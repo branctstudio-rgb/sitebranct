@@ -592,6 +592,105 @@
             line-height: 1.7;
         }
 
+        /* Holographic Dashboard — below title */
+        .holo-container {
+            perspective: 1200px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .holo-card {
+            width: 100%;
+            max-width: 780px;
+            background: rgba(9, 18, 28, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 36px 44px;
+            transform-style: preserve-3d;
+            transform: rotateY(-6deg) rotateX(3deg);
+            transition: transform 0.15s ease-out, border-color 0.4s ease, box-shadow 0.4s ease;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+            animation: floatCard 6s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .holo-card:hover {
+            border-color: var(--branct-cyan);
+            box-shadow: 0 30px 80px rgba(6, 182, 212, 0.15), 0 0 40px rgba(6, 182, 212, 0.08);
+        }
+
+        .holo-card .holo-content {
+            transform: translateZ(30px);
+            transition: transform 0.15s ease-out;
+        }
+
+        .holo-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 16px;
+            transform: translateZ(20px);
+        }
+
+        .dots { display: flex; gap: 8px; }
+        .dots span { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
+        .dots .red { background: #ff5f56; }
+        .dots .yellow { background: #ffbd2e; }
+        .dots .green { background: #27c93f; }
+
+        .holo-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #64748b;
+            letter-spacing: 1.5px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: #94a3b8;
+        }
+
+        .stat-row .value { font-weight: 700; color: #fff; font-size: 1.1rem; }
+        .stat-row .text-cyan { color: var(--branct-cyan); text-shadow: 0 0 12px rgba(6, 182, 212, 0.4); }
+
+        .holo-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            height: 120px;
+            margin-top: 28px;
+        }
+
+        .holo-chart .bar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            height: var(--h);
+            transition: transform 0.2s ease-out;
+        }
+
+        .holo-chart .bar.active {
+            background: var(--branct-cyan);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+        }
+
+        @keyframes floatCard {
+            0%, 100% { transform: rotateY(-6deg) rotateX(3deg) translateY(0); }
+            50% { transform: rotateY(-6deg) rotateX(3deg) translateY(-12px); }
+        }
+
         .bento-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1356,19 +1455,19 @@
             .bento-section { padding: 60px 1rem; }
             .bento-header {
                 grid-template-columns: 1fr;
-                gap: 1rem;
+                gap: 1.5rem;
                 margin-bottom: 2.5rem;
                 padding-bottom: 2rem;
             }
             .bento-header h2 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
             .bento-header p { font-size: 0.9rem; }
-            .bento-grid { grid-template-columns: 1fr; }
-            .tech-card.span-2 { grid-column: span 1; }
-            .tech-card { padding: 1.5rem; }
-            .tech-card h3 { font-size: 1rem; }
-            .tech-card p { font-size: 0.85rem; }
-            .tech-card-tags { gap: 0.4rem; margin-top: 1rem; }
-            .tech-tag { font-size: 0.55rem; padding: 0.25rem 0.5rem; }
+            .holo-card { transform: none; animation: none; max-width: 100%; padding: 24px; border-radius: 14px; }
+            .holo-card:hover { transform: none; }
+            .holo-header-row { margin-bottom: 18px; padding-bottom: 10px; transform: none; }
+            .holo-card .holo-content { transform: none; }
+            .stat-row { font-size: 0.85rem; margin-bottom: 12px; }
+            .stat-row .value { font-size: 0.95rem; }
+            .holo-chart { height: 70px; gap: 8px; margin-top: 18px; }
 
             /* --- FEATURE LIST --- */
             .feature-row {
@@ -1624,74 +1723,36 @@
         </div>
     </section>
 
-    <!-- Bento Grid - Technical Cards -->
+    <!-- Bento Section - Engineering Results -->
     <section class="bento-section" id="bento">
         <div class="bento-header">
             <h2 data-i18n="lp.bento.title" data-i18n-html="true">Engenharia<br>de Resultados</h2>
             <p data-i18n="lp.bento.subtitle">Cada elemento é projetado com propósito. Cada linha de código trabalha para a conversão. Sem excessos, sem ruído.</p>
         </div>
 
-        <div class="bento-grid">
-            <!-- Card 1: Speed -->
-            <div class="tech-card span-2">
-                <span class="tech-card-number">01</span>
-                <div class="tech-card-icon cyan">&#9889;</div>
-                <h3 data-i18n="lp.bento.speed.title">Velocidade Extrema</h3>
-                <p data-i18n="lp.bento.speed.desc">Core Web Vitals otimizados obsessivamente. Cada milissegundo eliminado aumenta sua taxa de conversão.</p>
-                <div class="tech-card-tags">
-                    <span class="tech-tag">LCP &lt;1s</span>
-                    <span class="tech-tag">FID &lt;50ms</span>
-                    <span class="tech-tag">CLS 0</span>
+        <!-- Holographic Dashboard -->
+        <div class="holo-container">
+            <div class="holo-card">
+                <div class="holo-header-row">
+                    <div class="dots"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
+                    <span class="holo-tag">LIVE ANALYTICS</span>
                 </div>
-            </div>
-
-            <!-- Card 2: UX -->
-            <div class="tech-card">
-                <span class="tech-card-number">02</span>
-                <div class="tech-card-icon">&#127919;</div>
-                <h3 data-i18n="lp.bento.ux.title">UX Direcionado</h3>
-                <p data-i18n="lp.bento.ux.desc">Hierarquia visual que guia o olhar até o CTA. Zero distrações.</p>
-            </div>
-
-            <!-- Card 3: Mobile -->
-            <div class="tech-card">
-                <span class="tech-card-number">03</span>
-                <div class="tech-card-icon">&#128241;</div>
-                <h3 data-i18n="lp.bento.mobile.title">Mobile First</h3>
-                <p data-i18n="lp.bento.mobile.desc">70% do tráfego vem de mobile. Priorizamos isso em cada decisão.</p>
-            </div>
-
-            <!-- Card 4: Copy -->
-            <div class="tech-card">
-                <span class="tech-card-number">04</span>
-                <div class="tech-card-icon cyan">&#9997;</div>
-                <h3 data-i18n="lp.bento.copy.title">Copy Persuasivo</h3>
-                <p data-i18n="lp.bento.copy.desc">Gatilhos mentais e estrutura AIDA. Headlines que conectam.</p>
-                <div class="tech-card-tags">
-                    <span class="tech-tag">AIDA</span>
-                    <span class="tech-tag">Scarcity</span>
-                </div>
-            </div>
-
-            <!-- Card 5: SEO -->
-            <div class="tech-card">
-                <span class="tech-card-number">05</span>
-                <div class="tech-card-icon">&#128269;</div>
-                <h3 data-i18n="lp.bento.seo.title">SEO Técnico</h3>
-                <p data-i18n="lp.bento.seo.desc">Schema markup e estrutura semântica para rankeamento orgânico.</p>
-            </div>
-
-            <!-- Card 6: Analytics -->
-            <div class="tech-card span-2">
-                <span class="tech-card-number">06</span>
-                <div class="tech-card-icon cyan">&#128200;</div>
-                <h3 data-i18n="lp.bento.analytics.title">Analytics Profundo</h3>
-                <p data-i18n="lp.bento.analytics.desc">GA4, Tag Manager e Heatmaps configurados de fábrica. Decisões baseadas em dados, não em achismos.</p>
-                <div class="tech-card-tags">
-                    <span class="tech-tag">GA4</span>
-                    <span class="tech-tag">GTM</span>
-                    <span class="tech-tag">Heatmaps</span>
-                    <span class="tech-tag">A/B Testing</span>
+                <div class="holo-content">
+                    <div class="stat-row">
+                        <span class="label">Conversion Rate</span>
+                        <span class="value text-cyan">+24.8%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Page Speed</span>
+                        <span class="value">99/100</span>
+                    </div>
+                    <div class="holo-chart">
+                        <div class="bar" style="--h:40%"></div>
+                        <div class="bar" style="--h:65%"></div>
+                        <div class="bar" style="--h:50%"></div>
+                        <div class="bar" style="--h:85%"></div>
+                        <div class="bar active" style="--h:100%"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2110,25 +2171,12 @@
         });
 
         // ========================================
-        // BENTO CARDS ANIMATION
+        // BENTO HEADER + HOLO DASHBOARD ANIMATION
         // ========================================
-        gsap.from('.tech-card', {
-            scrollTrigger: {
-                trigger: '.bento-grid',
-                start: 'top 80%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0,
-            y: 40,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: 'power3.out'
-        });
-
         gsap.from('.bento-header h2, .bento-header p', {
             scrollTrigger: {
-                trigger: '.bento-header',
-                start: 'top 85%',
+                trigger: '.bento-section',
+                start: 'top 90%',
                 toggleActions: 'play none none reverse'
             },
             opacity: 0,
@@ -2137,6 +2185,98 @@
             stagger: 0.2,
             ease: 'power3.out'
         });
+
+        gsap.from('.holo-card', {
+            scrollTrigger: {
+                trigger: '.holo-container',
+                start: 'top 90%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 40,
+            rotateY: -20,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+        // Animate holo chart bars on scroll
+        gsap.from('.holo-chart .bar', {
+            scrollTrigger: {
+                trigger: '.holo-container',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            scaleY: 0,
+            transformOrigin: 'bottom',
+            duration: 0.8,
+            stagger: 0.1,
+            ease: 'power3.out'
+        });
+
+        // Interactive 3D mouse-tracking tilt on holo-card
+        (function() {
+            const card = document.querySelector('.holo-card');
+            if (!card || window.innerWidth < 768) return;
+
+            const content = card.querySelector('.holo-content');
+            const headerRow = card.querySelector('.holo-header-row');
+            const maxRotate = 18;
+            let rafId = null;
+            let currentX = -6, currentY = 3;
+            let targetX = -6, targetY = 3;
+            let isHovering = false;
+
+            function lerp(a, b, t) { return a + (b - a) * t; }
+
+            function updateTransform() {
+                currentX = lerp(currentX, targetX, 0.08);
+                currentY = lerp(currentY, targetY, 0.08);
+
+                card.style.animation = 'none';
+                card.style.transform = 'rotateY(' + currentX + 'deg) rotateX(' + currentY + 'deg)';
+
+                if (content) {
+                    const shiftX = currentX * 0.8;
+                    const shiftY = currentY * -0.6;
+                    content.style.transform = 'translateZ(30px) translateX(' + shiftX + 'px) translateY(' + shiftY + 'px)';
+                }
+                if (headerRow) {
+                    headerRow.style.transform = 'translateZ(20px) translateX(' + (currentX * 0.4) + 'px)';
+                }
+
+                if (Math.abs(currentX - targetX) > 0.01 || Math.abs(currentY - targetY) > 0.01 || isHovering) {
+                    rafId = requestAnimationFrame(updateTransform);
+                } else if (!isHovering) {
+                    card.style.animation = '';
+                    card.style.transform = '';
+                    if (content) content.style.transform = '';
+                    if (headerRow) headerRow.style.transform = '';
+                }
+            }
+
+            card.addEventListener('mousemove', function(e) {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = (e.clientY - rect.top) / rect.height;
+
+                targetX = (x - 0.5) * maxRotate;
+                targetY = (0.5 - y) * maxRotate;
+
+                if (!isHovering) {
+                    isHovering = true;
+                    if (rafId) cancelAnimationFrame(rafId);
+                    rafId = requestAnimationFrame(updateTransform);
+                }
+            });
+
+            card.addEventListener('mouseleave', function() {
+                isHovering = false;
+                targetX = -6;
+                targetY = 3;
+                if (rafId) cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(updateTransform);
+            });
+        })();
 
         // ========================================
         // COMPARISON MATRIX ANIMATION
