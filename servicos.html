@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRANCT.Tech | Serviços</title>
+    <meta name="description" content="Conheça as nossas soluções de desenvolvimento premium.">
+    <link rel="stylesheet" href="src/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header glass-panel">
+        <div class="container header__container">
+            <a href="index.html" class="logo">BRANCT<span class="tech">.Tech</span></a>
+            <nav class="nav-desktop">
+                <ul class="nav-list">
+                    <li><a href="index.html" data-i18n="nav.home">InÃ­cio</a></li>
+                    <li class="nav-item--dropdown">
+                        <button class="nav-link" aria-haspopup="true" aria-expanded="false" aria-controls="services-submenu" data-i18n="nav.services">ServiÃ§os</button>
+                        <ul class="services-submenu" id="services-submenu">
+                            <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
+                            <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
+                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & GestÃ£o</a></li>
+                            <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">AutomaÃ§Ã£o & IA</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
+                    <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
+                    <li><a href="area-do-usuario.html" data-i18n="nav.userArea">Ãrea do UsuÃ¡rio</a></li>
+                    <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                </ul>
+            </nav>
+            <div class="header__actions">
+                <div class="lang-selector">
+                    <button class="lang-btn" aria-label="Select Language">
+                        <span id="current-lang">PT</span>
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <ul class="lang-dropdown">
+                        <li data-lang="pt">PT</li>
+                        <li data-lang="en">EN</li>
+                        <li data-lang="it">IT</li>
+                        <li data-lang="hr">HR</li>
+                    </ul>
+                </div>
+                <a href="contactos.html" class="btn btn--primary" data-i18n="nav.cta">Pedir Proposta</a>
+                <button class="mobile-toggle" aria-label="Menu"><span></span><span></span></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="mobile-drawer glass-panel">
+        <nav>
+            <ul class="mobile-nav-list">
+                <li><a href="index.html" data-i18n="nav.home">InÃ­cio</a></li>
+                <li class="nav-item--accordion">
+                    <button class="nav-link" aria-expanded="false" aria-controls="mobile-submenu" data-i18n="nav.services">ServiÃ§os</button>
+                    <ul class="mobile-submenu" id="mobile-submenu">
+                        <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
+                        <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & GestÃ£o</a></li>
+                        <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">AutomaÃ§Ã£o & IA</a></li>
+                    </ul>
+                </li>
+                <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
+                <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
+                <li><a href="area-do-usuario.html" data-i18n="nav.userArea">Ãrea do UsuÃ¡rio</a></li>
+                <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+            </ul>
+            <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir Proposta</a>
+        </nav>
+    </div>
+    <main class="page-main">
+        <section class="hero-simple section">
+            <h1 data-i18n="pageTitles.services">Serviços</h1>
+            <p data-i18n="pageSubtitles.services">Engenharia digital para marcas que lideram.</p>
+        </section>
+    </main>
+    <footer class="footer"><div class="container"><p>&copy; 2026 BRANCT.Tech</p></div></footer>
+    <script type="module" src="src/js/main.js"></script>
+</body>
+</html>

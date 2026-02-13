@@ -1,0 +1,762 @@
+{
+  "nav": {
+    "home": "Početna",
+    "services": "Usluge",
+    "process": "Proces",
+    "contacts": "Kontakt",
+    "userArea": "Korisnička Zona",
+    "blog": "Blog",
+    "cta": "Zatražite Ponudu"
+  },
+  "servicesMenu": {
+    "website": "Premium Web Stranica",
+    "landing": "Landing Stranice",
+    "crm": "CRM & Upravljanje",
+    "automation": "Automatizacija & AI"
+  },
+  "pageTitles": {
+    "services": "Usluge",
+    "process": "Naš Proces",
+    "contacts": "Kontakt",
+    "userArea": "Korisnička Zona",
+    "blog": "Blog",
+    "website": "Premium Web Stranica",
+    "landing": "Landing Stranice",
+    "crm": "CRM & Upravljanje",
+    "automation": "Automatizacija & AI"
+  },
+  "hero": {
+    "title": "Digitalna Budućnost Vašeg Brenda",
+    "subtitle": "Tech-Luxury Web Stranice, Inteligentna Automatizacija i Vrhunske Performanse.",
+    "scroll": "Klizite",
+    "proof": {
+      "perf": { "title": "Performanse", "desc": "Optimizirani Core Web Vitals." },
+      "seo": { "title": "Premium SEO", "desc": "Napredna semantička struktura." },
+      "ai": { "title": "AI Automatizacija", "desc": "Neuralni tijekovi i CRM." },
+      "i18n": { "title": "Višejezicnost", "desc": "Nativna globalna skalabilnost." },
+      "sec": { "title": "Sigurnost", "desc": "Zero-Trust protokoli." }
+    }
+  },
+  "cta": {
+    "proposal": "Zatražite Ponudu",
+    "services": "Pogledajte Usluge",
+    "start": "Započnite Sada"
+  },
+  "services": {
+    "title": "Premium Usluge",
+    "subtitle": "Elitni digitalni inženjering za vodeće brendove.",
+    "items": {
+      "web": {
+        "badge": "PERFORMANCE",
+        "title": "Premium Web Stranice",
+        "desc": "Brze, elegantne web stranice usmjerene na konverziju — s čvrstom tehničkom osnovom za SEO, performanse i rast.",
+        "bullets": ["UX/UI usmjeren na leadove", "Core Web Vitals optimizirani", "Tehnički SEO (struktura + schema)", "Modularna i skalabilna arhitektura"],
+        "chips": ["CWV 99+", "PWA", "SSR"],
+        "cta_primary": "Zatražite Ponudu",
+        "cta_secondary": "Pogledaj Detalje"
+      },
+      "lp": {
+        "badge": "CONVERSION",
+        "title": "Landing Stranice",
+        "desc": "Sučelja visoke konverzije s primijenjenom psihologijom prodaje. Pretvorite promet u prihod.",
+        "bullets": ["Uvjerljiv Copywriting", "Spremno za A/B Testiranje", "Trenutno Učitavanje", "Fokus na ROI"],
+        "chips": ["CRO", "Analytics", "Heatmaps"],
+        "cta_primary": "Zatražite Ponudu",
+        "cta_secondary": "Pogledaj Detalje"
+      },
+      "crm": {
+        "badge": "AI READY",
+        "title": "CRM & Upravljanje",
+        "desc": "Centralizirajte podatke, timove i prilike na jednom mjestu — s vidljivošću funnela i automatizacijama za ubrzanje prodajne operacije.",
+        "bullets": ["Pipeline s fazama i pravilima", "Dashboardi i metrike u stvarnom vremenu", "API i webhook integracije", "Automatizacija zadataka i follow-upova"],
+        "chips": ["n8n", "OpenAI", "API REST"],
+        "cta_primary": "Zatražite Ponudu",
+        "cta_secondary": "Pogledaj Detalje"
+      },
+      "auto": {
+        "badge": "AUTOMATION",
+        "title": "Automatizacija & AI",
+        "desc": "Automatizirajte korisničku podršku i follow-up bez gubitka personalizacije — s tokovima, segmentacijom i trackingom za brze odluke.",
+        "bullets": ["WhatsApp (API) i operativni chat", "Email i nurturing sekvence", "Automatizacija po događajima i fazama", "Kvalifikacija i usmjeravanje leadova"],
+        "chips": ["WhatsApp API", "SMTP", "Webhooks"],
+        "cta_primary": "Zatražite Ponudu",
+        "cta_secondary": "Pogledaj Detalje"
+      },
+      "brand": {
+        "badge": "BRAND SYSTEM",
+        "title": "Branding & Sadržaj",
+        "desc": "Koherentan vizualni i verbalni identitet. Gradimo narative koji povezuju brendove s budućnošću.",
+        "bullets": ["Strategija Brenda", "Ton Glasa", "Design System", "Stvaranje Sadržaja"],
+        "chips": ["Storytelling", "UI Kit", "Strategy"],
+        "cta_primary": "Zatražite Ponudu",
+        "cta_secondary": "Pogledaj Detalje"
+      }
+    }
+  },
+  "solutions": {
+    "title": "BRANCT Ekosustav",
+    "sub": "Više od web stranice: operacija akvizicije i upravljanja klijentima.",
+    "bullets": [
+      "Nativna CRM integracija (leadovi i pipeline)",
+      "Automatizacija praćenja (WhatsApp/SMS/E-mail)",
+      "Nadzorna ploča performansi (kampanje i lijevak)",
+      "Trenirani AI Chatbot (odgovori i kvalifikacija)",
+      "Kalendar i zadaci (da ne propustite prilike)",
+      "Praćenje i događaji (osnova za optimizaciju)"
+    ],
+    "trust": "Sve u jednom ekosustavu, dizajnirano za skaliranje uz kontrolu i sigurnost.",
+    "cta_primary": "Isprobajte 7 dana besplatno",
+    "cta_secondary": "Pogledaj značajke"
+  },
+  "projects": {
+    "title": "Nedavni Projekti",
+    "items": {
+      "neoprag": { "tag": "Web / Institucionalno" },
+      "vertexway": { "tag": "Web Stranica / Brend" },
+      "albino": { "tag": "Nekretnine / Landing Stranica" },
+      "kb": { "tag": "Računovodstvo / Web Stranica" }
+    }
+  },
+  "process": {
+    "title": "Naš Proces",
+    "step1": {
+      "title": "Dijagnostika",
+      "desc": "Usklađujemo ciljeve, publiku i prioritete. Definiramo arhitekturu prije dizajna.",
+      "chips": ["Analiza Tržišta", "Arhitektura"]
+    },
+    "step2": {
+      "title": "Dizajn",
+      "desc": "UI/UX i provjerljiv prototip. Jasnoća, kredibilitet i fokus na konverziju.",
+      "chips": ["UI/UX", "3D Prototip"]
+    },
+    "step3": {
+      "title": "Razvoj",
+      "desc": "Implementacija s performansama, tehničkim SEO-om i integracijama za tracking i automatizaciju.",
+      "chips": ["Clean Code", "SEO Native"]
+    },
+    "step4": {
+      "title": "Skaliranje",
+      "desc": "Kontinuirano praćenje i optimizacija. Evolucija vođena podacima.",
+      "chips": ["Analytics", "Growth"]
+    }
+  },
+  "contact": {
+    "title": "Spremni podići svoju digitalnu prisutnost?",
+    "desc": "Pošaljite svoj cilj i rokove. Mi vraćamo jasan plan i sljedeće korake.",
+    "social": {
+      "ln": "LinkedIn",
+      "ig": "Instagram",
+      "tw": "Twitter"
+    }
+  },
+  "form": {
+    "name": "Puno Ime",
+    "email": "Poslovni Email",
+    "message": "Kako možemo pomoći?",
+    "submit": "Pošalji Poruku",
+    "success": "Poruka uspješno poslana. Kontaktirat ćemo vas uskoro.",
+    "error": "Došlo je do pogreške. Molimo pokušajte ponovno."
+  },
+  "footer": {
+    "privacy": "Politika Privatnosti",
+    "terms": "Uvjeti Korištenja"
+  },
+  "websitePremium": {
+    "backButton": "Natrag",
+    "hero": {
+      "title": "Elitne Web Stranice",
+      "subtitle": "Digitalna iskustva s 3D tehnologijom, fluidnim animacijama i performantnom arhitekturom.",
+      "primaryCta": "Pokreni Projekt",
+      "secondaryCta": "Vidi Proces"
+    },
+    "stats": {
+      "performance": "<strong>Do 3.5x</strong> brže od konkurencije",
+      "lighthouse": "<strong>95+ Score</strong> Lighthouse Performance",
+      "edge": "<strong>Serverless Edge</strong>",
+      "cdn": "Arhitektura: Globalni CDN"
+    },
+    "section2": {
+      "title": "Elitna Tehnologija",
+      "subtitle": "Moderni stack koji osigurava skalabilnost i održivost na dugi rok.",
+      "features": [
+        "React/Next.js 14 s Server Components",
+        "TypeScript za type-safe kod",
+        "Tailwind CSS + Framer Motion",
+        "Vercel Edge Network (latencija <50ms)",
+        "Supabase/Firebase za real-time backend"
+      ]
+    },
+    "pricing": {
+      "title": "Transparentno Ulaganje",
+      "subtitle": "Premium digitalna rješenja prilagođena vašem poslovanju. Bez skrivenih troškova.",
+      "essential": {
+        "name": "Essential",
+        "tagline": "Za tvrtke koje počinju",
+        "price": "Od 500€",
+        "monthly": "Mjesečno: 70€",
+        "features": [
+          "Premium Responzivna Web Stranica",
+          "Moderan i Minimalistički Design",
+          "Osnovna SEO Optimizacija",
+          "Kontakt Forma",
+          "Google Analytics Integracija",
+          "1 Mjesec Podrške"
+        ],
+        "cta": "Počni Sada"
+      },
+      "professional": {
+        "name": "Professional",
+        "tagline": "✨ Najpopularniji",
+        "price": "Od 800€",
+        "monthly": "Mjesečno: 250€",
+        "features": [
+          "Sve iz Essentiala, plus:",
+          "Integrirani Prilagođeni CRM",
+          "Admin Dashboard",
+          "Napredni SEO + Schema Markup",
+          "Dinamički Blog / Vijesti",
+          "Email Marketing Integracija",
+          "3 Mjeseca Premium Podrške"
+        ],
+        "cta": "Odaberi Professional"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "tagline": "Za tvrtke lidere",
+        "price": "Od 1.200€",
+        "monthly": "Mjesečno: 370€",
+        "features": [
+          "Sve iz Professionala, plus:",
+          "Integrirana Konverzacijska AI",
+          "24/7 Inteligentni Chatbot",
+          "Napredne Automatizacije",
+          "Multi-jezik (3 jezika)",
+          "Potpuna E-trgovina (opcionalno)",
+          "6 Mjeseci VIP Podrške"
+        ],
+        "cta": "Razgovara sa Specijalistom"
+      }
+    },
+    "bespoke": {
+      "title": "EKSKLUZIVNI<br>PROJEKTI",
+      "subtitle": "DIZAJN PO MJERI",
+      "desc": "Za brendove koji se ne uklapaju u pakete. Stvaramo jedinstvena digitalna iskustva, dizajnirana od nule, bez predložaka.",
+      "cta": "Zatražite Jedinstveni Projekt →"
+    },
+    "scrollHint": "Nastavite",
+    "featureCloud": {
+      "power": {
+        "label": "SNAGA",
+        "keyword": "PERFORMANCE EDGE",
+        "desc": "Globalni CDN. Latencija <50ms."
+      },
+      "growth": {
+        "label": "RAST",
+        "keyword": "NATIVNI SEO",
+        "desc": "Semantička struktura. Schema spreman."
+      },
+      "intelligence": {
+        "label": "INTELIGENCIJA",
+        "keyword": "AI AUTOMATIZACIJA",
+        "desc": "Pametni tokovi. Aktivno 24/7."
+      }
+    },
+    "final": {
+      "title": "Definirajte sljedeći standard vašeg brenda.",
+      "desc": "Izrađujemo premium web stranice s fokusom na percepciju vrijednosti, brzinu, SEO i konverziju — dizajnirane za skaliranje uz kontrolu i dosljednost.",
+      "cta": "Pokreni Projekt",
+      "note": "Bez buke. Bez prečaca. Samo isporučena kvaliteta."
+    },
+    "footerBack": "Natrag na Vrh"
+  },
+  "lp": {
+    "hero": {
+      "badge": "Conversion Engineering",
+      "line1": "Inženjering",
+      "line2": "",
+      "highlight": "Konverzije.",
+      "subtitle": "Landing stranice visokih performansi koje pretvaraju promet u predvidljiv prihod. Nula predložaka. 100% inženjering.",
+      "cta": "Pokreni Projekt"
+    },
+    "metrics": {
+      "loadTime": "Vrijeme Učitavanja",
+      "roi": "Cilj ROI"
+    },
+    "reveal": {
+      "backTag": "// Branct Rješenje",
+      "backTitle": "Elitna<br>Performansa",
+      "backDesc": "Moderna arhitektura, optimizirani kod i dizajn koji konvertira.",
+      "faster": "Brže",
+      "conversion": "Konverzija",
+      "frontTitle": "Tradicionalni Landing",
+      "frontDesc": "Generički predlošci. Sporo učitavanje. Niska konverzija.",
+      "scrollHint": "Klizite za otkrivanje"
+    },
+    "bento": {
+      "title": "Inženjering<br>Rezultata",
+      "subtitle": "Svaki element je dizajniran sa svrhom. Svaka linija koda radi za konverziju. Bez viška, bez buke.",
+      "speed": {
+        "title": "Ekstremna Brzina",
+        "desc": "Core Web Vitals opsesivno optimizirani. Svaka eliminirana milisekunda povećava vašu stopu konverzije."
+      },
+      "ux": {
+        "title": "Usmjereni UX",
+        "desc": "Vizualna hijerarhija koja vodi pogled prema CTA. Nula distrakcija."
+      },
+      "mobile": {
+        "title": "Mobile First",
+        "desc": "70% prometa dolazi s mobilnih uređaja. To prioritiziramo u svakoj odluci."
+      },
+      "copy": {
+        "title": "Uvjerljivi Copy",
+        "desc": "Mentalni okidači i AIDA struktura. Naslovi koji povezuju."
+      },
+      "seo": {
+        "title": "Tehnički SEO",
+        "desc": "Schema markup i semantička struktura za organsko rangiranje."
+      },
+      "analytics": {
+        "title": "Duboka Analitika",
+        "desc": "GA4, Tag Manager i Heatmaps konfigurirani iz tvornice. Odluke temeljene na podacima, ne na nagađanjima."
+      }
+    },
+    "features": {
+      "ab": {
+        "title": "Nativno A/B Testiranje",
+        "desc": "Struktura spremna za <strong>testiranje varijacija</strong> od prvog dana. Integracija s Google Optimize, VWO ili Optimizely."
+      },
+      "crm": {
+        "title": "CRM Integracija",
+        "desc": "Nativna veza s <strong>HubSpot, Pipedrive, n8n</strong> i bilo kojim alatom putem API-ja. Leadovi direktno u vašem pipelineu."
+      },
+      "i18n": {
+        "title": "Višejezičnost",
+        "desc": "<strong>Nativna i18n arhitektura</strong> za globalno skaliranje. Jedan landing, više tržišta."
+      },
+      "edge": {
+        "title": "Edge Deployment",
+        "desc": "<strong>Vercel Edge Network</strong> s latencijom <50ms globalno. Vaš landing bliže korisniku."
+      }
+    },
+    "matrix": {
+      "tag": "Planovi i Cijene",
+      "title": "Odaberite svoj plan",
+      "subtitle": "Tri razine isporuke, isti standard izvrsnosti. Landing stranice koje konvertiraju, bez obzira na plan.",
+      "badge": "NAJPOPULARNIJI",
+      "feat": {
+        "pages": "Stranice",
+        "design": "Dizajn",
+        "mobile": "Mobilno",
+        "form": "Obrazac",
+        "seo": "SEO",
+        "analytics": "Analitika",
+        "ab": "A/B Testiranje",
+        "support": "Podrška"
+      },
+      "core": {
+        "name": "CORE",
+        "label": "Osnovno",
+        "price": "180€",
+        "pages": "1 Landing stranica",
+        "design": "Premium predložak",
+        "mobile": "Responzivno",
+        "form": "Osnovni kontakt",
+        "seo": "Tehnička baza",
+        "support": "15 dana",
+        "cta": "Zatražite ponudu"
+      },
+      "advanced": {
+        "name": "ADVANCED",
+        "label": "Performanse & konverzija",
+        "price": "300€ + 90€/mj",
+        "pages": "Do 3 varijacije",
+        "design": "Prilagođeni UI",
+        "mobile": "Mobile-first + animacije",
+        "form": "Multi-step + CRM",
+        "seo": "Napredni SEO",
+        "support": "3 mjeseca",
+        "cta": "Odabrati"
+      },
+      "ultimate": {
+        "name": "ULTIMATE",
+        "label": "Maksimalna konverzija",
+        "price": "Na upit",
+        "pages": "Neograničeno",
+        "design": "Premium po mjeri",
+        "mobile": "Mobile-first + 3D/WebGL",
+        "form": "Smart obrasci + AI",
+        "seo": "SEO + autoritet",
+        "support": "6 mjeseci kontinuirano",
+        "cta": "Razgovarajte s nama"
+      }
+    },
+    "final": {
+      "tag": "// Ready to Scale",
+      "title": "Spremni za<br>Skaliranje?",
+      "desc": "Landing stranice koje ne samo impresioniraju — konvertiraju. Izgradimo vašu.",
+      "cta": "Razgovarajte sa Specijalistom"
+    },
+    "footer": {
+      "rights": "Sva Prava Pridržana",
+      "back": "Natrag na Početak"
+    }
+  },
+  "landingPages": {
+    "badge": "Visoka Konverzija",
+    "title": "Landing Stranice",
+    "titleHighlight": "Dizajnirane za Prodaju.",
+    "subtitle": "Pretvorite promet u prihod s dizajnom visoke konverzije i inženjeringom performansi.",
+    "cta": "Želim Ovakvu Stranicu",
+    "scroll": "Klizite",
+    "bento": {
+      "title": "Što Isporučujemo",
+      "subtitle": "Svaki detalj osmišljen za maksimiziranje konverzija.",
+      "speed": {
+        "title": "Trenutno Učitavanje",
+        "metric": "< 1s",
+        "metricLabel": "Prosječno Vrijeme Učitavanja",
+        "desc": "Ekstremna performansa s optimizacijom Core Web Vitals. Svaka milisekunda utječe na konverziju."
+      },
+      "design": {
+        "title": "Hipnotički UI/UX",
+        "desc": "Dizajn koji privlači pažnju i vodi pogled prema CTA. Maksimalna vizualna retencija."
+      },
+      "mobile": {
+        "title": "Mobile-First",
+        "desc": "Savršeno na svakom ekranu. 70% prometa dolazi s mobilnih uređaja - to prioritiziramo."
+      },
+      "copy": {
+        "title": "Copywriting & Mentalni Okidači",
+        "desc": "Uvjerljiva struktura s primijenjenom psihologijom prodaje. Naslovi koji povezuju, CTA koji konvertiraju."
+      },
+      "seo": {
+        "title": "Tehnički SEO",
+        "desc": "Schema markup, optimizirane meta oznake i semantička struktura. Organsko rangiranje zajamčeno."
+      }
+    },
+    "why": {
+      "title": "Zašto Odabrati BRANCT?",
+      "desc": "Nismo samo dizajneri. Mi smo inženjeri konverzije koji kombiniraju premium estetiku s elitnom tehničkom performansom.",
+      "checklistTitle": "// Inženjerski Popis",
+      "items": [
+        { "title": "Lighthouse Score 95+", "desc": "Performansa, Pristupačnost, SEO optimizirani" },
+        { "title": "A/B Testing Spremno", "desc": "Struktura pripremljena za testiranje varijacija" },
+        { "title": "Integrirana Analitika", "desc": "GA4, Tag Manager, Heatmaps konfigurirani" },
+        { "title": "CRM Spremno", "desc": "Integracija s HubSpot, Pipedrive, n8n" },
+        { "title": "Višejezičnost", "desc": "Spremno za globalno skaliranje" }
+      ]
+    },
+    "final": {
+      "title": "Vaša ponuda zaslužuje najbolju pozornicu na svijetu.",
+      "desc": "Landing stranice koje ne samo impresioniraju - konvertiraju. Izgradimo vašu.",
+      "cta": "Razgovarajte sa Specijalistom"
+    },
+    "footerBack": "Natrag na Početak"
+  },
+  "crm": {
+    "cta": "Organiziraj Tvrtku",
+    "heroTag": "Zapovjedni Centar",
+    "heroLine1": "CENTRALIZACIJA.",
+    "heroLine2": "POTPUNA KONTROLA.",
+    "heroSub": "Prestanite gubiti leadove u tablicama. Pogled od 360° na vašu operaciju u stvarnom vremenu.",
+    "heroCta": "Pogledaj Demo",
+    "scrollHint": "Klizite",
+    "videoLabel": "POGLEDAJTE SUSTAV U AKCIJI",
+    "featuresTitle": "Elitne<br>Značajke",
+    "featuresSub": "Sve što trebate za skaliranje vaše prodajne operacije s kontrolom i predvidljivošću.",
+    "features": {
+      "pipeline": {
+        "title": "Vizualni Prodajni Lijevak",
+        "desc": "Vizualizirajte cijeli pipeline na intuitivnoj Kanban ploči. Povucite i ispustite poslove između faza. Nikad ne propustite priliku."
+      },
+      "automation": {
+        "title": "Automatski Follow-up",
+        "desc": "Sekvence e-pošte, SMS-a i WhatsAppa koje se pokreću automatski. Njega leadova na autopilotu."
+      },
+      "omni": {
+        "title": "WhatsApp, E-mail & Omni",
+        "desc": "Svi razgovori na jednom mjestu. Kompletna povijest svakog leada, bez obzira na kanal."
+      },
+      "reports": {
+        "title": "Izvješća o Prihodima u Stvarnom Vremenu",
+        "desc": "Nadzorne ploče koje pokazuju točno gdje je vaš novac. Prognoza prihoda, stopa konverzije i performanse po prodavaču."
+      },
+      "ai": {
+        "title": "Lead Scoring s AI",
+        "desc": "Algoritmi koji identificiraju najvruće leadove. Usredotočite svoju energiju tamo gdje postoji najveća vjerojatnost zatvaranja."
+      }
+    },
+    "integrationsLabel": "Integrira se s alatima koje već koristite",
+    "ctaTag": "// Spremni za Skaliranje",
+    "ctaTitle": "Spremni za<br>Organizaciju?",
+    "ctaDesc": "Dosta izgubljenih leadova u tablicama. Centralizirajte, automatizirajte i skalirajte.",
+    "ctaButton": "Organiziraj Moju Tvrtku",
+    "footerRights": "Sva Prava Pridržana",
+    "footerBack": "Natrag na Početak"
+  },
+  "ai": {
+    "heroBadge": "Umjetna Inteligencija",
+    "heroLine1": "VAŠA TVRTKA NA",
+    "heroLine2": "AUTOPILOTU.",
+    "heroSub": "Korisnička služba, prodaja i interni procesi rade 24/7. Bez pauza, bez ljudskih grešaka.",
+    "heroCta": "Pogledaj Demo",
+    "stats": {
+      "response": "Vrijeme Odgovora",
+      "availability": "Dostupnost",
+      "qualification": "Kvalifikacija"
+    },
+    "chatTag": "// Live Demo",
+    "chatTitle": "Pogledajte AI<br>u Akciji",
+    "chatDesc": "Dok čitate ovo, naš AI je već odgovorio 47 klijenata istovremeno. Kvalificirao leadove, zakazao sastanke i poslao ponude.",
+    "speedText": "Odgovori za <strong>0.2s</strong>. Trenutna konverzija.",
+    "chatOnline": "Online",
+    "solutionsTitle": "Rješenja za<br>Automatizaciju",
+    "solutionsSub": "Tehnologija koja radi dok vi spavate. Svaka interakcija, uhvaćena prilika.",
+    "solutions": {
+      "gpt": {
+        "title": "GPT-4 Chatbotovi",
+        "desc": "Konverzacijski AI treniran na vašem poslovanju. Kontekstualni odgovori, personalizacija u stvarnom vremenu i kontinuirano učenje."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Business",
+        "desc": "Službeni API integriran. Masovno slanje poruka, automatski odgovori i prodajni tokovi."
+      },
+      "leads": {
+        "title": "Kvalifikacija Leadova",
+        "desc": "Automatsko bodovanje temeljeno na ponašanju. Fokusirajte se samo na vruće leadove."
+      },
+      "booking": {
+        "title": "Automatsko Zakazivanje",
+        "desc": "Sinkronizacija s Google Kalendarom i Calendlyjem. Sastanci zakazani bez ljudske intervencije."
+      },
+      "email": {
+        "title": "Email Sekvence",
+        "desc": "Automatsko njegovanje s dinamičkom personalizacijom. AI generiran tekst."
+      }
+    },
+    "usecases": {
+      "support": "Korisnička Podrška",
+      "sales": "Automatizirana Prodaja",
+      "onboarding": "Onboarding Klijenata",
+      "booking": "Zakazivanje Sastanaka",
+      "qualification": "Kvalifikacija Leadova",
+      "followup": "Automatski Follow-up"
+    },
+    "ctaTag": "// Spremni za Automatizaciju",
+    "ctaTitle": "Spremni za<br>Automatizaciju?",
+    "ctaDesc": "Oslobodite svoj tim od ponavljajućih zadataka. Neka AI radi za vas.",
+    "ctaButton": "Automatiziraj Sada",
+    "footerRights": "Sva Prava Pridržana",
+    "footerBack": "Natrag na Početak",
+    "chat": {
+      "msg1": "Želio bih ponudu.",
+      "msg2": "Pozdrav! Naravno. Za koju uslugu?",
+      "msg3": "Automatizacija korisničke službe.",
+      "msg4": "Savršeno! Analiziram vaše potrebe..."
+    }
+  },
+  "pp": {
+    "hero": {
+      "tag": "// Naš Proces",
+      "title": "Od Dijagnostike do Skaliranja.",
+      "subtitle": "Četiri faze. Jedna opsesija: isporučiti mjerljivu vrijednost u svakoj fazi vašeg digitalnog projekta."
+    },
+    "step1": {
+      "tag": "// Discovery & Strategy",
+      "title": "Dijagnostika",
+      "desc": "Duboka analiza vašeg tržišta, konkurencije i pozicioniranja. Mapiramo svaku priliku prije nego što povučemo jednu liniju.",
+      "chip1": "Analiza Tržišta",
+      "chip2": "Tehnički Audit",
+      "chip3": "Roadmap"
+    },
+    "step2": {
+      "tag": "// UX & Visual Identity",
+      "title": "Dizajn",
+      "desc": "Interaktivni prototipovi i vizualni identitet koji prenosi bit vašeg brenda. Svaki piksel služi svrsi konverzije.",
+      "chip1": "UI/UX Research",
+      "chip2": "Interaktivni Prototip",
+      "chip3": "Design System"
+    },
+    "step3": {
+      "tag": "// Engineering & Performance",
+      "title": "Razvoj",
+      "desc": "Čist kod, opsesivna izvedba i kontinuirana integracija. Svaka milisekunda je bitna. Svaka linija koda je testirana.",
+      "chip1": "Clean Code",
+      "chip2": "Nativni SEO",
+      "chip3": "CI/CD"
+    },
+    "step4": {
+      "tag": "// Growth & Optimization",
+      "title": "Skaliranje",
+      "desc": "Kontinuirano praćenje, optimizacija temeljena na podacima i održivi rast. Lansiranje je tek početak.",
+      "chip1": "Analytics",
+      "chip2": "A/B Testing",
+      "chip3": "Growth Ops"
+    },
+    "cta": {
+      "tag": "// Spremni za početak",
+      "title": "Pretvorite svoju viziju u stvarnost.",
+      "desc": "Svaki projekt počinje razgovorom. Izgradimo nešto što definira sljedeći standard vašeg brenda.",
+      "button": "Pokreni Projekt"
+    },
+    "footer": {
+      "rights": "Sva prava pridržana",
+      "back": "Natrag na Početak"
+    }
+  },
+  "wp": {
+    "hero": {
+      "tag": "Premium Web Stranice",
+      "line1": "PREMIUM",
+      "line2": "WEB STRANICE.",
+      "line3": "DIZAJN",
+      "line4": "S METRIKOM.",
+      "desc": "Web stranica koja komunicira vrijednost i generira stvarne upite. Struktura osmišljena za konverziju, performanse i tehnički SEO — s trackingom za mjerenje rezultata.",
+      "cta1": "Zatražite ponudu",
+      "cta2": "Pogledajte proces",
+      "stat1": "Performanse usmjerene na CWV",
+      "stat2": "Tehnički SEO + struktura",
+      "stat3": "Globalna isporuka (Edge/CDN)"
+    },
+    "tech": {
+      "tag": "Tehnička osnova",
+      "title": "Arhitektura za skaliranje",
+      "desc": "Biramo stack koji štiti vašu investiciju: brz, stabilan i lak za razvoj. Manje trenja danas; manji troškovi preradbe sutra.",
+      "item1": "Next.js s hibridnim renderiranjem (SSR/SSG)",
+      "item2": "TypeScript za predvidljiv kod",
+      "item3": "Moderna UI s diskretnom animacijom",
+      "item4": "Deploy na Edge/CDN",
+      "item5": "Integracije s bazama podataka i servisima"
+    },
+    "float": {
+      "label1": "Performanse",
+      "kw1": "BRZO. BEZ BUKE.",
+      "desc1": "Stvarna optimizacija: učitavanje, slike i kod.",
+      "label2": "Rast",
+      "kw2": "TEHNIČKI SEO",
+      "desc2": "Semantička struktura + schema gdje ima smisla.",
+      "label3": "Sigurnost",
+      "kw3": "SIGURNA OSNOVA",
+      "desc3": "HTTPS, zaglavlja i najbolje prakse zaštite."
+    },
+    "matrix": {
+      "tag": "Razine isporuke",
+      "title": "Odaberite pravu razinu",
+      "subtitle": "Tri pristupa, isti standard: performanse, jasnoća i konverzija. Razlika je u tehničkoj dubini i integracijama.",
+      "badge": "NAJBOLJE URAVNOTEŽENO",
+      "feat": {
+        "tech": "Tehnologija",
+        "perf": "Performanse",
+        "design": "Dizajn",
+        "seo": "SEO",
+        "crm": "CRM",
+        "ai": "AI Automatizacija",
+        "support": "Podrška"
+      },
+      "core": {
+        "name": "CORE",
+        "label": "Osnovno",
+        "price": "500€ + 50€/mj",
+        "tech": "React / Next.js",
+        "perf": "Najbolje prakse + CWV",
+        "design": "Clean premium",
+        "seo": "Tehnička osnova",
+        "support": "1 mjesec (završne prilagodbe)",
+        "cta": "Zatražite ponudu"
+      },
+      "advanced": {
+        "name": "ADVANCED",
+        "label": "Performanse & konverzija",
+        "price": "900€ + 230€/mj",
+        "tech": "Next.js + GSAP",
+        "perf": "Napredna optimizacija",
+        "design": "Imerzivni UI (bez viška)",
+        "seo": "Napredni tehnički SEO",
+        "support": "3 mjeseca (početni monitoring)",
+        "cta": "Odaberi"
+      },
+      "ultimate": {
+        "name": "ULTIMATE",
+        "label": "Tech-Luxury",
+        "price": "Na upit",
+        "tech": "3D/WebGL gdje ima smisla",
+        "perf": "Edge + pametno renderiranje",
+        "design": "Premium iskustvo po mjeri",
+        "seo": "SEO + struktura za autoritet",
+        "support": "6 mjeseci (kontinuirana evolucija)",
+        "cta": "Razgovarajte s nama"
+      }
+    },
+    "bespoke": {
+      "title": "PROJEKTI PO MJERI",
+      "tag": "Prava ekskluzivnost",
+      "desc": "Za brendove koji ne staju u predloške. Dizajn i implementacija po mjeri, specifične integracije i tehnička osnova osmišljena za evoluciju s vašim poslovanjem.",
+      "cta": "Razgovarajmo o projektu"
+    },
+    "panel1": {
+      "title": "Nastavite istraživati",
+      "desc": "Pogledajte kako dizajniramo web stranicu s metodom: strategija, izvršenje i evolucija."
+    },
+    "final": {
+      "tag": "// Spremni za konverziju",
+      "title": "PODIGNITE STANDARD SVOJE PRISUTNOSTI.",
+      "desc": "Premium web stranice za povećanje percepcije vrijednosti, brzine i konverzije — s tehničkim SEO-om i trackingom za mjerenje onoga što je važno.",
+      "cta": "Zatražite ponudu"
+    },
+    "footer": {
+      "rights": "Sva prava pridržana",
+      "back": "Natrag na početak"
+    }
+  },
+  "ct": {
+    "hero": {
+      "tag": "// Kontakt",
+      "title": "Razgovarajmo.",
+      "subtitle": "Započnite s besplatnom dijagnostikom. Zajamčen odgovor unutar 24h."
+    },
+    "form": {
+      "name": "Ime",
+      "email": "Email",
+      "phone": "Telefon",
+      "company": "Tvrtka",
+      "interest": "Interes",
+      "interests": {
+        "website": "Premium Web Stranice",
+        "crm": "CRM & Upravljanje",
+        "automation": "Automatizacija & AI",
+        "branding": "Branding"
+      },
+      "message": "Poruka",
+      "submit": "Pošalji Dijagnostiku",
+      "success": {
+        "title": "Dijagnostika Poslana!",
+        "desc": "Naš tim će analizirati vaš zahtjev i javiti vam se unutar 24h.",
+        "back": "Pošalji Još Jedan"
+      }
+    },
+    "info": {
+      "title": "Izravni Kontakti",
+      "whatsapp": {
+        "title": "Izravan Chat",
+        "desc": "Odgovor unutar 10min"
+      },
+      "email": {
+        "title": "E-mail"
+      },
+      "schedule": {
+        "title": "Zakaži Poziv",
+        "desc": "Konzultacija od 30min"
+      },
+      "location": {
+        "title": "Lokacija"
+      }
+    }
+  },
+  "a11y": {
+    "skipToContent": "Preskoči na sadržaj",
+    "mainNav": "Glavna navigacija",
+    "mobileNav": "Izbornik navigacije",
+    "langSelector": "Odaberi jezik",
+    "scrollService": "Usluga {current} od {total}: {title}"
+  }
+}

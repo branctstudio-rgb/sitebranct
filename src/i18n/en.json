@@ -1,0 +1,762 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "process": "Process",
+    "contacts": "Contact",
+    "userArea": "Client Area",
+    "blog": "Blog",
+    "cta": "Request Proposal"
+  },
+  "servicesMenu": {
+    "website": "Premium Website",
+    "landing": "Landing Pages",
+    "crm": "CRM & Management",
+    "automation": "Automation & AI"
+  },
+  "pageTitles": {
+    "services": "Services",
+    "process": "Our Process",
+    "contacts": "Contact",
+    "userArea": "Client Area",
+    "blog": "Blog",
+    "website": "Premium Website",
+    "landing": "Landing Pages",
+    "crm": "CRM & Management",
+    "automation": "Automation & AI"
+  },
+  "hero": {
+    "title": "Your Brand's Digital Future",
+    "subtitle": "Tech-Luxury Websites, Intelligent Automation, and Elite Performance.",
+    "scroll": "Scroll",
+    "proof": {
+      "perf": { "title": "Performance", "desc": "Optimized Core Web Vitals." },
+      "seo": { "title": "Premium SEO", "desc": "Advanced semantic structure." },
+      "ai": { "title": "AI Automation", "desc": "Neural workflows & CRM." },
+      "i18n": { "title": "Multi-language", "desc": "Native global scalability." },
+      "sec": { "title": "Security First", "desc": "Zero-Trust protocols." }
+    }
+  },
+  "cta": {
+    "proposal": "Request Proposal",
+    "services": "View Services",
+    "start": "Start Now"
+  },
+  "services": {
+    "title": "Premium Services",
+    "subtitle": "Elite digital engineering for leading brands.",
+    "items": {
+      "web": {
+        "badge": "PERFORMANCE",
+        "title": "Premium Websites",
+        "desc": "Fast, elegant websites built for conversion — with a solid technical foundation for SEO, performance and growth.",
+        "bullets": ["UX/UI focused on leads", "Core Web Vitals optimised", "Technical SEO (structure + schema)", "Modular and scalable architecture"],
+        "chips": ["CWV 99+", "PWA", "SSR"],
+        "cta_primary": "Request Proposal",
+        "cta_secondary": "View Details"
+      },
+      "lp": {
+        "badge": "CONVERSION",
+        "title": "Landing Pages",
+        "desc": "High-conversion interfaces with applied sales psychology. Turn traffic into predictable revenue.",
+        "bullets": ["Persuasive Copywriting", "A/B Testing Ready", "Instant Loading", "ROI Focused"],
+        "chips": ["CRO", "Analytics", "Heatmaps"],
+        "cta_primary": "Request Proposal",
+        "cta_secondary": "View Details"
+      },
+      "crm": {
+        "badge": "AI READY",
+        "title": "CRM & Management",
+        "desc": "Centralise data, teams and opportunities in one place — with funnel visibility and automations to accelerate your sales operation.",
+        "bullets": ["Pipeline with stages and rules", "Dashboards and real-time metrics", "API and webhook integrations", "Task and follow-up automation"],
+        "chips": ["n8n", "OpenAI", "API REST"],
+        "cta_primary": "Request Proposal",
+        "cta_secondary": "View Details"
+      },
+      "auto": {
+        "badge": "AUTOMATION",
+        "title": "Automation & AI",
+        "desc": "Automate customer service and follow-up without losing personalisation — with flows, segmentation and tracking for fast decisions.",
+        "bullets": ["WhatsApp (API) and operational chat", "Email and nurturing sequences", "Event and stage-based automation", "Lead qualification and routing"],
+        "chips": ["WhatsApp API", "SMTP", "Webhooks"],
+        "cta_primary": "Request Proposal",
+        "cta_secondary": "View Details"
+      },
+      "brand": {
+        "badge": "BRAND SYSTEM",
+        "title": "Branding & Content",
+        "desc": "Coherent visual and verbal identity. We build narratives that connect brands to the future.",
+        "bullets": ["Brand Strategy", "Tone of Voice", "Design System", "Content Creation"],
+        "chips": ["Storytelling", "UI Kit", "Strategy"],
+        "cta_primary": "Request Proposal",
+        "cta_secondary": "View Details"
+      }
+    }
+  },
+  "solutions": {
+    "title": "BRANCT Ecosystem",
+    "sub": "More than a website: a client acquisition and management operation.",
+    "bullets": [
+      "Native CRM integration (leads and pipeline)",
+      "Follow-up automation (WhatsApp/SMS/Email)",
+      "Performance dashboard (campaigns and funnel)",
+      "Trained AI Chatbot (responses and qualification)",
+      "Calendar and tasks (never miss an opportunity)",
+      "Tracking and events (basis for optimization)"
+    ],
+    "trust": "All in a single ecosystem, designed to scale with control and security.",
+    "cta_primary": "Try 7 days free",
+    "cta_secondary": "View features"
+  },
+  "projects": {
+    "title": "Recent Projects",
+    "items": {
+      "neoprag": { "tag": "Web / Institutional" },
+      "vertexway": { "tag": "Website / Brand" },
+      "albino": { "tag": "Real Estate / Landing Page" },
+      "kb": { "tag": "Accounting / Website" }
+    }
+  },
+  "process": {
+    "title": "Our Process",
+    "step1": {
+      "title": "Diagnosis",
+      "desc": "We align goals, audience and priorities. We define architecture before design.",
+      "chips": ["Market Analysis", "Architecture"]
+    },
+    "step2": {
+      "title": "Design",
+      "desc": "UI/UX and a testable prototype. Clarity, credibility and conversion focus.",
+      "chips": ["UI/UX", "3D Prototype"]
+    },
+    "step3": {
+      "title": "Build",
+      "desc": "Implementation with performance, technical SEO and integrations for tracking and automation.",
+      "chips": ["Clean Code", "SEO Native"]
+    },
+    "step4": {
+      "title": "Scale",
+      "desc": "Continuous monitoring and optimisation. Data-driven evolution.",
+      "chips": ["Analytics", "Growth"]
+    }
+  },
+  "contact": {
+    "title": "Ready to elevate your digital presence?",
+    "desc": "Send your objective and timeline. We'll return a clear plan and next steps.",
+    "social": {
+      "ln": "LinkedIn",
+      "ig": "Instagram",
+      "tw": "Twitter"
+    }
+  },
+  "form": {
+    "name": "Full Name",
+    "email": "Work Email",
+    "message": "How can we help?",
+    "submit": "Send Message",
+    "success": "Message sent successfully. We will contact you shortly.",
+    "error": "An error occurred. Please try again."
+  },
+  "footer": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms & Conditions"
+  },
+  "websitePremium": {
+    "backButton": "Back",
+    "hero": {
+      "title": "Elite Websites",
+      "subtitle": "Digital experiences with 3D technology, fluid animations and high-performance architecture.",
+      "primaryCta": "Start Project",
+      "secondaryCta": "View Process"
+    },
+    "stats": {
+      "performance": "<strong>Up to 3.5x</strong> faster than competitors",
+      "lighthouse": "<strong>95+ Score</strong> Lighthouse Performance",
+      "edge": "<strong>Serverless Edge</strong>",
+      "cdn": "Architecture: Global CDN"
+    },
+    "section2": {
+      "title": "Elite Technology",
+      "subtitle": "Modern stack that ensures scalability and long-term maintainability.",
+      "features": [
+        "React/Next.js 14 with Server Components",
+        "TypeScript for type-safe code",
+        "Tailwind CSS + Framer Motion",
+        "Vercel Edge Network (latency <50ms)",
+        "Supabase/Firebase for real-time backend"
+      ]
+    },
+    "pricing": {
+      "title": "Transparent Investment",
+      "subtitle": "Premium digital solutions tailored to your business. No hidden costs.",
+      "essential": {
+        "name": "Essential",
+        "tagline": "For starting businesses",
+        "price": "From €500",
+        "monthly": "Monthly: €70",
+        "features": [
+          "Premium Responsive Website",
+          "Modern & Minimalist Design",
+          "Basic SEO Optimization",
+          "Contact Form",
+          "Google Analytics Integration",
+          "1 Month Support"
+        ],
+        "cta": "Get Started"
+      },
+      "professional": {
+        "name": "Professional",
+        "tagline": "✨ Most Popular",
+        "price": "From €800",
+        "monthly": "Monthly: €250",
+        "features": [
+          "Everything from Essential, plus:",
+          "Integrated Custom CRM",
+          "Admin Dashboard",
+          "Advanced SEO + Schema Markup",
+          "Dynamic Blog / News",
+          "Email Marketing Integration",
+          "3 Months Premium Support"
+        ],
+        "cta": "Choose Professional"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "tagline": "For leading companies",
+        "price": "From €1,200",
+        "monthly": "Monthly: €370",
+        "features": [
+          "Everything from Professional, plus:",
+          "Integrated Conversational AI",
+          "24/7 Intelligent Chatbot",
+          "Advanced Automations",
+          "Multi-language (3 languages)",
+          "Complete E-commerce (optional)",
+          "6 Months VIP Support"
+        ],
+        "cta": "Talk to Specialist"
+      }
+    },
+    "bespoke": {
+      "title": "EXCLUSIVE<br>PROJECTS",
+      "subtitle": "BESPOKE DESIGN",
+      "desc": "For brands that don't fit into packages. We engineer unique digital experiences from scratch, with zero templates.",
+      "cta": "Inquire Custom Project →"
+    },
+    "scrollHint": "Continue",
+    "featureCloud": {
+      "power": {
+        "label": "POWER",
+        "keyword": "PERFORMANCE EDGE",
+        "desc": "Global CDN. <50ms latency."
+      },
+      "growth": {
+        "label": "GROWTH",
+        "keyword": "NATIVE SEO",
+        "desc": "Semantic structure. Schema ready."
+      },
+      "intelligence": {
+        "label": "INTELLIGENCE",
+        "keyword": "AI AUTOMATION",
+        "desc": "Smart flows. 24/7 active."
+      }
+    },
+    "final": {
+      "title": "Define your brand's next standard.",
+      "desc": "We build premium websites focused on perceived value, speed, SEO and conversion — designed to scale with control and consistency.",
+      "cta": "Start Project",
+      "note": "No noise. No shortcuts. Just quality delivered."
+    },
+    "footerBack": "Back to Top"
+  },
+  "lp": {
+    "hero": {
+      "badge": "Conversion Engineering",
+      "line1": "Conversion",
+      "line2": "",
+      "highlight": "Engineering.",
+      "subtitle": "High-performance Landing Pages that turn traffic into predictable revenue. Zero templates. 100% engineering.",
+      "cta": "Start Project"
+    },
+    "metrics": {
+      "loadTime": "Load Time",
+      "roi": "ROI Target"
+    },
+    "reveal": {
+      "backTag": "// The Branct Solution",
+      "backTitle": "Elite<br>Performance",
+      "backDesc": "Modern architecture, optimized code and design that converts.",
+      "faster": "Faster",
+      "conversion": "Conversion",
+      "frontTitle": "Traditional Landing",
+      "frontDesc": "Generic templates. Slow loading. Low conversion.",
+      "scrollHint": "Scroll to reveal"
+    },
+    "bento": {
+      "title": "Results<br>Engineering",
+      "subtitle": "Every element is designed with purpose. Every line of code works for conversion. No excess, no noise.",
+      "speed": {
+        "title": "Extreme Speed",
+        "desc": "Core Web Vitals obsessively optimized. Every eliminated millisecond increases your conversion rate."
+      },
+      "ux": {
+        "title": "Directed UX",
+        "desc": "Visual hierarchy that guides the eye to the CTA. Zero distractions."
+      },
+      "mobile": {
+        "title": "Mobile First",
+        "desc": "70% of traffic comes from mobile. We prioritize this in every decision."
+      },
+      "copy": {
+        "title": "Persuasive Copy",
+        "desc": "Mental triggers and AIDA structure. Headlines that connect."
+      },
+      "seo": {
+        "title": "Technical SEO",
+        "desc": "Schema markup and semantic structure for organic ranking."
+      },
+      "analytics": {
+        "title": "Deep Analytics",
+        "desc": "GA4, Tag Manager and Heatmaps configured out of the box. Data-driven decisions, not guesswork."
+      }
+    },
+    "features": {
+      "ab": {
+        "title": "Native A/B Testing",
+        "desc": "Structure ready for <strong>variation testing</strong> from day one. Integration with Google Optimize, VWO or Optimizely."
+      },
+      "crm": {
+        "title": "CRM Integration",
+        "desc": "Native connection with <strong>HubSpot, Pipedrive, n8n</strong> and any tool via API. Leads straight to your pipeline."
+      },
+      "i18n": {
+        "title": "Multi-Language",
+        "desc": "<strong>Native i18n architecture</strong> to scale globally. One landing, multiple markets."
+      },
+      "edge": {
+        "title": "Edge Deployment",
+        "desc": "<strong>Vercel Edge Network</strong> with <50ms global latency. Your landing closer to the user."
+      }
+    },
+    "matrix": {
+      "tag": "Plans & Pricing",
+      "title": "Choose your plan",
+      "subtitle": "Three levels of delivery, the same standard of excellence. Landing pages that convert, regardless of the plan.",
+      "badge": "MOST POPULAR",
+      "feat": {
+        "pages": "Pages",
+        "design": "Design",
+        "mobile": "Mobile",
+        "form": "Form",
+        "seo": "SEO",
+        "analytics": "Analytics",
+        "ab": "A/B Testing",
+        "support": "Support"
+      },
+      "core": {
+        "name": "CORE",
+        "label": "Essential",
+        "price": "180€",
+        "pages": "1 Landing Page",
+        "design": "Premium template",
+        "mobile": "Responsive",
+        "form": "Basic contact",
+        "seo": "Technical base",
+        "support": "15 days",
+        "cta": "Request quote"
+      },
+      "advanced": {
+        "name": "ADVANCED",
+        "label": "Performance & conversion",
+        "price": "300€ + 90€/mo",
+        "pages": "Up to 3 variations",
+        "design": "Custom UI",
+        "mobile": "Mobile-first + animations",
+        "form": "Multi-step + CRM",
+        "seo": "Advanced SEO",
+        "support": "3 months",
+        "cta": "Choose"
+      },
+      "ultimate": {
+        "name": "ULTIMATE",
+        "label": "Maximum conversion",
+        "price": "On request",
+        "pages": "Unlimited",
+        "design": "Custom premium",
+        "mobile": "Mobile-first + 3D/WebGL",
+        "form": "Smart forms + AI",
+        "seo": "SEO + authority",
+        "support": "6 months ongoing",
+        "cta": "Talk to us"
+      }
+    },
+    "final": {
+      "tag": "// Ready to Scale",
+      "title": "Ready to<br>Scale?",
+      "desc": "Landing pages that don't just impress — they convert. Let's build yours.",
+      "cta": "Talk to Specialist"
+    },
+    "footer": {
+      "rights": "All Rights Reserved",
+      "back": "Back to Home"
+    }
+  },
+  "landingPages": {
+    "badge": "High Conversion",
+    "title": "Landing Pages",
+    "titleHighlight": "Designed to Sell.",
+    "subtitle": "Turn traffic into revenue with high-conversion design and performance engineering.",
+    "cta": "I Want a Page Like This",
+    "scroll": "Scroll",
+    "bento": {
+      "title": "What We Deliver",
+      "subtitle": "Every detail designed to maximize conversions.",
+      "speed": {
+        "title": "Instant Loading",
+        "metric": "< 1s",
+        "metricLabel": "Average Load Time",
+        "desc": "Extreme performance with Core Web Vitals optimization. Every millisecond counts for conversion."
+      },
+      "design": {
+        "title": "Hypnotic UI/UX",
+        "desc": "Design that captures attention and guides the eye to the CTA. Maximum visual retention."
+      },
+      "mobile": {
+        "title": "Mobile-First",
+        "desc": "Perfect on any screen. 70% of traffic comes from mobile - we prioritize this."
+      },
+      "copy": {
+        "title": "Copywriting & Mental Triggers",
+        "desc": "Persuasive structure with applied sales psychology. Headlines that connect, CTAs that convert."
+      },
+      "seo": {
+        "title": "Technical SEO",
+        "desc": "Schema markup, optimized meta tags and semantic structure. Organic ranking guaranteed."
+      }
+    },
+    "why": {
+      "title": "Why Choose BRANCT?",
+      "desc": "We're not just designers. We're conversion engineers combining premium aesthetics with elite technical performance.",
+      "checklistTitle": "// Engineering Checklist",
+      "items": [
+        { "title": "Lighthouse Score 95+", "desc": "Performance, Accessibility, SEO optimized" },
+        { "title": "A/B Testing Ready", "desc": "Structure prepared for variation testing" },
+        { "title": "Integrated Analytics", "desc": "GA4, Tag Manager, Heatmaps configured" },
+        { "title": "CRM Ready", "desc": "Integration with HubSpot, Pipedrive, n8n" },
+        { "title": "Multi-language", "desc": "Ready to scale globally" }
+      ]
+    },
+    "final": {
+      "title": "Your offer deserves the world's best stage.",
+      "desc": "Landing pages that don't just impress - they convert. Let's build yours.",
+      "cta": "Talk to Specialist"
+    },
+    "footerBack": "Back to Home"
+  },
+  "crm": {
+    "cta": "Organize Company",
+    "heroTag": "Command Center",
+    "heroLine1": "CENTRALIZATION.",
+    "heroLine2": "TOTAL CONTROL.",
+    "heroSub": "Stop losing leads in spreadsheets. A 360° view of your operation in real time.",
+    "heroCta": "See Demo",
+    "scrollHint": "Scroll",
+    "videoLabel": "SEE THE SYSTEM IN ACTION",
+    "featuresTitle": "Elite<br>Features",
+    "featuresSub": "Everything you need to scale your sales operation with control and predictability.",
+    "features": {
+      "pipeline": {
+        "title": "Visual Sales Funnel",
+        "desc": "Visualize your entire pipeline on an intuitive Kanban board. Drag and drop deals between stages. Never miss an opportunity."
+      },
+      "automation": {
+        "title": "Automatic Follow-up",
+        "desc": "Email, SMS and WhatsApp sequences that fire automatically. Lead nurturing on autopilot."
+      },
+      "omni": {
+        "title": "WhatsApp, Email & Omni",
+        "desc": "All conversations in one place. Complete history of each lead, regardless of channel."
+      },
+      "reports": {
+        "title": "Real-Time Revenue Reports",
+        "desc": "Dashboards that show exactly where your money is. Revenue forecast, conversion rate and performance by salesperson."
+      },
+      "ai": {
+        "title": "AI Lead Scoring",
+        "desc": "Algorithms that identify the hottest leads. Focus your energy where there's the highest probability of closing."
+      }
+    },
+    "integrationsLabel": "Integrates with the tools you already use",
+    "ctaTag": "// Ready to Scale",
+    "ctaTitle": "Ready to<br>Organize?",
+    "ctaDesc": "No more leads lost in spreadsheets. Centralize, automate and scale.",
+    "ctaButton": "Organize My Company",
+    "footerRights": "All Rights Reserved",
+    "footerBack": "Back to Home"
+  },
+  "ai": {
+    "heroBadge": "Artificial Intelligence",
+    "heroLine1": "YOUR COMPANY ON",
+    "heroLine2": "AUTOPILOT.",
+    "heroSub": "Customer service, sales and internal processes running 24/7. No breaks, no human error.",
+    "heroCta": "See Demo",
+    "stats": {
+      "response": "Response Time",
+      "availability": "Availability",
+      "qualification": "Qualification"
+    },
+    "chatTag": "// Live Demo",
+    "chatTitle": "See AI<br>in Action",
+    "chatDesc": "While you read this, our AI has already responded to 47 clients simultaneously. Qualified leads, scheduled meetings and sent proposals.",
+    "speedText": "Responses in <strong>0.2s</strong>. Instant conversion.",
+    "chatOnline": "Online",
+    "solutionsTitle": "Automation<br>Solutions",
+    "solutionsSub": "Technology that works while you sleep. Every interaction, an opportunity captured.",
+    "solutions": {
+      "gpt": {
+        "title": "GPT-4 Chatbots",
+        "desc": "Conversational AI trained on your business. Contextual responses, real-time personalization and continuous learning."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Business",
+        "desc": "Official API integrated. Mass messaging, automatic responses and sales flows."
+      },
+      "leads": {
+        "title": "Lead Qualification",
+        "desc": "Automatic scoring based on behavior. Focus only on hot leads."
+      },
+      "booking": {
+        "title": "Automatic Scheduling",
+        "desc": "Sync with Google Calendar and Calendly. Meetings booked without human intervention."
+      },
+      "email": {
+        "title": "Email Sequences",
+        "desc": "Automatic nurturing with dynamic personalization. AI-generated copy."
+      }
+    },
+    "usecases": {
+      "support": "Customer Support",
+      "sales": "Automated Sales",
+      "onboarding": "Client Onboarding",
+      "booking": "Meeting Scheduling",
+      "qualification": "Lead Qualification",
+      "followup": "Automatic Follow-up"
+    },
+    "ctaTag": "// Ready to Automate",
+    "ctaTitle": "Ready to<br>Automate?",
+    "ctaDesc": "Free your team from repetitive tasks. Let AI work for you.",
+    "ctaButton": "Automate Now",
+    "footerRights": "All Rights Reserved",
+    "footerBack": "Back to Home",
+    "chat": {
+      "msg1": "I'd like a quote.",
+      "msg2": "Hello! Sure. For which service?",
+      "msg3": "Customer service automation.",
+      "msg4": "Perfect! Analyzing your needs..."
+    }
+  },
+  "pp": {
+    "hero": {
+      "tag": "// Our Process",
+      "title": "From Diagnosis to Scale.",
+      "subtitle": "Four phases. One obsession: delivering measurable value at every stage of your digital project."
+    },
+    "step1": {
+      "tag": "// Discovery & Strategy",
+      "title": "Diagnosis",
+      "desc": "Deep analysis of your market, competition and positioning. We map every opportunity before drawing a single line.",
+      "chip1": "Market Analysis",
+      "chip2": "Technical Audit",
+      "chip3": "Roadmap"
+    },
+    "step2": {
+      "tag": "// UX & Visual Identity",
+      "title": "Design",
+      "desc": "Interactive prototypes and visual identity that translates the essence of your brand. Every pixel serves a conversion purpose.",
+      "chip1": "UI/UX Research",
+      "chip2": "Interactive Prototype",
+      "chip3": "Design System"
+    },
+    "step3": {
+      "tag": "// Engineering & Performance",
+      "title": "Build",
+      "desc": "Clean code, obsessive performance and continuous integration. Every millisecond counts. Every line of code is tested.",
+      "chip1": "Clean Code",
+      "chip2": "Native SEO",
+      "chip3": "CI/CD"
+    },
+    "step4": {
+      "tag": "// Growth & Optimization",
+      "title": "Scale",
+      "desc": "Continuous monitoring, data-driven optimization and sustainable growth. Launch is just the beginning.",
+      "chip1": "Analytics",
+      "chip2": "A/B Testing",
+      "chip3": "Growth Ops"
+    },
+    "cta": {
+      "tag": "// Ready to start",
+      "title": "Turn your vision into reality.",
+      "desc": "Every project begins with a conversation. Let's build something that defines your brand's next standard.",
+      "button": "Start Project"
+    },
+    "footer": {
+      "rights": "All rights reserved",
+      "back": "Back to Home"
+    }
+  },
+  "wp": {
+    "hero": {
+      "tag": "Premium Websites",
+      "line1": "PREMIUM",
+      "line2": "WEBSITES.",
+      "line3": "DESIGN",
+      "line4": "WITH METRICS.",
+      "desc": "A website that communicates value and generates real enquiries. Built for conversion, performance and technical SEO — with tracking ready to measure results.",
+      "cta1": "Request a proposal",
+      "cta2": "See process",
+      "stat1": "CWV-oriented performance",
+      "stat2": "Technical SEO + structure",
+      "stat3": "Global delivery (Edge/CDN)"
+    },
+    "tech": {
+      "tag": "Technical foundation",
+      "title": "Architecture built to scale",
+      "desc": "We choose a stack that protects your investment: fast, stable and easy to evolve. Less friction today; lower rebuild costs tomorrow.",
+      "item1": "Next.js with hybrid rendering (SSR/SSG)",
+      "item2": "TypeScript for predictable code",
+      "item3": "Modern UI with subtle animation",
+      "item4": "Edge/CDN deployment",
+      "item5": "Database and service integrations"
+    },
+    "float": {
+      "label1": "Performance",
+      "kw1": "FAST. NO NOISE.",
+      "desc1": "Real optimisation: loading, images and code.",
+      "label2": "Growth",
+      "kw2": "TECHNICAL SEO",
+      "desc2": "Semantic structure + schema where it matters.",
+      "label3": "Security",
+      "kw3": "SECURE FOUNDATION",
+      "desc3": "HTTPS, headers and protection best practices."
+    },
+    "matrix": {
+      "tag": "Delivery tiers",
+      "title": "Choose the right level",
+      "subtitle": "Three approaches, one standard: performance, clarity and conversion. The difference lies in technical depth and integrations.",
+      "badge": "BEST BALANCED",
+      "feat": {
+        "tech": "Technology",
+        "perf": "Performance",
+        "design": "Design",
+        "seo": "SEO",
+        "crm": "CRM",
+        "ai": "AI Automation",
+        "support": "Support"
+      },
+      "core": {
+        "name": "CORE",
+        "label": "Essential",
+        "price": "500€ + 50€/mo",
+        "tech": "React / Next.js",
+        "perf": "Best practices + CWV",
+        "design": "Clean premium",
+        "seo": "Technical foundation",
+        "support": "1 month (final adjustments)",
+        "cta": "Request a proposal"
+      },
+      "advanced": {
+        "name": "ADVANCED",
+        "label": "Performance & conversion",
+        "price": "900€ + 230€/mo",
+        "tech": "Next.js + GSAP",
+        "perf": "Advanced optimisation",
+        "design": "Immersive UI (no excess)",
+        "seo": "Advanced technical SEO",
+        "support": "3 months (initial monitoring)",
+        "cta": "Choose"
+      },
+      "ultimate": {
+        "name": "ULTIMATE",
+        "label": "Tech-Luxury",
+        "price": "On request",
+        "tech": "3D/WebGL where it makes sense",
+        "perf": "Edge + smart rendering",
+        "design": "Bespoke premium experience",
+        "seo": "SEO + authority structure",
+        "support": "6 months (continuous evolution)",
+        "cta": "Talk to us"
+      }
+    },
+    "bespoke": {
+      "title": "BESPOKE PROJECTS",
+      "tag": "Real exclusivity",
+      "desc": "For brands that don't fit templates. Bespoke design and implementation, specific integrations and a technical foundation built to evolve with your business.",
+      "cta": "Discuss your project"
+    },
+    "panel1": {
+      "title": "Keep exploring",
+      "desc": "See how we build a website with method: strategy, execution and evolution."
+    },
+    "final": {
+      "tag": "// Ready to convert",
+      "title": "RAISE THE STANDARD OF YOUR PRESENCE.",
+      "desc": "Premium websites to increase perceived value, speed and conversion — with technical SEO and tracking to measure what matters.",
+      "cta": "Request a proposal"
+    },
+    "footer": {
+      "rights": "All rights reserved",
+      "back": "Back to home"
+    }
+  },
+  "ct": {
+    "hero": {
+      "tag": "// Contact",
+      "title": "Let's Talk.",
+      "subtitle": "Start with a free diagnosis. Guaranteed response within 24h."
+    },
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company": "Company",
+      "interest": "Interest",
+      "interests": {
+        "website": "Premium Websites",
+        "crm": "CRM & Management",
+        "automation": "Automation & AI",
+        "branding": "Branding"
+      },
+      "message": "Message",
+      "submit": "Send Diagnosis",
+      "success": {
+        "title": "Diagnosis Sent!",
+        "desc": "Our team will review your request and get back to you within 24h.",
+        "back": "Send Another"
+      }
+    },
+    "info": {
+      "title": "Direct Contacts",
+      "whatsapp": {
+        "title": "Direct Chat",
+        "desc": "Response within 10min"
+      },
+      "email": {
+        "title": "E-mail"
+      },
+      "schedule": {
+        "title": "Schedule Call",
+        "desc": "30min consultation"
+      },
+      "location": {
+        "title": "Location"
+      }
+    }
+  },
+  "a11y": {
+    "skipToContent": "Skip to content",
+    "mainNav": "Main navigation",
+    "mobileNav": "Navigation menu",
+    "langSelector": "Select language",
+    "scrollService": "Service {current} of {total}: {title}"
+  }
+}

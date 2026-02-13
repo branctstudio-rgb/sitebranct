@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRANCT.Tech | Engenharia de Conversão</title>
+    <meta name="description" content="Landing Pages de alta performance que transformam tráfego em receita. Engenharia de conversão de elite.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+
+    <style>
+        /* ========================================
+           RESET & VARIABLES
+           ======================================== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --branct-deep: #09121c;
+            --branct-cyan: #06b6d4;
+            --branct-cyan-dim: rgba(6, 182, 212, 0.3);
+            --branct-cyan-glow: rgba(6, 182, 212, 0.4);
+            --branct-magenta: #d946ef;
+            --branct-slate: #94a3b8;
+            --branct-light: #0b1a28;
+            --branct-white: #ffffff;
+            --branct-border: rgba(255, 255, 255, 0.08);
+            --branct-border-strong: rgba(255, 255, 255, 0.12);
+            --branct-dark-border: rgba(255, 255, 255, 0.1);
+            --branct-grid: rgba(255, 255, 255, 0.03);
+            --branct-text: #e2e8f0;
+            --glass-blur: 12px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(ellipse at 50% 0%, #0d1f2d 0%, var(--branct-deep) 70%);
+            color: var(--branct-text);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* ========================================
+           3D CANVAS - Background Wireframe
+           ======================================== */
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* ========================================
+           HEADER - Technical Style
+           ======================================== */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 18, 28, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--branct-white);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+        }
+
+        .logo .tech {
+            color: var(--branct-cyan);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .header-nav a {
+            padding: 0.5rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--branct-slate);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .header-nav a:hover {
+            color: var(--branct-white);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-header {
+            padding: 0.6rem 1.25rem;
+            background: var(--branct-cyan);
+            color: var(--branct-deep);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid var(--branct-cyan);
+            transition: all 0.2s ease;
+        }
+
+        .btn-header:hover {
+            background: transparent;
+            color: var(--branct-cyan);
+            border-color: var(--branct-cyan);
+            box-shadow: 0 0 20px var(--branct-cyan-glow);
+        }
+
+        /* header-nav hidden at 768px: handled in unified branct-header @media block below */
+
+        /* ========================================
+           HERO SECTION - Lando Grid Style
+           ======================================== */
+        .hero {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            border-bottom: 1px solid var(--branct-border);
+            padding-top: 60px;
+        }
+
+        .hero-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            border-right: 1px solid var(--branct-border);
+        }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .hero-tag-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--branct-cyan);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .hero-tag-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--branct-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            color: var(--branct-white);
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(110, 193, 228, 0.4);
+        }
+
+        .hero h1 .line {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero h1 .highlight {
+            color: var(--branct-cyan);
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--branct-slate);
+            max-width: 500px;
+            line-height: 1.7;
+            margin-bottom: 3rem;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            background: transparent;
+            color: var(--branct-white);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .hero-cta:hover {
+            background: var(--branct-cyan);
+            color: var(--branct-deep);
+            border-color: var(--branct-cyan);
+            box-shadow: 0 0 30px var(--branct-cyan-glow);
+        }
+
+        .hero-cta svg {
+            transition: transform 0.3s ease;
+        }
+
+        .hero-cta:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* Hero Right - Metrics Panel */
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metrics-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-row {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem;
+            border-bottom: 1px solid var(--branct-border);
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--branct-slate);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .metric-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--branct-white);
+            letter-spacing: -0.02em;
+        }
+
+        .metric-value.cyan {
+            color: var(--branct-cyan);
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--branct-slate);
+            margin-left: 0.25rem;
+        }
+
+        @media (max-width: 1024px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+            .hero-left {
+                border-right: none;
+                border-bottom: 1px solid var(--branct-border);
+                padding: 3rem 2rem;
+            }
+            .hero-right {
+                min-height: 300px;
+            }
+        }
+
+        /* ========================================
+           PORTAVIA REVEAL SECTION
+           ======================================== */
+        .reveal-section {
+            height: 450vh;
+            position: relative;
+        }
+
+        .reveal-container {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .reveal-wrapper {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            height: 70vh;
+            perspective: 1200px;
+        }
+
+        .reveal-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+
+        /* Back Layer - Vibrant Solution */
+        .reveal-back {
+            background: linear-gradient(135deg, var(--branct-deep) 0%, #0c1829 100%);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+        }
+
+        .reveal-back::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 30% 20%, rgba(6, 182, 212, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(6, 182, 212, 0.2) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .reveal-back-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .reveal-back-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--branct-cyan);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+        }
+
+        .reveal-back h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            color: var(--branct-white);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .reveal-back p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            max-width: 500px;
+            margin: 0 auto 2rem;
+        }
+
+        .reveal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .reveal-stat {
+            text-align: center;
+            padding: 1.5rem;
+            border: 1px solid var(--branct-dark-border);
+            border-radius: 8px;
+        }
+
+        .reveal-stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--branct-cyan);
+        }
+
+        .reveal-stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        /* Front Layer - Gray/Old */
+        .reveal-front {
+            background: rgba(15, 25, 40, 0.95);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+        }
+
+        .reveal-front-content {
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .reveal-front-icon {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            filter: grayscale(100%);
+        }
+
+        .reveal-front h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 600;
+            color: var(--branct-slate);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .reveal-front p {
+            font-size: 1rem;
+            color: var(--branct-slate);
+            max-width: 400px;
+        }
+
+        .reveal-front-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+            opacity: 0.4;
+        }
+
+        .old-stat {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .old-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--branct-slate);
+        }
+
+        .old-stat-label {
+            font-size: 0.65rem;
+            color: var(--branct-slate);
+            text-transform: uppercase;
+            margin-top: 0.25rem;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--branct-slate);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        .scroll-indicator svg {
+            animation: scrollBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes scrollBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(8px); }
+        }
+
+        /* ========================================
+           BENTO GRID - Technical Cards
+           ======================================== */
+        .bento-section {
+            padding: 100px 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .bento-header {
+            max-width: 1200px;
+            margin: 0 auto 4rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: end;
+            padding-bottom: 3rem;
+            border-bottom: 1px solid var(--branct-border);
+        }
+
+        .bento-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 700;
+            color: var(--branct-white);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            text-shadow: 0 0 20px rgba(110, 193, 228, 0.4);
+        }
+
+        .bento-header p {
+            font-size: 1rem;
+            color: var(--branct-slate);
+            line-height: 1.7;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.06);
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tech-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .tech-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .tech-card.span-2 {
+            grid-column: span 2;
+        }
+
+        .tech-card-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+        }
+
+        .tech-card-icon.cyan {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .tech-card-number {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--branct-border-strong);
+        }
+
+        .tech-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--branct-white);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .tech-card p {
+            font-size: 0.9rem;
+            color: var(--branct-slate);
+            line-height: 1.6;
+        }
+
+        .tech-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .tech-tag {
+            padding: 0.3rem 0.6rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: var(--branct-slate);
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 1024px) {
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .bento-header {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+            .tech-card.span-2 {
+                grid-column: span 1;
+            }
+        }
+
+        /* ========================================
+           FEATURE LIST - Large Typography
+           ======================================== */
+        .features-section {
+            padding: 0;
+            background: transparent;
+        }
+
+        .feature-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr;
+            border-bottom: 1px solid var(--branct-border);
+            transition: background 0.3s ease;
+        }
+
+        .feature-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .feature-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--branct-border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--branct-cyan);
+        }
+
+        .feature-title {
+            padding: 3rem 2rem;
+            border-right: 1px solid var(--branct-border);
+            display: flex;
+            align-items: center;
+        }
+
+        .feature-title h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+            font-weight: 600;
+            color: var(--branct-white);
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-desc {
+            padding: 3rem 2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .feature-desc p {
+            font-size: 0.95rem;
+            color: var(--branct-slate);
+            line-height: 1.7;
+        }
+
+        .feature-desc strong {
+            color: var(--branct-white);
+            font-weight: 600;
+        }
+
+        /* feature-row mobile: handled in consolidated @media (max-width: 768px) block below */
+
+        /* ========================================
+           CTA FOOTER - Deep Blue Impact
+           ======================================== */
+        .cta-footer {
+            background: var(--branct-deep);
+            padding: 120px 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .cta-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--branct-cyan);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 2rem;
+        }
+
+        .cta-footer h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 7vw, 5rem);
+            font-weight: 700;
+            color: var(--branct-white);
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            line-height: 1.0;
+            margin-bottom: 2rem;
+        }
+
+        .cta-footer p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 3rem;
+        }
+
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 3rem;
+            background: var(--branct-cyan);
+            color: var(--branct-deep);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid var(--branct-cyan);
+            transition: all 0.3s ease;
+        }
+
+        .btn-cta:hover {
+            background: transparent;
+            box-shadow: 0 0 40px var(--branct-cyan-glow);
+        }
+
+        .btn-cta svg {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-cta:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* ========================================
+           FOOTER
+           ======================================== */
+        .footer {
+            background: var(--branct-deep);
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--branct-dark-border);
+        }
+
+        .footer p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .footer a {
+            color: var(--branct-cyan);
+            text-decoration: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer a:hover {
+            opacity: 0.7;
+        }
+
+        @media (max-width: 640px) {
+            .footer {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+
+        /* ========================================
+           SCROLL PROGRESS
+           ======================================== */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--branct-cyan);
+            z-index: 9999;
+            transform-origin: left;
+            transform: scaleX(0);
+        }
+
+        /* ========================================
+           LANGUAGE SELECTOR
+           ======================================== */
+        .lang-selector {
+            position: relative;
+            margin-left: 1rem;
+        }
+
+        .lang-current {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--branct-text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .lang-current:hover {
+            border-color: var(--branct-cyan);
+            color: var(--branct-cyan);
+        }
+
+        .lang-current svg {
+            width: 12px;
+            height: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .lang-selector.open .lang-current svg {
+            transform: rotate(180deg);
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            min-width: 120px;
+            background: rgba(9, 18, 28, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .lang-selector.open .lang-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .lang-option {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--branct-slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .lang-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--branct-white);
+        }
+
+        .lang-option.active {
+            color: var(--branct-cyan);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        /* ========================================
+           UNIFIED BRANCT HEADER (matches home)
+           ======================================== */
+        .branct-header {
+            position: fixed !important; top: 0; left: 0; width: 100%; z-index: 1000;
+            padding: 20px 0 !important;
+            background: rgba(5, 10, 15, 0.6) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+            display: block !important;
+        }
+        .branct-header .logo { color: #efeeee !important; font-size: 1.5rem; letter-spacing: -0.03em; }
+        .branct-header .logo .tech { color: #6ec1e4 !important; }
+        .branct-header__container {
+            width: 90%; max-width: 1200px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .branct-nav-desktop .branct-nav-list {
+            display: flex; align-items: center; gap: 40px; list-style: none;
+        }
+        .branct-nav-desktop a,
+        .branct-nav-desktop .branct-nav-link {
+            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+            color: rgba(255,255,255,0.8); text-decoration: none;
+            background: none; border: none; cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .branct-nav-desktop a:hover,
+        .branct-nav-desktop .branct-nav-link:hover { color: #6ec1e4; opacity: 1; }
+        .branct-nav-dropdown { position: relative; }
+        .branct-submenu {
+            position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            margin-top: 20px; padding: 20px;
+            background: rgba(9, 18, 28, 0.85);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; gap: 15px;
+            min-width: 220px; list-style: none;
+            opacity: 0; visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .branct-nav-dropdown:hover .branct-submenu {
+            opacity: 1; visibility: visible; margin-top: 15px;
+        }
+        .branct-submenu a { white-space: nowrap; color: rgba(255,255,255,0.8) !important; }
+        .branct-submenu a:hover { color: #6ec1e4 !important; }
+        .branct-header__actions { display: flex; align-items: center; gap: 20px; }
+        .branct-lang-selector { position: relative; }
+        .branct-lang-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 8px 16px; border-radius: 20px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+        .branct-lang-dropdown {
+            position: absolute; top: 100%; right: 0; margin-top: 15px;
+            background: #072c3d; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 10px; min-width: 80px;
+            opacity: 0; pointer-events: none; transform: translateY(-10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            list-style: none;
+        }
+        .branct-lang-dropdown.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+        .branct-lang-dropdown li { padding: 8px; cursor: pointer; text-align: center; border-radius: 6px; color: white; }
+        .branct-lang-dropdown li:hover { background: #1c5a74; }
+        .branct-cta-btn {
+            display: inline-block; padding: 14px 32px; border-radius: 50px;
+            font-weight: 600; font-size: 0.95rem; cursor: pointer;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+        }
+        .branct-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(9,118,151,0.3); }
+        .branct-mobile-toggle {
+            display: none; background: none; border: none;
+            cursor: pointer; flex-direction: column; gap: 6px;
+        }
+        .branct-mobile-toggle span { width: 25px; height: 2px; background: white; display: block; transition: 0.3s; }
+        .branct-mobile-drawer {
+            position: fixed; top: 0; right: -100%;
+            width: 80%; height: 100vh;
+            background: #072c3d; z-index: 999;
+            padding: 100px 40px;
+            transition: 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        .branct-mobile-drawer.open { right: 0; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
+        .branct-mobile-nav-list { list-style: none; }
+        .branct-mobile-nav-list > li { margin-bottom: 20px; }
+        .branct-mobile-nav-list a {
+            font-size: 1.5rem; font-family: 'Space Grotesk', sans-serif;
+            color: #efeeee; text-decoration: none;
+        }
+        .branct-mobile-nav-list .branct-nav-link {
+            font-size: 1.5rem; font-family: 'Space Grotesk', sans-serif;
+            background: none; border: none; color: #efeeee;
+            cursor: pointer; text-align: left; width: 100%;
+        }
+        .branct-mobile-submenu { display: none; padding-left: 20px; margin-top: 15px; list-style: none; }
+        .branct-mobile-submenu li { margin-bottom: 15px; }
+        .branct-mobile-submenu a { font-size: 1.1rem; }
+        .mobile-drawer-cta {
+            display: block; text-align: center; margin-top: 2rem; width: 100%;
+            padding: 14px 32px; border-radius: 50px; font-weight: 600; font-size: 0.95rem;
+            color: #efeeee; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            text-decoration: none; transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .mobile-drawer-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(9,118,151,0.3); }
+
+        /* ========================================
+           COMPARISON MATRIX
+           ======================================== */
+        .lp-comparison-matrix {
+            padding: clamp(4rem, 8vh, 8rem) clamp(1.5rem, 4vw, 4rem);
+            background: radial-gradient(circle at 50% 50%, #112233 0%, #050a0f 100%);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .lp-matrix-header {
+            max-width: 600px;
+            margin-bottom: clamp(2rem, 4vh, 4rem);
+        }
+        .lp-matrix-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #06b6d4;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .lp-matrix-tag::before { content: '// '; color: #94a3b8; }
+        .lp-matrix-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(110, 193, 228, 0.4);
+        }
+        .lp-matrix-subtitle {
+            color: #94a3b8;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+        .lp-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            max-width: 1200px;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+        .lp-matrix-card {
+            padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 2.5vw, 2rem);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: none;
+            position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .lp-matrix-card:last-child { border-right: 1px solid rgba(255, 255, 255, 0.1); }
+        .lp-matrix-card:hover { transform: translateY(-4px); }
+        .lp-matrix-card.featured {
+            background: #050a0f;
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.2), 0 0 80px rgba(6, 182, 212, 0.08), inset 0 1px 0 rgba(6, 182, 212, 0.2);
+        }
+        .lp-matrix-card.featured:hover { transform: translateY(-6px); box-shadow: 0 0 50px rgba(6, 182, 212, 0.3), 0 0 100px rgba(6, 182, 212, 0.1); }
+        .lp-card-badge {
+            position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
+            background: #06b6d4; color: #050a0f;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; font-weight: 600;
+            letter-spacing: 2px; padding: 5px 16px; text-transform: uppercase; white-space: nowrap;
+        }
+        .lp-plan-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            font-weight: 700; text-transform: uppercase; color: #ffffff; margin-bottom: 0.25rem;
+        }
+        .lp-plan-label {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+            color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
+            display: block; margin-bottom: 1.5rem;
+        }
+        .lp-matrix-card.featured .lp-plan-label { color: #06b6d4; }
+        .lp-power-meter {
+            width: 100%; height: 3px; background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden;
+        }
+        .lp-power-bar {
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+            border-radius: 2px; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .lp-plan-price {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: #ffffff;
+            margin-bottom: 2rem; padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .lp-matrix-card.featured .lp-plan-price { border-color: rgba(255, 255, 255, 0.1); }
+        .lp-feature-list { list-style: none; padding: 0; margin: 0; }
+        .lp-feature-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.75rem clamp(1.25rem, 2.5vw, 2rem);
+            margin: 0 calc(-1 * clamp(1.25rem, 2.5vw, 2rem));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.3s ease;
+        }
+        .lp-feature-row:last-child { border-bottom: none; }
+        .lp-feature-row:hover { background: linear-gradient(90deg, rgba(6, 182, 212, 0.06), transparent); }
+        .lp-matrix-card.featured .lp-feature-row:hover { background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), transparent); }
+        .lp-feat-name {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .lp-matrix-card.featured .lp-feat-name { color: rgba(255, 255, 255, 0.5); }
+        .lp-feat-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+            color: #e2e8f0; font-weight: 600; text-align: right;
+        }
+        .lp-matrix-card.featured .lp-feat-value { color: #ffffff; }
+        .lp-feat-icon { display: flex; align-items: center; }
+        .lp-feat-icon--check { color: #06b6d4; }
+        .lp-feat-icon--cross { color: #94a3b8; opacity: 0.3; }
+        .lp-matrix-card.featured .lp-feat-icon--cross { color: rgba(255, 255, 255, 0.15); opacity: 1; }
+        .lp-matrix-cta {
+            display: block; text-align: center; margin-top: 2rem; padding: 1rem;
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px; text-decoration: none; transition: all 0.3s ease;
+        }
+        .lp-matrix-cta--outline {
+            background: transparent; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .lp-matrix-cta--outline:hover { border-color: #06b6d4; color: #06b6d4; }
+        .lp-matrix-cta--fill {
+            background: #06b6d4; color: #050a0f; border: 1px solid #06b6d4;
+        }
+        .lp-matrix-cta--fill:hover {
+            background: #ffffff; transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+        }
+
+        /* ========================================
+           COMPREHENSIVE MOBILE RESPONSIVE
+           ======================================== */
+        @media (max-width: 768px) {
+
+            /* --- HEADER / NAV --- */
+            .header { padding: 0.75rem 1rem; }
+            .header-nav { display: none; }
+            .branct-nav-desktop { display: none; }
+            .branct-mobile-toggle { display: flex; }
+            .branct-cta-btn { display: none; }
+            .branct-header { padding: 14px 0 !important; }
+            .branct-header__container { width: 92%; }
+            .branct-header__actions { gap: 12px; }
+            .branct-lang-btn { padding: 6px 12px; font-size: 0.8rem; }
+            .header-right { gap: 0.25rem; }
+            .lang-selector { margin-left: 0.5rem; }
+
+            /* --- MOBILE DRAWER --- */
+            .branct-mobile-drawer {
+                width: 85%;
+                max-width: 320px;
+                padding: 90px 30px 40px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .branct-mobile-nav-list > li { margin-bottom: 16px; }
+            .branct-mobile-nav-list a { font-size: 1.3rem; }
+            .branct-mobile-nav-list .branct-nav-link { font-size: 1.3rem; }
+            .branct-mobile-submenu { padding-left: 16px; margin-top: 12px; }
+            .branct-mobile-submenu a { font-size: 1rem; }
+
+            /* --- HERO SECTION --- */
+            .hero {
+                grid-template-columns: 1fr;
+                min-height: auto;
+                padding-top: 70px;
+            }
+            .hero-left {
+                padding: 2.5rem 1.25rem 2rem;
+                border-right: none;
+                border-bottom: 1px solid var(--branct-border);
+            }
+            .hero h1 {
+                font-size: clamp(2.2rem, 10vw, 3.2rem);
+                margin-bottom: 1.25rem;
+            }
+            .hero-subtitle {
+                font-size: 0.95rem;
+                margin-bottom: 2rem;
+                max-width: 100%;
+            }
+            .hero-tag { margin-bottom: 1.25rem; }
+            .hero-cta {
+                padding: 0.85rem 1.5rem;
+                font-size: 0.75rem;
+                width: 100%;
+                justify-content: center;
+            }
+            .hero-right { min-height: auto; }
+            .metric-row {
+                padding: 1.25rem 1.25rem;
+            }
+            .metric-value {
+                font-size: 1.8rem;
+            }
+            /* Override inline style="font-size: 1.5rem;" on metric-value */
+            .metric-value[style] {
+                font-size: 1.2rem !important;
+            }
+            .metric-label {
+                font-size: 0.65rem;
+                letter-spacing: 1.5px;
+            }
+
+            /* --- REVEAL SECTION --- */
+            .reveal-section { height: 350vh; }
+            .reveal-wrapper {
+                width: 95%;
+                height: 65vh;
+            }
+            .reveal-back { padding: 2rem 1.25rem; }
+            .reveal-back h2 { font-size: clamp(1.5rem, 6vw, 2.5rem); }
+            .reveal-back p { font-size: 0.95rem; margin-bottom: 1.5rem; }
+            .reveal-back-tag { font-size: 0.65rem; letter-spacing: 2px; }
+            .reveal-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                max-width: 260px;
+            }
+            .reveal-stat { padding: 1rem; }
+            .reveal-stat-value { font-size: 1.5rem; }
+            .reveal-stat-label { font-size: 0.6rem; }
+            .reveal-front { padding: 2rem 1.25rem; }
+            .reveal-front h3 { font-size: clamp(1.2rem, 5vw, 1.8rem); }
+            .reveal-front p { font-size: 0.9rem; }
+            .reveal-front-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+            .reveal-front-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
+            .old-stat { padding: 0.75rem 0.5rem; }
+            .old-stat-value { font-size: 1rem; }
+            .scroll-indicator { font-size: 0.6rem; bottom: 1rem; }
+
+            /* --- BENTO SECTION --- */
+            .bento-section { padding: 60px 1rem; }
+            .bento-header {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-bottom: 2.5rem;
+                padding-bottom: 2rem;
+            }
+            .bento-header h2 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+            .bento-header p { font-size: 0.9rem; }
+            .bento-grid { grid-template-columns: 1fr; }
+            .tech-card.span-2 { grid-column: span 1; }
+            .tech-card { padding: 1.5rem; }
+            .tech-card h3 { font-size: 1rem; }
+            .tech-card p { font-size: 0.85rem; }
+            .tech-card-tags { gap: 0.4rem; margin-top: 1rem; }
+            .tech-tag { font-size: 0.55rem; padding: 0.25rem 0.5rem; }
+
+            /* --- FEATURE LIST --- */
+            .feature-row {
+                grid-template-columns: 1fr;
+            }
+            .feature-number {
+                border-right: none;
+                border-bottom: 1px solid var(--branct-border);
+                padding: 1rem;
+                justify-content: flex-start;
+            }
+            .feature-title {
+                padding: 1.25rem 1.25rem 0.5rem;
+                border-right: none;
+            }
+            .feature-title h3 { font-size: clamp(1rem, 4vw, 1.35rem); }
+            .feature-desc {
+                padding: 0.5rem 1.25rem 1.5rem;
+            }
+            .feature-desc p { font-size: 0.85rem; }
+
+            /* --- COMPARISON MATRIX --- */
+            .lp-comparison-matrix { padding: 3rem 1rem; }
+            .lp-matrix-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+            .lp-matrix-card { border-right: 1px solid rgba(255,255,255,0.1); border-radius: 8px; }
+            .lp-matrix-card.featured { margin-top: 0; }
+            .lp-matrix-title { font-size: clamp(1.5rem, 6vw, 2.5rem); }
+            .lp-plan-price { font-size: clamp(1.2rem, 5vw, 1.6rem); }
+            .lp-feat-name { font-size: 0.65rem; }
+            .lp-feat-value { font-size: 0.7rem; }
+
+            /* --- CTA FOOTER --- */
+            .cta-footer { padding: 60px 1.25rem; }
+            .cta-footer h2 { font-size: clamp(2rem, 8vw, 3rem); }
+            .cta-footer p { font-size: 0.95rem; margin-bottom: 2rem; }
+            .cta-tag { font-size: 0.65rem; letter-spacing: 2px; margin-bottom: 1.5rem; }
+            .btn-cta {
+                padding: 1rem 2rem;
+                font-size: 0.75rem;
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* --- FOOTER --- */
+            .footer {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+                padding: 1.5rem 1rem;
+            }
+            .footer p { font-size: 0.65rem; }
+
+            /* --- GLOBAL TEXT OVERFLOW PROTECTION --- */
+            h1, h2, h3, h4, h5, h6, p, span, a {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+            body { overflow-x: hidden; }
+        }
+
+        /* Extra-small screens */
+        @media (max-width: 400px) {
+            .hero h1 { font-size: 2rem; }
+            .hero-left { padding: 2rem 1rem 1.5rem; }
+            .metric-value { font-size: 1.5rem; }
+            .metric-value[style] { font-size: 1rem !important; }
+            .reveal-wrapper { height: 60vh; }
+            .reveal-back h2 { font-size: 1.4rem; }
+            .cta-footer h2 { font-size: 1.8rem; }
+            .branct-mobile-drawer { width: 90%; padding: 80px 20px 30px; }
+        }
+
+</style>
+</head>
+<body>
+
+    <!-- Scroll Progress -->
+    <div class="scroll-progress" id="scroll-progress"></div>
+
+    <!-- 3D Background Canvas -->
+    <canvas id="canvas-bg"></canvas>
+
+    <!-- Header -->
+        <header class="header branct-header">
+        <div class="branct-header__container">
+            <a href="index.html" class="logo">BRANCT<span class="tech">.Tech</span></a>
+            <nav class="branct-nav-desktop">
+                <ul class="branct-nav-list">
+                    <li><a href="index.html" data-i18n="nav.home">Início</a></li>
+                    <li class="branct-nav-dropdown">
+                        <button class="branct-nav-link" aria-haspopup="true" aria-expanded="false" data-i18n="nav.services">Serviços</button>
+                        <ul class="branct-submenu">
+                            <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
+                            <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
+                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & Gestão</a></li>
+                            <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
+                    <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
+                    <li><a href="area-do-usuario.html" data-i18n="nav.userArea">Área do Usuário</a></li>
+                    <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                </ul>
+            </nav>
+            <div class="branct-header__actions">
+                <div class="branct-lang-selector">
+                    <button class="branct-lang-btn" aria-label="Select Language">
+                        <span class="branct-current-lang">PT</span>
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <ul class="branct-lang-dropdown">
+                        <li data-lang="pt">PT</li>
+                        <li data-lang="en">EN</li>
+                        <li data-lang="it">IT</li>
+                        <li data-lang="hr">HR</li>
+                    </ul>
+                </div>
+                <a href="contactos.html" class="branct-cta-btn" data-i18n="nav.cta">Pedir Proposta</a>
+                <button class="branct-mobile-toggle" aria-label="Menu"><span></span><span></span></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="branct-mobile-drawer">
+        <nav>
+            <ul class="branct-mobile-nav-list">
+                <li><a href="index.html" data-i18n="nav.home">Início</a></li>
+                <li class="branct-mobile-accordion">
+                    <button class="branct-nav-link" aria-expanded="false" data-i18n="nav.services">Serviços</button>
+                    <ul class="branct-mobile-submenu">
+                        <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
+                        <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & Gestão</a></li>
+                        <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
+                    </ul>
+                </li>
+                <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
+                <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
+                <li><a href="area-do-usuario.html" data-i18n="nav.userArea">Área do Usuário</a></li>
+                <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+            </ul>
+            <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir Proposta</a>
+        </nav>
+    </div>
+
+
+    <!-- Hero Section - Lando Grid Style -->
+    <section class="hero" id="hero">
+        <div class="hero-left">
+            <div class="hero-tag">
+                <span class="hero-tag-dot"></span>
+                <span class="hero-tag-text" data-i18n="lp.hero.badge">Conversion Engineering</span>
+            </div>
+
+            <h1>
+                <span class="line" data-i18n="lp.hero.line1">Engenharia</span>
+                <span class="line"><span data-i18n="lp.hero.line2">de</span> <span class="highlight" data-i18n="lp.hero.highlight">Conversão.</span></span>
+            </h1>
+
+            <p class="hero-subtitle" data-i18n="lp.hero.subtitle">
+                Landing Pages de alta performance que transformam tráfego em receita previsível. Zero templates. 100% engenharia.
+            </p>
+
+            <a href="contactos.html" class="hero-cta">
+                <span data-i18n="lp.hero.cta">Iniciar Projeto</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+        <div class="hero-right">
+            <div class="metrics-panel">
+                <div class="metric-row">
+                    <span class="metric-label" data-i18n="lp.metrics.loadTime">Load Time</span>
+                    <span class="metric-value">&lt;0.8<span class="metric-unit">s</span></span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Lighthouse</span>
+                    <span class="metric-value cyan">98+</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label" data-i18n="lp.metrics.roi">ROI Target</span>
+                    <span class="metric-value">MAX</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Framework</span>
+                    <span class="metric-value" style="font-size: 1.5rem;">Next.js 14</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portavia Reveal Section -->
+    <section class="reveal-section" id="reveal">
+        <div class="reveal-container">
+            <div class="reveal-wrapper">
+                <!-- Back Layer: Vibrant Solution -->
+                <div class="reveal-layer reveal-back">
+                    <div class="reveal-back-content">
+                        <div class="reveal-back-tag" data-i18n="lp.reveal.backTag">// A Solução Branct</div>
+                        <h2 data-i18n="lp.reveal.backTitle" data-i18n-html="true">Performance<br>de Elite</h2>
+                        <p data-i18n="lp.reveal.backDesc">Arquitetura moderna, código otimizado e design que converte.</p>
+
+                        <div class="reveal-grid">
+                            <div class="reveal-stat">
+                                <div class="reveal-stat-value">3.5x</div>
+                                <div class="reveal-stat-label" data-i18n="lp.reveal.faster">Mais Rápido</div>
+                            </div>
+                            <div class="reveal-stat">
+                                <div class="reveal-stat-value">95+</div>
+                                <div class="reveal-stat-label">Lighthouse</div>
+                            </div>
+                            <div class="reveal-stat">
+                                <div class="reveal-stat-value">+40%</div>
+                                <div class="reveal-stat-label" data-i18n="lp.reveal.conversion">Conversão</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Front Layer: Old/Gray -->
+                <div class="reveal-layer reveal-front" id="reveal-front">
+                    <div class="reveal-front-content">
+                        <div class="reveal-front-icon">&#128683;</div>
+                        <h3 data-i18n="lp.reveal.frontTitle">Landing Tradicional</h3>
+                        <p data-i18n="lp.reveal.frontDesc">Templates genéricos. Carregamento lento. Conversão baixa.</p>
+
+                        <div class="reveal-front-grid">
+                            <div class="old-stat">
+                                <div class="old-stat-value">4.2s</div>
+                                <div class="old-stat-label">Load</div>
+                            </div>
+                            <div class="old-stat">
+                                <div class="old-stat-value">52</div>
+                                <div class="old-stat-label">Score</div>
+                            </div>
+                            <div class="old-stat">
+                                <div class="old-stat-value">1.2%</div>
+                                <div class="old-stat-label">Conv.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroll-indicator">
+                <span data-i18n="lp.reveal.scrollHint">Scroll para revelar</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bento Grid - Technical Cards -->
+    <section class="bento-section" id="bento">
+        <div class="bento-header">
+            <h2 data-i18n="lp.bento.title" data-i18n-html="true">Engenharia<br>de Resultados</h2>
+            <p data-i18n="lp.bento.subtitle">Cada elemento é projetado com propósito. Cada linha de código trabalha para a conversão. Sem excessos, sem ruído.</p>
+        </div>
+
+        <div class="bento-grid">
+            <!-- Card 1: Speed -->
+            <div class="tech-card span-2">
+                <span class="tech-card-number">01</span>
+                <div class="tech-card-icon cyan">&#9889;</div>
+                <h3 data-i18n="lp.bento.speed.title">Velocidade Extrema</h3>
+                <p data-i18n="lp.bento.speed.desc">Core Web Vitals otimizados obsessivamente. Cada milissegundo eliminado aumenta sua taxa de conversão.</p>
+                <div class="tech-card-tags">
+                    <span class="tech-tag">LCP &lt;1s</span>
+                    <span class="tech-tag">FID &lt;50ms</span>
+                    <span class="tech-tag">CLS 0</span>
+                </div>
+            </div>
+
+            <!-- Card 2: UX -->
+            <div class="tech-card">
+                <span class="tech-card-number">02</span>
+                <div class="tech-card-icon">&#127919;</div>
+                <h3 data-i18n="lp.bento.ux.title">UX Direcionado</h3>
+                <p data-i18n="lp.bento.ux.desc">Hierarquia visual que guia o olhar até o CTA. Zero distrações.</p>
+            </div>
+
+            <!-- Card 3: Mobile -->
+            <div class="tech-card">
+                <span class="tech-card-number">03</span>
+                <div class="tech-card-icon">&#128241;</div>
+                <h3 data-i18n="lp.bento.mobile.title">Mobile First</h3>
+                <p data-i18n="lp.bento.mobile.desc">70% do tráfego vem de mobile. Priorizamos isso em cada decisão.</p>
+            </div>
+
+            <!-- Card 4: Copy -->
+            <div class="tech-card">
+                <span class="tech-card-number">04</span>
+                <div class="tech-card-icon cyan">&#9997;</div>
+                <h3 data-i18n="lp.bento.copy.title">Copy Persuasivo</h3>
+                <p data-i18n="lp.bento.copy.desc">Gatilhos mentais e estrutura AIDA. Headlines que conectam.</p>
+                <div class="tech-card-tags">
+                    <span class="tech-tag">AIDA</span>
+                    <span class="tech-tag">Scarcity</span>
+                </div>
+            </div>
+
+            <!-- Card 5: SEO -->
+            <div class="tech-card">
+                <span class="tech-card-number">05</span>
+                <div class="tech-card-icon">&#128269;</div>
+                <h3 data-i18n="lp.bento.seo.title">SEO Técnico</h3>
+                <p data-i18n="lp.bento.seo.desc">Schema markup e estrutura semântica para rankeamento orgânico.</p>
+            </div>
+
+            <!-- Card 6: Analytics -->
+            <div class="tech-card span-2">
+                <span class="tech-card-number">06</span>
+                <div class="tech-card-icon cyan">&#128200;</div>
+                <h3 data-i18n="lp.bento.analytics.title">Analytics Profundo</h3>
+                <p data-i18n="lp.bento.analytics.desc">GA4, Tag Manager e Heatmaps configurados de fábrica. Decisões baseadas em dados, não em achismos.</p>
+                <div class="tech-card-tags">
+                    <span class="tech-tag">GA4</span>
+                    <span class="tech-tag">GTM</span>
+                    <span class="tech-tag">Heatmaps</span>
+                    <span class="tech-tag">A/B Testing</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Matrix -->
+    <section class="lp-comparison-matrix" id="lp-comparison-matrix">
+        <div class="lp-matrix-header">
+            <span class="lp-matrix-tag" data-i18n="lp.matrix.tag">Planos & Preços</span>
+            <h2 class="lp-matrix-title" data-i18n="lp.matrix.title">Escolha o seu plano</h2>
+            <p class="lp-matrix-subtitle" data-i18n="lp.matrix.subtitle">Três níveis de entrega, o mesmo padrão de excelência. Landing pages que convertem, independentemente do plano.</p>
+        </div>
+
+        <div class="lp-matrix-grid">
+            <!-- CORE -->
+            <div class="lp-matrix-card" data-plan="core">
+                <h3 class="lp-plan-name" data-i18n="lp.matrix.core.name">CORE</h3>
+                <span class="lp-plan-label" data-i18n="lp.matrix.core.label">Essencial</span>
+                <div class="lp-power-meter"><div class="lp-power-bar" data-power="35"></div></div>
+                <div class="lp-plan-price" data-i18n="lp.matrix.core.price">180€</div>
+                <ul class="lp-feature-list">
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.pages">Páginas</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.core.pages">1 Landing Page</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.design">Design</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.core.design">Template premium</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.mobile">Mobile</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.core.mobile">Responsivo</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.form">Formulário</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.core.form">Contacto básico</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.seo">SEO</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.core.seo">Base técnica</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.analytics">Analytics</span>
+                        <span class="lp-feat-icon lp-feat-icon--cross"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.ab">A/B Testing</span>
+                        <span class="lp-feat-icon lp-feat-icon--cross"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.support">Suporte</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.core.support">15 dias</span>
+                    </li>
+                </ul>
+                <a href="contactos.html" class="lp-matrix-cta lp-matrix-cta--outline" data-i18n="lp.matrix.core.cta">Pedir proposta</a>
+            </div>
+
+            <!-- ADVANCED (Featured) -->
+            <div class="lp-matrix-card featured" data-plan="advanced">
+                <div class="lp-card-badge" data-i18n="lp.matrix.badge">MAIS POPULAR</div>
+                <h3 class="lp-plan-name" data-i18n="lp.matrix.advanced.name">ADVANCED</h3>
+                <span class="lp-plan-label" data-i18n="lp.matrix.advanced.label">Performance & conversão</span>
+                <div class="lp-power-meter"><div class="lp-power-bar" data-power="70"></div></div>
+                <div class="lp-plan-price" data-i18n="lp.matrix.advanced.price">300€ + 90€/mês</div>
+                <ul class="lp-feature-list">
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.pages">Páginas</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.pages">Até 3 variações</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.design">Design</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.design">UI personalizada</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.mobile">Mobile</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.mobile">Mobile-first + animações</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.form">Formulário</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.form">Multi-step + CRM</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.seo">SEO</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.seo">SEO avançado</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.analytics">Analytics</span>
+                        <span class="lp-feat-icon lp-feat-icon--check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.ab">A/B Testing</span>
+                        <span class="lp-feat-icon lp-feat-icon--cross"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.support">Suporte</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.support">3 meses</span>
+                    </li>
+                </ul>
+                <a href="contactos.html" class="lp-matrix-cta lp-matrix-cta--fill" data-i18n="lp.matrix.advanced.cta">Escolher</a>
+            </div>
+
+            <!-- ULTIMATE -->
+            <div class="lp-matrix-card" data-plan="ultimate">
+                <h3 class="lp-plan-name" data-i18n="lp.matrix.ultimate.name">ULTIMATE</h3>
+                <span class="lp-plan-label" data-i18n="lp.matrix.ultimate.label">Máxima conversão</span>
+                <div class="lp-power-meter"><div class="lp-power-bar" data-power="100"></div></div>
+                <div class="lp-plan-price" data-i18n="lp.matrix.ultimate.price">Sob proposta</div>
+                <ul class="lp-feature-list">
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.pages">Páginas</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.pages">Ilimitadas</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.design">Design</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.design">Premium sob medida</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.mobile">Mobile</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.mobile">Mobile-first + 3D/WebGL</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.form">Formulário</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.form">Smart forms + IA</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.seo">SEO</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.seo">SEO + autoridade</span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.analytics">Analytics</span>
+                        <span class="lp-feat-icon lp-feat-icon--check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.ab">A/B Testing</span>
+                        <span class="lp-feat-icon lp-feat-icon--check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </li>
+                    <li class="lp-feature-row">
+                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.support">Suporte</span>
+                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.support">6 meses contínuo</span>
+                    </li>
+                </ul>
+                <a href="contactos.html" class="lp-matrix-cta lp-matrix-cta--outline" data-i18n="lp.matrix.ultimate.cta">Falar connosco</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature List -->
+    <section class="features-section" id="features">
+        <div class="feature-row">
+            <div class="feature-number">01</div>
+            <div class="feature-title">
+                <h3 data-i18n="lp.features.ab.title">A/B Testing Nativo</h3>
+            </div>
+            <div class="feature-desc">
+                <p data-i18n="lp.features.ab.desc" data-i18n-html="true">Estrutura preparada para <strong>testes de variação</strong> desde o primeiro dia. Integração com Google Optimize, VWO ou Optimizely.</p>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-number">02</div>
+            <div class="feature-title">
+                <h3 data-i18n="lp.features.crm.title">CRM Integration</h3>
+            </div>
+            <div class="feature-desc">
+                <p data-i18n="lp.features.crm.desc" data-i18n-html="true">Conexão nativa com <strong>HubSpot, Pipedrive, n8n</strong> e qualquer ferramenta via API. Leads direto no pipeline.</p>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-number">03</div>
+            <div class="feature-title">
+                <h3 data-i18n="lp.features.i18n.title">Multi-Language</h3>
+            </div>
+            <div class="feature-desc">
+                <p data-i18n="lp.features.i18n.desc" data-i18n-html="true">Arquitetura <strong>i18n nativa</strong> para escalar globalmente. Uma landing, múltiplos mercados.</p>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-number">04</div>
+            <div class="feature-title">
+                <h3 data-i18n="lp.features.edge.title">Edge Deployment</h3>
+            </div>
+            <div class="feature-desc">
+                <p data-i18n="lp.features.edge.desc" data-i18n-html="true"><strong>Vercel Edge Network</strong> com latência &lt;50ms global. Sua landing mais perto do usuário.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Footer -->
+    <section class="cta-footer" id="cta">
+        <div class="cta-content">
+            <div class="cta-tag" data-i18n="lp.final.tag">// Ready to Scale</div>
+            <h2 data-i18n="lp.final.title" data-i18n-html="true">Pronto Para<br>Escalar?</h2>
+            <p data-i18n="lp.final.desc">Landing pages que não apenas impressionam — convertem. Vamos construir a sua.</p>
+            <a href="contactos.html" class="btn-cta">
+                <span data-i18n="lp.final.cta">Falar com Especialista</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 BRANCT.Tech — <span data-i18n="lp.footer.rights">All Rights Reserved</span></p>
+        <p><a href="index.html" data-i18n="lp.footer.back">Back to Home</a></p>
+    </footer>
+
+    <!-- Three.js + GSAP Script -->
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ========================================
+        // GSAP Setup
+        // ========================================
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Scroll Progress Bar
+        gsap.to('#scroll-progress', {
+            scaleX: 1,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: document.body,
+                start: 'top top',
+                end: 'bottom bottom',
+                scrub: 0.3
+            }
+        });
+
+        // ========================================
+        // THREE.JS - Wireframe Terrain Background
+        // ========================================
+        const canvas = document.getElementById('canvas-bg');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // ========================================
+        // WIREFRAME TERRAIN
+        // ========================================
+        const terrainGeometry = new THREE.PlaneGeometry(50, 50, 60, 60);
+
+        // Animate vertices for wave effect
+        const positions = terrainGeometry.attributes.position.array;
+        const originalPositions = new Float32Array(positions.length);
+        for (let i = 0; i < positions.length; i++) {
+            originalPositions[i] = positions[i];
+        }
+
+        const terrainMaterial = new THREE.MeshBasicMaterial({
+            color: 0x06b6d4,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+        });
+
+        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+        terrain.rotation.x = -Math.PI / 2.5;
+        terrain.position.y = -3;
+        scene.add(terrain);
+
+        // ========================================
+        // FLOATING PARTICLES
+        // ========================================
+        const particlesCount = 200;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesPositions = new Float32Array(particlesCount * 3);
+
+        for (let i = 0; i < particlesCount * 3; i += 3) {
+            particlesPositions[i] = (Math.random() - 0.5) * 40;
+            particlesPositions[i + 1] = (Math.random() - 0.5) * 20;
+            particlesPositions[i + 2] = (Math.random() - 0.5) * 40;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlesPositions, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0x06b6d4,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        // ========================================
+        // ANIMATION LOOP
+        // ========================================
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Animate terrain waves
+            const positions = terrainGeometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const x = originalPositions[i];
+                const y = originalPositions[i + 1];
+                positions[i + 2] = Math.sin(x * 0.3 + time) * Math.cos(y * 0.3 + time) * 1.5;
+            }
+            terrainGeometry.attributes.position.needsUpdate = true;
+
+            // Rotate particles slowly
+            particles.rotation.y += 0.0005;
+
+            // Camera subtle movement based on scroll
+            const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+            camera.position.y = 5 - scrollProgress * 3;
+            camera.rotation.x = -0.2 - scrollProgress * 0.3;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ========================================
+        // RESIZE HANDLER
+        // ========================================
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ========================================
+        // GSAP ANIMATIONS
+        // ========================================
+
+        // Hero text animation
+        gsap.from('.hero h1 .line', {
+            y: 100,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: 'power3.out',
+            delay: 0.3
+        });
+
+        gsap.from('.hero-tag', {
+            opacity: 0,
+            y: 20,
+            duration: 0.8,
+            delay: 0.1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.hero-subtitle', {
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            delay: 0.7,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.hero-cta', {
+            opacity: 0,
+            y: 20,
+            duration: 0.8,
+            delay: 0.9,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.metric-row', {
+            opacity: 0,
+            x: 50,
+            duration: 0.6,
+            stagger: 0.15,
+            delay: 0.5,
+            ease: 'power3.out'
+        });
+
+        // ========================================
+        // PORTAVIA REVEAL ANIMATION
+        // ========================================
+        const revealTl = gsap.timeline({
+            scrollTrigger: {
+                trigger: '#reveal',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: 1.5,
+                pin: false
+            }
+        });
+
+        revealTl.to('#reveal-front', {
+            yPercent: 110,
+            rotationX: -15,
+            scale: 0.85,
+            opacity: 0.3,
+            duration: 1,
+            ease: 'power2.inOut'
+        });
+
+        // Hide scroll indicator on scroll
+        gsap.to('.scroll-indicator', {
+            opacity: 0,
+            scrollTrigger: {
+                trigger: '#reveal',
+                start: 'top 80%',
+                end: 'top 50%',
+                scrub: true
+            }
+        });
+
+        // ========================================
+        // BENTO CARDS ANIMATION
+        // ========================================
+        gsap.from('.tech-card', {
+            scrollTrigger: {
+                trigger: '.bento-grid',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 40,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.bento-header h2, .bento-header p', {
+            scrollTrigger: {
+                trigger: '.bento-header',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: 'power3.out'
+        });
+
+        // ========================================
+        // COMPARISON MATRIX ANIMATION
+        // ========================================
+        gsap.from('.lp-matrix-header', {
+            scrollTrigger: {
+                trigger: '.lp-comparison-matrix',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0, y: 30, duration: 0.8, ease: 'power3.out'
+        });
+
+        gsap.from('.lp-matrix-card', {
+            scrollTrigger: {
+                trigger: '.lp-matrix-grid',
+                start: 'top 80%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0, y: 50, duration: 0.7, stagger: 0.15, ease: 'power3.out',
+            onComplete: function() {
+                // Animate power bars after cards are visible
+                document.querySelectorAll('.lp-power-bar').forEach(bar => {
+                    const power = bar.getAttribute('data-power');
+                    bar.style.width = power + '%';
+                });
+            }
+        });
+
+        // ========================================
+        // FEATURE ROWS ANIMATION
+        // ========================================
+        gsap.utils.toArray('.feature-row').forEach((row, i) => {
+            gsap.from(row.children, {
+                scrollTrigger: {
+                    trigger: row,
+                    start: 'top 85%',
+                    toggleActions: 'play none none reverse'
+                },
+                opacity: 0,
+                x: -30,
+                duration: 0.6,
+                stagger: 0.15,
+                ease: 'power3.out'
+            });
+        });
+
+        // ========================================
+        // CTA FOOTER ANIMATION
+        // ========================================
+        gsap.from('.cta-content', {
+            scrollTrigger: {
+                trigger: '.cta-footer',
+                start: 'top 75%',
+                toggleActions: 'play none none reverse'
+            },
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+    </script>
+
+    <!-- i18n System -->
+    <script>
+        // ========================================
+        // INTERNATIONALIZATION (i18n) SYSTEM
+        // ========================================
+        const I18N = {
+            currentLang: 'pt',
+            translations: {},
+
+            async init() {
+                // Get saved language or detect from browser
+                const savedLang = localStorage.getItem('branct-lang');
+                const browserLang = navigator.language.split('-')[0];
+                const supportedLangs = ['pt', 'en', 'it', 'hr'];
+
+                if (savedLang && supportedLangs.includes(savedLang)) {
+                    this.currentLang = savedLang;
+                } else if (supportedLangs.includes(browserLang)) {
+                    this.currentLang = browserLang;
+                }
+
+                await this.loadTranslations(this.currentLang);
+                this.applyTranslations();
+                this.setupLanguageSelector();
+            },
+
+            async loadTranslations(lang) {
+                try {
+                    const response = await fetch(`src/i18n/${lang}.json`);
+                    if (!response.ok) throw new Error('Translation file not found');
+                    this.translations = await response.json();
+                    this.currentLang = lang;
+                    localStorage.setItem('branct-lang', lang);
+                } catch (error) {
+                    console.warn(`Could not load ${lang} translations, falling back to pt`);
+                    if (lang !== 'pt') {
+                        await this.loadTranslations('pt');
+                    }
+                }
+            },
+
+            getNestedValue(obj, path) {
+                return path.split('.').reduce((current, key) =>
+                    current && current[key] !== undefined ? current[key] : null, obj);
+            },
+
+            applyTranslations() {
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    const value = this.getNestedValue(this.translations, key);
+
+                    if (value) {
+                        if (el.hasAttribute('data-i18n-html')) {
+                            el.innerHTML = value;
+                        } else {
+                            el.textContent = value;
+                        }
+                    }
+                });
+
+                // Update HTML lang attribute
+                document.documentElement.lang = this.currentLang === 'pt' ? 'pt-PT' :
+                                                 this.currentLang === 'en' ? 'en' :
+                                                 this.currentLang === 'it' ? 'it' : 'hr';
+
+                // Update current language display
+                const langText = document.getElementById('current-lang-text');
+                if (langText) {
+                    langText.textContent = this.currentLang.toUpperCase();
+                }
+
+                // Update active state in dropdown
+                document.querySelectorAll('.lang-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.lang === this.currentLang);
+                });
+            },
+
+            setupLanguageSelector() {
+                const selector = document.getElementById('lang-selector');
+                const current = document.getElementById('lang-current');
+                const dropdown = document.getElementById('lang-dropdown');
+
+                if (!selector || !current || !dropdown) return;
+
+                // Toggle dropdown
+                current.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selector.classList.toggle('open');
+                });
+
+                // Close on click outside
+                document.addEventListener('click', () => {
+                    selector.classList.remove('open');
+                });
+
+                // Language options
+                dropdown.querySelectorAll('.lang-option').forEach(option => {
+                    option.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const lang = option.dataset.lang;
+                        if (lang !== this.currentLang) {
+                            await this.loadTranslations(lang);
+                            this.applyTranslations();
+                        }
+                        selector.classList.remove('open');
+                    });
+                });
+            }
+        };
+
+        // Initialize i18n when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            I18N.init();
+        });
+    </script>
+
+
+    <script>
+    // Unified Header Navigation
+    (function() {
+        // Mobile Toggle
+        const toggle = document.querySelector('.branct-mobile-toggle');
+        const drawer = document.querySelector('.branct-mobile-drawer');
+        if (toggle && drawer) {
+            toggle.addEventListener('click', () => {
+                drawer.classList.toggle('open');
+                document.body.style.overflow = drawer.classList.contains('open') ? 'hidden' : '';
+            });
+        }
+
+        // Mobile Accordion
+        const accordionBtn = document.querySelector('.branct-mobile-accordion button');
+        const mobileSubmenu = document.querySelector('.branct-mobile-submenu');
+        if (accordionBtn && mobileSubmenu) {
+            accordionBtn.addEventListener('click', () => {
+                const expanded = accordionBtn.getAttribute('aria-expanded') === 'true';
+                accordionBtn.setAttribute('aria-expanded', !expanded);
+                mobileSubmenu.style.display = expanded ? 'none' : 'block';
+            });
+        }
+
+        // Desktop Dropdown
+        const dropdownBtn = document.querySelector('.branct-nav-dropdown button');
+        const submenu = document.querySelector('.branct-submenu');
+        if (dropdownBtn && submenu) {
+            dropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                submenu.style.opacity = submenu.style.opacity === '1' ? '0' : '1';
+                submenu.style.visibility = submenu.style.visibility === 'visible' ? 'hidden' : 'visible';
+                submenu.style.marginTop = submenu.style.visibility === 'visible' ? '15px' : '20px';
+            });
+            document.addEventListener('click', () => {
+                submenu.style.opacity = '0';
+                submenu.style.visibility = 'hidden';
+            });
+        }
+
+        // Language Selector — connected to I18N system
+        const langBtn = document.querySelector('.branct-lang-btn');
+        const langDropdown = document.querySelector('.branct-lang-dropdown');
+        if (langBtn && langDropdown) {
+            langBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                langDropdown.classList.toggle('active');
+            });
+            document.addEventListener('click', () => langDropdown.classList.remove('active'));
+            langDropdown.querySelectorAll('li').forEach(li => {
+                li.addEventListener('click', async () => {
+                    const lang = li.dataset.lang;
+                    document.querySelector('.branct-current-lang').textContent = lang.toUpperCase();
+                    langDropdown.classList.remove('active');
+                    // Load translations and apply via I18N system
+                    if (typeof I18N !== 'undefined') {
+                        await I18N.loadTranslations(lang);
+                        I18N.applyTranslations();
+                    }
+                });
+            });
+        }
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,762 @@
+{
+  "nav": {
+    "home": "Inizio",
+    "services": "Servizi",
+    "process": "Processo",
+    "contacts": "Contatti",
+    "userArea": "Area Clienti",
+    "blog": "Blog",
+    "cta": "Richiedi Preventivo"
+  },
+  "servicesMenu": {
+    "website": "Sito Web Premium",
+    "landing": "Landing Pages",
+    "crm": "CRM & Gestione",
+    "automation": "Automazione & IA"
+  },
+  "pageTitles": {
+    "services": "Servizi",
+    "process": "Il Nostro Processo",
+    "contacts": "Contatti",
+    "userArea": "Area Clienti",
+    "blog": "Blog",
+    "website": "Sito Web Premium",
+    "landing": "Landing Pages",
+    "crm": "CRM & Gestione",
+    "automation": "Automazione & IA"
+  },
+  "hero": {
+    "title": "Il Futuro Digitale del Tuo Brand",
+    "subtitle": "Siti Web Tech-Luxury, Automazione Intelligente e Performance d'Elite.",
+    "scroll": "Scorri",
+    "proof": {
+      "perf": { "title": "Performance", "desc": "Core Web Vitals ottimizzati." },
+      "seo": { "title": "SEO Premium", "desc": "Struttura semantica avanzata." },
+      "ai": { "title": "Automazione IA", "desc": "Flussi neurali e CRM." },
+      "i18n": { "title": "Multi-lingua", "desc": "Scalabilità globale nativa." },
+      "sec": { "title": "Sicurezza", "desc": "Protocolli Zero-Trust." }
+    }
+  },
+  "cta": {
+    "proposal": "Richiedi Preventivo",
+    "services": "Vedi Servizi",
+    "start": "Inizia Ora"
+  },
+  "services": {
+    "title": "Servizi Premium",
+    "subtitle": "Ingegneria digitale d'élite per marchi leader.",
+    "items": {
+      "web": {
+        "badge": "PERFORMANCE",
+        "title": "Siti Web Premium",
+        "desc": "Siti web veloci, eleganti e orientati alla conversione — con una base tecnica solida per SEO, performance e crescita.",
+        "bullets": ["UX/UI orientato ai lead", "Core Web Vitals ottimizzati", "SEO tecnico (struttura + schema)", "Architettura modulare e scalabile"],
+        "chips": ["CWV 99+", "PWA", "SSR"],
+        "cta_primary": "Richiedi Preventivo",
+        "cta_secondary": "Vedi Dettagli"
+      },
+      "lp": {
+        "badge": "CONVERSION",
+        "title": "Landing Pages",
+        "desc": "Interfacce ad alta conversione con psicologia di vendita applicata. Trasforma il traffico in entrate.",
+        "bullets": ["Copywriting Persuasivo", "A/B Testing Ready", "Caricamento Istantaneo", "Focus sul ROI"],
+        "chips": ["CRO", "Analytics", "Heatmaps"],
+        "cta_primary": "Richiedi Preventivo",
+        "cta_secondary": "Vedi Dettagli"
+      },
+      "crm": {
+        "badge": "AI READY",
+        "title": "CRM & Gestione",
+        "desc": "Centralizza dati, team e opportunità in un unico posto — con visibilità del funnel e automazioni per accelerare l'operazione commerciale.",
+        "bullets": ["Pipeline con fasi e regole", "Dashboard e metriche in tempo reale", "Integrazioni API e webhook", "Automazione di attività e follow-up"],
+        "chips": ["n8n", "OpenAI", "API REST"],
+        "cta_primary": "Richiedi Preventivo",
+        "cta_secondary": "Vedi Dettagli"
+      },
+      "auto": {
+        "badge": "AUTOMATION",
+        "title": "Automazione & IA",
+        "desc": "Automatizza assistenza e follow-up senza perdere personalizzazione — con flussi, segmentazione e tracking per decisioni rapide.",
+        "bullets": ["WhatsApp (API) e chat operativa", "Email e sequenze di nurturing", "Automazione per eventi e fasi", "Qualificazione e instradamento lead"],
+        "chips": ["WhatsApp API", "SMTP", "Webhooks"],
+        "cta_primary": "Richiedi Preventivo",
+        "cta_secondary": "Vedi Dettagli"
+      },
+      "brand": {
+        "badge": "BRAND SYSTEM",
+        "title": "Branding & Contenuti",
+        "desc": "Identità visiva e verbale coerente. Costruiamo narrazioni che connettono i brand al futuro.",
+        "bullets": ["Strategia del Brand", "Tono di Voce", "Design System", "Creazione Contenuti"],
+        "chips": ["Storytelling", "UI Kit", "Strategy"],
+        "cta_primary": "Richiedi Preventivo",
+        "cta_secondary": "Vedi Dettagli"
+      }
+    }
+  },
+  "solutions": {
+    "title": "Ecosistema BRANCT",
+    "sub": "Più di un sito: un'operazione di acquisizione e gestione clienti.",
+    "bullets": [
+      "Integrazione CRM nativa (lead e pipeline)",
+      "Automazione follow-up (WhatsApp/SMS/E-mail)",
+      "Dashboard prestazioni (campagne e funnel)",
+      "Chatbot IA addestrato (risposte e qualificazione)",
+      "Agenda e attività (per non perdere opportunità)",
+      "Tracking ed eventi (base per l'ottimizzazione)"
+    ],
+    "trust": "Tutto in un unico ecosistema, progettato per scalare con controllo e sicurezza.",
+    "cta_primary": "Prova 7 giorni gratis",
+    "cta_secondary": "Vedi funzionalità"
+  },
+  "projects": {
+    "title": "Progetti Recenti",
+    "items": {
+      "neoprag": { "tag": "Web / Istituzionale" },
+      "vertexway": { "tag": "Sito Web / Brand" },
+      "albino": { "tag": "Immobiliare / Landing Page" },
+      "kb": { "tag": "Contabilità / Sito Web" }
+    }
+  },
+  "process": {
+    "title": "Il Nostro Processo",
+    "step1": {
+      "title": "Diagnosi",
+      "desc": "Allineiamo obiettivi, pubblico e priorità. Definiamo l'architettura prima del design.",
+      "chips": ["Analisi di Mercato", "Architettura"]
+    },
+    "step2": {
+      "title": "Design",
+      "desc": "UI/UX e prototipo validabile. Chiarezza, credibilità e focus sulla conversione.",
+      "chips": ["UI/UX", "Prototipo 3D"]
+    },
+    "step3": {
+      "title": "Sviluppo",
+      "desc": "Implementazione con performance, SEO tecnico e integrazioni per tracking e automazione.",
+      "chips": ["Clean Code", "SEO Nativo"]
+    },
+    "step4": {
+      "title": "Scala",
+      "desc": "Monitoraggio e ottimizzazione continua. Evoluzione guidata dai dati.",
+      "chips": ["Analytics", "Growth"]
+    }
+  },
+  "contact": {
+    "title": "Pronti a elevare la vostra presenza digitale?",
+    "desc": "Inviate il vostro obiettivo e la tempistica. Vi restituiamo un piano chiaro e i prossimi passi.",
+    "social": {
+      "ln": "LinkedIn",
+      "ig": "Instagram",
+      "fb": "Facebook"
+    }
+  },
+  "form": {
+    "name": "Nome Completo",
+    "email": "Email Aziendale",
+    "message": "Come possiamo aiutare?",
+    "submit": "Invia Messaggio",
+    "success": "Messaggio inviato con successo. Ti contatteremo a breve.",
+    "error": "Si è verificato un errore. Riprova."
+  },
+  "footer": {
+    "privacy": "Privacy Policy",
+    "terms": "Termini e Condizioni"
+  },
+  "websitePremium": {
+    "backButton": "Indietro",
+    "hero": {
+      "title": "Siti Web di Elite",
+      "subtitle": "Esperienze digitali con tecnologia 3D, animazioni fluide e architettura performante.",
+      "primaryCta": "Inizia Progetto",
+      "secondaryCta": "Vedi Processo"
+    },
+    "stats": {
+      "performance": "<strong>Fino a 3.5x</strong> più veloce dei concorrenti",
+      "lighthouse": "<strong>95+ Score</strong> Lighthouse Performance",
+      "edge": "<strong>Serverless Edge</strong>",
+      "cdn": "Architettura: CDN Globale"
+    },
+    "section2": {
+      "title": "Tecnologia di Elite",
+      "subtitle": "Stack moderno che garantisce scalabilità e manutenibilità a lungo termine.",
+      "features": [
+        "React/Next.js 14 con Server Components",
+        "TypeScript per codice type-safe",
+        "Tailwind CSS + Framer Motion",
+        "Vercel Edge Network (latenza <50ms)",
+        "Supabase/Firebase per backend real-time"
+      ]
+    },
+    "pricing": {
+      "title": "Investimento Trasparente",
+      "subtitle": "Soluzioni digitali premium adattate al tuo business. Nessun costo nascosto.",
+      "essential": {
+        "name": "Essential",
+        "tagline": "Per le aziende che iniziano",
+        "price": "A partire da 500€",
+        "monthly": "Mensile: 70€",
+        "features": [
+          "Sito Web Responsive Premium",
+          "Design Moderno e Minimalista",
+          "Ottimizzazione SEO Base",
+          "Form di Contatto",
+          "Integrazione Google Analytics",
+          "1 Mese di Supporto"
+        ],
+        "cta": "Inizia Ora"
+      },
+      "professional": {
+        "name": "Professional",
+        "tagline": "✨ Più Popolare",
+        "price": "A partire da 800€",
+        "monthly": "Mensile: 250€",
+        "features": [
+          "Tutto dall'Essential, più:",
+          "CRM Personalizzato Integrato",
+          "Pannello di Amministrazione",
+          "SEO Avanzato + Schema Markup",
+          "Blog / Notizie Dinamico",
+          "Integrazione Email Marketing",
+          "3 Mesi di Supporto Premium"
+        ],
+        "cta": "Scegli Professional"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "tagline": "Per aziende leader",
+        "price": "A partire da 1.200€",
+        "monthly": "Mensile: 370€",
+        "features": [
+          "Tutto dal Professional, più:",
+          "IA Conversazionale Integrata",
+          "Chatbot Intelligente 24/7",
+          "Automazioni Avanzate",
+          "Multi-lingua (3 lingue)",
+          "E-commerce Completo (opzionale)",
+          "6 Mesi di Supporto VIP"
+        ],
+        "cta": "Parla con Specialista"
+      }
+    },
+    "bespoke": {
+      "title": "PROGETTI<br>ESCLUSIVI",
+      "subtitle": "DESIGN SU MISURA",
+      "desc": "Per i brand che non rientrano nei pacchetti. Creiamo esperienze digitali uniche, progettate da zero, senza template.",
+      "cta": "Richiedi Progetto Unico →"
+    },
+    "scrollHint": "Continua",
+    "featureCloud": {
+      "power": {
+        "label": "POTENZA",
+        "keyword": "PERFORMANCE EDGE",
+        "desc": "CDN Globale. Latenza <50ms."
+      },
+      "growth": {
+        "label": "CRESCITA",
+        "keyword": "SEO NATIVO",
+        "desc": "Struttura semantica. Schema pronto."
+      },
+      "intelligence": {
+        "label": "INTELLIGENZA",
+        "keyword": "AUTOMAZIONE IA",
+        "desc": "Flussi smart. Attivo 24/7."
+      }
+    },
+    "final": {
+      "title": "Definisci il prossimo standard del tuo brand.",
+      "desc": "Creiamo siti web premium focalizzati su percezione del valore, velocità, SEO e conversione — progettati per scalare con controllo e coerenza.",
+      "cta": "Inizia Progetto",
+      "note": "Niente rumore. Niente scorciatoie. Solo qualità consegnata."
+    },
+    "footerBack": "Torna all'Inizio"
+  },
+  "lp": {
+    "hero": {
+      "badge": "Conversion Engineering",
+      "line1": "Ingegneria",
+      "line2": "della",
+      "highlight": "Conversione.",
+      "subtitle": "Landing Page ad alte prestazioni che trasformano il traffico in entrate prevedibili. Zero template. 100% ingegneria.",
+      "cta": "Inizia Progetto"
+    },
+    "metrics": {
+      "loadTime": "Tempo di Caricamento",
+      "roi": "Obiettivo ROI"
+    },
+    "reveal": {
+      "backTag": "// La Soluzione Branct",
+      "backTitle": "Performance<br>di Elite",
+      "backDesc": "Architettura moderna, codice ottimizzato e design che converte.",
+      "faster": "Più Veloce",
+      "conversion": "Conversione",
+      "frontTitle": "Landing Tradizionale",
+      "frontDesc": "Template generici. Caricamento lento. Conversione bassa.",
+      "scrollHint": "Scorri per rivelare"
+    },
+    "bento": {
+      "title": "Ingegneria<br>dei Risultati",
+      "subtitle": "Ogni elemento è progettato con uno scopo. Ogni riga di codice lavora per la conversione. Niente eccessi, niente rumore.",
+      "speed": {
+        "title": "Velocità Estrema",
+        "desc": "Core Web Vitals ottimizzati ossessivamente. Ogni millisecondo eliminato aumenta il tuo tasso di conversione."
+      },
+      "ux": {
+        "title": "UX Direzionata",
+        "desc": "Gerarchia visiva che guida lo sguardo verso la CTA. Zero distrazioni."
+      },
+      "mobile": {
+        "title": "Mobile First",
+        "desc": "Il 70% del traffico viene da mobile. Priorizziamo questo in ogni decisione."
+      },
+      "copy": {
+        "title": "Copy Persuasivo",
+        "desc": "Trigger mentali e struttura AIDA. Headline che connettono."
+      },
+      "seo": {
+        "title": "SEO Tecnico",
+        "desc": "Schema markup e struttura semantica per il posizionamento organico."
+      },
+      "analytics": {
+        "title": "Analytics Profondo",
+        "desc": "GA4, Tag Manager e Heatmap configurati di fabbrica. Decisioni basate sui dati, non sulle supposizioni."
+      }
+    },
+    "features": {
+      "ab": {
+        "title": "A/B Testing Nativo",
+        "desc": "Struttura pronta per <strong>test di variazione</strong> dal primo giorno. Integrazione con Google Optimize, VWO o Optimizely."
+      },
+      "crm": {
+        "title": "Integrazione CRM",
+        "desc": "Connessione nativa con <strong>HubSpot, Pipedrive, n8n</strong> e qualsiasi strumento via API. Lead direttamente nella pipeline."
+      },
+      "i18n": {
+        "title": "Multi-lingua",
+        "desc": "Architettura <strong>i18n nativa</strong> per scalare globalmente. Una landing, più mercati."
+      },
+      "edge": {
+        "title": "Edge Deployment",
+        "desc": "<strong>Vercel Edge Network</strong> con latenza <50ms globale. La tua landing più vicina all'utente."
+      }
+    },
+    "matrix": {
+      "tag": "Piani & Prezzi",
+      "title": "Scegli il tuo piano",
+      "subtitle": "Tre livelli di consegna, lo stesso standard di eccellenza. Landing page che convertono, indipendentemente dal piano.",
+      "badge": "PIÙ POPOLARE",
+      "feat": {
+        "pages": "Pagine",
+        "design": "Design",
+        "mobile": "Mobile",
+        "form": "Modulo",
+        "seo": "SEO",
+        "analytics": "Analytics",
+        "ab": "A/B Testing",
+        "support": "Supporto"
+      },
+      "core": {
+        "name": "CORE",
+        "label": "Essenziale",
+        "price": "180€",
+        "pages": "1 Landing Page",
+        "design": "Template premium",
+        "mobile": "Responsive",
+        "form": "Contatto base",
+        "seo": "Base tecnica",
+        "support": "15 giorni",
+        "cta": "Richiedi preventivo"
+      },
+      "advanced": {
+        "name": "ADVANCED",
+        "label": "Performance & conversione",
+        "price": "300€ + 90€/mese",
+        "pages": "Fino a 3 variazioni",
+        "design": "UI personalizzata",
+        "mobile": "Mobile-first + animazioni",
+        "form": "Multi-step + CRM",
+        "seo": "SEO avanzato",
+        "support": "3 mesi",
+        "cta": "Scegliere"
+      },
+      "ultimate": {
+        "name": "ULTIMATE",
+        "label": "Massima conversione",
+        "price": "Su richiesta",
+        "pages": "Illimitate",
+        "design": "Premium su misura",
+        "mobile": "Mobile-first + 3D/WebGL",
+        "form": "Smart forms + IA",
+        "seo": "SEO + autorità",
+        "support": "6 mesi continuo",
+        "cta": "Parlaci"
+      }
+    },
+    "final": {
+      "tag": "// Ready to Scale",
+      "title": "Pronto a<br>Scalare?",
+      "desc": "Landing page che non solo impressionano — convertono. Costruiamo la tua.",
+      "cta": "Parla con Specialista"
+    },
+    "footer": {
+      "rights": "Tutti i Diritti Riservati",
+      "back": "Torna all'Inizio"
+    }
+  },
+  "landingPages": {
+    "badge": "Alta Conversione",
+    "title": "Landing Pages",
+    "titleHighlight": "Progettate per Vendere.",
+    "subtitle": "Trasforma il traffico in entrate con design ad alta conversione e ingegneria delle performance.",
+    "cta": "Voglio una Pagina Così",
+    "scroll": "Scorri",
+    "bento": {
+      "title": "Cosa Offriamo",
+      "subtitle": "Ogni dettaglio pensato per massimizzare le conversioni.",
+      "speed": {
+        "title": "Caricamento Istantaneo",
+        "metric": "< 1s",
+        "metricLabel": "Tempo di Caricamento Medio",
+        "desc": "Performance estrema con ottimizzazione Core Web Vitals. Ogni millisecondo conta per la conversione."
+      },
+      "design": {
+        "title": "UI/UX Ipnotico",
+        "desc": "Design che cattura l'attenzione e guida lo sguardo verso la CTA. Massima ritenzione visiva."
+      },
+      "mobile": {
+        "title": "Mobile-First",
+        "desc": "Perfetto su qualsiasi schermo. Il 70% del traffico viene da mobile - lo priorizziamo."
+      },
+      "copy": {
+        "title": "Copywriting & Trigger Mentali",
+        "desc": "Struttura persuasiva con psicologia di vendita applicata. Headline che connettono, CTA che convertono."
+      },
+      "seo": {
+        "title": "SEO Tecnico",
+        "desc": "Schema markup, meta tag ottimizzati e struttura semantica. Posizionamento organico garantito."
+      }
+    },
+    "why": {
+      "title": "Perché Scegliere BRANCT?",
+      "desc": "Non siamo solo designer. Siamo ingegneri della conversione che combinano estetica premium con performance tecnica d'élite.",
+      "checklistTitle": "// Checklist di Ingegneria",
+      "items": [
+        { "title": "Lighthouse Score 95+", "desc": "Performance, Accessibilità, SEO ottimizzati" },
+        { "title": "A/B Testing Ready", "desc": "Struttura preparata per test di variazione" },
+        { "title": "Analytics Integrato", "desc": "GA4, Tag Manager, Heatmaps configurati" },
+        { "title": "CRM Ready", "desc": "Integrazione con HubSpot, Pipedrive, n8n" },
+        { "title": "Multi-lingua", "desc": "Pronto per scalare globalmente" }
+      ]
+    },
+    "final": {
+      "title": "La tua offerta merita il palcoscenico migliore del mondo.",
+      "desc": "Landing page che non solo impressionano - convertono. Costruiamo la tua.",
+      "cta": "Parla con Specialista"
+    },
+    "footerBack": "Torna all'Inizio"
+  },
+  "crm": {
+    "cta": "Organizza Azienda",
+    "heroTag": "Centro di Comando",
+    "heroLine1": "CENTRALIZZAZIONE.",
+    "heroLine2": "CONTROLLO TOTALE.",
+    "heroSub": "Smetti di perdere lead nei fogli di calcolo. Una visione a 360° della tua operazione in tempo reale.",
+    "heroCta": "Vedi Demo",
+    "scrollHint": "Scorri",
+    "videoLabel": "GUARDA IL SISTEMA IN AZIONE",
+    "featuresTitle": "Funzionalità<br>di Elite",
+    "featuresSub": "Tutto ciò di cui hai bisogno per scalare la tua operazione di vendita con controllo e prevedibilità.",
+    "features": {
+      "pipeline": {
+        "title": "Funnel di Vendita Visivo",
+        "desc": "Visualizza l'intera pipeline su una lavagna Kanban intuitiva. Trascina e rilascia le trattative tra le fasi. Non perdere mai un'opportunità."
+      },
+      "automation": {
+        "title": "Follow-up Automatico",
+        "desc": "Sequenze di email, SMS e WhatsApp che si attivano automaticamente. Nurturing dei lead in autopilota."
+      },
+      "omni": {
+        "title": "WhatsApp, Email & Omni",
+        "desc": "Tutte le conversazioni in un unico posto. Storico completo di ogni lead, indipendentemente dal canale."
+      },
+      "reports": {
+        "title": "Report sui Ricavi in Tempo Reale",
+        "desc": "Dashboard che mostrano esattamente dove sono i tuoi soldi. Previsione dei ricavi, tasso di conversione e performance per venditore."
+      },
+      "ai": {
+        "title": "Lead Scoring con IA",
+        "desc": "Algoritmi che identificano i lead più caldi. Concentra la tua energia dove c'è la maggiore probabilità di chiudere."
+      }
+    },
+    "integrationsLabel": "Si integra con gli strumenti che già usi",
+    "ctaTag": "// Pronto a Scalare",
+    "ctaTitle": "Pronto a<br>Organizzare?",
+    "ctaDesc": "Basta lead persi nei fogli di calcolo. Centralizza, automatizza e scala.",
+    "ctaButton": "Organizza la Mia Azienda",
+    "footerRights": "Tutti i Diritti Riservati",
+    "footerBack": "Torna all'Inizio"
+  },
+  "ai": {
+    "heroBadge": "Intelligenza Artificiale",
+    "heroLine1": "LA TUA AZIENDA IN",
+    "heroLine2": "PILOTA AUTOMATICO.",
+    "heroSub": "Assistenza clienti, vendite e processi interni attivi 24/7. Nessuna pausa, nessun errore umano.",
+    "heroCta": "Vedi Demo",
+    "stats": {
+      "response": "Tempo di Risposta",
+      "availability": "Disponibilità",
+      "qualification": "Qualificazione"
+    },
+    "chatTag": "// Live Demo",
+    "chatTitle": "Guarda l'IA<br>in Azione",
+    "chatDesc": "Mentre leggi questo, la nostra IA ha già risposto a 47 clienti contemporaneamente. Ha qualificato lead, programmato riunioni e inviato proposte.",
+    "speedText": "Risposte in <strong>0.2s</strong>. Conversione istantanea.",
+    "chatOnline": "Online",
+    "solutionsTitle": "Soluzioni di<br>Automazione",
+    "solutionsSub": "Tecnologia che lavora mentre dormi. Ogni interazione, un'opportunità catturata.",
+    "solutions": {
+      "gpt": {
+        "title": "Chatbot GPT-4",
+        "desc": "IA conversazionale addestrata sul tuo business. Risposte contestuali, personalizzazione in tempo reale e apprendimento continuo."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Business",
+        "desc": "API ufficiale integrata. Messaggi di massa, risposte automatiche e flussi di vendita."
+      },
+      "leads": {
+        "title": "Qualificazione Lead",
+        "desc": "Scoring automatico basato sul comportamento. Concentrati solo sui lead caldi."
+      },
+      "booking": {
+        "title": "Pianificazione Automatica",
+        "desc": "Sincronizzazione con Google Calendar e Calendly. Riunioni prenotate senza intervento umano."
+      },
+      "email": {
+        "title": "Sequenze Email",
+        "desc": "Nurturing automatico con personalizzazione dinamica. Copy generato da IA."
+      }
+    },
+    "usecases": {
+      "support": "Supporto Clienti",
+      "sales": "Vendite Automatizzate",
+      "onboarding": "Onboarding Clienti",
+      "booking": "Pianificazione Riunioni",
+      "qualification": "Qualificazione Lead",
+      "followup": "Follow-up Automatico"
+    },
+    "ctaTag": "// Pronto ad Automatizzare",
+    "ctaTitle": "Pronto ad<br>Automatizzare?",
+    "ctaDesc": "Libera il tuo team dalle attività ripetitive. Lascia che l'IA lavori per te.",
+    "ctaButton": "Automatizza Ora",
+    "footerRights": "Tutti i Diritti Riservati",
+    "footerBack": "Torna all'Inizio",
+    "chat": {
+      "msg1": "Vorrei un preventivo.",
+      "msg2": "Ciao! Certo. Per quale servizio?",
+      "msg3": "Automazione del servizio clienti.",
+      "msg4": "Perfetto! Analizzo le tue esigenze..."
+    }
+  },
+  "pp": {
+    "hero": {
+      "tag": "// Il Nostro Processo",
+      "title": "Dalla Diagnosi alla Scala.",
+      "subtitle": "Quattro fasi. Un'ossessione: fornire valore misurabile in ogni fase del tuo progetto digitale."
+    },
+    "step1": {
+      "tag": "// Discovery & Strategy",
+      "title": "Diagnosi",
+      "desc": "Analisi approfondita del tuo mercato, concorrenza e posizionamento. Mappiamo ogni opportunità prima di tracciare una sola linea.",
+      "chip1": "Analisi di Mercato",
+      "chip2": "Audit Tecnico",
+      "chip3": "Roadmap"
+    },
+    "step2": {
+      "tag": "// UX & Visual Identity",
+      "title": "Design",
+      "desc": "Prototipi interattivi e identità visiva che traduce l'essenza del tuo brand. Ogni pixel serve uno scopo di conversione.",
+      "chip1": "UI/UX Research",
+      "chip2": "Prototipo Interattivo",
+      "chip3": "Design System"
+    },
+    "step3": {
+      "tag": "// Engineering & Performance",
+      "title": "Sviluppo",
+      "desc": "Codice pulito, performance ossessiva e integrazione continua. Ogni millisecondo conta. Ogni riga di codice è testata.",
+      "chip1": "Clean Code",
+      "chip2": "SEO Nativo",
+      "chip3": "CI/CD"
+    },
+    "step4": {
+      "tag": "// Growth & Optimization",
+      "title": "Scala",
+      "desc": "Monitoraggio continuo, ottimizzazione basata sui dati e crescita sostenibile. Il lancio è solo l'inizio.",
+      "chip1": "Analytics",
+      "chip2": "A/B Testing",
+      "chip3": "Growth Ops"
+    },
+    "cta": {
+      "tag": "// Pronto per iniziare",
+      "title": "Trasforma la tua visione in realtà.",
+      "desc": "Ogni progetto inizia con una conversazione. Costruiamo qualcosa che definisca il prossimo standard del tuo brand.",
+      "button": "Inizia Progetto"
+    },
+    "footer": {
+      "rights": "Tutti i diritti riservati",
+      "back": "Torna all'Inizio"
+    }
+  },
+  "wp": {
+    "hero": {
+      "tag": "Siti Web Premium",
+      "line1": "SITI WEB",
+      "line2": "PREMIUM.",
+      "line3": "DESIGN",
+      "line4": "CON METRICA.",
+      "desc": "Un sito web che comunica valore e genera richieste reali. Struttura pensata per conversione, performance e SEO tecnico — con tracking pronto per misurare i risultati.",
+      "cta1": "Richiedi preventivo",
+      "cta2": "Vedi il processo",
+      "stat1": "Performance orientata ai CWV",
+      "stat2": "SEO tecnico + struttura",
+      "stat3": "Distribuzione globale (Edge/CDN)"
+    },
+    "tech": {
+      "tag": "Base tecnica",
+      "title": "Architettura per scalare",
+      "desc": "Scegliamo uno stack che protegge il tuo investimento: veloce, stabile e facile da evolvere. Meno attrito oggi; meno costi di rifacimento domani.",
+      "item1": "Next.js con rendering ibrido (SSR/SSG)",
+      "item2": "TypeScript per codice prevedibile",
+      "item3": "UI moderna con animazione discreta",
+      "item4": "Deploy su Edge/CDN",
+      "item5": "Integrazioni con database e servizi"
+    },
+    "float": {
+      "label1": "Performance",
+      "kw1": "VELOCE. SENZA RUMORE.",
+      "desc1": "Ottimizzazione reale: caricamento, immagini e codice.",
+      "label2": "Crescita",
+      "kw2": "SEO TECNICO",
+      "desc2": "Struttura semantica + schema dove ha senso.",
+      "label3": "Sicurezza",
+      "kw3": "BASE SICURA",
+      "desc3": "HTTPS, headers e best practice di protezione."
+    },
+    "matrix": {
+      "tag": "Livelli di consegna",
+      "title": "Scegli il livello giusto",
+      "subtitle": "Tre approcci, uno stesso standard: performance, chiarezza e conversione. La differenza sta nella profondità tecnica e nelle integrazioni.",
+      "badge": "PIÙ EQUILIBRATO",
+      "feat": {
+        "tech": "Tecnologia",
+        "perf": "Performance",
+        "design": "Design",
+        "seo": "SEO",
+        "crm": "CRM",
+        "ai": "Automazione IA",
+        "support": "Supporto"
+      },
+      "core": {
+        "name": "CORE",
+        "label": "Essenziale",
+        "price": "500€ + 50€/mese",
+        "tech": "React / Next.js",
+        "perf": "Best practice + CWV",
+        "design": "Clean premium",
+        "seo": "Base tecnica",
+        "support": "1 mese (aggiustamenti finali)",
+        "cta": "Richiedi preventivo"
+      },
+      "advanced": {
+        "name": "ADVANCED",
+        "label": "Performance & conversione",
+        "price": "900€ + 230€/mese",
+        "tech": "Next.js + GSAP",
+        "perf": "Ottimizzazione avanzata",
+        "design": "UI immersiva (senza eccessi)",
+        "seo": "SEO tecnico avanzato",
+        "support": "3 mesi (monitoraggio iniziale)",
+        "cta": "Scegli"
+      },
+      "ultimate": {
+        "name": "ULTIMATE",
+        "label": "Tech-Luxury",
+        "price": "Su richiesta",
+        "tech": "3D/WebGL dove ha senso",
+        "perf": "Edge + rendering intelligente",
+        "design": "Esperienza premium su misura",
+        "seo": "SEO + struttura per autorità",
+        "support": "6 mesi (evoluzione continua)",
+        "cta": "Parlaci"
+      }
+    },
+    "bespoke": {
+      "title": "PROGETTI SU MISURA",
+      "tag": "Esclusività reale",
+      "desc": "Per brand che non entrano nei template. Design e implementazione su misura, integrazioni specifiche e una base tecnica pensata per evolvere con il tuo business.",
+      "cta": "Discuti il progetto"
+    },
+    "panel1": {
+      "title": "Continua a esplorare",
+      "desc": "Scopri come progettiamo un sito con metodo: strategia, esecuzione ed evoluzione."
+    },
+    "final": {
+      "tag": "// Pronto a convertire",
+      "title": "ELEVA LO STANDARD DELLA TUA PRESENZA.",
+      "desc": "Siti web premium per aumentare percezione di valore, velocità e conversione — con SEO tecnico e tracking per misurare ciò che conta.",
+      "cta": "Richiedi preventivo"
+    },
+    "footer": {
+      "rights": "Tutti i diritti riservati",
+      "back": "Torna all'inizio"
+    }
+  },
+  "ct": {
+    "hero": {
+      "tag": "// Contatti",
+      "title": "Parliamo.",
+      "subtitle": "Inizia con una diagnosi gratuita. Risposta garantita entro 24h."
+    },
+    "form": {
+      "name": "Nome",
+      "email": "Email",
+      "phone": "Telefono",
+      "company": "Azienda",
+      "interest": "Interesse",
+      "interests": {
+        "website": "Siti Web Premium",
+        "crm": "CRM & Gestione",
+        "automation": "Automazione & IA",
+        "branding": "Branding"
+      },
+      "message": "Messaggio",
+      "submit": "Invia Diagnosi",
+      "success": {
+        "title": "Diagnosi Inviata!",
+        "desc": "Il nostro team analizzerà la tua richiesta e ti contatterà entro 24h.",
+        "back": "Invia un Altro"
+      }
+    },
+    "info": {
+      "title": "Contatti Diretti",
+      "whatsapp": {
+        "title": "Chat Diretta",
+        "desc": "Risposta entro 10min"
+      },
+      "email": {
+        "title": "E-mail"
+      },
+      "schedule": {
+        "title": "Prenota Call",
+        "desc": "Consulenza di 30min"
+      },
+      "location": {
+        "title": "Posizione"
+      }
+    }
+  },
+  "a11y": {
+    "skipToContent": "Vai al contenuto",
+    "mainNav": "Navigazione principale",
+    "mobileNav": "Menu di navigazione",
+    "langSelector": "Seleziona lingua",
+    "scrollService": "Servizio {current} di {total}: {title}"
+  }
+}
