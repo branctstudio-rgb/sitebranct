@@ -710,21 +710,37 @@
             line-height: 1.7;
         }
 
-        .bento-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            max-width: var(--container-max);
+        /* Feature Slider */
+        .feature-slider {
+            position: relative;
+            max-width: 720px;
             margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .feature-slider-track {
+            position: relative;
+            min-height: 340px;
         }
 
         .feature-card {
-            position: relative;
+            position: absolute;
+            inset: 0;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+            padding: 2.5rem;
             overflow: hidden;
+            opacity: 0;
+            transform: translateX(60px);
+            pointer-events: none;
+            transition: none;
+        }
+
+        .feature-card.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
         }
 
         .feature-card::before {
@@ -737,26 +753,94 @@
             background: linear-gradient(90deg, var(--branct-cyan), #22d3ee);
             transform: scaleX(0);
             transform-origin: left;
-            transition: transform 0.4s ease;
+            transition: transform 0.6s ease 0.3s;
         }
 
-        .feature-card:hover {
-            transform: translateY(-8px);
-            background: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.15);
-            border-color: rgba(6, 182, 212, 0.3);
-        }
-
-        .feature-card:hover::before {
+        .feature-card.active::before {
             transform: scaleX(1);
         }
 
-        .feature-card.span-2 {
-            grid-column: span 2;
+        /* Slider Navigation */
+        .slider-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2.5rem;
         }
 
-        .feature-card.span-full {
-            grid-column: span 3;
+        .slider-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .slider-dot {
+            width: 32px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slider-dot::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 0%;
+            height: 100%;
+            background: var(--branct-cyan);
+            border-radius: 2px;
+            transition: none;
+        }
+
+        .slider-dot.active::after {
+            width: 100%;
+            transition: width 3s linear;
+        }
+
+        .slider-dot.done::after {
+            width: 100%;
+            transition: none;
+        }
+
+        .slider-arrow {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: var(--branct-slate);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .slider-arrow:hover {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--branct-cyan);
+            color: var(--branct-cyan);
+        }
+
+        .slider-counter {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--branct-muted);
+            letter-spacing: 1px;
+        }
+
+        .slider-counter .current {
+            color: var(--branct-cyan);
+            font-weight: 600;
         }
 
         .feature-number {
@@ -1020,16 +1104,8 @@
 
         /* --- Tablet (1024px) --- */
         @media (max-width: 1024px) {
-            .bento-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .feature-card.span-2 {
-                grid-column: span 2;
-            }
-
-            .feature-card.span-full {
-                grid-column: span 2;
+            .feature-slider {
+                max-width: 600px;
             }
 
             .dashboard-stats {
@@ -1195,15 +1271,13 @@
                 display: none;
             }
 
-            /* --- Bento Grid: 3 columns -> 1 column --- */
-            .bento-grid {
-                grid-template-columns: 1fr !important;
-                gap: 1rem;
+            /* --- Feature Slider: mobile --- */
+            .feature-slider {
+                max-width: 100%;
             }
 
-            .feature-card.span-2,
-            .feature-card.span-full {
-                grid-column: span 1 !important;
+            .feature-slider-track {
+                min-height: 300px;
             }
 
             .bento-section {
@@ -1225,10 +1299,7 @@
 
             .feature-card {
                 padding: 1.5rem;
-            }
-
-            .feature-card:hover {
-                transform: none;
+                border-radius: 14px;
             }
 
             .feature-title {
@@ -1775,71 +1846,86 @@
             <p data-i18n="crm.featuresSub">Tudo o que precisa para escalar a sua operacao de vendas com controle e previsibilidade.</p>
         </div>
 
-        <div class="bento-grid">
-            <!-- Card 1: Pipeline -->
-            <div class="feature-card span-2">
-                <span class="feature-number">// 01</span>
-                <div class="feature-icon cyan">&#128202;</div>
-                <h3 class="feature-title" data-i18n="crm.features.pipeline.title">Funil de Vendas Visual</h3>
-                <p class="feature-desc" data-i18n="crm.features.pipeline.desc">Visualize todo o seu pipeline num quadro Kanban intuitivo. Arraste e solte deals entre etapas. Nunca perca uma oportunidade.</p>
-                <div class="feature-tags">
-                    <span class="feature-tag">Kanban</span>
-                    <span class="feature-tag">Drag & Drop</span>
-                    <span class="feature-tag">Custom Stages</span>
+        <div class="feature-slider">
+            <div class="feature-slider-track">
+                <!-- Card 1: Pipeline -->
+                <div class="feature-card active">
+                    <span class="feature-number">// 01</span>
+                    <div class="feature-icon cyan">&#128202;</div>
+                    <h3 class="feature-title" data-i18n="crm.features.pipeline.title">Funil de Vendas Visual</h3>
+                    <p class="feature-desc" data-i18n="crm.features.pipeline.desc">Visualize todo o seu pipeline num quadro Kanban intuitivo. Arraste e solte deals entre etapas. Nunca perca uma oportunidade.</p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">Kanban</span>
+                        <span class="feature-tag">Drag & Drop</span>
+                        <span class="feature-tag">Custom Stages</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Automations -->
+                <div class="feature-card">
+                    <span class="feature-number">// 02</span>
+                    <div class="feature-icon">&#129302;</div>
+                    <h3 class="feature-title" data-i18n="crm.features.automation.title">Follow-up Automatico</h3>
+                    <p class="feature-desc" data-i18n="crm.features.automation.desc">Sequencias de e-mail, SMS e WhatsApp que disparam automaticamente. Nutricao de leads no piloto automatico.</p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">n8n</span>
+                        <span class="feature-tag">Workflows</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Omnichannel -->
+                <div class="feature-card">
+                    <span class="feature-number">// 03</span>
+                    <div class="feature-icon cyan">&#128172;</div>
+                    <h3 class="feature-title" data-i18n="crm.features.omni.title">WhatsApp, E-mail & Omni</h3>
+                    <p class="feature-desc" data-i18n="crm.features.omni.desc">Todas as conversas num so lugar. Historico completo de cada lead, independente do canal.</p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">WhatsApp API</span>
+                        <span class="feature-tag">SMTP</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Reports -->
+                <div class="feature-card">
+                    <span class="feature-number">// 04</span>
+                    <div class="feature-icon">&#128200;</div>
+                    <h3 class="feature-title" data-i18n="crm.features.reports.title">Relatorios de Receita em Tempo Real</h3>
+                    <p class="feature-desc" data-i18n="crm.features.reports.desc">Dashboards que mostram exatamente onde esta o seu dinheiro. Previsao de receita, taxa de conversao e performance por vendedor.</p>
+                    <div class="mini-chart">
+                        <div class="mini-bar"></div>
+                        <div class="mini-bar"></div>
+                        <div class="mini-bar"></div>
+                        <div class="mini-bar"></div>
+                        <div class="mini-bar"></div>
+                        <div class="mini-bar"></div>
+                        <div class="mini-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Card 5: AI -->
+                <div class="feature-card">
+                    <span class="feature-number">// 05</span>
+                    <div class="feature-icon cyan">&#129504;</div>
+                    <h3 class="feature-title" data-i18n="crm.features.ai.title">Lead Scoring com IA</h3>
+                    <p class="feature-desc" data-i18n="crm.features.ai.desc">Algoritmos que identificam os leads mais quentes. Foque sua energia onde ha maior probabilidade de fechar.</p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">OpenAI</span>
+                        <span class="feature-tag">ML</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Card 2: Automations -->
-            <div class="feature-card">
-                <span class="feature-number">// 02</span>
-                <div class="feature-icon">&#129302;</div>
-                <h3 class="feature-title" data-i18n="crm.features.automation.title">Follow-up Automatico</h3>
-                <p class="feature-desc" data-i18n="crm.features.automation.desc">Sequencias de e-mail, SMS e WhatsApp que disparam automaticamente. Nutricao de leads no piloto automatico.</p>
-                <div class="feature-tags">
-                    <span class="feature-tag">n8n</span>
-                    <span class="feature-tag">Workflows</span>
+            <!-- Slider Navigation -->
+            <div class="slider-nav">
+                <button class="slider-arrow slider-prev" aria-label="Anterior">&#8592;</button>
+                <div class="slider-dots">
+                    <button class="slider-dot active" data-index="0"></button>
+                    <button class="slider-dot" data-index="1"></button>
+                    <button class="slider-dot" data-index="2"></button>
+                    <button class="slider-dot" data-index="3"></button>
+                    <button class="slider-dot" data-index="4"></button>
                 </div>
-            </div>
-
-            <!-- Card 3: Omnichannel -->
-            <div class="feature-card">
-                <span class="feature-number">// 03</span>
-                <div class="feature-icon cyan">&#128172;</div>
-                <h3 class="feature-title" data-i18n="crm.features.omni.title">WhatsApp, E-mail & Omni</h3>
-                <p class="feature-desc" data-i18n="crm.features.omni.desc">Todas as conversas num so lugar. Historico completo de cada lead, independente do canal.</p>
-                <div class="feature-tags">
-                    <span class="feature-tag">WhatsApp API</span>
-                    <span class="feature-tag">SMTP</span>
-                </div>
-            </div>
-
-            <!-- Card 4: Reports -->
-            <div class="feature-card span-2">
-                <span class="feature-number">// 04</span>
-                <div class="feature-icon">&#128200;</div>
-                <h3 class="feature-title" data-i18n="crm.features.reports.title">Relatorios de Receita em Tempo Real</h3>
-                <p class="feature-desc" data-i18n="crm.features.reports.desc">Dashboards que mostram exatamente onde esta o seu dinheiro. Previsao de receita, taxa de conversao e performance por vendedor.</p>
-                <div class="mini-chart">
-                    <div class="mini-bar"></div>
-                    <div class="mini-bar"></div>
-                    <div class="mini-bar"></div>
-                    <div class="mini-bar"></div>
-                    <div class="mini-bar"></div>
-                    <div class="mini-bar"></div>
-                    <div class="mini-bar"></div>
-                </div>
-            </div>
-
-            <!-- Card 5: AI -->
-            <div class="feature-card">
-                <span class="feature-number">// 05</span>
-                <div class="feature-icon cyan">&#129504;</div>
-                <h3 class="feature-title" data-i18n="crm.features.ai.title">Lead Scoring com IA</h3>
-                <p class="feature-desc" data-i18n="crm.features.ai.desc">Algoritmos que identificam os leads mais quentes. Foque sua energia onde ha maior probabilidade de fechar.</p>
-                <div class="feature-tags">
-                    <span class="feature-tag">OpenAI</span>
-                    <span class="feature-tag">ML</span>
-                </div>
+                <button class="slider-arrow slider-next" aria-label="Proximo">&#8594;</button>
             </div>
         </div>
     </section>
@@ -1967,7 +2053,7 @@
         });
 
         // ========================================
-        // BENTO GRID ANIMATIONS
+        // BENTO HEADER ANIMATION
         // ========================================
         gsap.from('.bento-header', {
             opacity: 0,
@@ -1975,22 +2061,136 @@
             duration: 0.8,
             scrollTrigger: {
                 trigger: '.bento-section',
-                start: 'top 70%',
+                start: 'top 90%',
                 toggleActions: 'play none none reverse'
             }
         });
 
-        gsap.from('.feature-card', {
+        gsap.from('.feature-slider', {
             opacity: 0,
-            y: 60,
-            duration: 0.8,
-            stagger: 0.15,
+            y: 50,
+            duration: 0.9,
             scrollTrigger: {
-                trigger: '.bento-grid',
-                start: 'top 70%',
+                trigger: '.feature-slider',
+                start: 'top 95%',
                 toggleActions: 'play none none reverse'
             }
         });
+
+        // ========================================
+        // FEATURE SLIDER (auto-advance every 3s)
+        // ========================================
+        (function() {
+            const cards = document.querySelectorAll('.feature-slider .feature-card');
+            const dots = document.querySelectorAll('.slider-dot');
+            const prevBtn = document.querySelector('.slider-prev');
+            const nextBtn = document.querySelector('.slider-next');
+            if (!cards.length) return;
+
+            let current = 0;
+            let autoTimer = null;
+            let isAnimating = false;
+            const total = cards.length;
+            const INTERVAL = 3000;
+
+            function goTo(index, direction) {
+                if (isAnimating || index === current) return;
+                isAnimating = true;
+
+                const outCard = cards[current];
+                const inCard = cards[index];
+                const dir = direction || (index > current ? 1 : -1);
+
+                // Reset incoming card position
+                gsap.set(inCard, { opacity: 0, x: dir * 60 });
+                inCard.classList.add('active');
+
+                // Animate out
+                gsap.to(outCard, {
+                    opacity: 0,
+                    x: dir * -60,
+                    duration: 0.45,
+                    ease: 'power2.in',
+                    onComplete: function() {
+                        outCard.classList.remove('active');
+                    }
+                });
+
+                // Animate in
+                gsap.to(inCard, {
+                    opacity: 1,
+                    x: 0,
+                    duration: 0.45,
+                    ease: 'power2.out',
+                    delay: 0.1,
+                    onComplete: function() {
+                        isAnimating = false;
+                    }
+                });
+
+                // Update dots
+                dots.forEach(function(d) { d.classList.remove('active', 'done'); });
+                for (var i = 0; i < index; i++) dots[i].classList.add('done');
+                dots[index].classList.add('active');
+
+                current = index;
+            }
+
+            function next() { goTo((current + 1) % total, 1); }
+            function prev() { goTo((current - 1 + total) % total, -1); }
+
+            function startAuto() {
+                stopAuto();
+                autoTimer = setInterval(next, INTERVAL);
+            }
+
+            function stopAuto() {
+                if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+            }
+
+            // Arrow buttons
+            nextBtn.addEventListener('click', function() { stopAuto(); next(); startAuto(); });
+            prevBtn.addEventListener('click', function() { stopAuto(); prev(); startAuto(); });
+
+            // Dot buttons
+            dots.forEach(function(dot) {
+                dot.addEventListener('click', function() {
+                    var idx = parseInt(this.dataset.index);
+                    stopAuto();
+                    goTo(idx);
+                    startAuto();
+                });
+            });
+
+            // Pause on hover
+            var slider = document.querySelector('.feature-slider');
+            slider.addEventListener('mouseenter', stopAuto);
+            slider.addEventListener('mouseleave', startAuto);
+
+            // Touch swipe support
+            var touchStartX = 0;
+            slider.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].clientX;
+                stopAuto();
+            }, { passive: true });
+            slider.addEventListener('touchend', function(e) {
+                var diff = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(diff) > 50) {
+                    if (diff < 0) next(); else prev();
+                }
+                startAuto();
+            }, { passive: true });
+
+            // Start auto-slide when section enters viewport
+            ScrollTrigger.create({
+                trigger: '.feature-slider',
+                start: 'top 90%',
+                onEnter: startAuto,
+                onLeave: stopAuto,
+                onEnterBack: startAuto,
+                onLeaveBack: stopAuto
+            });
+        })();
 
         // ========================================
         // INTEGRATION STRIP

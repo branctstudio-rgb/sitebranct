@@ -151,25 +151,28 @@
         .solutions-header { text-align: center; max-width: 700px; margin: 0 auto 4rem; }
         .solutions-header h2 { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; line-height: 1.1; letter-spacing: -2px; color: var(--branct-white); margin-bottom: 1.5rem; }
         .solutions-header p { font-size: 1.1rem; color: var(--branct-muted); line-height: 1.7; }
-        .solutions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; max-width: var(--container-max); margin: 0 auto; }
-        .solution-card { position: relative; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--branct-border); padding: 2rem; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
-        .solution-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--branct-cyan), #22d3ee); transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease; }
-        .solution-card:hover { transform: translateY(-8px); box-shadow: 0 20px 60px rgba(6, 182, 212, 0.2); border-color: var(--branct-cyan); }
-        .solution-card:hover::before { transform: scaleX(1); }
-        .solution-card.featured { grid-column: span 2; background: linear-gradient(135deg, var(--branct-deep) 0%, #1e293b 100%); border-color: transparent; }
-        .solution-card.featured * { color: var(--branct-white); }
-        .solution-card.featured .solution-desc { color: rgba(255, 255, 255, 0.7); }
-        .solution-card.featured:hover { box-shadow: 0 20px 60px rgba(9, 18, 28, 0.3); }
+        /* Solutions Slider */
+        .solutions-slider { position: relative; max-width: 720px; margin: 0 auto; overflow: hidden; }
+        .solutions-slider-track { position: relative; min-height: 320px; }
+        .solution-card { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--branct-border); border-radius: 20px; padding: 2.5rem; overflow: hidden; opacity: 0; transform: translateX(60px); pointer-events: none; transition: none; }
+        .solution-card.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+        .solution-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--branct-cyan), #22d3ee); transform: scaleX(0); transform-origin: left; transition: transform 0.6s ease 0.3s; }
+        .solution-card.active::before { transform: scaleX(1); }
+        /* Slider Nav */
+        .sol-slider-nav { display: flex; align-items: center; justify-content: center; gap: 2rem; margin-top: 2.5rem; }
+        .sol-slider-dots { display: flex; gap: 10px; }
+        .sol-slider-dot { width: 32px; height: 3px; background: rgba(255, 255, 255, 0.15); border: none; border-radius: 2px; cursor: pointer; transition: all 0.4s ease; padding: 0; position: relative; overflow: hidden; }
+        .sol-slider-dot::after { content: ''; position: absolute; top: 0; left: 0; width: 0%; height: 100%; background: var(--branct-cyan); border-radius: 2px; transition: none; }
+        .sol-slider-dot.active::after { width: 100%; transition: width 3s linear; }
+        .sol-slider-dot.done::after { width: 100%; transition: none; }
+        .sol-slider-arrow { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50%; color: var(--branct-slate); cursor: pointer; transition: all 0.3s ease; font-size: 1rem; padding: 0; flex-shrink: 0; }
+        .sol-slider-arrow:hover { background: rgba(6, 182, 212, 0.1); border-color: var(--branct-cyan); color: var(--branct-cyan); }
         .solution-number { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500; color: var(--branct-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1.5rem; }
-        .solution-card.featured .solution-number { color: var(--branct-cyan); }
         .solution-icon { display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: rgba(6, 182, 212, 0.1); border: 1px solid var(--branct-border-light); border-radius: 14px; font-size: 1.75rem; margin-bottom: 1.5rem; transition: all 0.3s ease; }
-        .solution-card:hover .solution-icon { background: rgba(6, 182, 212, 0.1); border-color: var(--branct-cyan); transform: scale(1.05); }
-        .solution-card.featured .solution-icon { background: rgba(6, 182, 212, 0.2); border-color: rgba(6, 182, 212, 0.4); }
         .solution-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 600; color: var(--branct-white); margin-bottom: 0.75rem; letter-spacing: -0.5px; }
         .solution-desc { font-size: 0.95rem; color: var(--branct-muted); line-height: 1.7; margin-bottom: 1.5rem; }
         .solution-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .solution-tag { padding: 0.35rem 0.75rem; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); font-family: var(--font-mono); font-size: 0.65rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--branct-cyan); }
-        .solution-card.featured .solution-tag { background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.3); color: var(--branct-cyan); }
 
         /* Use Cases Strip */
         .usecases-strip { padding: 3rem 2rem; background: rgba(9, 18, 28, 0.5); border-top: 1px solid var(--branct-border-light); border-bottom: 1px solid var(--branct-border-light); z-index: 1; position: relative; overflow: hidden; }
@@ -212,11 +215,8 @@
             .speed-indicator {
                 justify-content: center;
             }
-            .solutions-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .solution-card.featured {
-                grid-column: span 2;
+            .solutions-slider {
+                max-width: 600px;
             }
             .hero h1 {
                 font-size: clamp(2rem, 6vw, 4rem);
@@ -317,7 +317,7 @@
                 font-size: 0.85rem;
             }
 
-            /* --- Solutions grid: 1 COLUMN on phones --- */
+            /* --- Solutions slider: mobile --- */
             .solutions-section {
                 padding: var(--section-padding) 1rem;
             }
@@ -331,15 +331,15 @@
             .solutions-header p {
                 font-size: 0.95rem;
             }
-            .solutions-grid {
-                grid-template-columns: 1fr;
-                gap: 1.25rem;
+            .solutions-slider {
+                max-width: 100%;
             }
-            .solution-card.featured {
-                grid-column: span 1;
+            .solutions-slider-track {
+                min-height: 280px;
             }
             .solution-card {
                 padding: 1.5rem;
+                border-radius: 14px;
             }
             .solution-title {
                 font-size: 1.2rem;
@@ -467,13 +467,6 @@
                 height: 48px;
                 font-size: 1.4rem;
                 border-radius: 10px;
-            }
-            .solutions-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            .solution-card.featured {
-                grid-column: span 1;
             }
             .cta-footer {
                 padding: 60px 0.75rem;
@@ -760,61 +753,75 @@
             <p data-i18n="ai.solutionsSub">Tecnologia que trabalha enquanto voce dorme. Cada interacao, uma oportunidade capturada.</p>
         </div>
 
-        <div class="solutions-grid">
-            <div class="solution-card featured">
-                <span class="solution-number">// 01</span>
-                <div class="solution-icon">&#129504;</div>
-                <h3 class="solution-title" data-i18n="ai.solutions.gpt.title">Chatbots GPT-4</h3>
-                <p class="solution-desc" data-i18n="ai.solutions.gpt.desc">IA conversacional treinada no seu negocio. Respostas contextuais, personalizacao em tempo real e aprendizado continuo.</p>
-                <div class="solution-tags">
-                    <span class="solution-tag">OpenAI</span>
-                    <span class="solution-tag">Fine-tuning</span>
-                    <span class="solution-tag">RAG</span>
+        <div class="solutions-slider">
+            <div class="solutions-slider-track">
+                <div class="solution-card active">
+                    <span class="solution-number">// 01</span>
+                    <div class="solution-icon">&#129504;</div>
+                    <h3 class="solution-title" data-i18n="ai.solutions.gpt.title">Chatbots GPT-4</h3>
+                    <p class="solution-desc" data-i18n="ai.solutions.gpt.desc">IA conversacional treinada no seu negocio. Respostas contextuais, personalizacao em tempo real e aprendizado continuo.</p>
+                    <div class="solution-tags">
+                        <span class="solution-tag">OpenAI</span>
+                        <span class="solution-tag">Fine-tuning</span>
+                        <span class="solution-tag">RAG</span>
+                    </div>
+                </div>
+
+                <div class="solution-card">
+                    <span class="solution-number">// 02</span>
+                    <div class="solution-icon">&#128172;</div>
+                    <h3 class="solution-title" data-i18n="ai.solutions.whatsapp.title">WhatsApp Business</h3>
+                    <p class="solution-desc" data-i18n="ai.solutions.whatsapp.desc">API oficial integrada. Mensagens em massa, respostas automaticas e fluxos de vendas.</p>
+                    <div class="solution-tags">
+                        <span class="solution-tag">API Oficial</span>
+                        <span class="solution-tag">Broadcasts</span>
+                    </div>
+                </div>
+
+                <div class="solution-card">
+                    <span class="solution-number">// 03</span>
+                    <div class="solution-icon">&#128202;</div>
+                    <h3 class="solution-title" data-i18n="ai.solutions.leads.title">Qualificacao de Leads</h3>
+                    <p class="solution-desc" data-i18n="ai.solutions.leads.desc">Scoring automatico baseado em comportamento. Foque apenas nos leads quentes.</p>
+                    <div class="solution-tags">
+                        <span class="solution-tag">ML Scoring</span>
+                        <span class="solution-tag">Behavior</span>
+                    </div>
+                </div>
+
+                <div class="solution-card">
+                    <span class="solution-number">// 04</span>
+                    <div class="solution-icon">&#128197;</div>
+                    <h3 class="solution-title" data-i18n="ai.solutions.booking.title">Agendamento Automatico</h3>
+                    <p class="solution-desc" data-i18n="ai.solutions.booking.desc">Sincronizacao com Google Calendar e Calendly. Reunioes marcadas sem intervencao humana.</p>
+                    <div class="solution-tags">
+                        <span class="solution-tag">Cal.com</span>
+                        <span class="solution-tag">Google</span>
+                    </div>
+                </div>
+
+                <div class="solution-card">
+                    <span class="solution-number">// 05</span>
+                    <div class="solution-icon">&#9993;</div>
+                    <h3 class="solution-title" data-i18n="ai.solutions.email.title">Email Sequences</h3>
+                    <p class="solution-desc" data-i18n="ai.solutions.email.desc">Nutricao automatica com personalizacao dinamica. Copy gerado por IA.</p>
+                    <div class="solution-tags">
+                        <span class="solution-tag">SMTP</span>
+                        <span class="solution-tag">Drip</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="solution-card">
-                <span class="solution-number">// 02</span>
-                <div class="solution-icon">&#128172;</div>
-                <h3 class="solution-title" data-i18n="ai.solutions.whatsapp.title">WhatsApp Business</h3>
-                <p class="solution-desc" data-i18n="ai.solutions.whatsapp.desc">API oficial integrada. Mensagens em massa, respostas automaticas e fluxos de vendas.</p>
-                <div class="solution-tags">
-                    <span class="solution-tag">API Oficial</span>
-                    <span class="solution-tag">Broadcasts</span>
+            <div class="sol-slider-nav">
+                <button class="sol-slider-arrow sol-prev" aria-label="Anterior">&#8592;</button>
+                <div class="sol-slider-dots">
+                    <button class="sol-slider-dot active" data-index="0"></button>
+                    <button class="sol-slider-dot" data-index="1"></button>
+                    <button class="sol-slider-dot" data-index="2"></button>
+                    <button class="sol-slider-dot" data-index="3"></button>
+                    <button class="sol-slider-dot" data-index="4"></button>
                 </div>
-            </div>
-
-            <div class="solution-card">
-                <span class="solution-number">// 03</span>
-                <div class="solution-icon">&#128202;</div>
-                <h3 class="solution-title" data-i18n="ai.solutions.leads.title">Qualificacao de Leads</h3>
-                <p class="solution-desc" data-i18n="ai.solutions.leads.desc">Scoring automatico baseado em comportamento. Foque apenas nos leads quentes.</p>
-                <div class="solution-tags">
-                    <span class="solution-tag">ML Scoring</span>
-                    <span class="solution-tag">Behavior</span>
-                </div>
-            </div>
-
-            <div class="solution-card">
-                <span class="solution-number">// 04</span>
-                <div class="solution-icon">&#128197;</div>
-                <h3 class="solution-title" data-i18n="ai.solutions.booking.title">Agendamento Automatico</h3>
-                <p class="solution-desc" data-i18n="ai.solutions.booking.desc">Sincronizacao com Google Calendar e Calendly. Reunioes marcadas sem intervencao humana.</p>
-                <div class="solution-tags">
-                    <span class="solution-tag">Cal.com</span>
-                    <span class="solution-tag">Google</span>
-                </div>
-            </div>
-
-            <div class="solution-card">
-                <span class="solution-number">// 05</span>
-                <div class="solution-icon">&#9993;</div>
-                <h3 class="solution-title" data-i18n="ai.solutions.email.title">Email Sequences</h3>
-                <p class="solution-desc" data-i18n="ai.solutions.email.desc">Nutricao automatica com personalizacao dinamica. Copy gerado por IA.</p>
-                <div class="solution-tags">
-                    <span class="solution-tag">SMTP</span>
-                    <span class="solution-tag">Drip</span>
-                </div>
+                <button class="sol-slider-arrow sol-next" aria-label="Proximo">&#8594;</button>
             </div>
         </div>
     </section>
@@ -1031,8 +1038,59 @@
 
         gsap.from('.chat-info', { opacity: 0, x: -50, duration: 0.8, scrollTrigger: { trigger: '#chat', start: 'top 70%', toggleActions: 'play none none reverse' } });
         gsap.from('.chat-interface', { opacity: 0, x: 50, duration: 0.8, scrollTrigger: { trigger: '#chat', start: 'top 70%', toggleActions: 'play none none reverse' } });
-        gsap.from('.solutions-header', { opacity: 0, y: 40, duration: 0.8, scrollTrigger: { trigger: '.solutions-section', start: 'top 70%', toggleActions: 'play none none reverse' } });
-        gsap.from('.solution-card', { opacity: 0, y: 60, duration: 0.8, stagger: 0.12, scrollTrigger: { trigger: '.solutions-grid', start: 'top 70%', toggleActions: 'play none none reverse' } });
+        gsap.from('.solutions-header', { opacity: 0, y: 40, duration: 0.8, scrollTrigger: { trigger: '.solutions-section', start: 'top 90%', toggleActions: 'play none none reverse' } });
+        gsap.from('.solutions-slider', { opacity: 0, y: 50, duration: 0.9, scrollTrigger: { trigger: '.solutions-slider', start: 'top 95%', toggleActions: 'play none none reverse' } });
+
+        // Solutions Slider (auto-advance every 3s)
+        (function() {
+            var cards = document.querySelectorAll('.solutions-slider .solution-card');
+            var dots = document.querySelectorAll('.sol-slider-dot');
+            var prevBtn = document.querySelector('.sol-prev');
+            var nextBtn = document.querySelector('.sol-next');
+            if (!cards.length) return;
+
+            var current = 0, autoTimer = null, isAnimating = false;
+            var total = cards.length, INTERVAL = 3000;
+
+            function goTo(index, direction) {
+                if (isAnimating || index === current) return;
+                isAnimating = true;
+                var outCard = cards[current];
+                var inCard = cards[index];
+                var dir = direction || (index > current ? 1 : -1);
+
+                gsap.set(inCard, { opacity: 0, x: dir * 60 });
+                inCard.classList.add('active');
+
+                gsap.to(outCard, { opacity: 0, x: dir * -60, duration: 0.45, ease: 'power2.in', onComplete: function() { outCard.classList.remove('active'); } });
+                gsap.to(inCard, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out', delay: 0.1, onComplete: function() { isAnimating = false; } });
+
+                dots.forEach(function(d) { d.classList.remove('active', 'done'); });
+                for (var i = 0; i < index; i++) dots[i].classList.add('done');
+                dots[index].classList.add('active');
+                current = index;
+            }
+
+            function next() { goTo((current + 1) % total, 1); }
+            function prev() { goTo((current - 1 + total) % total, -1); }
+            function startAuto() { stopAuto(); autoTimer = setInterval(next, INTERVAL); }
+            function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+            nextBtn.addEventListener('click', function() { stopAuto(); next(); startAuto(); });
+            prevBtn.addEventListener('click', function() { stopAuto(); prev(); startAuto(); });
+            dots.forEach(function(dot) { dot.addEventListener('click', function() { stopAuto(); goTo(parseInt(this.dataset.index)); startAuto(); }); });
+
+            var slider = document.querySelector('.solutions-slider');
+            slider.addEventListener('mouseenter', stopAuto);
+            slider.addEventListener('mouseleave', startAuto);
+
+            // Touch swipe
+            var touchStartX = 0;
+            slider.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].clientX; stopAuto(); }, { passive: true });
+            slider.addEventListener('touchend', function(e) { var diff = e.changedTouches[0].clientX - touchStartX; if (Math.abs(diff) > 50) { if (diff < 0) next(); else prev(); } startAuto(); }, { passive: true });
+
+            ScrollTrigger.create({ trigger: '.solutions-slider', start: 'top 90%', onEnter: startAuto, onLeave: stopAuto, onEnterBack: startAuto, onLeaveBack: stopAuto });
+        })();
         gsap.from('.cta-content', { opacity: 0, y: 50, duration: 1, scrollTrigger: { trigger: '.cta-footer', start: 'top 70%', toggleActions: 'play none none reverse' } });
     </script>
 
