@@ -1203,18 +1203,27 @@ const APP = {
     },
 
     async sendLead(payload) {
-        const WEBHOOK_URL = 'https://n8n.branct.com/webhook/clientes?empresaId=1';
-        try {
-            const res = await fetch(WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        } catch (err) {
-            console.error('Webhook error:', err);
-            throw err;
+        const WEBHOOK_URL = 'https://n8n.branct.com/webhook/site-lead';
+        const body = {
+            token: '046afad8-d9e8-409d-8d21-86d2e5adbf9e',
+            nome: payload.name || payload.nome || '',
+            email: payload.email || '',
+            telefone: payload.phone || payload.telefone || '',
+            empresa: payload.company || payload.empresa || '',
+            interesse: payload.interest || payload.interesse || '',
+            mensagem: payload.message || payload.mensagem || ''
+        };
+        const res = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const result = await res.json();
+        if (!result.success) {
+            const msg = result.error?.message || `HTTP ${res.status}`;
+            throw new Error(msg);
         }
+        return result;
     }
 };
 
