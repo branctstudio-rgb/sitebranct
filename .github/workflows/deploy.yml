@@ -1,4 +1,4 @@
-name: Deploy para Hostinger (SFTP)
+name: Deploy para Hostinger (FTP)
 
 on:
   push:
@@ -7,47 +7,44 @@ on:
 
 jobs:
   deploy:
-    name: Deploy via SFTP
+    name: Deploy via FTP
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do codigo
         uses: actions/checkout@v4
 
-      - name: Configurar chave SSH
+      - name: Deploy via FTP (lftp mirror)
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          FTP_USER: ${{ secrets.SSH_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
+          FTP_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          install -m 600 -D /dev/null ~/.ssh/id_rsa
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-
-      - name: Deploy via SFTP (lftp)
-        env:
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null 2>&1
           lftp -e "
-            set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p $SSH_PORT -i ~/.ssh/id_rsa';
-            open sftp://${SSH_USER}@${SSH_HOST};
-            mirror --reverse --delete --verbose \
-              --exclude APP/ \
-              --exclude n8n/ \
-              --exclude testecliente/ \
-              --exclude .git/ \
-              --exclude .github/ \
-              --exclude node_modules/ \
-              --exclude .vscode/ \
-              --exclude .gitignore \
-              --exclude package.json \
-              --exclude package-lock.json \
-              --exclude CHANGELOG-3D-FIX.md \
-              --exclude GEMINI-FIXES-APPLIED.md \
-              --exclude MELHORIAS-SUGERIDAS.md \
-              --exclude MOCKUP-IMPLEMENTATION.md \
-              ./ ${DEPLOY_PATH}/;
+            set ftp:ssl-allow yes;
+            set ftp:ssl-force no;
+            set ftp:ssl-protect-data yes;
+            set ssl:verify-certificate no;
+            set net:timeout 30;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            open ftp://${FTP_USER}:${FTP_PASS}@${FTP_HOST};
+            mirror --reverse --delete --verbose --parallel=5 \
+              --exclude ^APP/ \
+              --exclude ^n8n/ \
+              --exclude ^testecliente/ \
+              --exclude ^\.git/ \
+              --exclude ^\.github/ \
+              --exclude ^node_modules/ \
+              --exclude ^\.vscode/ \
+              --exclude ^\.gitignore$ \
+              --exclude ^package\.json$ \
+              --exclude ^package-lock\.json$ \
+              --exclude ^CHANGELOG-3D-FIX\.md$ \
+              --exclude ^GEMINI-FIXES-APPLIED\.md$ \
+              --exclude ^MELHORIAS-SUGERIDAS\.md$ \
+              --exclude ^MOCKUP-IMPLEMENTATION\.md$ \
+              ./ /public_html/;
             quit
           "
 
