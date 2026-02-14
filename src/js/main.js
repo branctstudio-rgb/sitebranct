@@ -1057,18 +1057,20 @@ const APP = {
             const payload = Object.fromEntries(formData.entries());
             payload.source = 'contactos';
 
-            // Send lead
-            await this.sendLead(payload);
+            try {
+                await this.sendLead(payload);
 
-            // Remove loading
-            if (submitBtn) {
-                submitBtn.classList.remove('btn--loading');
-                submitBtn.disabled = false;
-            }
-
-            // Show success overlay
-            if (successOverlay) {
-                successOverlay.classList.add('active');
+                // Show success overlay
+                if (successOverlay) {
+                    successOverlay.classList.add('active');
+                }
+            } catch {
+                alert('Erro ao enviar. Tente novamente ou contacte-nos por WhatsApp.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.classList.remove('btn--loading');
+                    submitBtn.disabled = false;
+                }
             }
         });
 
@@ -1175,18 +1177,21 @@ const APP = {
                 btn.disabled = true;
                 btn.textContent = '...';
 
-                // Mock Payload
                 const formData = new FormData(form);
                 const payload = Object.fromEntries(formData.entries());
+                payload.source = 'homepage';
 
-                // Simulate API Call
-                await this.sendLead(payload);
+                try {
+                    await this.sendLead(payload);
 
-                // Feedback
-                const t = this.state.translations.form;
-                feedback.textContent = t.success;
-                feedback.className = 'form-feedback success';
-                form.reset();
+                    const t = this.state.translations.form;
+                    feedback.textContent = t?.success || 'Enviado com sucesso!';
+                    feedback.className = 'form-feedback success';
+                    form.reset();
+                } catch {
+                    feedback.textContent = 'Erro ao enviar. Tente novamente.';
+                    feedback.className = 'form-feedback error';
+                }
 
                 setTimeout(() => {
                     btn.disabled = false;
@@ -1197,14 +1202,19 @@ const APP = {
         }
     },
 
-    // Mock API function (Ready for n8n integration)
     async sendLead(payload) {
-        return new Promise(resolve => {
-            console.log('Lead Payload:', payload);
-            // TODO: Integrar n8n webhook aqui
-            // fetch('https://n8n.branct.com/webhook/...', { method: 'POST', body: JSON.stringify(payload) })
-            setTimeout(resolve, 1500);
-        });
+        const WEBHOOK_URL = 'https://n8n.branct.com/webhook/clientes?empresaId=1';
+        try {
+            const res = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch (err) {
+            console.error('Webhook error:', err);
+            throw err;
+        }
     }
 };
 
