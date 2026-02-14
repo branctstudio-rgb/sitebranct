@@ -1,4 +1,4 @@
-name: Deploy para Hostinger (SSH + Rsync)
+name: Deploy para Hostinger (SFTP)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy via SSH
+    name: Deploy via SFTP
     runs-on: ubuntu-latest
 
     steps:
@@ -17,37 +17,39 @@ jobs:
       - name: Configurar chave SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Deploy via Rsync
+      - name: Deploy via SFTP (lftp)
         env:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          rsync -avz --delete \
-            --exclude='APP/' \
-            --exclude='n8n/' \
-            --exclude='testecliente/' \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='node_modules/' \
-            --exclude='.vscode/' \
-            --exclude='.gitignore' \
-            --exclude='package.json' \
-            --exclude='package-lock.json' \
-            --exclude='CHANGELOG-3D-FIX.md' \
-            --exclude='GEMINI-FIXES-APPLIED.md' \
-            --exclude='MELHORIAS-SUGERIDAS.md' \
-            --exclude='MOCKUP-IMPLEMENTATION.md' \
-            -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no" \
-            ./ ${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null 2>&1
+          lftp -e "
+            set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p $SSH_PORT -i ~/.ssh/id_rsa';
+            open sftp://${SSH_USER}@${SSH_HOST};
+            mirror --reverse --delete --verbose \
+              --exclude APP/ \
+              --exclude n8n/ \
+              --exclude testecliente/ \
+              --exclude .git/ \
+              --exclude .github/ \
+              --exclude node_modules/ \
+              --exclude .vscode/ \
+              --exclude .gitignore \
+              --exclude package.json \
+              --exclude package-lock.json \
+              --exclude CHANGELOG-3D-FIX.md \
+              --exclude GEMINI-FIXES-APPLIED.md \
+              --exclude MELHORIAS-SUGERIDAS.md \
+              --exclude MOCKUP-IMPLEMENTATION.md \
+              ./ ${DEPLOY_PATH}/;
+            quit
+          "
 
       - name: Deploy concluido
         run: echo "Deploy realizado com sucesso! Pastas APP/, n8n/ e testecliente/ preservadas."
