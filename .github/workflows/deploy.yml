@@ -17,32 +17,6 @@ jobs:
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Debug - verificar diretorio FTP
-        env:
-          FTP_USER: ${{ secrets.SSH_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
-          FTP_HOST: ${{ secrets.SSH_HOST }}
-        run: |
-          lftp -e "
-            set ftp:ssl-allow yes;
-            set ftp:ssl-force no;
-            set ftp:ssl-protect-data yes;
-            set ssl:verify-certificate no;
-            set net:timeout 30;
-            open ftp://${FTP_USER}:${FTP_PASS}@${FTP_HOST};
-            echo '=== PWD (diretorio raiz FTP) ===';
-            pwd;
-            echo '=== Listando raiz / ===';
-            ls /;
-            echo '=== Listando /public_html/ ===';
-            ls /public_html/;
-            echo '=== Listando /domains/ ===';
-            ls /domains/ || echo 'Nao existe /domains/';
-            echo '=== Listando /home/ ===';
-            ls /home/ || echo 'Nao existe /home/';
-            quit
-          "
-
       - name: Deploy via FTP (lftp mirror)
         env:
           FTP_USER: ${{ secrets.SSH_USER }}
@@ -73,7 +47,7 @@ jobs:
               --exclude ^GEMINI-FIXES-APPLIED\.md$ \
               --exclude ^MELHORIAS-SUGERIDAS\.md$ \
               --exclude ^MOCKUP-IMPLEMENTATION\.md$ \
-              ./ /public_html/;
+              ./ /domains/branct.com/public_html/;
             quit
           "
 
