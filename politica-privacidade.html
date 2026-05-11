@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade e Termos — BRANCT.Tech</title>
+<meta name="description" content="Política de Privacidade, cookies e Termos de Utilização da plataforma Branct CRM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://branct.com/politica-privacidade.html">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg: #09121c;
+    --bg-elev: #0e1a26;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(110,193,228,0.25);
+    --accent: #6ec1e4;
+    --text: #efeeee;
+    --muted: #9aa6b2;
+    --radius: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: var(--text); }
+
+.container { width: 92%; max-width: 760px; margin: 0 auto; }
+
+.header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(9,18,28,0.78);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+}
+.header__inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+    max-width: 1120px; margin: 0 auto; width: 92%;
+}
+.logo {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em;
+    color: var(--text); text-decoration: none;
+}
+.logo span { color: var(--accent); font-weight: 600; }
+.header__back {
+    font-size: 0.9rem; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--line); padding: 10px 18px; border-radius: 100px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+.header__back:hover { border-color: var(--accent); color: var(--accent); }
+
+main { padding: 64px 0 96px; }
+
+h1 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700; letter-spacing: -0.02em; line-height: 1.15;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    margin-bottom: 8px;
+}
+.meta {
+    color: var(--muted); font-size: 0.88rem;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+h2 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700; letter-spacing: -0.015em;
+    font-size: 1.5rem;
+    margin: 56px 0 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+}
+h2:first-of-type { border-top: none; padding-top: 0; }
+h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 28px 0 8px;
+}
+
+p { margin-bottom: 14px; color: var(--text); }
+p.muted { color: var(--muted); font-size: 0.94rem; }
+
+ul, ol {
+    margin: 0 0 16px 0;
+    padding-left: 22px;
+}
+ul li, ol li { margin-bottom: 6px; }
+
+.toc {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 28px;
+    margin-bottom: 48px;
+}
+.toc strong {
+    display: block; font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.95rem; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+}
+.toc ol { padding-left: 18px; margin: 0; }
+.toc li { margin-bottom: 4px; font-size: 0.92rem; }
+.toc a { color: var(--text); text-decoration: none; }
+.toc a:hover { color: var(--accent); }
+
+.placeholder {
+    display: inline-block;
+    background: rgba(110,193,228,0.10);
+    border: 1px dashed var(--line-strong);
+    border-radius: 4px;
+    padding: 0 6px;
+    color: var(--accent);
+    font-family: 'Manrope', monospace;
+    font-size: 0.92em;
+    font-weight: 600;
+}
+
+.callout {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 20px 0;
+    font-size: 0.94rem;
+}
+
+.footer {
+    padding: 32px 0;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header__inner">
+        <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+        <a href="crm-gestao.html" class="header__back">← Voltar</a>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+
+        <h1>Política de Privacidade e Termos de Utilização</h1>
+        <p class="meta">Última atualização: <span class="placeholder">[INSERIR DATA]</span> • Versão 1.0</p>
+
+        <nav class="toc" aria-label="Índice">
+            <strong>Índice</strong>
+            <ol>
+                <li><a href="#privacidade">Política de Privacidade</a></li>
+                <li><a href="#dados">Que dados recolhemos</a></li>
+                <li><a href="#fins">Para que fins</a></li>
+                <li><a href="#cookies">Cookies e Meta Pixel</a></li>
+                <li><a href="#partilha">Partilha de dados com terceiros</a></li>
+                <li><a href="#retencao">Período de retenção</a></li>
+                <li><a href="#direitos">Os seus direitos</a></li>
+                <li><a href="#termos">Termos de Utilização</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ol>
+        </nav>
+
+        <!-- ═══════════════ PRIVACIDADE ═══════════════ -->
+        <section id="privacidade">
+            <h2>1. Política de Privacidade</h2>
+            <p>A <strong>BRANCT</strong> (doravante "Branct", "nós") respeita a sua privacidade e está comprometida com a proteção dos seus dados pessoais, em conformidade com o <strong>Regulamento Geral sobre a Proteção de Dados (Regulamento (UE) 2016/679 — RGPD)</strong> e a Lei n.º 58/2019 de execução nacional.</p>
+
+            <h3>Responsável pelo tratamento</h3>
+            <p>
+                <strong>Entidade:</strong> <span class="placeholder">[INSERIR RAZÃO SOCIAL]</span><br>
+                <strong>NIF/NIPC:</strong> <span class="placeholder">[INSERIR NIF]</span><br>
+                <strong>Morada:</strong> <span class="placeholder">[INSERIR MORADA]</span>, Guimarães, Portugal<br>
+                <strong>Email:</strong> <a href="mailto:contacto@branct.com">contacto@branct.com</a>
+            </p>
+        </section>
+
+        <!-- ═══════════════ DADOS ═══════════════ -->
+        <section id="dados">
+            <h2>2. Que dados recolhemos</h2>
+            <p>Recolhemos os seguintes dados pessoais quando interage com este site ou com a plataforma Branct CRM:</p>
+            <ul>
+                <li><strong>Dados de identificação e contacto:</strong> nome, email, telefone, empresa (quando fornecidos em formulários ou no registo de conta).</li>
+                <li><strong>Dados de utilização:</strong> páginas visitadas, tempo de permanência, dispositivo, browser, sistema operativo, endereço IP aproximado.</li>
+                <li><strong>Dados de marketing:</strong> origem do tráfego (Meta Ads, Google, direto, referência), interações com campanhas publicitárias.</li>
+                <li><strong>Dados da plataforma CRM:</strong> apenas se criar conta — preferências, registos de leads que importar e configurações da sua organização.</li>
+            </ul>
+            <p>Não recolhemos categorias especiais de dados pessoais (saúde, origem racial, opiniões políticas, etc.).</p>
+        </section>
+
+        <!-- ═══════════════ FINS ═══════════════ -->
+        <section id="fins">
+            <h2>3. Para que fins tratamos os seus dados</h2>
+            <ul>
+                <li><strong>Fornecimento do serviço:</strong> permitir-lhe usar o Branct CRM (registo, autenticação, funcionalidades).</li>
+                <li><strong>Comunicação:</strong> responder a pedidos de contacto, enviar informações sobre o trial e suporte.</li>
+                <li><strong>Marketing e otimização:</strong> medir a eficácia das nossas campanhas no Meta (Facebook/Instagram) e melhorar a experiência do site. <strong>Apenas se consentir</strong> através do banner de cookies.</li>
+                <li><strong>Obrigações legais:</strong> faturação, contabilidade e resposta a autoridades competentes quando exigido por lei.</li>
+            </ul>
+            <h3>Fundamento legal</h3>
+            <p>Tratamos os seus dados com base em: <strong>(a)</strong> execução de contrato (utilização da plataforma); <strong>(b)</strong> consentimento explícito (cookies de marketing, comunicações promocionais); <strong>(c)</strong> interesse legítimo (segurança, prevenção de fraude); <strong>(d)</strong> obrigação legal.</p>
+        </section>
+
+        <!-- ═══════════════ COOKIES ═══════════════ -->
+        <section id="cookies">
+            <h2>4. Cookies e Meta Pixel</h2>
+            <p>Usamos cookies para fazer o site funcionar e, com o seu consentimento, para medir a eficácia das nossas campanhas publicitárias.</p>
+
+            <h3>Cookies essenciais</h3>
+            <p>Necessários ao funcionamento do site (preferências de idioma, manutenção de sessão, registo do seu consentimento). <strong>Não requerem consentimento</strong> nos termos do RGPD.</p>
+
+            <h3>Cookies de marketing — Meta Pixel</h3>
+            <p>Quando aceita os cookies de marketing, o nosso site carrega o <strong>Meta Pixel</strong> (Facebook/Instagram), que recolhe:</p>
+            <ul>
+                <li>Visitas à página e cliques nos botões de "Iniciar trial".</li>
+                <li>Endereço IP aproximado e identificadores de dispositivo.</li>
+                <li>Eventos de conversão (PageView, Lead) para optimização das nossas campanhas no Meta Ads.</li>
+            </ul>
+            <div class="callout">
+                <strong>Pode recusar ou retirar o consentimento a qualquer momento</strong> apagando os cookies do seu browser. Sem o seu consentimento, o Meta Pixel não é ativado e nenhum dado é enviado ao Meta.
+            </div>
+            <p>Saiba mais sobre como o Meta usa os seus dados em: <a href="https://www.facebook.com/policy" target="_blank" rel="noopener">facebook.com/policy</a>.</p>
+        </section>
+
+        <!-- ═══════════════ PARTILHA ═══════════════ -->
+        <section id="partilha">
+            <h2>5. Partilha de dados com terceiros</h2>
+            <p>Não vendemos os seus dados pessoais. Partilhamos dados apenas com subcontratantes necessários ao serviço:</p>
+            <ul>
+                <li><strong>Meta Platforms Ireland Ltd.</strong> — através do Meta Pixel, para medição publicitária (apenas com consentimento).</li>
+                <li><strong>Hostinger</strong> — alojamento do website (transferências dentro do EEE).</li>
+                <li><strong>n8n / Supabase</strong> — processamento de leads e armazenamento da plataforma CRM (alojamento na União Europeia).</li>
+                <li><strong>Autoridades competentes</strong> — quando exigido por lei.</li>
+            </ul>
+            <p>Caso ocorra transferência de dados para fora da União Europeia, será feita ao abrigo de cláusulas contratuais-tipo aprovadas pela Comissão Europeia ou outro mecanismo legal equivalente.</p>
+        </section>
+
+        <!-- ═══════════════ RETENÇÃO ═══════════════ -->
+        <section id="retencao">
+            <h2>6. Período de retenção</h2>
+            <ul>
+                <li><strong>Dados de contacto de leads:</strong> 24 meses após o último contacto.</li>
+                <li><strong>Dados de clientes ativos:</strong> durante a vigência do contrato + 5 anos para cumprir obrigações fiscais.</li>
+                <li><strong>Cookies de marketing (Meta):</strong> até 90 dias, conforme política do Meta.</li>
+                <li><strong>Registos de consentimento:</strong> 12 meses, para prova de cumprimento do RGPD.</li>
+            </ul>
+        </section>
+
+        <!-- ═══════════════ DIREITOS ═══════════════ -->
+        <section id="direitos">
+            <h2>7. Os seus direitos</h2>
+            <p>Nos termos do RGPD, tem o direito a:</p>
+            <ul>
+                <li><strong>Acesso</strong> aos seus dados pessoais que tratamos.</li>
+                <li><strong>Retificação</strong> de dados inexatos ou incompletos.</li>
+                <li><strong>Apagamento</strong> ("direito ao esquecimento") nos casos previstos na lei.</li>
+                <li><strong>Limitação</strong> do tratamento.</li>
+                <li><strong>Portabilidade</strong> dos dados num formato estruturado.</li>
+                <li><strong>Oposição</strong> ao tratamento, incluindo perfis de marketing.</li>
+                <li><strong>Retirar o consentimento</strong> em qualquer momento, sem afetar a licitude do tratamento anterior.</li>
+            </ul>
+            <p>Para exercer estes direitos contacte-nos em <a href="mailto:contacto@branct.com">contacto@branct.com</a>. Respondemos no prazo máximo de 30 dias.</p>
+            <p>Tem também o direito de apresentar reclamação à autoridade de controlo competente: <strong>Comissão Nacional de Proteção de Dados (CNPD)</strong> — <a href="https://www.cnpd.pt" target="_blank" rel="noopener">www.cnpd.pt</a>.</p>
+        </section>
+
+        <!-- ═══════════════ TERMOS ═══════════════ -->
+        <section id="termos">
+            <h2>8. Termos de Utilização</h2>
+
+            <h3>Aceitação dos termos</h3>
+            <p>Ao utilizar o website branct.com e a plataforma Branct CRM, declara aceitar estes Termos. Se não concorda, não utilize o serviço.</p>
+
+            <h3>Trial gratuito de 7 dias</h3>
+            <p>Oferecemos um período de teste gratuito de 7 dias ao Branct CRM, sem necessidade de cartão de crédito. Findo o período, poderá optar por subscrever um plano pago ou descontinuar a utilização. Os dados introduzidos durante o trial são mantidos por 30 dias e depois eliminados, salvo se subscrever um plano.</p>
+
+            <h3>Uso aceitável</h3>
+            <p>Compromete-se a utilizar o Branct CRM apenas para fins legítimos e dentro do enquadramento legal aplicável. É proibido:</p>
+            <ul>
+                <li>Importar contactos sem base legal (consentimento ou interesse legítimo).</li>
+                <li>Enviar comunicações comerciais não solicitadas (spam).</li>
+                <li>Tentar aceder a dados de outros utilizadores ou comprometer a segurança da plataforma.</li>
+                <li>Revender ou redistribuir o acesso à plataforma sem autorização escrita.</li>
+            </ul>
+
+            <h3>Propriedade intelectual</h3>
+            <p>Todo o conteúdo do site e da plataforma (design, código, marca, textos) é propriedade da BRANCT e está protegido pela legislação aplicável. Os dados que introduzir na plataforma continuam a ser sua propriedade.</p>
+
+            <h3>Disponibilidade do serviço</h3>
+            <p>Esforçamo-nos por manter o serviço disponível 24/7, mas podem ocorrer interrupções para manutenção, atualizações ou por causas alheias ao nosso controlo. Não nos responsabilizamos por danos resultantes de indisponibilidade temporária.</p>
+
+            <h3>Limitação de responsabilidade</h3>
+            <p>O Branct CRM é fornecido "tal como está". Não garantimos que cumprirá objetivos específicos do seu negócio. A nossa responsabilidade máxima, em qualquer circunstância, está limitada ao valor pago pelo cliente nos 12 meses anteriores ao incidente.</p>
+
+            <h3>Alterações aos Termos</h3>
+            <p>Reservamos o direito de alterar estes Termos. Alterações materiais serão notificadas por email com 30 dias de antecedência. A continuação do uso após a entrada em vigor constitui aceitação.</p>
+
+            <h3>Lei aplicável e foro</h3>
+            <p>Estes Termos regem-se pela lei portuguesa. Para qualquer litígio, é competente o foro da Comarca de <span class="placeholder">[INSERIR COMARCA]</span>, com renúncia a qualquer outro.</p>
+        </section>
+
+        <!-- ═══════════════ CONTACTO ═══════════════ -->
+        <section id="contacto">
+            <h2>9. Contacto</h2>
+            <p>Para qualquer questão sobre privacidade, cookies ou termos de utilização:</p>
+            <p>
+                <strong>Email:</strong> <a href="mailto:contacto@branct.com">contacto@branct.com</a><br>
+                <strong>Morada:</strong> <span class="placeholder">[INSERIR MORADA]</span>, Guimarães, Portugal
+            </p>
+            <p class="muted" style="margin-top:32px">Este documento foi elaborado em conformidade com o RGPD e a Lei n.º 58/2019. Aconselha-se revisão jurídica antes de utilização em produção para garantir adequação plena à atividade específica da empresa.</p>
+        </section>
+
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        &copy; 2026 BRANCT.Tech &nbsp;•&nbsp; <a href="crm-gestao.html">Voltar à página principal</a>
+    </div>
+</footer>
+
+</body>
+</html>
