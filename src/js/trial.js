@@ -4,8 +4,12 @@
  *   1. Captura UTMs da URL → sessionStorage → hidden inputs do form
  *   2. Smooth-scroll de qualquer <a href="#trial-signup"> para o form
  *   3. Dispara ViewContent quando o form entra no viewport (>=50%)
- *   4. Submete o form à Edge Function trial-signup do Supabase
- *   5. Dispara Lead (pre-fetch) e StartTrial (após sucesso)
+ *   4. Valida nome/email e redireciona para app.branct.com/signup com
+ *      ?trial=true&name=&email=&company= + UTMs preservadas
+ *   5. Dispara Lead e StartTrial antes do redirect
+ *
+ * A password nunca passa por esta página estática — é pedida apenas no /signup
+ * do CRM, que cria a conta via Supabase Auth e autentica de imediato.
  *
  * Eventos Pixel passam por window.brancrPixel.track() — definido no inline IIFE
  * de crm-gestao.html — para respeitar o consent gate RGPD do banner de cookies.
@@ -14,8 +18,7 @@
 (function () {
     'use strict';
 
-    var FUNCTION_URL = 'https://ksocmuesmlqzpbtmibgu.supabase.co/functions/v1/trial-signup';
-    var SUPABASE_PUBLISHABLE_KEY = 'sb_publishable__8ALaFu_zQPAaCimhaxU2w__LHo6613';
+    var SIGNUP_URL = 'https://app.branct.com/signup';
 
     var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
     var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -88,7 +91,7 @@
     function setBusy(btn, busy) {
         if (!btn) return;
         btn.disabled = !!busy;
-        btn.textContent = busy ? 'A criar a tua conta...' : 'Começar 7 dias grátis →';
+        btn.textContent = busy ? 'A redirecionar-te...' : 'Começar 7 dias grátis →';
     }
 
     function handleSubmit(event) {
@@ -98,76 +101,44 @@
         var messageEl = document.getElementById('trial-message');
 
         setMessage(messageEl, '');
-        setBusy(submitBtn, true);
 
-        var data = {
-            nome: (form.nome.value || '').trim(),
-            email: (form.email.value || '').trim().toLowerCase(),
-            empresa: (form.empresa.value || '').trim() || null,
-            utm_source: form.utm_source.value || null,
-            utm_medium: form.utm_medium.value || null,
-            utm_campaign: form.utm_campaign.value || null,
-            utm_content: form.utm_content.value || null,
-            utm_term: form.utm_term.value || null,
-            referrer: document.referrer || null,
-            landing_url: window.location.href,
-            user_agent: navigator.userAgent || null
-        };
+        var nome = (form.nome.value || '').trim();
+        var email = (form.email.value || '').trim().toLowerCase();
+        var empresa = (form.empresa.value || '').trim();
 
-        if (!data.nome || !data.email || !EMAIL_RE.test(data.email)) {
+        if (!nome || !email || !EMAIL_RE.test(email)) {
             setMessage(messageEl, 'Preenche o teu nome e um email válido.', 'error');
-            setBusy(submitBtn, false);
             return;
         }
 
-        // Lead dispara ANTES da resposta — captura intent mesmo se a fetch falhar.
-        // Só dispara se o utilizador deu consentimento (gate em window.brancrPixel).
+        setBusy(submitBtn, true);
+
         track('Lead', {
             content_name: 'Branct CRM Trial',
             content_category: 'CRM',
             currency: 'EUR',
             value: 0
         });
-
-        fetch(FUNCTION_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_PUBLISHABLE_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_PUBLISHABLE_KEY
-            },
-            body: JSON.stringify(data)
-        }).then(function (response) {
-            return response.json().then(function (body) {
-                return { ok: response.ok, status: response.status, body: body };
-            }).catch(function () {
-                return { ok: response.ok, status: response.status, body: null };
-            });
-        }).then(function (result) {
-            if (!result.ok) {
-                var err = (result.body && result.body.error) || 'Erro ao criar conta';
-                throw new Error(err);
-            }
-
-            // StartTrial só após confirmação do servidor
-            track('StartTrial', {
-                value: 0,
-                currency: 'EUR',
-                predicted_ltv: 480
-            });
-
-            setMessage(messageEl, 'Conta criada! A redirecionar-te...', 'success');
-            var redirect = (result.body && result.body.redirectUrl) || 'https://app.branct.com/signup';
-            setTimeout(function () { window.location.href = redirect; }, 1500);
-        }).catch(function (err) {
-            console.error('[Branct Trial] signup error:', err);
-            setMessage(
-                messageEl,
-                'Tivemos um problema. <a href="https://app.branct.com/signup" target="_blank" rel="noopener noreferrer">Tenta criar conta diretamente aqui</a>.',
-                'html'
-            );
-            setBusy(submitBtn, false);
+        track('StartTrial', {
+            value: 0,
+            currency: 'EUR',
+            predicted_ltv: 480
         });
+
+        // Empresa vazia → fallback para o nome do dono (evita erro de campo
+        // obrigatório no /signup do CRM, que regista como cliente particular).
+        var params = new URLSearchParams({
+            trial: 'true',
+            name: nome,
+            email: email,
+            company: empresa || nome
+        });
+        UTM_KEYS.forEach(function (key) {
+            var input = form[key];
+            if (input && input.value) params.set(key, input.value);
+        });
+
+        window.location.href = SIGNUP_URL + '?' + params.toString();
     }
 
     function init() {
