@@ -317,7 +317,7 @@ Manual, antes de considerar feito:
 - Mensagem exata pré-preenchida do WhatsApp "Agendar call" (proposta em §6.6).
 - Blog fora do header — confirmar (default: fora; pode estar no footer).
 - Footer com colunas vs. footer minimal de uma linha — default: colunas (§6.7).
-- Imagem do card-hero: `crm-dashboard.jpeg` vs `notebook.png` — decidir ao montar.
+- Imagem do card-hero: **decidido `crm-dashboard.jpeg`** (escuro, com blurs de privacidade, alinhado ao dark tech-luxury; `notebook.png` é claro/naturalista — não encaixa, ver `MOCKUP-IMPLEMENTATION.md`).
 
 ## 12. Fora de âmbito (follow-ups / sub-projetos futuros)
 - Migrar as 9 páginas restantes para `branct.css` (cada uma o seu spec).
