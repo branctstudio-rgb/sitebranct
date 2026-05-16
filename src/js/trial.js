@@ -5,8 +5,15 @@
  *   2. Smooth-scroll de qualquer <a href="#trial-signup"> para o form
  *   3. Dispara ViewContent quando o form entra no viewport (>=50%)
  *   4. Valida nome/email e redireciona para app.branct.com/signup com
- *      ?trial=true&name=&email=&company= + UTMs preservadas
- *   5. Dispara Lead e StartTrial antes do redirect
+ *      ?trial=true&name=&email=&company= + UTMs + ref preservados
+ *   5. Dispara Lead UMA vez (no submit) com eventID UUID para dedup CAPI futura
+ *
+ * Divisão de funil (decisão de arquitetura, final):
+ *   - Landing = topo de funil. Só dispara ViewContent (form visível) e
+ *     Lead (1x, no submit = intenção). NUNCA dispara StartTrial.
+ *   - app.branct.com/signup = conversão. Dispara PageView e StartTrial no
+ *     momento real da criação da conta no Supabase. Não é responsabilidade
+ *     desta landing.
  *
  * A password nunca passa por esta página estática — é pedida apenas no /signup
  * do CRM, que cria a conta via Supabase Auth e autentica de imediato.
@@ -21,12 +28,36 @@
     var SIGNUP_URL = 'https://app.branct.com/signup';
 
     var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+    var REF_KEY = 'ref';
+    var LEAD_EVENTID_KEY = 'branct_lead_eventid';
     var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    function track(name, params) {
+    function track(name, params, options) {
         if (window.brancrPixel && typeof window.brancrPixel.track === 'function') {
-            window.brancrPixel.track(name, params || {});
+            window.brancrPixel.track(name, params || {}, options);
         }
+    }
+
+    // UUID v4 — usa crypto.randomUUID() quando disponível, com fallback.
+    function uuid() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (Math.random() * 16) | 0;
+            var v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    }
+
+    // Captura ?ref= (programa de afiliados) → sessionStorage → devolve o valor.
+    function getRef() {
+        var fromUrl = new URLSearchParams(window.location.search).get(REF_KEY);
+        if (fromUrl) {
+            try { sessionStorage.setItem(REF_KEY, fromUrl); } catch (e) {}
+            return fromUrl;
+        }
+        try { return sessionStorage.getItem(REF_KEY); } catch (e) { return null; }
     }
 
     function captureUTMs() {
@@ -113,17 +144,17 @@
 
         setBusy(submitBtn, true);
 
+        // Lead — UMA vez, só aqui no submit (intenção). eventID guardado em
+        // sessionStorage para futura Conversions API deduplicar browser↔server.
+        // StartTrial NÃO dispara aqui: é exclusivo do app.branct.com (conversão real).
+        var leadEventId = uuid();
+        try { sessionStorage.setItem(LEAD_EVENTID_KEY, leadEventId); } catch (e) {}
         track('Lead', {
             content_name: 'Branct CRM Trial',
             content_category: 'CRM',
             currency: 'EUR',
             value: 0
-        });
-        track('StartTrial', {
-            value: 0,
-            currency: 'EUR',
-            predicted_ltv: 480
-        });
+        }, { eventID: leadEventId });
 
         // Empresa vazia → fallback para o nome do dono (evita erro de campo
         // obrigatório no /signup do CRM, que regista como cliente particular).
@@ -137,12 +168,15 @@
             var input = form[key];
             if (input && input.value) params.set(key, input.value);
         });
+        var ref = getRef();
+        if (ref) params.set(REF_KEY, ref);
 
         window.location.href = SIGNUP_URL + '?' + params.toString();
     }
 
     function init() {
         captureUTMs();
+        getRef(); // persiste ?ref= cedo no sessionStorage
         setupScrollLinks();
         setupViewContentTracking();
         var form = document.getElementById('trial-form');
@@ -153,7 +187,8 @@
             UTM_KEYS.forEach(function (k) {
                 try { snapshot[k] = sessionStorage.getItem(k); } catch (e) { snapshot[k] = null; }
             });
-            console.log('[Branct Trial] UTMs captured:', snapshot);
+            try { snapshot[REF_KEY] = sessionStorage.getItem(REF_KEY); } catch (e) { snapshot[REF_KEY] = null; }
+            console.log('[Branct Trial] UTMs/ref captured:', snapshot);
             console.log('[Branct Trial] Pixel inited:', !!(window.brancrPixel && window.brancrPixel.isInited()));
         }
     }

@@ -705,7 +705,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
     </div>
 </footer>
 
-<!-- ===== JS: Consent + Pixel gated + Lead tracking + reveal on scroll ===== -->
+<!-- ===== JS: Consent gate + Pixel (PageView) + reveal on scroll ===== -->
 <script>
 (function () {
     var CONSENT_KEY = 'branct_consent';
@@ -722,9 +722,14 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
             fbq('track', 'PageView');
         }
     }
-    function pixelTrack(name, params) {
+    function pixelTrack(name, params, options) {
         if (window.fbq && window.__brancrPixelInited) {
-            fbq('track', name, params || {});
+            // options = { eventID } para deduplicação CAPI server-side futura
+            if (options) {
+                fbq('track', name, params || {}, options);
+            } else {
+                fbq('track', name, params || {});
+            }
         }
     }
 
@@ -782,12 +787,9 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
         // Sem init do Pixel; sem tracking. fbevents.js carregado mas inerte.
     });
 
-    // Lead event — só dispara se Pixel iniciado (consentimento concedido)
-    document.querySelectorAll('[data-event="lead"]').forEach(function (el) {
-        el.addEventListener('click', function () {
-            pixelTrack('Lead', { source: el.dataset.cta || 'unknown' });
-        });
-    });
+    // NOTA: Lead NÃO dispara em cliques de CTA. Dispara uma única vez no submit
+    // do form (ver trial.js), para não inflar o sinal. Conversão real (StartTrial)
+    // é exclusiva do app.branct.com/signup — a landing é topo de funil.
 
     // Reveal on scroll
     var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
@@ -806,7 +808,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 })();
 </script>
 
-<!-- Trial signup form: UTM capture + Pixel events + Edge Function POST -->
+<!-- Trial signup form: UTM/ref capture + Lead (1x, no submit) + redirect p/ app.branct.com/signup -->
 <script src="src/js/trial.js" defer></script>
 
 </body>

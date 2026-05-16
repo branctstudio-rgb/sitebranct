@@ -65,10 +65,13 @@ sitebranct/
 - Tipografia: **Bricolage Grotesque** (display, H1-H3) + **Manrope** (texto)
 - No `index.html` adiciona-se também Inter, Space Grotesk e JetBrains Mono
 
-### Meta Pixel
+### Meta Pixel — divisão de funil (regra de ouro)
 - Carregado em `crm-gestao.html` mas `fbq('init')` + `fbq('track', 'PageView')` **só após** o utilizador clicar "Aceitar" no banner de consent
-- Eventos disparados via `window.brancrPixel.track(name, params)` — definido no IIFE inline da página, respeita o gate
-- Eventos atuais: `PageView`, `ViewContent`, `Lead`, `StartTrial`
+- Eventos disparados via `window.brancrPixel.track(name, params, options)` — definido no IIFE inline da página, respeita o gate. `options = { eventID }` para dedup CAPI futura
+- **Landing (topo de funil):** só `ViewContent` (form ≥50% visível, 1x) e `Lead` (1x, no submit, com `eventID` UUID guardado em `sessionStorage['branct_lead_eventid']`)
+- **A landing NUNCA dispara `StartTrial`.** Conversão real é exclusiva de `app.branct.com/signup`, que dispara `PageView` + `StartTrial` no momento da criação da conta no Supabase (outro repo/dev)
+- Campanha deve **otimizar por `StartTrial`** (conta real). `Lead` é só métrica de intenção/diagnóstico — não otimizar por Lead
+- Pixel ID: `1595310191130205` (mesmo nos dois lados, para o Meta cruzar funil)
 
 ### i18n
 - Atributo `data-i18n="path.to.key"` no HTML; o JS substitui pelo idioma ativo
@@ -80,17 +83,19 @@ sitebranct/
 ## Fluxo do trial (estado atual — 2026-05-13)
 
 ```
-landing /crm-gestao.html
-    │  form submit (nome, email, empresa)
-    │  trial.js valida + dispara Lead+StartTrial (Pixel, sob consent gate)
+Anúncio → landing /crm-gestao.html
+    │  ViewContent (form ≥50% visível, 1x)
+    │  form submit (nome, email, empresa) → trial.js valida
+    │  Lead (1x, no submit, com eventID UUID) — sob consent gate
     ▼
 window.location.href = https://app.branct.com/signup
-    ?trial=true&name=&email=&company=&utm_*
+    ?trial=true&name=&email=&company=&utm_*&ref(se existir)
     │
     ▼
 CRM (app.branct.com — outro repo, outro dev)
+    PageView (chega ao /signup)
     pré-preenche os 3 campos, pede só password,
-    cria conta Supabase Auth, autentica, leva ao dashboard
+    cria conta Supabase Auth → StartTrial (conversão real, 1x) → dashboard
 ```
 
 Decisão arquitetural: **a password nunca passa pela landing**. A landing é estática — se for comprometida amanhã, não vaza credenciais. A criação real da conta + Auth vive toda no CRM.
@@ -115,6 +120,23 @@ supabase functions deploy trial-signup --project-ref ksocmuesmlqzpbtmibgu --no-v
 ## Changelog
 
 Entradas em ordem cronológica inversa (mais recente em cima). Data em ISO. Cada entrada: o que mudou, porquê, ficheiros tocados.
+
+### 2026-05-16 — Funil de Pixel: landing só intenção, conversão é da app
+**Porquê:** spec final do dev do CRM. O `app.branct.com/signup` passou a ter Pixel próprio que dispara `PageView` e `StartTrial` no momento real da criação da conta no Supabase (server-truth, à prova de inflação). A landing duplicava o sinal: disparava `StartTrial` (errado — não há conta ainda) e podia disparar `Lead` em cliques de CTA além do submit. Regra de ouro: **landing nunca dispara StartTrial; só 1 Lead por utilizador, no submit**. Campanha otimiza por StartTrial.
+
+**[src/js/trial.js](src/js/trial.js):**
+- Removido o disparo de `StartTrial` (agora exclusivo da app)
+- `Lead` agora leva `eventID` (UUID v4, `crypto.randomUUID()` + fallback) guardado em `sessionStorage['branct_lead_eventid']` para dedup CAPI futura
+- `track()` e `pixelTrack()` aceitam 3º arg `options` ({ eventID }) → `fbq('track', name, params, options)`
+- Adicionada captura de `?ref=` (afiliados) → sessionStorage → encaminhado na query do redirect, a par dos `utm_*`
+- `getRef()` chamado no `init` (persiste cedo) e no submit; debug log inclui ref
+
+**[crm-gestao.html](crm-gestao.html):**
+- Removido o listener `[data-event="lead"]` que disparava `Lead` em clique de CTA (era dead code mas elimina o mecanismo de inflação por design)
+- `pixelTrack` estendido para aceitar `options` (eventID)
+- Comentários do `<script>` e do include do trial.js atualizados
+
+**Não tocado:** `ViewContent` (já era 1x via `io.disconnect()`), consent gate, redirect, fluxo de password/conta (app).
 
 ### 2026-05-13 — Trial signup passa a redirecionar diretamente para o CRM
 **Porquê:** decisão arquitetural conjunta com o dev do CRM. A landing estática não deve manipular passwords nem criar contas; o CRM já tem todo o fluxo (Supabase Auth, criação de empresa, criação do owner). Manter "60 segundos" prometidos: landing pede 3 campos, CRM pede 1 (password).
