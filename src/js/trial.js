@@ -171,6 +171,19 @@
         var ref = getRef();
         if (ref) params.set(REF_KEY, ref);
 
+        // Propaga o eventID do Lead para o app.branct.com deduplicar
+        // browser↔server (Conversions API) ao disparar o StartTrial real.
+        params.set('lead_eventid', leadEventId);
+
+        // Propaga o consent gate landing→app: só se o utilizador aceitou
+        // cookies aqui é que o /signup do CRM pode iniciar o Pixel.
+        try {
+            var c = JSON.parse(localStorage.getItem('branct_consent') || 'null');
+            if (c && c.status === 'granted' && c.version === 'v1') {
+                params.set('consent', '1');
+            }
+        } catch (e) { /* localStorage indisponível, segue sem consent param */ }
+
         window.location.href = SIGNUP_URL + '?' + params.toString();
     }
 
