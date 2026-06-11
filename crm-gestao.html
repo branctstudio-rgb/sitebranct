@@ -93,16 +93,30 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 
 /* ===== BOTÕES ===== */
 .btn {
+    position: relative; overflow: hidden;
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     padding: 15px 28px; border-radius: var(--r-full);
     font-weight: 700; font-size: 1rem; white-space: nowrap;
-    transition: transform 0.15s var(--ease), box-shadow 0.25s var(--ease), background 0.15s var(--ease), border-color 0.15s var(--ease);
+    transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s var(--ease), border-color 0.15s var(--ease);
 }
 .btn svg { width: 18px; height: 18px; transition: transform 0.15s var(--ease); }
 .btn:hover svg { transform: translateX(3px); }
-.btn:active { transform: scale(0.98); }
-.btn--accent { background: var(--accent); color: #fff; box-shadow: var(--sh-2); }
-.btn--accent:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(13,27,36,0.05), 0 20px 44px -14px rgba(12,124,143,0.45); background: var(--accent-strong); }
+.btn--accent {
+    background: var(--accent); color: #fff;
+    transform: translateY(calc(var(--btn-press, 0) * 1px));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.16),
+        0 calc(4px - var(--btn-press, 0) * 1px) 0 #064450,
+        0 calc(14px - var(--btn-press, 0) * 2px) 28px -10px rgba(12,124,143,0.5);
+}
+.btn--accent:hover { background: var(--accent-strong); }
+.btn--accent:active { --btn-press: 4; }
+.btn--accent::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.22) 48%, rgba(0,246,236,0.10) 52%, transparent 70%);
+    transform: translateX(-120%) skewX(-12deg);
+}
+.btn--accent:hover::after { transform: translateX(120%) skewX(-12deg); transition: transform 0.55s var(--ease); }
 .btn--ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 11px 20px; font-size: 0.92rem; }
 .btn--ghost:hover { border-color: var(--ink); }
 .btn--lg { padding: 19px 36px; font-size: 1.07rem; }
@@ -143,6 +157,7 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .frame__bar span { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.16); }
 .frame__media { position: relative; border-radius: calc(var(--r-xl) - 10px); overflow: hidden; }
 .frame img { width: 100%; height: auto; aspect-ratio: 2551 / 1398; background: #0a141d; }
+.frame video { width: 100%; height: auto; aspect-ratio: 1280 / 694; background: #0a141d; }
 .frame--glow::after {
     content: ''; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; pointer-events: none;
     background: radial-gradient(60% 50% at 50% 0%, rgba(0,246,236,0.16), transparent 70%);
@@ -255,13 +270,19 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .trial-form input::placeholder { color: #98A4AD; }
 .trial-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); }
 .trial-cta {
+    position: relative; overflow: hidden;
     margin-top: 0.5rem; padding: 1.1rem 2rem;
     background: var(--accent); color: #fff;
     border-radius: var(--r-full); font-size: 1.02rem; font-weight: 700;
-    box-shadow: var(--sh-2);
-    transition: transform 0.15s var(--ease), box-shadow 0.25s var(--ease), background 0.15s var(--ease);
+    transform: translateY(calc(var(--btn-press, 0) * 1px));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.16),
+        0 calc(4px - var(--btn-press, 0) * 1px) 0 #064450,
+        0 calc(14px - var(--btn-press, 0) * 2px) 28px -10px rgba(12,124,143,0.5);
+    transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s var(--ease);
 }
-.trial-cta:hover:not(:disabled) { transform: translateY(-2px); background: var(--accent-strong); box-shadow: 0 20px 44px -14px rgba(12,124,143,0.45); }
+.trial-cta:hover:not(:disabled) { background: var(--accent-strong); }
+.trial-cta:active:not(:disabled) { --btn-press: 4; }
 .trial-microcopy { font-size: 0.8rem; color: var(--muted); margin-top: 1rem; }
 .trial-message { margin-top: 1rem; padding: 0.75rem; border-radius: var(--r-md); font-size: 0.9rem; }
 .trial-message:empty { display: none; padding: 0; margin: 0; }
@@ -307,12 +328,50 @@ a:focus-visible, button:focus-visible, input:focus-visible {
     .consent__actions .btn { flex: 1; justify-content: center; }
 }
 
-/* ===== REVEAL ===== */
-.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
-.reveal.is-visible { opacity: 1; transform: none; }
+/* ===== REVEAL (usa `translate` para compor com o transform do tilt) ===== */
+.reveal { opacity: 0; translate: 0 16px; transition: opacity 0.6s var(--ease), translate 0.6s var(--ease); }
+.reveal.is-visible { opacity: 1; translate: 0 0; }
+
+/* ===== TILT 3D (cards seguem o cursor; JS escreve --rx/--ry/--mx/--my) ===== */
+.tilt { position: relative; transform-style: preserve-3d; will-change: transform; }
+.tilt > * { transform-style: preserve-3d; }
+.tilt__pop { transform: translateZ(34px); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .tilt {
+        transform: perspective(900px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+        transition: transform 0.25s var(--ease);
+    }
+    .tilt.is-tilting { transition: transform 0.08s linear; }
+    .tilt::before {
+        content: ''; position: absolute; inset: 0; z-index: 1;
+        border-radius: inherit; pointer-events: none;
+        background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%),
+                    rgba(255,255,255,0.55), rgba(255,255,255,0.0) 45%);
+        opacity: 0; transition: opacity 0.25s var(--ease);
+        mix-blend-mode: soft-light;
+    }
+    .tilt::after {
+        content: ''; position: absolute; inset: -1px; z-index: 0;
+        border-radius: inherit; pointer-events: none; padding: 1px;
+        background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%),
+                    rgba(12,124,143,0.55), rgba(0,246,236,0.18) 40%, transparent 65%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        opacity: 0; transition: opacity 0.25s var(--ease);
+    }
+    .tilt.is-tilting::before, .tilt.is-tilting::after { opacity: 1; }
+    /* Frame com perspetiva — endireita no hover */
+    .frame--persp {
+        transform: perspective(1400px) rotateX(8deg) rotateY(-7deg) rotateZ(0.6deg);
+        transition: transform 0.6s var(--ease);
+    }
+    .frame--persp:hover { transform: perspective(1400px) rotateX(0) rotateY(0) rotateZ(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
+    .reveal { opacity: 1; translate: none; transition: none; }
     .pulse-dot { animation: none; }
+    .btn--accent::after { display: none; }
     * { scroll-behavior: auto !important; }
 }
 </style>
@@ -387,7 +446,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
         <!-- Screenshot real do dashboard Branct CRM -->
         <div class="container">
             <div class="hero__mock reveal">
-                <div class="frame frame--glow">
+                <div class="frame frame--glow frame--persp">
                     <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
                     <div class="frame__media">
                         <img src="src/img/crm-dashboard.jpeg"
@@ -422,15 +481,15 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                 <p>Não é mais uma ferramenta para juntar às outras cinco. É o lugar onde a tua operação comercial passa a viver.</p>
             </div>
             <div class="bento">
-                <article class="card reveal span-7">
-                    <div class="card__icon">
+                <article class="card reveal tilt span-7">
+                    <div class="card__icon tilt__pop">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                     </div>
                     <h3>Atendimento IA 24/7 no WhatsApp Business</h3>
                     <p>O lead escreve às 23h47? A IA responde em segundos, qualifica e agenda. E quando a conversa precisa de gente a sério, passa-a à tua equipa com todo o contexto — handoff humano, sem perder o fio.</p>
                 </article>
-                <article class="card reveal span-5">
-                    <div class="card__icon" style="background:var(--violet-tint); color:var(--violet-ink)">
+                <article class="card reveal tilt span-5">
+                    <div class="card__icon tilt__pop" style="background:var(--violet-tint); color:var(--violet-ink)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                     </div>
                     <h3>Anúncios e analytics num só painel <span class="badge-beta">Beta</span></h3>
@@ -438,7 +497,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                 </article>
                 <article class="card card--wide reveal span-12">
                     <div>
-                        <div class="card__icon">
+                        <div class="card__icon tilt__pop">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
                         </div>
                         <h3>Adapta-se ao teu negócio — não o contrário</h3>
@@ -447,10 +506,13 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                     <div class="frame">
                         <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
                         <div class="frame__media">
-                            <img src="src/img/crm-dashboard.jpeg" alt="Pipeline visual do Branct CRM" width="2551" height="1398" loading="lazy" decoding="async">
-                            <div class="mock__redact" style="--x:17%; --y:62.5%; --w:18%; --h:2.6%;" aria-hidden="true"></div>
-                            <div class="mock__redact" style="--x:17%; --y:69%;   --w:14%; --h:2.6%;" aria-hidden="true"></div>
-                            <div class="mock__redact" style="--x:17%; --y:75.5%; --w:17%; --h:2.6%;" aria-hidden="true"></div>
+                            <video data-lazy-video muted loop playsinline preload="none"
+                                   poster="src/img/crm-demo-poster.jpg"
+                                   width="1280" height="694"
+                                   aria-label="Demonstração em vídeo do Branct CRM: dashboard, pipeline e origem dos leads">
+                                <source data-src="src/img/crm-demo.webm" type="video/webm">
+                                <source data-src="src/img/crm-demo.mp4" type="video/mp4">
+                            </video>
                         </div>
                     </div>
                 </article>
@@ -466,17 +528,17 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                 <p>Do registo ao primeiro lead respondido pela IA, em menos de um minuto.</p>
             </div>
             <div class="steps__grid">
-                <article class="step reveal">
+                <article class="step reveal tilt">
                     <span class="step__num">01 — Conta</span>
                     <h3>Cria conta gratuita</h3>
                     <p>Email e password. Acesso imediato à plataforma, sem cartão de crédito.</p>
                 </article>
-                <article class="step reveal">
+                <article class="step reveal tilt">
                     <span class="step__num">02 — Conexão</span>
                     <h3>Conecta o WhatsApp</h3>
                     <p>Ligas o WhatsApp Business, o email e os formulários. Os leads entram no pipeline sozinhos.</p>
                 </article>
-                <article class="step reveal">
+                <article class="step reveal tilt">
                     <span class="step__num">03 — Operação</span>
                     <h3>Vende com método</h3>
                     <p>A IA responde, tu fechas. Pipeline visual e dashboards durante 7 dias completos.</p>
@@ -488,7 +550,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
     <!-- ===== PRICING / TRIAL ===== -->
     <section class="section" style="padding-top:0" id="pricing">
         <div class="container">
-            <div class="pricing-card reveal">
+            <div class="pricing-card reveal tilt">
                 <span class="eyebrow">O que recebes no trial</span>
                 <h2 style="margin-top:14px">Plano Business completo. 7 dias. 0€.</h2>
                 <p>Sem versões castradas: testas exatamente o que pagarias.</p>
@@ -746,11 +808,65 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
         if (io) io.observe(el);
         else el.classList.add('is-visible');
     });
+
+    // ===== Tilt 3D (rato fino + sem reduced-motion; CSS desenha via vars) =====
+    var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (fine && !noMotion) {
+        var MAX = 7; // graus
+        document.querySelectorAll('.tilt').forEach(function (el) {
+            var rect = null;
+            el.addEventListener('pointerenter', function () {
+                rect = el.getBoundingClientRect();
+                el.classList.add('is-tilting');
+            });
+            el.addEventListener('pointermove', function (e) {
+                if (!rect) rect = el.getBoundingClientRect();
+                var px = (e.clientX - rect.left) / rect.width;
+                var py = (e.clientY - rect.top) / rect.height;
+                el.style.setProperty('--ry', ((px - 0.5) * 2 * MAX).toFixed(2));
+                el.style.setProperty('--rx', ((0.5 - py) * 2 * MAX).toFixed(2));
+                el.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+                el.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+            });
+            el.addEventListener('pointerleave', function () {
+                rect = null;
+                el.style.setProperty('--rx', '0');
+                el.style.setProperty('--ry', '0');
+                el.classList.remove('is-tilting');
+            });
+        });
+    }
+
+    // ===== Vídeo lazy: src só quando se aproxima do viewport; play/pause =====
+    (function () {
+        var vids = document.querySelectorAll('video[data-lazy-video]');
+        if (!vids.length) return;
+        function hydrate(v) {
+            v.querySelectorAll('source[data-src]').forEach(function (s) {
+                s.src = s.dataset.src; s.removeAttribute('data-src');
+            });
+            v.load();
+        }
+        if (!('IntersectionObserver' in window)) { vids.forEach(hydrate); return; }
+        var vio = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                var v = entry.target;
+                if (entry.isIntersecting) {
+                    if (v.querySelector('source[data-src]')) hydrate(v);
+                    if (!noMotion) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+                } else if (!v.paused) {
+                    v.pause();
+                }
+            });
+        }, { rootMargin: '200px 0px' });
+        vids.forEach(function (v) { vio.observe(v); });
+    })();
 })();
 </script>
 
 <!-- Trial signup form: UTM/ref capture + Lead (1x, no submit) + redirect p/ app.branct.com/signup -->
-<script src="src/js/trial.js" defer></script>
+<script src="src/js/trial.js?v=20260611" defer></script>
 
 </body>
 </html>

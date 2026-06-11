@@ -220,37 +220,111 @@
         background: var(--violet-tint); color: var(--violet-ink);
     }
 
-    /* --- Botões ---
+    /* --- Botões 3D ---
        Disciplina de cor com significado de funil:
        .btn--primary (ink)  → CTAs da agência (proposta, contacto)
        .btn--accent  (teal) → CTAs do CRM (trial) — exclusivo do produto
-       .btn--ghost          → ações secundárias                       */
+       .btn--ghost          → ações secundárias
+       Sólidos têm corpo 3D: aresta inferior (--btn-edge), afundam no
+       press e um brilho varre a superfície no hover.                  */
     .btn {
+        position: relative; overflow: hidden;
         display: inline-flex; align-items: center; justify-content: center; gap: 10px;
         padding: 14px 26px; border-radius: var(--r-full);
         font-weight: 700; font-size: 1rem; line-height: 1.2;
         white-space: nowrap;
         transition: transform var(--dur-fast) var(--ease),
-                    box-shadow var(--dur) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease),
                     background var(--dur-fast) var(--ease),
                     border-color var(--dur-fast) var(--ease),
                     color var(--dur-fast) var(--ease);
     }
     .btn svg { width: 18px; height: 18px; transition: transform var(--dur-fast) var(--ease); }
     .btn:hover svg { transform: translateX(3px); }
-    .btn:active { transform: scale(0.98); }
 
-    .btn--primary { background: var(--ink); color: #fff; box-shadow: var(--sh-2); }
-    .btn--primary:hover { transform: translateY(-2px); box-shadow: var(--sh-3); background: #162833; }
+    .btn--primary, .btn--accent {
+        transform: translateY(calc(var(--btn-press, 0) * 1px));
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.16),
+            0 calc(4px - var(--btn-press, 0) * 1px) 0 var(--btn-edge),
+            0 calc(14px - var(--btn-press, 0) * 2px) 28px -10px var(--btn-glow, rgba(13,27,36,0.35));
+    }
+    .btn--primary:active, .btn--accent:active { --btn-press: 4; }
 
-    .btn--accent { background: var(--accent); color: #fff; box-shadow: var(--sh-2); }
-    .btn--accent:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(13,27,36,0.05), 0 20px 44px -14px rgba(12,124,143,0.45); background: var(--accent-strong); }
+    .btn--primary { background: var(--ink); color: #fff; --btn-edge: #02080D; }
+    .btn--primary:hover { background: #162833; }
+
+    .btn--accent { background: var(--accent); color: #fff; --btn-edge: #064450; --btn-glow: rgba(12,124,143,0.5); }
+    .btn--accent:hover { background: var(--accent-strong); }
+
+    /* Brilho que varre a superfície dos botões sólidos */
+    .btn--primary::after, .btn--accent::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.22) 48%, rgba(0,246,236,0.10) 52%, transparent 70%);
+        transform: translateX(-120%) skewX(-12deg);
+    }
+    .btn--primary:hover::after, .btn--accent:hover::after {
+        transform: translateX(120%) skewX(-12deg);
+        transition: transform 0.55s var(--ease);
+    }
 
     .btn--ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); }
-    .btn--ghost:hover { border-color: var(--ink); }
+    .btn--ghost:hover { border-color: var(--ink); transform: translateY(-1px); }
+    .btn--ghost:active { transform: translateY(0); }
 
     .btn--lg { padding: 18px 34px; font-size: 1.06rem; }
     .btn--sm { padding: 10px 18px; font-size: var(--fs-small); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .btn--primary::after, .btn--accent::after { display: none; }
+    }
+
+    /* --- Tilt 3D (cards que seguem o cursor) ---
+       JS (branct.js) escreve --rx/--ry/--mx/--my; aqui só se desenha.
+       .tilt__pop dentro do card flutua em translateZ.
+       Desativado em ecrã táctil e reduced-motion (fica card normal). */
+    .tilt { position: relative; transform-style: preserve-3d; will-change: transform; }
+    .tilt > * { transform-style: preserve-3d; }
+    .tilt__pop { transform: translateZ(34px); }
+    .tilt__pop--far { transform: translateZ(54px); }
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+        .tilt {
+            transform: perspective(900px)
+                       rotateX(calc(var(--rx, 0) * 1deg))
+                       rotateY(calc(var(--ry, 0) * 1deg));
+            transition: transform 0.25s var(--ease);
+        }
+        .tilt.is-tilting { transition: transform 0.08s linear; }
+        /* Glare — reflexo que segue o cursor */
+        .tilt::before {
+            content: ''; position: absolute; inset: 0; z-index: 1;
+            border-radius: inherit; pointer-events: none;
+            background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%),
+                        rgba(255,255,255,0.55), rgba(255,255,255,0.0) 45%);
+            opacity: 0; transition: opacity var(--dur) var(--ease);
+            mix-blend-mode: soft-light;
+        }
+        /* Aro de luz cyan na borda, acende perto do cursor */
+        .tilt::after {
+            content: ''; position: absolute; inset: -1px; z-index: 0;
+            border-radius: inherit; pointer-events: none; padding: 1px;
+            background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%),
+                        rgba(12,124,143,0.55), rgba(0,246,236,0.18) 40%, transparent 65%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            opacity: 0; transition: opacity var(--dur) var(--ease);
+        }
+        .tilt.is-tilting::before, .tilt.is-tilting::after { opacity: 1; }
+    }
+
+    /* --- Frame com perspetiva 3D (endireita no hover) --- */
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+        .frame--persp {
+            transform: perspective(1400px) rotateX(8deg) rotateY(-9deg) rotateZ(1deg);
+            transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+        }
+        .frame--persp:hover { transform: perspective(1400px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    }
 
     /* --- Card base / bento card --- */
     .card {
@@ -284,7 +358,7 @@
     }
     .frame__bar { display: flex; gap: 6px; padding: 4px 6px 10px; }
     .frame__bar span { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.16); }
-    .frame img { border-radius: calc(var(--r-xl) - 10px); width: 100%; height: auto; }
+    .frame img, .frame video { border-radius: calc(var(--r-xl) - 10px); width: 100%; height: auto; background: #0a141d; }
     .frame--glow::after {
         content: ''; position: absolute; inset: -1px; z-index: -1;
         border-radius: inherit; pointer-events: none;
@@ -505,11 +579,13 @@
     .text-muted { color: var(--muted); }
     .text-accent { color: var(--accent-strong); }
 
-    /* Reveal on scroll — JS adiciona .is-visible via IntersectionObserver */
-    .reveal { opacity: 0; transform: translateY(16px); transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease); }
-    .reveal.is-visible { opacity: 1; transform: none; }
-    .reveal-stagger > * { opacity: 0; transform: translateY(14px); transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease); }
-    .reveal-stagger.is-visible > * { opacity: 1; transform: none; }
+    /* Reveal on scroll — JS adiciona .is-visible via IntersectionObserver.
+       Usa a propriedade `translate` (não `transform`) para compor com o
+       tilt 3D, que ocupa o transform dos cards. */
+    .reveal { opacity: 0; translate: 0 16px; transition: opacity var(--dur-slow) var(--ease), translate var(--dur-slow) var(--ease); }
+    .reveal.is-visible { opacity: 1; translate: 0 0; }
+    .reveal-stagger > * { opacity: 0; translate: 0 14px; transition: opacity var(--dur-slow) var(--ease), translate var(--dur-slow) var(--ease); }
+    .reveal-stagger.is-visible > * { opacity: 1; translate: 0 0; }
     .reveal-stagger.is-visible > :nth-child(2) { transition-delay: 70ms; }
     .reveal-stagger.is-visible > :nth-child(3) { transition-delay: 140ms; }
     .reveal-stagger.is-visible > :nth-child(4) { transition-delay: 210ms; }
@@ -517,6 +593,6 @@
     .reveal-stagger.is-visible > :nth-child(6) { transition-delay: 350ms; }
 
     @media (prefers-reduced-motion: reduce) {
-        .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; }
+        .reveal, .reveal-stagger > * { opacity: 1 !important; translate: none !important; }
     }
 }

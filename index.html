@@ -27,7 +27,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="src/css/branct.css">
+    <link rel="stylesheet" href="src/css/branct.css?v=20260611">
     <style>
     /* Estilos específicos da home (mantidos pequenos e junto da página) */
     .hero-visual { position: relative; }
@@ -183,12 +183,15 @@
                     </div>
                 </div>
                 <div class="hero-visual">
-                    <div class="frame frame--glow">
+                    <div class="frame frame--glow frame--persp">
                         <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
-                        <img src="src/img/crm-dashboard.jpeg"
-                             alt="Dashboard do Branct CRM com pipeline de vendas, leads recentes e métricas de conversão"
-                             width="2551" height="1398"
-                             loading="eager" decoding="async" fetchpriority="high">
+                        <video data-lazy-video muted loop playsinline preload="none"
+                               poster="src/img/crm-demo-poster.jpg"
+                               width="1280" height="694"
+                               aria-label="Demonstração em vídeo do dashboard do Branct CRM: tour pelo pipeline, origem dos leads e métricas">
+                            <source data-src="src/img/crm-demo.webm" type="video/webm">
+                            <source data-src="src/img/crm-demo.mp4" type="video/mp4">
+                        </video>
                     </div>
                     <div class="hero-visual__float" aria-hidden="true">
                         <span class="dot"></span>
@@ -223,26 +226,26 @@
                     <h2 style="margin-top:12px" data-i18n="home.services.title">Quatro frentes, um método.</h2>
                 </div>
                 <div class="bento reveal-stagger">
-                    <article class="card card--hover span-7">
-                        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                    <article class="card card--hover tilt span-7">
+                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
                         <h3 data-i18n="home.services.web.title">Websites Premium</h3>
                         <p data-i18n="home.services.web.desc">Sites rápidos, sóbrios e construídos para converter — com base técnica sólida em SEO, performance e escalabilidade.</p>
                         <a href="website-premium.html" class="btn btn--ghost btn--sm" style="margin-top:20px" data-i18n="home.services.cta">Ver detalhes</a>
                     </article>
-                    <article class="card card--hover span-5">
-                        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+                    <article class="card card--hover tilt span-5">
+                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
                         <h3 data-i18n="home.services.landing.title">Landing Pages</h3>
                         <p data-i18n="home.services.landing.desc">Páginas de campanha com uma mensagem, um caminho e uma ação. Prontas para tráfego pago, com tracking afinado.</p>
                         <a href="landing-page.html" class="btn btn--ghost btn--sm" style="margin-top:20px" data-i18n="home.services.cta">Ver detalhes</a>
                     </article>
-                    <article class="card card--hover span-5">
-                        <div class="card__icon" style="background:var(--violet-tint); color:var(--violet-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
+                    <article class="card card--hover tilt span-5">
+                        <div class="card__icon tilt__pop" style="background:var(--violet-tint); color:var(--violet-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
                         <h3 data-i18n="home.services.crm.title">Branct CRM</h3>
                         <p data-i18n="home.services.crm.desc">A nossa plataforma: pipeline visual, IA no WhatsApp e dashboards. Trial de 7 dias sem cartão.</p>
                         <a href="crm-gestao.html" class="btn btn--accent btn--sm" style="margin-top:20px" data-i18n="home.services.crmCta">Testa grátis 7 dias</a>
                     </article>
-                    <article class="card card--hover span-7">
-                        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                    <article class="card card--hover tilt span-7">
+                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
                         <h3 data-i18n="home.services.auto.title">Automação & IA</h3>
                         <p data-i18n="home.services.auto.desc">Atendimento e nutrição de leads no piloto automático, sem perder o toque humano — fluxos, segmentação e IA que responde.</p>
                         <a href="automacao-ia.html" class="btn btn--ghost btn--sm" style="margin-top:20px" data-i18n="home.services.cta">Ver detalhes</a>
@@ -284,10 +287,10 @@
                     <h2 style="margin-top:12px" data-i18n="home.process.title">Método de engenharia, do briefing ao crescimento.</h2>
                 </div>
                 <div class="bento reveal-stagger">
-                    <article class="card span-6"><p class="eyebrow" style="font-size:0.7rem">01</p><h3 style="margin-top:10px" data-i18n="home.process.s1.title">Diagnóstico</h3><p data-i18n="home.process.s1.desc">Alinhamos objetivos, público e prioridades. A arquitetura vem antes do design.</p></article>
-                    <article class="card span-6"><p class="eyebrow" style="font-size:0.7rem">02</p><h3 style="margin-top:10px" data-i18n="home.process.s2.title">Design</h3><p data-i18n="home.process.s2.desc">UI/UX e protótipo validável. Clareza, credibilidade e foco em conversão.</p></article>
-                    <article class="card span-6"><p class="eyebrow" style="font-size:0.7rem">03</p><h3 style="margin-top:10px" data-i18n="home.process.s3.title">Construção</h3><p data-i18n="home.process.s3.desc">Implementação com performance, SEO técnico e integrações de tracking e automação.</p></article>
-                    <article class="card span-6"><p class="eyebrow" style="font-size:0.7rem">04</p><h3 style="margin-top:10px" data-i18n="home.process.s4.title">Escala</h3><p data-i18n="home.process.s4.desc">Monitorização e otimização contínua. Evolução orientada por dados.</p></article>
+                    <article class="card tilt span-6"><p class="eyebrow tilt__pop" style="font-size:0.7rem">01</p><h3 style="margin-top:10px" data-i18n="home.process.s1.title">Diagnóstico</h3><p data-i18n="home.process.s1.desc">Alinhamos objetivos, público e prioridades. A arquitetura vem antes do design.</p></article>
+                    <article class="card tilt span-6"><p class="eyebrow tilt__pop" style="font-size:0.7rem">02</p><h3 style="margin-top:10px" data-i18n="home.process.s2.title">Design</h3><p data-i18n="home.process.s2.desc">UI/UX e protótipo validável. Clareza, credibilidade e foco em conversão.</p></article>
+                    <article class="card tilt span-6"><p class="eyebrow tilt__pop" style="font-size:0.7rem">03</p><h3 style="margin-top:10px" data-i18n="home.process.s3.title">Construção</h3><p data-i18n="home.process.s3.desc">Implementação com performance, SEO técnico e integrações de tracking e automação.</p></article>
+                    <article class="card tilt span-6"><p class="eyebrow tilt__pop" style="font-size:0.7rem">04</p><h3 style="margin-top:10px" data-i18n="home.process.s4.title">Escala</h3><p data-i18n="home.process.s4.desc">Monitorização e otimização contínua. Evolução orientada por dados.</p></article>
                 </div>
             </div>
         </section>
@@ -395,6 +398,6 @@
         </div>
     </aside>
 
-    <script src="src/js/branct.js" defer></script>
+    <script src="src/js/branct.js?v=20260611" defer></script>
 </body>
 </html>

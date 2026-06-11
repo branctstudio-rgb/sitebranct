@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="src/css/branct.css">
+<link rel="stylesheet" href="src/css/branct.css?v=20260611">
 <style>
 /* Estilos exclusivos desta página de documentação */
 .sg-section { padding-block: var(--sp-16); border-bottom: 1px solid var(--line); }
@@ -39,7 +39,7 @@
     <section class="sg-section">
         <p class="eyebrow">Design System</p>
         <h1 style="margin-top:12px">Premium Light 2026</h1>
-        <p class="hero__sub">A nova linguagem visual do branct.com: fundo claro, tipografia confiante, acentos com disciplina e o produto (dark) como protagonista do contraste. Tudo definido em <code>src/css/branct.css</code>.</p>
+        <p class="hero__sub">A nova linguagem visual do branct.com: fundo claro, tipografia confiante, acentos com disciplina e o produto (dark) como protagonista do contraste. Tudo definido em <code>src/css/branct.css?v=20260611</code>.</p>
     </section>
 
     <!-- CORES -->
@@ -182,9 +182,9 @@
     </section>
 
     <!-- MOTION -->
-    <section class="sg-section" style="border-bottom:0">
+    <section class="sg-section">
         <p class="sg-label">08 — Motion com significado</p>
-        <p class="sg-note" style="margin-bottom:var(--sp-6)">Só dois mecanismos: <code>.reveal</code> (fade+rise de 16px ao entrar no viewport) e <code>.reveal-stagger</code> (filhos em cascata de 70ms). Hovers de 150–250ms. Tudo desligado com <code>prefers-reduced-motion</code>. Zero bibliotecas de animação.</p>
+        <p class="sg-note" style="margin-bottom:var(--sp-6)">Mecanismos: <code>.reveal</code>/<code>.reveal-stagger</code> (entrada no viewport), tilt 3D nos cards e botões com corpo 3D. Hovers de 150–250ms. Tudo desligado com <code>prefers-reduced-motion</code> e em ecrã táctil. Zero bibliotecas de animação.</p>
         <div class="bento reveal-stagger is-visible">
             <div class="card span-4"><h3>01</h3><p>Cria conta</p></div>
             <div class="card span-4"><h3>02</h3><p>Conecta o WhatsApp</p></div>
@@ -192,14 +192,86 @@
         </div>
     </section>
 
+    <!-- 3D -->
+    <section class="sg-section" style="border-bottom:0">
+        <p class="sg-label">09 — 3D (CSS puro, zero Three.js)</p>
+        <p class="sg-note" style="margin-bottom:var(--sp-6)">Cards <code>.tilt</code> inclinam-se a seguir o cursor (±7°), com glare e aro de luz cyan na borda; ícones flutuam em <code>translateZ</code> (<code>.tilt__pop</code>). Botões sólidos têm aresta 3D que afunda no clique e brilho que varre no hover. Frames <code>.frame--persp</code> ficam em perspetiva e endireitam no hover. Passa o rato:</p>
+        <div class="bento" style="margin-bottom:var(--sp-8)">
+            <article class="card card--hover tilt span-4">
+                <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                <h3 class="tilt__pop">Tilt + glare</h3>
+                <p>O card roda comigo e o ícone flutua acima da superfície.</p>
+            </article>
+            <article class="card card--hover tilt span-4">
+                <div class="card__icon tilt__pop" style="background:var(--violet-tint); color:var(--violet-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
+                <h3 class="tilt__pop">Aro de luz</h3>
+                <p>A borda acende em cyan perto do cursor — o #00F6EC vivo em ação decorativa.</p>
+            </article>
+            <article class="card card--hover tilt span-4">
+                <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                <h3 class="tilt__pop">Acessível</h3>
+                <p>Em táctil e reduced-motion volta a ser um card normal. Sem custo de LCP.</p>
+            </article>
+        </div>
+        <p class="sg-note" style="margin-bottom:var(--sp-6)">Vídeo do produto (17MB → 0,8MB, lazy, muted loop) dentro de frame com perspetiva:</p>
+        <div class="frame frame--glow frame--persp" style="max-width:680px">
+            <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+            <video data-lazy-video muted loop playsinline preload="none" poster="src/img/crm-demo-poster.jpg" width="1280" height="694" aria-label="Demonstração do Branct CRM">
+                <source data-src="src/img/crm-demo.webm" type="video/webm">
+                <source data-src="src/img/crm-demo.mp4" type="video/mp4">
+            </video>
+        </div>
+    </section>
+
 </main>
 
 <footer class="footer">
     <div class="container footer__meta" style="margin-top:0; padding-top:0; border-top:0">
-        <span>Styleguide interno · não indexado · Fase 1 do redesign</span>
+        <span>Styleguide interno · não indexado · Fases 1–2 do redesign</span>
         <a href="index.html">← branct.com</a>
     </div>
 </footer>
+
+<script>
+/* Demo do tilt + lazy video — mesma lógica do branct.js, isolada para
+   o styleguide não carregar o boot completo (i18n, consent, Pixel). */
+(function () {
+    var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (fine && !noMotion) {
+        var MAX = 7;
+        document.querySelectorAll('.tilt').forEach(function (el) {
+            var rect = null;
+            el.addEventListener('pointerenter', function () { rect = el.getBoundingClientRect(); el.classList.add('is-tilting'); });
+            el.addEventListener('pointermove', function (e) {
+                if (!rect) rect = el.getBoundingClientRect();
+                var px = (e.clientX - rect.left) / rect.width, py = (e.clientY - rect.top) / rect.height;
+                el.style.setProperty('--ry', ((px - 0.5) * 2 * MAX).toFixed(2));
+                el.style.setProperty('--rx', ((0.5 - py) * 2 * MAX).toFixed(2));
+                el.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+                el.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+            });
+            el.addEventListener('pointerleave', function () { rect = null; el.style.setProperty('--rx','0'); el.style.setProperty('--ry','0'); el.classList.remove('is-tilting'); });
+        });
+    }
+    var vids = document.querySelectorAll('video[data-lazy-video]');
+    function hydrate(v) {
+        v.querySelectorAll('source[data-src]').forEach(function (s) { s.src = s.dataset.src; s.removeAttribute('data-src'); });
+        v.load();
+    }
+    if (!('IntersectionObserver' in window)) { vids.forEach(hydrate); return; }
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            var v = entry.target;
+            if (entry.isIntersecting) {
+                if (v.querySelector('source[data-src]')) hydrate(v);
+                if (!noMotion) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+            } else if (!v.paused) v.pause();
+        });
+    }, { rootMargin: '200px 0px' });
+    vids.forEach(function (v) { io.observe(v); });
+})();
+</script>
 
 </body>
 </html>

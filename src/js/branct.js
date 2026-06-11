@@ -236,6 +236,72 @@
         }
     }
 
+    /* ============ TILT 3D ============ */
+    // Cards .tilt inclinam-se a seguir o cursor (±MAX graus, com lerp).
+    // CSS desenha (vars --rx/--ry/--mx/--my); só corre em rato fino e
+    // sem prefers-reduced-motion — em táctil fica um card normal.
+    function setupTilt() {
+        var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!fine || noMotion) return;
+
+        var MAX = 7; // graus
+        document.querySelectorAll('.tilt').forEach(function (el) {
+            var rect = null;
+            el.addEventListener('pointerenter', function () {
+                rect = el.getBoundingClientRect();
+                el.classList.add('is-tilting');
+            });
+            el.addEventListener('pointermove', function (e) {
+                if (!rect) rect = el.getBoundingClientRect();
+                var px = (e.clientX - rect.left) / rect.width;   // 0..1
+                var py = (e.clientY - rect.top) / rect.height;
+                // Escreve direto; a suavização é da transição CSS (.is-tilting)
+                el.style.setProperty('--ry', ((px - 0.5) * 2 * MAX).toFixed(2));
+                el.style.setProperty('--rx', ((0.5 - py) * 2 * MAX).toFixed(2));
+                el.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+                el.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+            });
+            el.addEventListener('pointerleave', function () {
+                rect = null;
+                el.style.setProperty('--rx', '0');
+                el.style.setProperty('--ry', '0');
+                el.classList.remove('is-tilting');
+            });
+        });
+    }
+
+    /* ============ VÍDEO LAZY (autoplay só quando visível) ============ */
+    // <video data-lazy-video> com <source data-src=...>: o src só é
+    // atribuído quando o vídeo se aproxima do viewport; play/pause
+    // conforme visibilidade. Poupa o peso do vídeo a quem não chega lá.
+    function setupLazyVideo() {
+        var vids = document.querySelectorAll('video[data-lazy-video]');
+        if (!vids.length) return;
+        var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function hydrate(v) {
+            v.querySelectorAll('source[data-src]').forEach(function (s) {
+                s.src = s.dataset.src; s.removeAttribute('data-src');
+            });
+            v.load();
+        }
+        if (!('IntersectionObserver' in window)) { vids.forEach(hydrate); return; }
+
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                var v = entry.target;
+                if (entry.isIntersecting) {
+                    if (v.querySelector('source[data-src]')) hydrate(v);
+                    if (!noMotion) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+                } else if (!v.paused) {
+                    v.pause();
+                }
+            });
+        }, { rootMargin: '200px 0px' });
+        vids.forEach(function (v) { io.observe(v); });
+    }
+
     /* ============ REVEALS ============ */
     function setupReveals() {
         var els = document.querySelectorAll('.reveal, .reveal-stagger');
@@ -328,6 +394,8 @@
         setupDrawer();
         setupLangSelector();
         setupReveals();
+        setupTilt();
+        setupLazyVideo();
         setupLeadForms();
         var saved = 'pt';
         try { saved = localStorage.getItem(LANG_KEY) || 'pt'; } catch (e) {}
