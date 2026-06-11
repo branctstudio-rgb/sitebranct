@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Styleguide — BRANCT Premium Light 2026 (interno)</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/css/branct.css">
+<style>
+/* Estilos exclusivos desta página de documentação */
+.sg-section { padding-block: var(--sp-16); border-bottom: 1px solid var(--line); }
+.sg-label { font-size: var(--fs-label); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--sp-6); }
+.sg-grid { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.sg-swatch { border-radius: var(--r-md); border: 1px solid var(--line); overflow: hidden; background: var(--surface); }
+.sg-swatch__color { height: 72px; }
+.sg-swatch__meta { padding: 10px 12px; font-size: 0.78rem; }
+.sg-swatch__meta strong { display: block; }
+.sg-swatch__meta span { color: var(--muted); }
+.sg-row { display: flex; flex-wrap: wrap; gap: var(--sp-4); align-items: center; }
+.sg-type-sample { border-left: 2px solid var(--line); padding-left: var(--sp-5); margin-bottom: var(--sp-6); }
+.sg-type-sample small { display: block; color: var(--muted); font-size: 0.78rem; margin-bottom: 4px; font-family: var(--font-body); }
+.sg-note { font-size: var(--fs-small); color: var(--muted); max-width: var(--prose); }
+</style>
+</head>
+<body>
+
+<header class="header is-scrolled">
+    <div class="container header__inner">
+        <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+        <span class="badge-beta">Styleguide interno</span>
+    </div>
+</header>
+
+<main class="container">
+
+    <section class="sg-section">
+        <p class="eyebrow">Design System</p>
+        <h1 style="margin-top:12px">Premium Light 2026</h1>
+        <p class="hero__sub">A nova linguagem visual do branct.com: fundo claro, tipografia confiante, acentos com disciplina e o produto (dark) como protagonista do contraste. Tudo definido em <code>src/css/branct.css</code>.</p>
+    </section>
+
+    <!-- CORES -->
+    <section class="sg-section">
+        <p class="sg-label">01 — Cor</p>
+        <div class="sg-grid">
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--bg); border-bottom:1px solid var(--line)"></div><div class="sg-swatch__meta"><strong>--bg</strong><span>#FAFAF9 · fundo</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--surface); border-bottom:1px solid var(--line)"></div><div class="sg-swatch__meta"><strong>--surface</strong><span>#FFFFFF · cards</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--surface-2)"></div><div class="sg-swatch__meta"><strong>--surface-2</strong><span>#F4F3F0 · alternada</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--ink)"></div><div class="sg-swatch__meta"><strong>--ink</strong><span>#0D1B24 · texto/CTA agência</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--muted)"></div><div class="sg-swatch__meta"><strong>--muted</strong><span>#5C6B76 · apoio</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--accent)"></div><div class="sg-swatch__meta"><strong>--accent</strong><span>#0C7C8F · interativo/CRM</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--accent-vivid)"></div><div class="sg-swatch__meta"><strong>--accent-vivid</strong><span>#00F6EC · só decorativo</span></div></div>
+            <div class="sg-swatch"><div class="sg-swatch__color" style="background:var(--violet)"></div><div class="sg-swatch__meta"><strong>--violet</strong><span>#8B5CF6 · produto/Beta</span></div></div>
+        </div>
+        <p class="sg-note" style="margin-top:var(--sp-6)">Regra: o cyan vivo da marca (<code>#00F6EC</code>) nunca é usado como texto sobre fundo claro — falha contraste. Vive em glows, detalhes e dentro dos screenshots dark do produto. Para texto e CTAs usa-se o teal escurecido <code>#0C7C8F</code> (AA). O roxo é exclusivo de contexto de produto (badges Beta, realces do CRM).</p>
+    </section>
+
+    <!-- TIPOGRAFIA -->
+    <section class="sg-section">
+        <p class="sg-label">02 — Tipografia</p>
+        <div class="sg-type-sample"><small>Display · Bricolage Grotesque 700 · --fs-display</small>
+            <p style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-display); line-height:1.04; letter-spacing:-0.025em">Para de perder leads enquanto dormes.</p>
+        </div>
+        <div class="sg-type-sample"><small>H2 · Bricolage Grotesque 700 · --fs-h2</small>
+            <h2>Tudo o que precisas para escalar vendas.</h2>
+        </div>
+        <div class="sg-type-sample"><small>Lead · Manrope 400 · --fs-lead</small>
+            <p style="font-size:var(--fs-lead); color:var(--muted)">Websites premium, uma plataforma de CRM própria e automação com IA — tudo medido por performance e conversão.</p>
+        </div>
+        <div class="sg-type-sample"><small>Body · Manrope 400 · 1rem</small>
+            <p>Pipeline visual, follow-up automático e IA que responde leads no WhatsApp em segundos. Sem cartão. Sem complicações.</p>
+        </div>
+        <div class="sg-type-sample"><small>Eyebrow · Manrope 700 caps</small>
+            <p class="eyebrow">Produto próprio</p>
+        </div>
+    </section>
+
+    <!-- BOTÕES -->
+    <section class="sg-section">
+        <p class="sg-label">03 — Botões (cor com significado de funil)</p>
+        <div class="sg-row">
+            <a href="#" class="btn btn--primary">Pedir proposta <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+            <a href="#" class="btn btn--accent">Testa grátis 7 dias <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+            <a href="#" class="btn btn--ghost">Ver o processo</a>
+            <a href="#" class="btn btn--accent btn--lg">Testa grátis 7 dias</a>
+            <a href="#" class="btn btn--ghost btn--sm">Detalhes</a>
+        </div>
+        <p class="sg-note" style="margin-top:var(--sp-6)"><strong>Ink</strong> = CTAs da agência (proposta/contacto). <strong>Teal</strong> = exclusivo do trial do CRM. Nunca os dois com o mesmo peso na mesma vista — um CTA dominante por secção.</p>
+    </section>
+
+    <!-- CHIPS / BADGES -->
+    <section class="sg-section">
+        <p class="sg-label">04 — Chips, badges e trust row</p>
+        <div class="sg-row" style="margin-bottom:var(--sp-6)">
+            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão</span>
+            <span class="chip chip--accent">IA WhatsApp 24/7</span>
+            <span class="badge-beta">Beta</span>
+            <span class="eyebrow">Como funciona</span>
+            <span class="eyebrow eyebrow--violet">Branct CRM</span>
+        </div>
+        <div class="trust-row">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Setup em 60 segundos</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Cancelas quando quiseres</span>
+        </div>
+    </section>
+
+    <!-- BENTO -->
+    <section class="sg-section">
+        <p class="sg-label">05 — Bento grid (features)</p>
+        <div class="bento">
+            <article class="card card--hover span-7">
+                <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                <h3>Atendimento IA 24/7 no WhatsApp</h3>
+                <p>A IA responde, qualifica e agenda — e passa a conversa a um humano quando faz sentido. Nenhum lead fica sem resposta, nem às 3 da manhã.</p>
+            </article>
+            <article class="card card--hover span-5">
+                <div class="card__icon" style="background:var(--violet-tint); color:var(--violet-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+                <h3>Dashboard de anúncios <span class="badge-beta">Beta</span></h3>
+                <p>Anúncios e analytics num só painel, com atribuição real ao CRM: vês que campanha gerou que receita.</p>
+            </article>
+            <article class="card card--hover span-5">
+                <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+                <h3>Multi-segmento adaptativo</h3>
+                <p>E-commerce, imobiliária, serviços ou portfólio — o CRM adapta-se ao teu negócio. Multi-idioma e multi-moeda incluídos.</p>
+            </article>
+            <article class="card card--hover span-7">
+                <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
+                <h3>Pipeline visual</h3>
+                <p>Todo o funil num quadro Kanban: arrastas, largas e nunca mais perdes uma oportunidade numa folha de cálculo.</p>
+            </article>
+        </div>
+    </section>
+
+    <!-- FRAME DE PRODUTO -->
+    <section class="sg-section">
+        <p class="sg-label">06 — Frame de produto (screenshot dark sobre claro)</p>
+        <div class="frame frame--glow" style="max-width:760px">
+            <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+            <img src="src/img/crm-dashboard.jpeg" alt="Dashboard do Branct CRM" width="2551" height="1398" loading="lazy" decoding="async">
+        </div>
+        <p class="sg-note" style="margin-top:var(--sp-6)">O glassmorphism dark da app é o momento de maior contraste do site — substitui o Three.js como "wow" sem custar um milissegundo de LCP.</p>
+    </section>
+
+    <!-- FORMS / FAQ / STATS -->
+    <section class="sg-section">
+        <p class="sg-label">07 — Form, FAQ e métricas</p>
+        <div class="bento" style="margin-bottom:var(--sp-10)">
+            <form class="card span-5" onsubmit="return false">
+                <div class="field" style="margin-bottom:var(--sp-4)">
+                    <label for="sg-nome">O teu nome</label>
+                    <input class="input" id="sg-nome" type="text" placeholder="Ex.: Maria Santos">
+                </div>
+                <div class="field" style="margin-bottom:var(--sp-5)">
+                    <label for="sg-email">Email profissional</label>
+                    <input class="input" id="sg-email" type="email" placeholder="maria@empresa.pt">
+                </div>
+                <button class="btn btn--accent" style="width:100%">Testa grátis 7 dias</button>
+                <p class="form-msg success" style="margin-top:var(--sp-3)">Exemplo de mensagem de sucesso.</p>
+            </form>
+            <div class="span-7">
+                <div class="faq" style="margin-bottom:var(--sp-8)">
+                    <details open>
+                        <summary>Preciso de cartão de crédito para o trial?</summary>
+                        <p>Não. Crias conta com email e password e tens 7 dias de acesso completo ao plano Business. Cancelas quando quiseres.</p>
+                    </details>
+                    <details>
+                        <summary>A IA do WhatsApp substitui a minha equipa?</summary>
+                        <p>Não — responde primeiro e qualifica. Quando a conversa precisa de um humano, passa-a à tua equipa com todo o contexto.</p>
+                    </details>
+                </div>
+                <div class="sg-row" style="gap:var(--sp-10)">
+                    <div class="stat"><span class="stat__value">30s</span><span class="stat__label">resposta média da IA</span></div>
+                    <div class="stat"><span class="stat__value">24/7</span><span class="stat__label">atendimento no WhatsApp</span></div>
+                    <div class="stat"><span class="stat__value">7 dias</span><span class="stat__label">trial sem cartão</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MOTION -->
+    <section class="sg-section" style="border-bottom:0">
+        <p class="sg-label">08 — Motion com significado</p>
+        <p class="sg-note" style="margin-bottom:var(--sp-6)">Só dois mecanismos: <code>.reveal</code> (fade+rise de 16px ao entrar no viewport) e <code>.reveal-stagger</code> (filhos em cascata de 70ms). Hovers de 150–250ms. Tudo desligado com <code>prefers-reduced-motion</code>. Zero bibliotecas de animação.</p>
+        <div class="bento reveal-stagger is-visible">
+            <div class="card span-4"><h3>01</h3><p>Cria conta</p></div>
+            <div class="card span-4"><h3>02</h3><p>Conecta o WhatsApp</p></div>
+            <div class="card span-4"><h3>03</h3><p>Vende com método</p></div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="footer">
+    <div class="container footer__meta" style="margin-top:0; padding-top:0; border-top:0">
+        <span>Styleguide interno · não indexado · Fase 1 do redesign</span>
+        <a href="index.html">← branct.com</a>
+    </div>
+</footer>
+
+</body>
+</html>
