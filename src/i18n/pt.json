@@ -4,15 +4,87 @@
     "services": "Serviços",
     "process": "Processo",
     "contacts": "Contactos",
-    "userArea": "Área do Usuário",
+    "userArea": "Área de Cliente",
     "blog": "Blog",
-    "cta": "Pedir Proposta"
+    "cta": "Pedir proposta"
   },
   "servicesMenu": {
     "website": "Website Premium",
     "landing": "Landing Pages",
-    "crm": "CRM & Gestão",
+    "crm": "Branct CRM",
     "automation": "Automação & IA"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Agência digital + produto próprio",
+      "title": "Websites que vendem. Um CRM que responde por ti.",
+      "sub": "Construímos sites premium orientados a conversão — e o Branct CRM, com IA que atende os teus leads no WhatsApp, 24 horas por dia.",
+      "ctaPrimary": "Pedir proposta",
+      "ctaSecondary": "Conhecer o Branct CRM",
+      "trust1": "Core Web Vitals 95+",
+      "trust2": "IA no WhatsApp 24/7",
+      "trust3": "4 idiomas, 1 plataforma",
+      "floatTitle": "Lead respondido pela IA",
+      "floatSub": "WhatsApp · há 30 segundos"
+    },
+    "proof": {
+      "stat1": "Lighthouse nos sites entregues",
+      "stat2": "resposta média da IA",
+      "stat3": "clientes em 2 mercados"
+    },
+    "services": {
+      "eyebrow": "O que fazemos",
+      "title": "Quatro frentes, um método.",
+      "cta": "Ver detalhes",
+      "crmCta": "Testa grátis 7 dias",
+      "web": { "title": "Websites Premium", "desc": "Sites rápidos, sóbrios e construídos para converter — com base técnica sólida em SEO, performance e escalabilidade." },
+      "landing": { "title": "Landing Pages", "desc": "Páginas de campanha com uma mensagem, um caminho e uma ação. Prontas para tráfego pago, com tracking afinado." },
+      "crm": { "title": "Branct CRM", "desc": "A nossa plataforma: pipeline visual, IA no WhatsApp e dashboards. Trial de 7 dias sem cartão." },
+      "auto": { "title": "Automação & IA", "desc": "Atendimento e nutrição de leads no piloto automático, sem perder o toque humano — fluxos, segmentação e IA que responde." }
+    },
+    "crm": {
+      "eyebrow": "Produto próprio · Branct CRM",
+      "title": "Para de perder leads enquanto dormes.",
+      "f1": "<strong>Atendimento IA 24/7 no WhatsApp</strong> — responde, qualifica e passa a humano quando faz sentido.",
+      "f2": "<strong>Dashboard de anúncios e analytics (Beta)</strong> — atribuição real: vês que campanha gerou que receita.",
+      "f3": "<strong>Adapta-se ao teu negócio</strong> — e-commerce, imobiliária, serviços ou portfólio. Multi-idioma e multi-moeda.",
+      "cta": "Testa grátis 7 dias",
+      "micro": "Sem cartão. Sem complicações. Cancelas quando quiseres."
+    },
+    "process": {
+      "eyebrow": "Como trabalhamos",
+      "title": "Método de engenharia, do briefing ao crescimento.",
+      "s1": { "title": "Diagnóstico", "desc": "Alinhamos objetivos, público e prioridades. A arquitetura vem antes do design." },
+      "s2": { "title": "Design", "desc": "UI/UX e protótipo validável. Clareza, credibilidade e foco em conversão." },
+      "s3": { "title": "Construção", "desc": "Implementação com performance, SEO técnico e integrações de tracking e automação." },
+      "s4": { "title": "Escala", "desc": "Monitorização e otimização contínua. Evolução orientada por dados." }
+    },
+    "cases": {
+      "eyebrow": "Trabalho recente",
+      "title": "Marcas que já confiaram.",
+      "neoprag": "Web institucional · BR",
+      "vertexway": "Website e marca · PT",
+      "albino": "Imobiliário · landing page · PT",
+      "kb": "Contabilidade · website · BR"
+    },
+    "cta": {
+      "eyebrow": "Próximo passo",
+      "title": "Vamos elevar a tua presença digital?",
+      "sub": "Envia o teu objetivo e prazo. Devolvemos um plano claro e os próximos passos — em 24h.",
+      "primary": "Pedir proposta",
+      "whatsapp": "Falar no WhatsApp"
+    },
+    "footer": {
+      "tagline": "Websites premium e um CRM com IA — engenharia digital para PMEs que querem crescer.",
+      "company": "Empresa",
+      "legal": "Legal"
+    },
+    "consent": {
+      "title": "Privacidade primeiro.",
+      "desc": "Usamos cookies essenciais e cookies de marketing (Meta) para medir campanhas. Aceitas ou recusas — a escolha fica guardada. Vê a <a href=\"politica-privacidade.html#cookies\">Política de Privacidade</a>.",
+      "accept": "Aceitar",
+      "reject": "Recusar"
+    }
   },
   "pageTitles": {
     "services": "Serviços",

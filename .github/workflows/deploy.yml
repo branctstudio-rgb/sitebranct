@@ -40,6 +40,15 @@ jobs:
               --exclude ^\.github/ \
               --exclude ^node_modules/ \
               --exclude ^\.vscode/ \
+              --exclude ^\.claude/ \
+              --exclude ^\.superpowers/ \
+              --exclude ^docs/ \
+              --exclude ^supabase/ \
+              --exclude ^AUDIT\.md$ \
+              --exclude ^CLAUDE\.md$ \
+              --exclude ^src/models/ \
+              --exclude ^src/3d/ \
+              --exclude ^src/img/video\.mp4$ \
               --exclude ^\.gitignore$ \
               --exclude ^package\.json$ \
               --exclude ^package-lock\.json$ \

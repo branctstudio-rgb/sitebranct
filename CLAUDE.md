@@ -14,12 +14,13 @@ Idioma do site: **pt-PT** (com i18n PT/EN/IT/HR via `data-i18n` keys e ficheiros
 
 ## Tech stack
 
-- HTML estático + CSS único ([src/css/main.css](src/css/main.css)) + JS modular ([src/js/](src/js/))
-- GSAP + ScrollTrigger + SplitType (animações)
-- Three.js (cena WebGL no hero do `index.html`)
-- Supabase: Edge Functions (Deno) + Postgres (RLS ativa)
+- HTML estático, sem build step. **Em migração para o design system "Premium Light 2026"** (branch `redesign-light-2026`, ver [AUDIT.md](AUDIT.md)):
+  - Páginas migradas usam [src/css/branct.css](src/css/branct.css) + [src/js/branct.js](src/js/branct.js) — light, zero GSAP/Three.js. Migradas até agora: `index.html`, `crm-gestao.html` (standalone), `styleguide.html`.
+  - Páginas antigas continuam em [src/css/main.css](src/css/main.css) + [src/js/main.js](src/js/main.js) (dark, GSAP, Three.js) até migrarem na Fase 3.
+- Supabase: Edge Functions (Deno) + Postgres (RLS ativa) — atualmente órfãs (ver Pontos abertos)
+- Leads dos forms da agência → webhook n8n `https://n8n.branct.com/webhook/site-lead`
 - Meta Pixel (id `1595310191130205`) — **sempre gated por consent banner RGPD**
-- `package.json` declara `express` e `three`, mas o site é servido estaticamente. O `express` parece não estar em uso ativo.
+- `package.json` declara `express` e `three`, mas o site é servido estaticamente; saem quando a migração terminar.
 
 ---
 
@@ -59,11 +60,12 @@ sitebranct/
 - **Standalone**: não usa o `src/css/main.css` partilhado. Tem CSS inline próprio com a sua própria paleta.
 - Razão: é uma landing de aquisição com performance e tracking dedicados, separada do site institucional. Mantém-se assim.
 
-### Paleta (consistente em ambos os contextos)
-- `--bg: #09121c`, `--bg-2: #072c3d`
-- `--accent: #6ec1e4` (ciano principal), `--accent-2: #097697`
-- Tipografia: **Bricolage Grotesque** (display, H1-H3) + **Manrope** (texto)
-- No `index.html` adiciona-se também Inter, Space Grotesk e JetBrains Mono
+### Paleta — design system "Premium Light 2026" (páginas migradas)
+- Base clara: `--bg: #FAFAF9`, cards `#FFFFFF`, hairlines `#E8E6E1`, ink `#0D1B24`
+- Acento interativo: teal `#0C7C8F` (hover `#095E6E`); `#00F6EC` vivo é SÓ decorativo; roxo `#8B5CF6`/`#6D28D9` exclusivo de contexto de produto (badges Beta)
+- **CTAs com significado de funil**: botão ink = agência (proposta); botão teal = trial do CRM
+- Tipografia: **Bricolage Grotesque** (display, variável) + **Manrope** (texto)
+- Páginas antigas (main.css) mantêm a paleta dark `#09121c`/`#6ec1e4` até migrarem
 
 ### Meta Pixel — divisão de funil (regra de ouro)
 - Carregado em `crm-gestao.html` mas `fbq('init')` + `fbq('track', 'PageView')` **só após** o utilizador clicar "Aceitar" no banner de consent
@@ -120,6 +122,16 @@ supabase functions deploy trial-signup --project-ref ksocmuesmlqzpbtmibgu --no-v
 ## Changelog
 
 Entradas em ordem cronológica inversa (mais recente em cima). Data em ISO. Cada entrada: o que mudou, porquê, ficheiros tocados.
+
+### 2026-06-11 — Redesign "Premium Light 2026": Fases 0–2 (branch `redesign-light-2026`)
+**Porquê:** handoff do marketing (ver `MARKETING/_shared/handoffs/PROMPT_CLAUDE_CODE_SITE_PREMIUM_2026.md`): site light premium, performance budget Lighthouse ≥95 mobile, product-led, killer features do CRM em destaque. Supersede o spec dark de 2026-05-12.
+
+- **Fase 0** — [AUDIT.md](AUDIT.md): inventário completo; 42MB de peso morto identificado (Three.js + .glb + video.mp4); gaps: Turnstile inexistente, schema.org zero, sitemap/robots em falta.
+- **Fase 1** — [src/css/branct.css](src/css/branct.css) (design system light) + `styleguide.html` (demo interna, noindex).
+- **Fase 2** — `index.html` reescrita (hero split agência+CRM, prova social, bento de serviços, faixa CRM, processo, casos, CTA final, consent banner + Pixel PageView gated, schema.org Organization, i18n `home.*` nos 4 idiomas) e `crm-gestao.html` reescrita light (hero 1 CTA → stats → 3 killer features bento (IA WhatsApp 24/7, dashboard ads **Beta**, multi-segmento) → 3 passos → pricing trial → FAQ → CTA → form). **Tracking intocado**: IIFE consent/Pixel, trial.js (só label do botão), IDs do form, hidden UTMs, redirects. Copy revista contra a lista de compliance (sem lead scoring IA, sem SMS, sem promessas de integrações em escala).
+- [src/js/branct.js](src/js/branct.js): consent+Pixel site-wide, i18n, drawer, dropdown, reveals IO, forms→webhook n8n com `Lead`+eventID.
+- deploy.yml: exclusões novas (docs/, supabase/, .claude/, AUDIT.md, CLAUDE.md, src/models/, src/3d/, video.mp4).
+- **Validação do Felipe pendente antes da Fase 3** (restantes páginas). Não fazer push para `main` sem essa validação — push a `main` = deploy imediato para produção via FTP.
 
 ### 2026-05-16 — Funil de Pixel: landing só intenção, conversão é da app
 **Porquê:** spec final do dev do CRM. O `app.branct.com/signup` passou a ter Pixel próprio que dispara `PageView` e `StartTrial` no momento real da criação da conta no Supabase (server-truth, à prova de inflação). A landing duplicava o sinal: disparava `StartTrial` (errado — não há conta ainda) e podia disparar `Lead` em cliques de CTA além do submit. Regra de ouro: **landing nunca dispara StartTrial; só 1 Lead por utilizador, no submit**. Campanha otimiza por StartTrial.

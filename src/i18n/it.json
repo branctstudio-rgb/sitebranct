@@ -11,8 +11,80 @@
   "servicesMenu": {
     "website": "Sito Web Premium",
     "landing": "Landing Pages",
-    "crm": "CRM & Gestione",
+    "crm": "Branct CRM",
     "automation": "Automazione & IA"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Agenzia digitale + prodotto proprio",
+      "title": "Siti che vendono. Un CRM che risponde per te.",
+      "sub": "Creiamo siti premium orientati alla conversione — e Branct CRM, con un'IA che risponde ai tuoi lead su WhatsApp, 24 ore su 24.",
+      "ctaPrimary": "Richiedi un preventivo",
+      "ctaSecondary": "Scopri Branct CRM",
+      "trust1": "Core Web Vitals 95+",
+      "trust2": "IA su WhatsApp 24/7",
+      "trust3": "4 lingue, 1 piattaforma",
+      "floatTitle": "Lead gestito dall'IA",
+      "floatSub": "WhatsApp · 30 secondi fa"
+    },
+    "proof": {
+      "stat1": "Lighthouse sui siti consegnati",
+      "stat2": "tempo medio di risposta dell'IA",
+      "stat3": "clienti in 2 mercati"
+    },
+    "services": {
+      "eyebrow": "Cosa facciamo",
+      "title": "Quattro fronti, un metodo.",
+      "cta": "Scopri di più",
+      "crmCta": "Prova gratis 7 giorni",
+      "web": { "title": "Siti Web Premium", "desc": "Siti veloci, eleganti e costruiti per convertire — con basi tecniche solide per SEO, performance e scalabilità." },
+      "landing": { "title": "Landing Page", "desc": "Pagine di campagna con un messaggio, un percorso e un'azione. Pronte per il traffico a pagamento, con tracking preciso." },
+      "crm": { "title": "Branct CRM", "desc": "La nostra piattaforma: pipeline visiva, IA su WhatsApp e dashboard. Prova di 7 giorni senza carta." },
+      "auto": { "title": "Automazione & IA", "desc": "Gestione e nurturing dei lead con il pilota automatico, senza perdere il tocco umano — flussi, segmentazione e IA che risponde." }
+    },
+    "crm": {
+      "eyebrow": "Prodotto proprio · Branct CRM",
+      "title": "Smetti di perdere lead mentre dormi.",
+      "f1": "<strong>IA 24/7 su WhatsApp</strong> — risponde, qualifica e passa a un umano quando serve.",
+      "f2": "<strong>Dashboard di annunci e analytics (Beta)</strong> — attribuzione reale: vedi quale campagna ha generato quale fatturato.",
+      "f3": "<strong>Si adatta al tuo business</strong> — e-commerce, immobiliare, servizi o portfolio. Multilingua e multivaluta.",
+      "cta": "Prova gratis 7 giorni",
+      "micro": "Senza carta. Senza complicazioni. Disdici quando vuoi."
+    },
+    "process": {
+      "eyebrow": "Come lavoriamo",
+      "title": "Metodo da ingegneri, dal briefing alla crescita.",
+      "s1": { "title": "Analisi", "desc": "Allineiamo obiettivi, pubblico e priorità. L'architettura viene prima del design." },
+      "s2": { "title": "Design", "desc": "UI/UX e prototipo validabile. Chiarezza, credibilità e focus sulla conversione." },
+      "s3": { "title": "Sviluppo", "desc": "Implementazione con performance, SEO tecnico e integrazioni di tracking e automazione." },
+      "s4": { "title": "Crescita", "desc": "Monitoraggio e ottimizzazione continua. Evoluzione guidata dai dati." }
+    },
+    "cases": {
+      "eyebrow": "Lavori recenti",
+      "title": "Brand che si fidano già di noi.",
+      "neoprag": "Sito istituzionale · BR",
+      "vertexway": "Sito e brand · PT",
+      "albino": "Immobiliare · landing page · PT",
+      "kb": "Contabilità · sito web · BR"
+    },
+    "cta": {
+      "eyebrow": "Prossimo passo",
+      "title": "Pronto a far crescere la tua presenza digitale?",
+      "sub": "Inviaci il tuo obiettivo e le tue scadenze. Ti rispondiamo con un piano chiaro e i prossimi passi — entro 24h.",
+      "primary": "Richiedi un preventivo",
+      "whatsapp": "Scrivici su WhatsApp"
+    },
+    "footer": {
+      "tagline": "Siti web premium e un CRM con IA — ingegneria digitale per PMI che vogliono crescere.",
+      "company": "Azienda",
+      "legal": "Note legali"
+    },
+    "consent": {
+      "title": "Prima la privacy.",
+      "desc": "Usiamo cookie essenziali e cookie di marketing (Meta) per misurare le campagne. Accetta o rifiuta — la scelta resta salvata. Vedi la <a href=\"politica-privacidade.html#cookies\">Privacy Policy</a>.",
+      "accept": "Accetta",
+      "reject": "Rifiuta"
+    }
   },
   "pageTitles": {
     "services": "Servizi",

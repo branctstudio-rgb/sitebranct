@@ -11,8 +11,80 @@
   "servicesMenu": {
     "website": "Premium Web Stranica",
     "landing": "Landing Stranice",
-    "crm": "CRM & Upravljanje",
+    "crm": "Branct CRM",
     "automation": "Automatizacija & AI"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Digitalna agencija + vlastiti proizvod",
+      "title": "Web stranice koje prodaju. CRM koji odgovara umjesto tebe.",
+      "sub": "Izrađujemo premium web stranice usmjerene na konverziju — i Branct CRM, s AI-jem koji odgovara tvojim leadovima na WhatsAppu, 24 sata dnevno.",
+      "ctaPrimary": "Zatraži ponudu",
+      "ctaSecondary": "Upoznaj Branct CRM",
+      "trust1": "Core Web Vitals 95+",
+      "trust2": "AI na WhatsAppu 24/7",
+      "trust3": "4 jezika, 1 platforma",
+      "floatTitle": "AI je odgovorio leadu",
+      "floatSub": "WhatsApp · prije 30 sekundi"
+    },
+    "proof": {
+      "stat1": "Lighthouse na isporučenim stranicama",
+      "stat2": "prosječno vrijeme odgovora AI-ja",
+      "stat3": "klijenti na 2 tržišta"
+    },
+    "services": {
+      "eyebrow": "Što radimo",
+      "title": "Četiri fronte, jedna metoda.",
+      "cta": "Saznaj više",
+      "crmCta": "Isprobaj besplatno 7 dana",
+      "web": { "title": "Premium Web Stranice", "desc": "Brze, elegantne stranice građene za konverziju — na čvrstim tehničkim temeljima za SEO, performanse i skalabilnost." },
+      "landing": { "title": "Landing Stranice", "desc": "Kampanjske stranice s jednom porukom, jednim putem i jednom akcijom. Spremne za plaćeni promet, s preciznim praćenjem." },
+      "crm": { "title": "Branct CRM", "desc": "Naša platforma: vizualni pipeline, WhatsApp AI i nadzorne ploče. Probno razdoblje od 7 dana bez kartice." },
+      "auto": { "title": "Automatizacija & AI", "desc": "Obrada i njegovanje leadova na autopilotu, bez gubitka ljudskog dodira — tokovi, segmentacija i AI koji odgovara." }
+    },
+    "crm": {
+      "eyebrow": "Vlastiti proizvod · Branct CRM",
+      "title": "Prestani gubiti leadove dok spavaš.",
+      "f1": "<strong>AI 24/7 na WhatsAppu</strong> — odgovara, kvalificira i predaje čovjeku kad je to važno.",
+      "f2": "<strong>Nadzorna ploča oglasa i analitike (Beta)</strong> — stvarna atribucija: vidiš koja je kampanja donijela koji prihod.",
+      "f3": "<strong>Prilagođava se tvom poslu</strong> — e-trgovina, nekretnine, usluge ili portfelj. Više jezika i valuta.",
+      "cta": "Isprobaj besplatno 7 dana",
+      "micro": "Bez kartice. Bez komplikacija. Otkaži kad god želiš."
+    },
+    "process": {
+      "eyebrow": "Kako radimo",
+      "title": "Inženjerska metoda, od briefinga do rasta.",
+      "s1": { "title": "Dijagnoza", "desc": "Usklađujemo ciljeve, publiku i prioritete. Arhitektura dolazi prije dizajna." },
+      "s2": { "title": "Dizajn", "desc": "UI/UX i provjerljiv prototip. Jasnoća, vjerodostojnost i fokus na konverziju." },
+      "s3": { "title": "Izrada", "desc": "Implementacija s performansama, tehničkim SEO-om i integracijama praćenja i automatizacije." },
+      "s4": { "title": "Rast", "desc": "Kontinuirano praćenje i optimizacija. Evolucija vođena podacima." }
+    },
+    "cases": {
+      "eyebrow": "Nedavni radovi",
+      "title": "Brendovi koji nam već vjeruju.",
+      "neoprag": "Korporativna stranica · BR",
+      "vertexway": "Web stranica i brend · PT",
+      "albino": "Nekretnine · landing stranica · PT",
+      "kb": "Računovodstvo · web stranica · BR"
+    },
+    "cta": {
+      "eyebrow": "Sljedeći korak",
+      "title": "Spreman podići svoju digitalnu prisutnost?",
+      "sub": "Pošalji nam svoj cilj i rok. Vraćamo se s jasnim planom i sljedećim koracima — unutar 24h.",
+      "primary": "Zatraži ponudu",
+      "whatsapp": "Piši nam na WhatsApp"
+    },
+    "footer": {
+      "tagline": "Premium web stranice i CRM s AI-jem — digitalni inženjering za male i srednje tvrtke koje žele rasti.",
+      "company": "Tvrtka",
+      "legal": "Pravno"
+    },
+    "consent": {
+      "title": "Privatnost na prvom mjestu.",
+      "desc": "Koristimo osnovne kolačiće i marketinške kolačiće (Meta) za mjerenje kampanja. Prihvati ili odbij — izbor ostaje spremljen. Pogledaj <a href=\"politica-privacidade.html#cookies\">Pravila privatnosti</a>.",
+      "accept": "Prihvati",
+      "reject": "Odbij"
+    }
   },
   "pageTitles": {
     "services": "Usluge",

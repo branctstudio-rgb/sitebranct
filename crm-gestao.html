@@ -5,299 +5,301 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Branct CRM — Trial gratuito 7 dias | Pipeline, automação e dashboards</title>
-<meta name="description" content="Centraliza leads, automatiza follow-ups e vê a tua receita em tempo real. Trial de 7 dias sem cartão de crédito. Setup em 60 segundos.">
+<title>Branct CRM — IA que responde os teus leads no WhatsApp, 24/7 | Trial 7 dias sem cartão</title>
+<meta name="description" content="Para de perder leads enquanto dormes: IA no WhatsApp 24/7 com handoff humano, pipeline visual e dashboards. Testa grátis 7 dias, sem cartão.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://branct.com/crm-gestao.html">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Branct CRM — Trial gratuito de 7 dias">
-<meta property="og:description" content="Pipeline visual, follow-up automático e dashboards em tempo real. Sem cartão de crédito.">
+<meta property="og:title" content="Branct CRM — Testa grátis 7 dias, sem cartão">
+<meta property="og:description" content="IA que responde os teus leads no WhatsApp 24/7, pipeline visual e dashboards com atribuição real. Sem cartão de crédito.">
 <meta property="og:url" content="https://branct.com/crm-gestao.html">
+<meta property="og:image" content="https://branct.com/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="src/img/favicon.ico" sizes="any">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
 
 <style>
-/* ===== TOKENS — paleta atual do projeto ===== */
+/* ===== TOKENS — Premium Light 2026 (subset standalone desta landing) ===== */
 :root {
-    --bg:           #09121c;
-    --bg-2:         #072c3d;
-    --bg-elev:      #0e1a26;
-    --line:         rgba(255,255,255,0.08);
-    --line-strong:  rgba(110,193,228,0.25);
-    --accent:       #6ec1e4;
-    --accent-2:     #097697;
-    --accent-deep:  #1c5a74;
-    --text:         #efeeee;
-    --muted:        #9aa6b2;
-    --success:      #4ade80;
-    --radius:       14px;
-    --radius-lg:    20px;
-    --shadow-cta:   0 12px 40px rgba(110,193,228,0.25), 0 4px 16px rgba(0,0,0,0.4);
+    --bg:           #FAFAF9;
+    --surface:      #FFFFFF;
+    --surface-2:    #F4F3F0;
+    --surface-ink:  #0D1B24;
+    --line:         #E8E6E1;
+    --ink:          #0D1B24;
+    --ink-2:        #3D4D59;
+    --muted:        #5C6B76;
+    --accent:       #0C7C8F;
+    --accent-strong:#095E6E;
+    --accent-tint:  #E3F4F6;
+    --violet-ink:   #6D28D9;
+    --violet-tint:  #F1EBFE;
+    --success:      #15803D;
+    --error:        #B91C1C;
+    --error-tint:   #FBEAEA;
+    --success-tint: #E8F6EC;
+    --r-md: 12px; --r-lg: 18px; --r-xl: 26px; --r-full: 999px;
+    --sh-2: 0 1px 2px rgba(13,27,36,0.04), 0 8px 24px -8px rgba(13,27,36,0.10);
+    --sh-3: 0 2px 4px rgba(13,27,36,0.04), 0 20px 48px -16px rgba(13,27,36,0.16);
+    --sh-frame: 0 2px 6px rgba(13,27,36,0.06), 0 32px 80px -24px rgba(13,27,36,0.28);
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    color-scheme: light;
 }
 
-/* ===== RESET ===== */
+/* ===== RESET / BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--ink);
     font-family: 'Manrope', system-ui, sans-serif;
-    font-weight: 400;
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
+    line-height: 1.6; -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
 }
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
-
-/* ===== TYPOGRAPHY ===== */
-h1, h2, h3 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.025em; line-height: 1.08; }
-h1 { font-size: clamp(2.4rem, 5.4vw, 4.2rem); }
-h2 { font-size: clamp(1.8rem, 3.6vw, 2.6rem); letter-spacing: -0.02em; }
-h3 { font-size: 1.15rem; letter-spacing: -0.01em; }
-p  { font-size: 1rem; }
+h1, h2, h3 { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.025em; line-height: 1.06; text-wrap: balance; }
+h1 { font-size: clamp(2.5rem, 1.6rem + 4.4vw, 4.6rem); }
+h2 { font-size: clamp(1.7rem, 1.4rem + 1.6vw, 2.5rem); }
+h3 { font-size: 1.18rem; line-height: 1.25; }
+p { text-wrap: pretty; }
+a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px;
+}
 
 /* ===== LAYOUT ===== */
-.container { width: 92%; max-width: 1120px; margin: 0 auto; }
-.section { padding: clamp(64px, 10vw, 112px) 0; position: relative; }
+.container { width: min(92%, 1120px); margin-inline: auto; }
+.section { padding-block: clamp(64px, 9vw, 110px); }
+.section__head { text-align: center; max-width: 620px; margin: 0 auto 52px; }
+.section__head p { color: var(--muted); margin-top: 14px; font-size: 1.06rem; }
+
 .eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
-    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--accent);
-    padding: 6px 12px; border-radius: 100px;
-    background: rgba(110,193,228,0.08); border: 1px solid var(--line-strong);
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent-strong);
 }
-.eyebrow::before {
-    content: ''; width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent); box-shadow: 0 0 8px var(--accent);
-    animation: pulse 2.4s ease-in-out infinite;
+.eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.badge-beta {
+    display: inline-flex; padding: 3px 10px; border-radius: var(--r-full);
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--violet-tint); color: var(--violet-ink); vertical-align: middle;
 }
-@keyframes pulse { 50% { opacity: 0.45; transform: scale(0.85); } }
 
-/* ===== BUTTONS ===== */
+/* ===== BOTÕES ===== */
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    padding: 16px 28px; border-radius: 100px;
-    font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 1rem;
-    transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.2s ease;
-    white-space: nowrap;
+    padding: 15px 28px; border-radius: var(--r-full);
+    font-weight: 700; font-size: 1rem; white-space: nowrap;
+    transition: transform 0.15s var(--ease), box-shadow 0.25s var(--ease), background 0.15s var(--ease), border-color 0.15s var(--ease);
 }
-.btn--primary {
-    background: var(--accent);
-    color: var(--bg);
-    box-shadow: var(--shadow-cta);
-}
-.btn--primary:hover { transform: translateY(-2px); box-shadow: 0 18px 50px rgba(110,193,228,0.35), 0 6px 20px rgba(0,0,0,0.5); }
-.btn--primary:active { transform: translateY(0); }
-.btn--ghost {
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--line);
-    padding: 12px 22px; font-size: 0.9rem;
-}
-.btn--ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn--lg { padding: 20px 36px; font-size: 1.08rem; }
-.btn svg { width: 18px; height: 18px; }
+.btn svg { width: 18px; height: 18px; transition: transform 0.15s var(--ease); }
+.btn:hover svg { transform: translateX(3px); }
+.btn:active { transform: scale(0.98); }
+.btn--accent { background: var(--accent); color: #fff; box-shadow: var(--sh-2); }
+.btn--accent:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(13,27,36,0.05), 0 20px 44px -14px rgba(12,124,143,0.45); background: var(--accent-strong); }
+.btn--ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 11px 20px; font-size: 0.92rem; }
+.btn--ghost:hover { border-color: var(--ink); }
+.btn--lg { padding: 19px 36px; font-size: 1.07rem; }
+.btn:disabled { opacity: 0.6; cursor: wait; }
 
 /* ===== HEADER ===== */
 .header {
     position: sticky; top: 0; z-index: 50;
-    background: rgba(9,18,28,0.78);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
 }
-.header__inner {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 0;
-}
-.logo {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em;
-}
+.header__inner { display: flex; align-items: center; justify-content: space-between; padding-block: 13px; }
+.logo { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em; }
 .logo span { color: var(--accent); font-weight: 600; }
 
 /* ===== HERO ===== */
-.hero { padding: clamp(64px, 12vw, 120px) 0 clamp(48px, 8vw, 80px); position: relative; }
+.hero { padding: clamp(56px, 9vw, 100px) 0 clamp(40px, 6vw, 64px); position: relative; }
 .hero::before {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background:
-        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(110,193,228,0.10) 0%, transparent 60%),
-        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(9,118,151,0.08) 0%, transparent 70%);
-    z-index: 0;
+    content: ''; position: absolute; inset: 0 0 30% 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(55% 65% at 50% 0%, rgba(12,124,143,0.07), transparent 70%);
 }
-.hero__inner { position: relative; z-index: 1; text-align: center; max-width: 820px; margin: 0 auto; }
-.hero h1 {
-    margin: 18px 0 20px;
-    background: linear-gradient(180deg, #ffffff 0%, #cfe5f0 100%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.hero__sub {
-    color: var(--muted); font-size: clamp(1.05rem, 1.6vw, 1.2rem);
-    max-width: 620px; margin: 0 auto 36px;
-}
+.hero__inner { text-align: center; max-width: 780px; margin: 0 auto; }
+.hero h1 { margin: 18px 0 20px; }
+.hero__sub { color: var(--muted); font-size: clamp(1.05rem, 1.6vw, 1.22rem); max-width: 620px; margin: 0 auto 32px; }
 .hero__cta { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.trust-row {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px;
-    color: var(--muted); font-size: 0.88rem; margin-top: 6px;
-}
+.trust-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
 .trust-row span { display: inline-flex; align-items: center; gap: 6px; }
 .trust-row svg { width: 14px; height: 14px; color: var(--success); flex-shrink: 0; }
 
-/* ===== HERO MOCKUP ===== */
-.hero__mock {
-    position: relative; z-index: 1;
-    margin: 56px auto 0; max-width: 880px;
-    background: linear-gradient(180deg, var(--bg-elev) 0%, #0a141d 100%);
-    border: 1px solid var(--line); border-radius: var(--radius-lg);
-    padding: 14px;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(110,193,228,0.04);
-    overflow: hidden;
+/* ===== FRAME (screenshot dark sobre claro) ===== */
+.hero__mock { margin: 52px auto 0; max-width: 880px; }
+.frame {
+    background: var(--surface-ink); border-radius: var(--r-xl);
+    padding: 10px; box-shadow: var(--sh-frame); position: relative;
 }
-.hero__mock::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.4;
+.frame__bar { display: flex; gap: 6px; padding: 4px 6px 10px; }
+.frame__bar span { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.16); }
+.frame__media { position: relative; border-radius: calc(var(--r-xl) - 10px); overflow: hidden; }
+.frame img { width: 100%; height: auto; aspect-ratio: 2551 / 1398; background: #0a141d; }
+.frame--glow::after {
+    content: ''; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(60% 50% at 50% 0%, rgba(0,246,236,0.16), transparent 70%);
+    filter: blur(24px);
 }
-.mock__bar { display: flex; gap: 6px; padding: 4px 6px 12px; }
-.mock__bar span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.12); }
-.mock__bar span:nth-child(1) { background: #ff5f57; }
-.mock__bar span:nth-child(2) { background: #febc2e; }
-.mock__bar span:nth-child(3) { background: #28c840; }
-.mock__media { position: relative; border-radius: 10px; overflow: hidden; }
-.mock__img {
-    display: block; width: 100%; height: auto;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    aspect-ratio: 2551 / 1398;
-    background: #0a141d;
-}
-/* Overlays para ofuscar dados sensíveis (emails de clientes reais).
-   Posições em % do mock__media — escalam com a imagem. */
+/* Overlays para ofuscar dados sensíveis (emails de clientes reais). */
 .mock__redact {
-    position: absolute;
-    left: var(--x); top: var(--y);
-    width: var(--w); height: var(--h);
-    backdrop-filter: blur(7px) saturate(140%);
-    -webkit-backdrop-filter: blur(7px) saturate(140%);
-    background: rgba(20, 30, 42, 0.35);
-    border-radius: 3px;
-    pointer-events: none;
+    position: absolute; left: var(--x); top: var(--y); width: var(--w); height: var(--h);
+    backdrop-filter: blur(7px) saturate(140%); -webkit-backdrop-filter: blur(7px) saturate(140%);
+    background: rgba(20, 30, 42, 0.35); border-radius: 3px; pointer-events: none;
 }
-/* Fallback sem backdrop-filter: cobertura sólida */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .mock__redact { background: rgba(20, 30, 42, 0.92); }
 }
+@media (max-width: 480px) { .hero__mock { display: none; } }
 
-@media (max-width: 480px) {
-    .hero__mock { display: none; }
-}
+/* ===== STATS ===== */
+.stats-strip { border-block: 1px solid var(--line); padding-block: 36px; }
+.stats-strip__inner { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px 72px; text-align: center; }
+.stat__value { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem); letter-spacing: -0.03em; display: block; }
+.stat__label { color: var(--muted); font-size: 0.88rem; }
 
-/* ===== FEATURES ===== */
-.features { background: linear-gradient(180deg, var(--bg) 0%, #060d15 100%); }
-.section__head { text-align: center; max-width: 640px; margin: 0 auto 56px; }
-.section__head p { color: var(--muted); margin-top: 14px; font-size: 1.05rem; }
-.features__grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+/* ===== BENTO FEATURES ===== */
+.bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.bento > * { grid-column: span 12; }
+@media (min-width: 720px) {
+    .bento .span-5 { grid-column: span 5; }
+    .bento .span-7 { grid-column: span 7; }
+    .bento .span-12 { grid-column: span 12; }
 }
-.feature {
-    padding: 28px; border-radius: var(--radius);
-    background: var(--bg-elev); border: 1px solid var(--line);
-    transition: border-color 0.3s ease, transform 0.3s ease, background 0.3s ease;
+.card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg); padding: 30px;
+    box-shadow: 0 1px 2px rgba(13,27,36,0.05);
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
 }
-.feature:hover { border-color: var(--line-strong); transform: translateY(-3px); background: #11202d; }
-.feature__icon {
-    width: 44px; height: 44px; border-radius: 10px;
-    background: rgba(110,193,228,0.10); border: 1px solid var(--line-strong);
+.card:hover { transform: translateY(-3px); box-shadow: var(--sh-2); border-color: #D8D5CE; }
+.card__icon {
+    width: 44px; height: 44px; border-radius: var(--r-md);
     display: flex; align-items: center; justify-content: center;
-    color: var(--accent); margin-bottom: 18px;
+    background: var(--accent-tint); color: var(--accent-strong); margin-bottom: 18px;
 }
-.feature__icon svg { width: 22px; height: 22px; }
-.feature h3 { margin-bottom: 10px; }
-.feature p { color: var(--muted); font-size: 0.94rem; }
-
-@media (max-width: 900px) { .features__grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .features__grid { grid-template-columns: 1fr; } }
+.card__icon svg { width: 22px; height: 22px; }
+.card h3 { margin-bottom: 8px; }
+.card p { color: var(--muted); font-size: 0.95rem; }
+.card--wide { display: grid; gap: 24px; align-items: center; }
+@media (min-width: 720px) { .card--wide { grid-template-columns: 1fr 1fr; } }
 
 /* ===== STEPS ===== */
-.steps__grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 960px; margin: 0 auto;
-}
-.step {
-    text-align: left; position: relative;
-    padding: 28px 24px; border-radius: var(--radius);
-    background: rgba(255,255,255,0.02); border: 1px solid var(--line);
-}
-.step__num {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.82rem; font-weight: 700; color: var(--accent);
-    letter-spacing: 0.1em; text-transform: uppercase;
-    display: inline-block; margin-bottom: 12px;
-}
+.steps__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 960px; margin: 0 auto; }
+.step { padding: 28px 24px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.step__num { font-size: 0.78rem; font-weight: 700; color: var(--accent-strong); letter-spacing: 0.1em; text-transform: uppercase; display: inline-block; margin-bottom: 12px; }
 .step h3 { margin-bottom: 8px; }
 .step p { color: var(--muted); font-size: 0.94rem; }
+@media (max-width: 760px) { .steps__grid { grid-template-columns: 1fr; gap: 12px; } }
 
-@media (max-width: 760px) { .steps__grid { grid-template-columns: 1fr; gap: 14px; } }
-
-/* ===== FINAL CTA ===== */
-.cta-final {
-    text-align: center; padding: clamp(72px, 12vw, 120px) 0;
-    background:
-        radial-gradient(ellipse 70% 80% at 50% 50%, rgba(110,193,228,0.15) 0%, transparent 65%),
-        var(--bg-2);
-    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+/* ===== PRICING / TRIAL CARD ===== */
+.pricing-card {
+    max-width: 640px; margin: 0 auto; text-align: center;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-xl); padding: clamp(36px, 5vw, 56px);
+    box-shadow: var(--sh-3); position: relative; overflow: hidden;
 }
-.cta-final h2 { max-width: 720px; margin: 0 auto 18px; }
-.cta-final p { color: var(--muted); max-width: 560px; margin: 0 auto 32px; font-size: 1.08rem; }
+.pricing-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), #00F6EC);
+}
+.pricing-card h2 { margin-bottom: 8px; }
+.pricing-card > p { color: var(--muted); margin-bottom: 28px; }
+.pricing-list { list-style: none; text-align: left; max-width: 400px; margin: 0 auto 32px; display: flex; flex-direction: column; gap: 12px; }
+.pricing-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.97rem; }
+.pricing-list svg { width: 18px; height: 18px; color: var(--success); flex-shrink: 0; margin-top: 3px; }
+
+/* ===== FAQ ===== */
+.faq { max-width: 700px; margin-inline: auto; display: flex; flex-direction: column; gap: 12px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px 24px; }
+.faq summary { font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.3rem; line-height: 1; color: var(--accent-strong); transition: rotate 0.15s var(--ease); }
+.faq details[open] summary::after { rotate: 45deg; }
+.faq details p { color: var(--muted); padding-top: 12px; font-size: 0.95rem; }
+
+/* ===== TRIAL FORM ===== */
+.trial-section { padding: clamp(64px, 9vw, 100px) 1.5rem; background: var(--surface-2); }
+.trial-container {
+    max-width: 560px; margin: 0 auto; text-align: center;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-xl); box-shadow: var(--sh-3);
+    padding: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 3vw, 2.5rem);
+}
+.trial-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.9rem; background: var(--accent-tint);
+    color: var(--accent-strong); border-radius: var(--r-full);
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700;
+}
+.pulse-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulseDot 2s infinite; }
+@keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.trial-title { font-size: clamp(1.9rem, 4.4vw, 2.8rem); margin: 1.4rem 0 0.9rem; }
+.trial-highlight { color: var(--accent-strong); }
+.trial-subtitle { color: var(--muted); font-size: 1rem; max-width: 420px; margin: 0 auto 2.1rem; }
+.trial-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.trial-form input[type="text"],
+.trial-form input[type="email"] {
+    width: 100%; padding: 1rem 1.25rem;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-full); font-size: 1rem;
+    transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.trial-form input::placeholder { color: #98A4AD; }
+.trial-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); }
+.trial-cta {
+    margin-top: 0.5rem; padding: 1.1rem 2rem;
+    background: var(--accent); color: #fff;
+    border-radius: var(--r-full); font-size: 1.02rem; font-weight: 700;
+    box-shadow: var(--sh-2);
+    transition: transform 0.15s var(--ease), box-shadow 0.25s var(--ease), background 0.15s var(--ease);
+}
+.trial-cta:hover:not(:disabled) { transform: translateY(-2px); background: var(--accent-strong); box-shadow: 0 20px 44px -14px rgba(12,124,143,0.45); }
+.trial-microcopy { font-size: 0.8rem; color: var(--muted); margin-top: 1rem; }
+.trial-message { margin-top: 1rem; padding: 0.75rem; border-radius: var(--r-md); font-size: 0.9rem; }
+.trial-message:empty { display: none; padding: 0; margin: 0; }
+.trial-message.success { background: var(--success-tint); color: var(--success); }
+.trial-message.error { background: var(--error-tint); color: var(--error); }
+.trial-message a { color: var(--accent-strong); text-decoration: underline; }
+
+/* ===== CTA FINAL ===== */
+.cta-final { text-align: center; }
+.cta-final h2 { max-width: 680px; margin: 0 auto 16px; }
+.cta-final > .container > p { color: var(--muted); max-width: 540px; margin: 0 auto 30px; font-size: 1.06rem; }
 
 /* ===== FOOTER ===== */
-.footer {
-    padding: 32px 0; font-size: 0.85rem; color: var(--muted);
-    border-top: 1px solid var(--line);
-}
-.footer__inner {
-    display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;
-}
+.footer { padding: 30px 0; font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); }
+.footer__inner { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
 .footer__links { display: flex; gap: 22px; }
-.footer__links a:hover { color: var(--accent); }
+.footer__links a:hover { color: var(--ink); }
 
 /* ===== CONSENT BANNER ===== */
 .consent {
     position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 100;
-    max-width: 720px; margin: 0 auto;
-    background: rgba(14, 26, 38, 0.96);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(110,193,228,0.05);
+    max-width: 680px; margin: 0 auto;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg); box-shadow: var(--sh-3);
     padding: 20px 22px;
-    transform: translateY(120%);
-    opacity: 0;
-    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease;
+    transform: translateY(120%); opacity: 0;
+    transition: transform 0.45s var(--ease), opacity 0.3s ease;
 }
 .consent.is-visible { transform: translateY(0); opacity: 1; }
 .consent[hidden] { display: none !important; }
-.consent__inner {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px;
-}
-.consent__text {
-    flex: 1 1 320px; min-width: 240px;
-    font-size: 0.88rem; color: var(--text); line-height: 1.55;
-}
-.consent__text strong { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 4px; color: var(--text); }
+.consent__inner { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; }
+.consent__text { flex: 1 1 300px; min-width: 240px; font-size: 0.88rem; }
+.consent__text strong { display: block; font-family: 'Bricolage Grotesque', sans-serif; margin-bottom: 3px; }
 .consent__text p { color: var(--muted); font-size: 0.85rem; }
-.consent__text a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.consent__text a:hover { color: var(--text); }
-.consent__actions {
-    display: flex; gap: 10px; flex-shrink: 0;
-}
-.consent__actions .btn { padding: 11px 22px; font-size: 0.9rem; }
+.consent__text a { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 3px; }
+.consent__actions { display: flex; gap: 10px; flex-shrink: 0; }
+.consent__actions .btn { padding: 10px 20px; font-size: 0.88rem; }
+.consent__actions .btn--solid { background: var(--ink); color: #fff; }
 @media (max-width: 560px) {
     .consent { left: 8px; right: 8px; bottom: 8px; padding: 16px; }
     .consent__inner { flex-direction: column; align-items: stretch; }
@@ -305,147 +307,44 @@ p  { font-size: 1rem; }
     .consent__actions .btn { flex: 1; justify-content: center; }
 }
 
-/* ===== INTERSECTION REVEAL ===== */
-.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s ease; }
-.reveal.is-visible { opacity: 1; transform: translateY(0); }
+/* ===== REVEAL ===== */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+.reveal.is-visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
-    .eyebrow::before { animation: none; }
+    .pulse-dot { animation: none; }
     * { scroll-behavior: auto !important; }
 }
-
-/* ===== TRIAL SIGNUP FORM ===== */
-.trial-section {
-    padding: clamp(64px, 10vw, 96px) 1.5rem;
-    background: linear-gradient(180deg, #051a26 0%, var(--bg-2) 100%);
-}
-.trial-container {
-    max-width: 560px;
-    margin: 0 auto;
-    text-align: center;
-    background: rgba(13, 61, 82, 0.4);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(110, 193, 228, 0.15);
-    border-radius: 24px;
-    padding: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 3vw, 2rem);
-}
-.trial-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 0.9rem;
-    background: rgba(110, 193, 228, 0.08);
-    border: 1px solid rgba(110, 193, 228, 0.25);
-    color: var(--accent);
-    border-radius: 999px;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    font-weight: 500;
-}
-.pulse-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulseDot 2s infinite;
-}
-@keyframes pulseDot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-.trial-title {
-    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-    font-size: clamp(1.9rem, 4.6vw, 3rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 1.5rem 0 1rem;
-    color: #f7faff;
-}
-.trial-highlight {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-.trial-subtitle {
-    color: var(--muted);
-    font-size: 1rem;
-    line-height: 1.6;
-    max-width: 420px;
-    margin: 0 auto 2.25rem;
-}
-.trial-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-.trial-form input[type="text"],
-.trial-form input[type="email"] {
-    width: 100%;
-    padding: 1rem 1.25rem;
-    background: rgba(13, 61, 82, 0.6);
-    border: 1px solid rgba(110, 193, 228, 0.2);
-    border-radius: 999px;
-    color: #f7faff;
-    font-size: 1rem;
-    font-family: inherit;
-    transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-}
-.trial-form input:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: rgba(13, 61, 82, 0.9);
-    box-shadow: 0 0 0 4px rgba(110, 193, 228, 0.12);
-}
-.trial-form input::placeholder { color: #6b7d8a; }
-.trial-cta {
-    margin-top: 0.5rem;
-    padding: 1.1rem 2rem;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-    color: var(--bg);
-    border: none;
-    border-radius: 999px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
-    animation: pulseGlow 2.4s infinite;
-}
-.trial-cta:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(110, 193, 228, 0.4);
-}
-.trial-cta:disabled { opacity: 0.6; cursor: wait; animation: none; }
-@keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(110, 193, 228, 0.4); }
-    50% { box-shadow: 0 0 0 16px rgba(110, 193, 228, 0); }
-}
-.trial-microcopy { font-size: 0.78rem; color: #6b7d8a; margin-top: 1rem; }
-.trial-message {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    transition: opacity 0.3s ease, background 0.3s ease;
-}
-.trial-message:empty { display: none; padding: 0; margin: 0; }
-.trial-message.success {
-    background: rgba(110, 193, 228, 0.1);
-    color: var(--accent);
-    border: 1px solid rgba(110, 193, 228, 0.3);
-}
-.trial-message.error {
-    background: rgba(239, 68, 68, 0.1);
-    color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-.trial-message a { color: var(--accent); text-decoration: underline; }
-@media (prefers-reduced-motion: reduce) {
-    .pulse-dot, .trial-cta { animation: none; }
-}
 </style>
+
+<!-- schema.org: produto + FAQ -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "SoftwareApplication",
+            "name": "Branct CRM",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "url": "https://branct.com/crm-gestao.html",
+            "description": "CRM para PMEs com IA que responde leads no WhatsApp 24/7, pipeline visual e dashboards. Trial de 7 dias sem cartão.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "description": "Trial gratuito de 7 dias, sem cartão de crédito" },
+            "publisher": { "@type": "Organization", "name": "BRANCT", "url": "https://branct.com/" }
+        },
+        {
+            "@type": "FAQPage",
+            "mainEntity": [
+                { "@type": "Question", "name": "Preciso de cartão de crédito para o trial?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Crias conta com email e password e tens 7 dias de acesso completo ao plano Business. Cancelas quando quiseres, sem fidelização." } },
+                { "@type": "Question", "name": "A IA do WhatsApp substitui a minha equipa?", "acceptedAnswer": { "@type": "Answer", "text": "Não — responde primeiro, qualifica e agenda. Quando a conversa precisa de um humano, passa-a à tua equipa com todo o contexto." } },
+                { "@type": "Question", "name": "O Branct CRM serve para o meu setor?", "acceptedAnswer": { "@type": "Answer", "text": "O CRM adapta-se ao segmento: e-commerce, imobiliária, serviços ou portfólio. Suporta vários idiomas e moedas." } },
+                { "@type": "Question", "name": "O que acontece no fim dos 7 dias?", "acceptedAnswer": { "@type": "Answer", "text": "Escolhes se queres continuar num plano pago. Se não continuares, não pagas nada — não pedimos cartão no registo." } },
+                { "@type": "Question", "name": "Os meus dados ficam seguros?", "acceptedAnswer": { "@type": "Answer", "text": "Sim. Dados alojados na UE, RGPD cumprido e os teus contactos nunca são partilhados com terceiros." } }
+            ]
+        }
+    ]
+}
+</script>
 
 <!-- ===== Meta Pixel — carregado, mas init/track só após consentimento ===== -->
 <script>
@@ -459,34 +358,28 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 <header class="header">
     <div class="container header__inner">
         <a href="#top" class="logo">BRANCT<span>.Tech</span></a>
-        <a href="#trial-signup"
-           class="btn btn--ghost"
-           data-cta="header">
-            Iniciar trial
-        </a>
+        <a href="#trial-signup" class="btn btn--ghost" data-cta="header">Testa grátis 7 dias</a>
     </div>
 </header>
 
 <main id="top">
 
-    <!-- ===== HERO ===== -->
+    <!-- ===== HERO — um único CTA dominante ===== -->
     <section class="hero">
         <div class="container hero__inner">
-            <span class="eyebrow">CRM Branct • Trial 7 dias</span>
+            <span class="eyebrow">Branct CRM · Trial 7 dias sem cartão</span>
             <h1>Para de perder leads enquanto dormes.</h1>
-            <p class="hero__sub">Pipeline visual, follow-up automático e IA que responde leads em 30 segundos — tudo num só lugar. Trial de 7 dias sem cartão de crédito.</p>
+            <p class="hero__sub">A IA do Branct CRM responde os teus leads no WhatsApp em segundos, 24/7 — e passa a conversa à tua equipa quando é preciso. Pipeline visual e receita em tempo real, tudo num só lugar.</p>
 
             <div class="hero__cta">
-                <a href="#trial-signup"
-                   class="btn btn--primary btn--lg"
-                   data-cta="hero">
-                    Começar trial gratuito de 7 dias
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <a href="#trial-signup" class="btn btn--accent btn--lg" data-cta="hero">
+                    Testa grátis 7 dias
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </a>
                 <div class="trust-row">
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Setup em 60 segundos</span>
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão</span>
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Acesso imediato</span>
+                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão</span>
+                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Setup em 60 segundos</span>
+                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Plano Business completo</span>
                 </div>
             </div>
         </div>
@@ -494,90 +387,83 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
         <!-- Screenshot real do dashboard Branct CRM -->
         <div class="container">
             <div class="hero__mock reveal">
-                <div class="mock__bar" aria-hidden="true"><span></span><span></span><span></span></div>
-                <div class="mock__media">
-                    <img class="mock__img"
-                         src="src/img/crm-dashboard.jpeg"
-                         alt="Dashboard do Branct CRM com pipeline de vendas, leads recentes, métricas de conversão e origem dos leads."
-                         width="2551"
-                         height="1398"
-                         loading="eager"
-                         decoding="async"
-                         fetchpriority="high">
-                    <!-- Blur sobre emails de clientes reais (privacidade) -->
-                    <div class="mock__redact" style="--x:17%; --y:62.5%; --w:18%; --h:2.6%;" aria-hidden="true"></div>
-                    <div class="mock__redact" style="--x:17%; --y:69%;   --w:14%; --h:2.6%;" aria-hidden="true"></div>
-                    <div class="mock__redact" style="--x:17%; --y:75.5%; --w:17%; --h:2.6%;" aria-hidden="true"></div>
+                <div class="frame frame--glow">
+                    <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+                    <div class="frame__media">
+                        <img src="src/img/crm-dashboard.jpeg"
+                             alt="Dashboard do Branct CRM com pipeline de vendas, leads recentes, métricas de conversão e origem dos leads."
+                             width="2551" height="1398"
+                             loading="eager" decoding="async" fetchpriority="high">
+                        <!-- Blur sobre emails de clientes reais (privacidade) -->
+                        <div class="mock__redact" style="--x:17%; --y:62.5%; --w:18%; --h:2.6%;" aria-hidden="true"></div>
+                        <div class="mock__redact" style="--x:17%; --y:69%;   --w:14%; --h:2.6%;" aria-hidden="true"></div>
+                        <div class="mock__redact" style="--x:17%; --y:75.5%; --w:17%; --h:2.6%;" aria-hidden="true"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ===== FEATURES ===== -->
-    <section class="section features">
+    <!-- ===== PROVA (números) ===== -->
+    <section class="stats-strip" aria-label="Números">
+        <div class="container stats-strip__inner">
+            <div><span class="stat__value">30s</span><span class="stat__label">resposta média da IA</span></div>
+            <div><span class="stat__value">24/7</span><span class="stat__label">atendimento no WhatsApp</span></div>
+            <div><span class="stat__value">60s</span><span class="stat__label">do registo ao primeiro lead</span></div>
+            <div><span class="stat__value">0€</span><span class="stat__label">durante os 7 dias de trial</span></div>
+        </div>
+    </section>
+
+    <!-- ===== 3 KILLER FEATURES (bento) ===== -->
+    <section class="section">
         <div class="container">
             <div class="section__head reveal">
-                <h2>Tudo o que precisas para escalar vendas.</h2>
-                <p>Centraliza, automatiza e vê o resultado — sem ter de juntar 5 ferramentas diferentes.</p>
+                <h2>Três motivos para testares hoje.</h2>
+                <p>Não é mais uma ferramenta para juntar às outras cinco. É o lugar onde a tua operação comercial passa a viver.</p>
             </div>
-            <div class="features__grid">
-                <article class="feature reveal">
-                    <div class="feature__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            <div class="bento">
+                <article class="card reveal span-7">
+                    <div class="card__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                     </div>
-                    <h3>Funil de vendas visual</h3>
-                    <p>Vês todo o teu pipeline num quadro Kanban intuitivo. Arrastas e largas deals entre etapas. Nunca perdes uma oportunidade.</p>
+                    <h3>Atendimento IA 24/7 no WhatsApp Business</h3>
+                    <p>O lead escreve às 23h47? A IA responde em segundos, qualifica e agenda. E quando a conversa precisa de gente a sério, passa-a à tua equipa com todo o contexto — handoff humano, sem perder o fio.</p>
                 </article>
-
-                <article class="feature reveal">
-                    <div class="feature__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <article class="card reveal span-5">
+                    <div class="card__icon" style="background:var(--violet-tint); color:var(--violet-ink)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                     </div>
-                    <h3>Follow-up automático</h3>
-                    <p>Sequências de email, SMS e WhatsApp disparadas automaticamente. Nutrição de leads no piloto automático.</p>
+                    <h3>Anúncios e analytics num só painel <span class="badge-beta">Beta</span></h3>
+                    <p>Dashboard unificado com atribuição real ao CRM: deixas de adivinhar que campanha gerou que receita — vês.</p>
                 </article>
-
-                <article class="feature reveal">
-                    <div class="feature__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <article class="card card--wide reveal span-12">
+                    <div>
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        </div>
+                        <h3>Adapta-se ao teu negócio — não o contrário</h3>
+                        <p>E-commerce, imobiliária, serviços ou portfólio: o CRM ajusta campos, pipeline e linguagem ao teu segmento. Multi-idioma e multi-moeda incluídos, do primeiro dia. E o pipeline é visual: arrastas, largas, nunca mais perdes uma oportunidade numa folha de cálculo.</p>
                     </div>
-                    <h3>WhatsApp, email e omni</h3>
-                    <p>Todas as conversas num só lugar. Histórico completo de cada lead, independente do canal.</p>
-                </article>
-
-                <article class="feature reveal">
-                    <div class="feature__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <div class="frame">
+                        <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+                        <div class="frame__media">
+                            <img src="src/img/crm-dashboard.jpeg" alt="Pipeline visual do Branct CRM" width="2551" height="1398" loading="lazy" decoding="async">
+                            <div class="mock__redact" style="--x:17%; --y:62.5%; --w:18%; --h:2.6%;" aria-hidden="true"></div>
+                            <div class="mock__redact" style="--x:17%; --y:69%;   --w:14%; --h:2.6%;" aria-hidden="true"></div>
+                            <div class="mock__redact" style="--x:17%; --y:75.5%; --w:17%; --h:2.6%;" aria-hidden="true"></div>
+                        </div>
                     </div>
-                    <h3>Receita em tempo real</h3>
-                    <p>Dashboards que mostram exatamente onde está o teu dinheiro. Previsão, taxa de conversão e performance por vendedor.</p>
-                </article>
-
-                <article class="feature reveal">
-                    <div class="feature__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.39.16.7.43.92.76"/></svg>
-                    </div>
-                    <h3>Lead scoring com IA</h3>
-                    <p>Algoritmos que identificam os leads mais quentes. Foca a tua energia onde há maior probabilidade de fechar.</p>
-                </article>
-
-                <article class="feature reveal">
-                    <div class="feature__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <h3>Setup em 60 segundos</h3>
-                    <p>Crias conta, conectas os canais e começas a receber leads no funil. Sem instalações, sem configurações longas.</p>
                 </article>
             </div>
         </div>
     </section>
 
-    <!-- ===== STEPS ===== -->
-    <section class="section">
+    <!-- ===== COMO FUNCIONA ===== -->
+    <section class="section" style="padding-top:0">
         <div class="container">
             <div class="section__head reveal">
                 <h2>Começa em 3 passos.</h2>
-                <p>Do registo ao primeiro lead organizado, em menos de um minuto.</p>
+                <p>Do registo ao primeiro lead respondido pela IA, em menos de um minuto.</p>
             </div>
             <div class="steps__grid">
                 <article class="step reveal">
@@ -587,34 +473,89 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                 </article>
                 <article class="step reveal">
                     <span class="step__num">02 — Conexão</span>
-                    <h3>Conecta os canais</h3>
-                    <p>Ligas email, WhatsApp e formulários. Os leads começam a entrar no pipeline automaticamente.</p>
+                    <h3>Conecta o WhatsApp</h3>
+                    <p>Ligas o WhatsApp Business, o email e os formulários. Os leads entram no pipeline sozinhos.</p>
                 </article>
                 <article class="step reveal">
                     <span class="step__num">03 — Operação</span>
                     <h3>Vende com método</h3>
-                    <p>Pipeline visual, follow-ups automáticos e dashboards. Sete dias para testares a operação completa.</p>
+                    <p>A IA responde, tu fechas. Pipeline visual e dashboards durante 7 dias completos.</p>
                 </article>
             </div>
         </div>
     </section>
 
-    <!-- ===== FINAL CTA ===== -->
-    <section class="cta-final">
+    <!-- ===== PRICING / TRIAL ===== -->
+    <section class="section" style="padding-top:0" id="pricing">
         <div class="container">
-            <span class="eyebrow reveal">Pronto para escalar</span>
-            <h2 class="reveal" style="margin-top:18px">Pronto para organizares?</h2>
-            <p class="reveal">Chega de leads perdidos em folhas de cálculo. Centraliza, automatiza e escala — durante 7 dias, gratuitamente.</p>
+            <div class="pricing-card reveal">
+                <span class="eyebrow">O que recebes no trial</span>
+                <h2 style="margin-top:14px">Plano Business completo. 7 dias. 0€.</h2>
+                <p>Sem versões castradas: testas exatamente o que pagarias.</p>
+                <ul class="pricing-list">
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> IA no WhatsApp 24/7 com handoff humano</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Pipeline visual com etapas e regras</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Dashboard de anúncios e analytics (Beta)</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Multi-segmento, multi-idioma e multi-moeda</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão, sem fidelização, cancelas quando quiseres</li>
+                </ul>
+                <a href="#trial-signup" class="btn btn--accent btn--lg" data-cta="pricing">
+                    Testa grátis 7 dias
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section class="section" style="padding-top:0" id="faq">
+        <div class="container">
+            <div class="section__head reveal">
+                <h2>Perguntas frequentes</h2>
+            </div>
+            <div class="faq reveal">
+                <details>
+                    <summary>Preciso de cartão de crédito para o trial?</summary>
+                    <p>Não. Crias conta com email e password e tens 7 dias de acesso completo ao plano Business. Cancelas quando quiseres, sem fidelização.</p>
+                </details>
+                <details>
+                    <summary>A IA do WhatsApp substitui a minha equipa?</summary>
+                    <p>Não — responde primeiro, qualifica e agenda. Quando a conversa precisa de um humano, passa-a à tua equipa com todo o contexto.</p>
+                </details>
+                <details>
+                    <summary>O Branct CRM serve para o meu setor?</summary>
+                    <p>O CRM adapta-se ao segmento: e-commerce, imobiliária, serviços ou portfólio. Suporta vários idiomas e moedas — vendes para fora, ele acompanha.</p>
+                </details>
+                <details>
+                    <summary>O que acontece no fim dos 7 dias?</summary>
+                    <p>Escolhes se queres continuar num plano pago. Se não continuares, não pagas nada — não pedimos cartão no registo, por isso não há surpresas na fatura.</p>
+                </details>
+                <details>
+                    <summary>Os meus dados ficam seguros?</summary>
+                    <p>Sim. Dados alojados na UE, RGPD cumprido e os teus contactos nunca são partilhados com terceiros.</p>
+                </details>
+                <details>
+                    <summary>Tenho uma agência — posso recomendar o Branct CRM?</summary>
+                    <p>Sim: o programa de afiliados paga 30% de comissão recorrente por cada cliente que trouxeres. Fala connosco depois de criares a tua conta.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CTA FINAL ===== -->
+    <section class="section cta-final" style="padding-top:0">
+        <div class="container">
+            <span class="eyebrow reveal">Pronto para começar</span>
+            <h2 class="reveal" style="margin-top:14px">O teu próximo lead chega daqui a minutos. Quem responde?</h2>
+            <p class="reveal">Chega de leads perdidos em folhas de cálculo e mensagens sem resposta. Em 60 segundos a IA está a trabalhar por ti.</p>
             <div class="hero__cta reveal">
-                <a href="#trial-signup"
-                   class="btn btn--primary btn--lg"
-                   data-cta="final">
-                    Começar trial gratuito de 7 dias
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <a href="#trial-signup" class="btn btn--accent btn--lg" data-cta="final">
+                    Testa grátis 7 dias
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </a>
                 <div class="trust-row">
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão</span>
-                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Acesso imediato</span>
+                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão</span>
+                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Acesso imediato</span>
                 </div>
             </div>
         </div>
@@ -633,7 +574,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
             </h2>
 
             <p class="trial-subtitle">
-                Cria a tua conta, conecta os canais e vê o teu primeiro lead a ser respondido automaticamente.
+                Cria a tua conta, conecta o WhatsApp e vê o teu primeiro lead a ser respondido pela IA.
             </p>
 
             <form id="trial-form" class="trial-form" novalidate>
@@ -666,7 +607,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                 <input type="hidden" name="utm_term"     id="utm-term" />
 
                 <button type="submit" class="trial-cta" id="trial-submit">
-                    Começar 7 dias grátis →
+                    Testa grátis 7 dias →
                 </button>
 
                 <div class="trial-microcopy">
@@ -689,7 +630,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
         </div>
         <div class="consent__actions">
             <button type="button" class="btn btn--ghost" id="consent-reject">Recusar</button>
-            <button type="button" class="btn btn--primary" id="consent-accept">Aceitar</button>
+            <button type="button" class="btn btn--solid" id="consent-accept">Aceitar</button>
         </div>
     </div>
 </aside>

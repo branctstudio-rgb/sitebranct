@@ -122,7 +122,7 @@
     function setBusy(btn, busy) {
         if (!btn) return;
         btn.disabled = !!busy;
-        btn.textContent = busy ? 'A redirecionar-te...' : 'Começar 7 dias grátis →';
+        btn.textContent = busy ? 'A redirecionar-te...' : 'Testa grátis 7 dias →';
     }
 
     function handleSubmit(event) {

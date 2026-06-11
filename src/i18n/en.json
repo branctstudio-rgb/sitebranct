@@ -11,8 +11,80 @@
   "servicesMenu": {
     "website": "Premium Website",
     "landing": "Landing Pages",
-    "crm": "CRM & Management",
+    "crm": "Branct CRM",
     "automation": "Automation & AI"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Digital agency + our own product",
+      "title": "Websites that sell. A CRM that replies for you.",
+      "sub": "We build conversion-driven premium websites — and Branct CRM, with AI that answers your leads on WhatsApp, around the clock.",
+      "ctaPrimary": "Request a proposal",
+      "ctaSecondary": "Discover Branct CRM",
+      "trust1": "Core Web Vitals 95+",
+      "trust2": "WhatsApp AI 24/7",
+      "trust3": "4 languages, 1 platform",
+      "floatTitle": "Lead answered by AI",
+      "floatSub": "WhatsApp · 30 seconds ago"
+    },
+    "proof": {
+      "stat1": "Lighthouse on delivered sites",
+      "stat2": "average AI response time",
+      "stat3": "clients in 2 markets"
+    },
+    "services": {
+      "eyebrow": "What we do",
+      "title": "Four fronts, one method.",
+      "cta": "See details",
+      "crmCta": "Try free for 7 days",
+      "web": { "title": "Premium Websites", "desc": "Fast, refined sites built to convert — on solid technical foundations for SEO, performance and scale." },
+      "landing": { "title": "Landing Pages", "desc": "Campaign pages with one message, one path, one action. Ready for paid traffic, with tracking dialled in." },
+      "crm": { "title": "Branct CRM", "desc": "Our platform: visual pipeline, WhatsApp AI and dashboards. 7-day trial, no credit card." },
+      "auto": { "title": "Automation & AI", "desc": "Lead handling and nurturing on autopilot, without losing the human touch — flows, segmentation and AI that replies." }
+    },
+    "crm": {
+      "eyebrow": "Our product · Branct CRM",
+      "title": "Stop losing leads while you sleep.",
+      "f1": "<strong>24/7 AI on WhatsApp</strong> — replies, qualifies and hands over to a human when it matters.",
+      "f2": "<strong>Ads & analytics dashboard (Beta)</strong> — real attribution: see which campaign drove which revenue.",
+      "f3": "<strong>Adapts to your business</strong> — e-commerce, real estate, services or portfolio. Multi-language and multi-currency.",
+      "cta": "Try free for 7 days",
+      "micro": "No credit card. No hassle. Cancel anytime."
+    },
+    "process": {
+      "eyebrow": "How we work",
+      "title": "An engineering method, from briefing to growth.",
+      "s1": { "title": "Discovery", "desc": "We align goals, audience and priorities. Architecture comes before design." },
+      "s2": { "title": "Design", "desc": "UI/UX and a testable prototype. Clarity, credibility and a focus on conversion." },
+      "s3": { "title": "Build", "desc": "Implementation with performance, technical SEO and tracking & automation integrations." },
+      "s4": { "title": "Scale", "desc": "Continuous monitoring and optimisation. Data-driven evolution." }
+    },
+    "cases": {
+      "eyebrow": "Recent work",
+      "title": "Brands that already trust us.",
+      "neoprag": "Corporate website · BR",
+      "vertexway": "Website & brand · PT",
+      "albino": "Real estate · landing page · PT",
+      "kb": "Accounting · website · BR"
+    },
+    "cta": {
+      "eyebrow": "Next step",
+      "title": "Ready to level up your digital presence?",
+      "sub": "Send us your goal and deadline. We come back with a clear plan and next steps — within 24h.",
+      "primary": "Request a proposal",
+      "whatsapp": "Chat on WhatsApp"
+    },
+    "footer": {
+      "tagline": "Premium websites and an AI-powered CRM — digital engineering for growing SMBs.",
+      "company": "Company",
+      "legal": "Legal"
+    },
+    "consent": {
+      "title": "Privacy first.",
+      "desc": "We use essential cookies and marketing cookies (Meta) to measure campaigns. Accept or decline — your choice is saved. See our <a href=\"politica-privacidade.html#cookies\">Privacy Policy</a>.",
+      "accept": "Accept",
+      "reject": "Decline"
+    }
   },
   "pageTitles": {
     "services": "Services",
