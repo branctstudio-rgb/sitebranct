@@ -302,6 +302,65 @@
         vids.forEach(function (v) { io.observe(v); });
     }
 
+    /* ============ PREVIEW DOS TRABALHOS ============ */
+    // Itens [data-img] mostram uma janela com a capa do site a seguir o
+    // cursor (como o site antigo, sem GSAP). Só em rato fino; em táctil
+    // o link continua a abrir o site normalmente.
+    function setupCasePreview() {
+        var items = document.querySelectorAll('[data-img]');
+        if (!items.length) return;
+        var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!fine || noMotion) return;
+
+        var box = document.createElement('div');
+        box.className = 'case-preview';
+        box.setAttribute('aria-hidden', 'true');
+        var img = document.createElement('img');
+        img.alt = '';
+        img.decoding = 'async';
+        box.appendChild(img);
+        document.body.appendChild(box);
+
+        var raf = null, x = 0, y = 0;
+        function place() {
+            raf = null;
+            var w = box.offsetWidth, h = box.offsetHeight;
+            var left = Math.min(x + 24, window.innerWidth - w - 16);
+            var top = Math.min(Math.max(y - h / 2, 16), window.innerHeight - h - 16);
+            box.style.transform = 'translate(' + left + 'px, ' + top + 'px)';
+        }
+        function onMove(e) {
+            x = e.clientX; y = e.clientY;
+            if (!raf) raf = requestAnimationFrame(place);
+        }
+
+        items.forEach(function (item) {
+            item.addEventListener('pointerenter', function (e) {
+                img.src = item.dataset.img;
+                x = e.clientX; y = e.clientY;
+                place();
+                box.classList.add('is-visible');
+            });
+            item.addEventListener('pointermove', onMove);
+            item.addEventListener('pointerleave', function () {
+                box.classList.remove('is-visible');
+            });
+        });
+
+        // Pré-carrega as capas no primeiro toque do rato na lista
+        var preloaded = false;
+        document.addEventListener('pointermove', function once() {
+            if (preloaded) return;
+            preloaded = true;
+            document.removeEventListener('pointermove', once);
+            items.forEach(function (item) {
+                var i = new Image();
+                i.src = item.dataset.img;
+            });
+        }, { once: true });
+    }
+
     /* ============ REVEALS ============ */
     function setupReveals() {
         var els = document.querySelectorAll('.reveal, .reveal-stagger');
@@ -396,6 +455,7 @@
         setupReveals();
         setupTilt();
         setupLazyVideo();
+        setupCasePreview();
         setupLeadForms();
         var saved = 'pt';
         try { saved = localStorage.getItem(LANG_KEY) || 'pt'; } catch (e) {}

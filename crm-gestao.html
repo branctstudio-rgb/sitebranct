@@ -328,6 +328,23 @@ a:focus-visible, button:focus-visible, input:focus-visible {
     .consent__actions .btn { flex: 1; justify-content: center; }
 }
 
+/* ===== SCROLL FX (scroll-driven, CSS puro; ignorado sem suporte) ===== */
+.scroll-progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 300;
+    background: linear-gradient(90deg, var(--accent), #00F6EC);
+    transform-origin: 0 50%; transform: scaleX(0); pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+        .scroll-progress { animation: fx-progress linear both; animation-timeline: scroll(root); }
+        .fx-rise { animation: fx-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 85%; }
+        .fx-zoom { animation: fx-zoom linear both; animation-timeline: view(); animation-range: entry 0% entry 95%; }
+    }
+}
+@keyframes fx-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes fx-rise { from { opacity: 0; translate: 0 44px; } to { opacity: 1; translate: 0 0; } }
+@keyframes fx-zoom { from { scale: 0.92; opacity: 0.35; } to { scale: 1; opacity: 1; } }
+
 /* ===== REVEAL (usa `translate` para compor com o transform do tilt) ===== */
 .reveal { opacity: 0; translate: 0 16px; transition: opacity 0.6s var(--ease), translate 0.6s var(--ease); }
 .reveal.is-visible { opacity: 1; translate: 0 0; }
@@ -412,6 +429,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 </script>
 </head>
 <body>
+<div class="scroll-progress" aria-hidden="true"></div>
 
 <!-- ===== HEADER ===== -->
 <header class="header">
@@ -466,10 +484,10 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
     <!-- ===== PROVA (números) ===== -->
     <section class="stats-strip" aria-label="Números">
         <div class="container stats-strip__inner">
-            <div><span class="stat__value">30s</span><span class="stat__label">resposta média da IA</span></div>
-            <div><span class="stat__value">24/7</span><span class="stat__label">atendimento no WhatsApp</span></div>
-            <div><span class="stat__value">60s</span><span class="stat__label">do registo ao primeiro lead</span></div>
-            <div><span class="stat__value">0€</span><span class="stat__label">durante os 7 dias de trial</span></div>
+            <div class="fx-rise"><span class="stat__value">30s</span><span class="stat__label">resposta média da IA</span></div>
+            <div class="fx-rise"><span class="stat__value">24/7</span><span class="stat__label">atendimento no WhatsApp</span></div>
+            <div class="fx-rise"><span class="stat__value">60s</span><span class="stat__label">do registo ao primeiro lead</span></div>
+            <div class="fx-rise"><span class="stat__value">0€</span><span class="stat__label">durante os 7 dias de trial</span></div>
         </div>
     </section>
 
@@ -503,7 +521,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                         <h3>Adapta-se ao teu negócio — não o contrário</h3>
                         <p>E-commerce, imobiliária, serviços ou portfólio: o CRM ajusta campos, pipeline e linguagem ao teu segmento. Multi-idioma e multi-moeda incluídos, do primeiro dia. E o pipeline é visual: arrastas, largas, nunca mais perdes uma oportunidade numa folha de cálculo.</p>
                     </div>
-                    <div class="frame">
+                    <div class="frame fx-zoom">
                         <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
                         <div class="frame__media">
                             <video data-lazy-video muted loop playsinline preload="none"

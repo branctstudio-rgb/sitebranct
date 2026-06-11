@@ -570,6 +570,72 @@
     .cta-final p { color: var(--muted); max-width: 520px; margin: var(--sp-4) auto var(--sp-8); font-size: var(--fs-lead); }
 }
 
+/* ===== SCROLL FX (scroll-driven animations, CSS puro) =====
+   Animações "agarradas" à posição do scroll via animation-timeline.
+   Progressive enhancement: browsers sem suporte ignoram tudo isto e
+   ficam com os reveals IO normais. Animamos translate/scale/opacity
+   (propriedades individuais) para nunca tocar no transform do tilt. */
+@layer sections {
+    /* Barra de progresso de leitura no topo */
+    .scroll-progress {
+        position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 300;
+        background: linear-gradient(90deg, var(--accent), var(--accent-vivid));
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        @supports (animation-timeline: scroll()) {
+            .scroll-progress {
+                animation: fx-progress linear both;
+                animation-timeline: scroll(root);
+            }
+
+            /* Sobe + revela enquanto entra no viewport (scrubbed) */
+            .fx-rise {
+                animation: fx-rise linear both;
+                animation-timeline: view();
+                animation-range: entry 0% entry 85%;
+            }
+            /* Cresce de 0.92 enquanto entra — para frames de produto */
+            .fx-zoom {
+                animation: fx-zoom linear both;
+                animation-timeline: view();
+                animation-range: entry 0% entry 95%;
+            }
+            /* Flutua a velocidade diferente do scroll (parallax suave) */
+            .fx-parallax {
+                animation: fx-parallax linear both;
+                animation-timeline: view();
+                animation-range: cover 0% cover 100%;
+            }
+        }
+    }
+    @keyframes fx-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes fx-rise { from { opacity: 0; translate: 0 44px; } to { opacity: 1; translate: 0 0; } }
+    @keyframes fx-zoom { from { scale: 0.92; opacity: 0.35; } to { scale: 1; opacity: 1; } }
+    @keyframes fx-parallax { from { translate: 0 34px; } to { translate: 0 -34px; } }
+
+    /* Preview dos trabalhos — telinha com a capa do site segue o cursor */
+    .case-preview {
+        position: fixed; left: 0; top: 0; z-index: 90;
+        width: min(320px, 30vw); aspect-ratio: 16 / 10;
+        border-radius: var(--r-md); overflow: hidden;
+        border: 1px solid var(--line);
+        box-shadow: var(--sh-frame);
+        background: var(--surface-ink);
+        pointer-events: none;
+        opacity: 0; scale: 0.82; rotate: -3deg;
+        transition: opacity 0.22s var(--ease), scale 0.22s var(--ease), rotate 0.22s var(--ease);
+        will-change: transform;
+    }
+    .case-preview.is-visible { opacity: 1; scale: 1; rotate: 0deg; }
+    .case-preview img {
+        width: 100%; height: 100%; object-fit: cover; object-position: top;
+    }
+}
+
 /* ===== UTILITIES ===== */
 @layer utilities {
     .sr-only {
