@@ -44,7 +44,7 @@
     },
     "crm": {
       "eyebrow": "Produto próprio · Branct CRM",
-      "title": "Para de perder leads enquanto dormes.",
+      "title": "Para de perder leads <span class=\"text-gradient\">enquanto dormes</span>.",
       "f1": "<strong>Atendimento IA 24/7 no WhatsApp</strong> — responde, qualifica e passa a humano quando faz sentido.",
       "f2": "<strong>Dashboard de anúncios e analytics (Beta)</strong> — atribuição real: vês que campanha gerou que receita.",
       "f3": "<strong>Adapta-se ao teu negócio</strong> — e-commerce, imobiliária, serviços ou portfólio. Multi-idioma e multi-moeda.",

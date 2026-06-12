@@ -44,7 +44,7 @@
     },
     "crm": {
       "eyebrow": "Vlastiti proizvod · Branct CRM",
-      "title": "Prestani gubiti leadove dok spavaš.",
+      "title": "Prestani gubiti leadove <span class=\"text-gradient\">dok spavaš</span>.",
       "f1": "<strong>AI 24/7 na WhatsAppu</strong> — odgovara, kvalificira i predaje čovjeku kad je to važno.",
       "f2": "<strong>Nadzorna ploča oglasa i analitike (Beta)</strong> — stvarna atribucija: vidiš koja je kampanja donijela koji prihod.",
       "f3": "<strong>Prilagođava se tvom poslu</strong> — e-trgovina, nekretnine, usluge ili portfelj. Više jezika i valuta.",

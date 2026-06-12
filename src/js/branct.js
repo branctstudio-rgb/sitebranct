@@ -348,6 +348,12 @@
             });
         });
 
+        // Se a página desliza debaixo do cursor, o pointerleave pode não
+        // disparar — esconde o preview em qualquer scroll.
+        window.addEventListener('scroll', function () {
+            box.classList.remove('is-visible');
+        }, { passive: true });
+
         // Pré-carrega as capas no primeiro toque do rato na lista
         var preloaded = false;
         document.addEventListener('pointermove', function once() {

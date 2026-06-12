@@ -44,7 +44,7 @@
     },
     "crm": {
       "eyebrow": "Our product · Branct CRM",
-      "title": "Stop losing leads while you sleep.",
+      "title": "Stop losing leads <span class=\"text-gradient\">while you sleep</span>.",
       "f1": "<strong>24/7 AI on WhatsApp</strong> — replies, qualifies and hands over to a human when it matters.",
       "f2": "<strong>Ads & analytics dashboard (Beta)</strong> — real attribution: see which campaign drove which revenue.",
       "f3": "<strong>Adapts to your business</strong> — e-commerce, real estate, services or portfolio. Multi-language and multi-currency.",

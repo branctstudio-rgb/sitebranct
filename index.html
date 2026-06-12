@@ -42,7 +42,7 @@
     .hero-visual__float small { display: block; color: var(--muted); font-weight: 500; }
     @media (max-width: 480px) { .hero-visual__float { position: static; margin-top: var(--sp-3); } }
 
-    .proof-strip { border-block: 1px solid var(--line); padding-block: var(--sp-10); }
+    .proof-strip { border-block: 1px solid var(--line); padding-block: var(--sp-10); background: var(--surface-2); }
     .proof-strip__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-8); }
     .proof-names { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-8); align-items: center; }
     .proof-names a {
@@ -53,11 +53,12 @@
     .proof-names a:hover { color: var(--ink); }
     .proof-stats { display: flex; gap: var(--sp-10); }
 
-    .crm-band { background: var(--surface-2); }
+    /* Faixa CRM — secção dark de impacto (momento "MacBook Pro") */
     .crm-band__list { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); margin-block: var(--sp-6); }
-    .crm-band__list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.97rem; }
-    .crm-band__list svg { width: 18px; height: 18px; color: var(--accent-strong); flex-shrink: 0; margin-top: 3px; }
-    .crm-band__micro { color: var(--muted); font-size: var(--fs-small); margin-top: var(--sp-3); }
+    .crm-band__list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.97rem; color: #C3D0D8; }
+    .crm-band__list li strong { color: #fff; }
+    .crm-band__list svg { width: 18px; height: 18px; color: var(--accent-vivid); flex-shrink: 0; margin-top: 3px; }
+    .crm-band__micro { color: #8DA0AC; font-size: var(--fs-small); margin-top: var(--sp-3); }
 
     .case-item {
         display: flex; align-items: center; gap: var(--sp-5);
@@ -227,7 +228,7 @@
                     <h2 style="margin-top:12px" data-i18n="home.services.title">Quatro frentes, um método.</h2>
                 </div>
                 <div class="bento reveal-stagger">
-                    <article class="card card--hover tilt span-7">
+                    <article class="card card--hover card--tint-cyan tilt span-7">
                         <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
                         <h3 data-i18n="home.services.web.title">Websites Premium</h3>
                         <p data-i18n="home.services.web.desc">Sites rápidos, sóbrios e construídos para converter — com base técnica sólida em SEO, performance e escalabilidade.</p>
@@ -239,13 +240,13 @@
                         <p data-i18n="home.services.landing.desc">Páginas de campanha com uma mensagem, um caminho e uma ação. Prontas para tráfego pago, com tracking afinado.</p>
                         <a href="landing-page.html" class="btn btn--ghost btn--sm" style="margin-top:20px" data-i18n="home.services.cta">Ver detalhes</a>
                     </article>
-                    <article class="card card--hover tilt span-5">
-                        <div class="card__icon tilt__pop" style="background:var(--violet-tint); color:var(--violet-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
+                    <article class="card card--hover card--ink tilt span-5">
+                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div>
                         <h3 data-i18n="home.services.crm.title">Branct CRM</h3>
                         <p data-i18n="home.services.crm.desc">A nossa plataforma: pipeline visual, IA no WhatsApp e dashboards. Trial de 7 dias sem cartão.</p>
                         <a href="crm-gestao.html" class="btn btn--accent btn--sm" style="margin-top:20px" data-i18n="home.services.crmCta">Testa grátis 7 dias</a>
                     </article>
-                    <article class="card card--hover tilt span-7">
+                    <article class="card card--hover card--tint-violet tilt span-7">
                         <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
                         <h3 data-i18n="home.services.auto.title">Automação & IA</h3>
                         <p data-i18n="home.services.auto.desc">Atendimento e nutrição de leads no piloto automático, sem perder o toque humano — fluxos, segmentação e IA que responde.</p>
@@ -256,11 +257,11 @@
         </section>
 
         <!-- ===== FAIXA BRANCT CRM ===== -->
-        <section class="section crm-band" aria-label="Branct CRM">
+        <section class="section section--ink crm-band" aria-label="Branct CRM">
             <div class="container split">
                 <div class="reveal">
                     <p class="eyebrow eyebrow--violet" data-i18n="home.crm.eyebrow">Produto próprio · Branct CRM</p>
-                    <h2 style="margin-top:12px" data-i18n="home.crm.title">Para de perder leads enquanto dormes.</h2>
+                    <h2 style="margin-top:12px" data-i18n="home.crm.title" data-i18n-html>Para de perder leads <span class="text-gradient">enquanto dormes</span>.</h2>
                     <ul class="crm-band__list">
                         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="home.crm.f1" data-i18n-html><strong>Atendimento IA 24/7 no WhatsApp</strong> — responde, qualifica e passa a humano quando faz sentido.</span></li>
                         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="home.crm.f2" data-i18n-html><strong>Dashboard de anúncios e analytics (Beta)</strong> — atribuição real: vês que campanha gerou que receita.</span></li>
@@ -331,7 +332,7 @@
         <!-- ===== CTA FINAL ===== -->
         <section class="section cta-final" aria-label="Contacto">
             <div class="container">
-                <div class="card reveal">
+                <div class="card card--ink reveal">
                     <p class="eyebrow" style="justify-content:center" data-i18n="home.cta.eyebrow">Próximo passo</p>
                     <h2 style="margin-top:14px" data-i18n="home.cta.title">Vamos elevar a tua presença digital?</h2>
                     <p data-i18n="home.cta.sub">Envia o teu objetivo e prazo. Devolvemos um plano claro e os próximos passos — em 24h.</p>
