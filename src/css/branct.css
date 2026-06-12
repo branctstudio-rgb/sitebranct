@@ -610,6 +610,43 @@
     .trust-row span { display: inline-flex; align-items: center; gap: 6px; }
     .trust-row svg { width: 14px; height: 14px; color: var(--success); flex-shrink: 0; }
 
+    /* Processo — timeline editorial com entregável por etapa */
+    .process-flow { position: relative; max-width: 880px; }
+    .process-flow::before {
+        content: ''; position: absolute; left: 27px; top: 36px; bottom: 56px; width: 3px;
+        background: linear-gradient(180deg, var(--accent) 0%, #4FA8E8 55%, var(--violet) 100%);
+        border-radius: 3px; opacity: 0.55;
+    }
+    .process-step {
+        position: relative;
+        display: grid; grid-template-columns: 56px 1fr; gap: var(--sp-6);
+        padding-block: var(--sp-8);
+    }
+    .process-step + .process-step { border-top: 1px solid var(--line-soft); }
+    .process-step__num {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: var(--surface); border: 1px solid var(--line);
+        box-shadow: var(--sh-1);
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display); font-weight: 800; font-size: 1.15rem;
+        color: var(--accent-strong);
+        position: relative; z-index: 1;
+    }
+    .process-step:nth-child(3) .process-step__num { color: #3D7CC9; }
+    .process-step:nth-child(4) .process-step__num { color: var(--violet-ink); }
+    .process-step h3 { font-size: clamp(1.3rem, 1.15rem + 0.7vw, 1.65rem); }
+    .process-step h3 em { font-style: normal; color: var(--accent-strong); }
+    .process-step p { color: var(--muted); margin-top: var(--sp-2); max-width: 640px; }
+    .process-step__get {
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-top: var(--sp-4);
+        padding: 7px 14px; border-radius: var(--r-full);
+        font-size: var(--fs-small); font-weight: 700;
+        background: var(--accent-tint); color: var(--accent-strong);
+    }
+    .process-step:nth-child(4) .process-step__get { background: var(--violet-tint); color: var(--violet-ink); }
+    .process-step__get svg { width: 15px; height: 15px; flex-shrink: 0; }
+
     /* Logo wall (prova social) */
     .logo-wall { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-6) var(--sp-10); opacity: 0.75; }
     .logo-wall img { height: 26px; width: auto; filter: grayscale(1); }

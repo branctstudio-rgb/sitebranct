@@ -53,11 +53,12 @@
     },
     "process": {
       "eyebrow": "Como trabalhamos",
-      "title": "Método de engenharia, do briefing ao crescimento.",
-      "s1": { "title": "Diagnóstico", "desc": "Alinhamos objetivos, público e prioridades. A arquitetura vem antes do design." },
-      "s2": { "title": "Design", "desc": "UI/UX e protótipo validável. Clareza, credibilidade e foco em conversão." },
-      "s3": { "title": "Construção", "desc": "Implementação com performance, SEO técnico e integrações de tracking e automação." },
-      "s4": { "title": "Escala", "desc": "Monitorização e otimização contínua. Evolução orientada por dados." }
+      "title": "Sabes sempre o que acontece a seguir.",
+      "sub": "Quatro etapas, prazos claros e um entregável concreto em cada uma. É assim que um projeto deve correr.",
+      "s1": { "title": "Ouvimos primeiro.", "desc": "Percebemos o teu negócio, os teus clientes e o que te está a travar — e só depois desenhamos a solução. Nada de propostas de gaveta.", "get": "Recebes: diagnóstico e proposta em 48h" },
+      "s2": { "title": "Vês o site antes de ele existir.", "desc": "Desenhamos um protótipo navegável para aprovares cada ecrã antes de escrevermos uma linha de código. Sem cheques em branco.", "get": "Recebes: protótipo interativo para aprovar" },
+      "s3": { "title": "Construímos obcecados com velocidade.", "desc": "Performance, SEO técnico e tracking afinados desde a primeira linha — porque um site bonito que demora a abrir é um site que não vende.", "get": "Recebes: site no ar, Lighthouse 95+" },
+      "s4": { "title": "Não desaparecemos depois do lançamento.", "desc": "Medimos o que os teus visitantes fazem, otimizamos o que trava conversões e fazemos o site evoluir contigo, mês após mês.", "get": "Recebes: relatórios e melhorias contínuas" }
     },
     "cases": {
       "eyebrow": "Trabalho recente",

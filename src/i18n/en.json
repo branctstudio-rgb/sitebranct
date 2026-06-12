@@ -53,11 +53,12 @@
     },
     "process": {
       "eyebrow": "How we work",
-      "title": "An engineering method, from briefing to growth.",
-      "s1": { "title": "Discovery", "desc": "We align goals, audience and priorities. Architecture comes before design." },
-      "s2": { "title": "Design", "desc": "UI/UX and a testable prototype. Clarity, credibility and a focus on conversion." },
-      "s3": { "title": "Build", "desc": "Implementation with performance, technical SEO and tracking & automation integrations." },
-      "s4": { "title": "Scale", "desc": "Continuous monitoring and optimisation. Data-driven evolution." }
+      "title": "You always know what happens next.",
+      "sub": "Four stages, clear deadlines and a concrete deliverable at each one. That's how a project should run.",
+      "s1": { "title": "We listen first.", "desc": "We get to know your business, your customers and what's holding you back — and only then design the solution. No off-the-shelf proposals.", "get": "You get: diagnosis and proposal within 48h" },
+      "s2": { "title": "See your site before it exists.", "desc": "We design a navigable prototype so you approve every screen before we write a line of code. No blank cheques.", "get": "You get: an interactive prototype to approve" },
+      "s3": { "title": "We build obsessed with speed.", "desc": "Performance, technical SEO and tracking dialled in from the first line — because a beautiful site that loads slowly is a site that doesn't sell.", "get": "You get: site live, Lighthouse 95+" },
+      "s4": { "title": "We don't vanish after launch.", "desc": "We measure what your visitors do, fix what blocks conversions and keep your site evolving with you, month after month.", "get": "You get: reports and continuous improvements" }
     },
     "cases": {
       "eyebrow": "Recent work",

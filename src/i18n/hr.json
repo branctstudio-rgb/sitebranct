@@ -53,11 +53,12 @@
     },
     "process": {
       "eyebrow": "Kako radimo",
-      "title": "Inženjerska metoda, od briefinga do rasta.",
-      "s1": { "title": "Dijagnoza", "desc": "Usklađujemo ciljeve, publiku i prioritete. Arhitektura dolazi prije dizajna." },
-      "s2": { "title": "Dizajn", "desc": "UI/UX i provjerljiv prototip. Jasnoća, vjerodostojnost i fokus na konverziju." },
-      "s3": { "title": "Izrada", "desc": "Implementacija s performansama, tehničkim SEO-om i integracijama praćenja i automatizacije." },
-      "s4": { "title": "Rast", "desc": "Kontinuirano praćenje i optimizacija. Evolucija vođena podacima." }
+      "title": "Uvijek znaš što slijedi.",
+      "sub": "Četiri faze, jasni rokovi i konkretan rezultat u svakoj. Tako bi projekt trebao teći.",
+      "s1": { "title": "Prvo slušamo.", "desc": "Upoznajemo tvoj posao, tvoje klijente i ono što te koči — i tek onda osmišljavamo rješenje. Bez gotovih ponuda iz ladice.", "get": "Dobivaš: dijagnozu i ponudu unutar 48h" },
+      "s2": { "title": "Vidiš stranicu prije nego što postoji.", "desc": "Izrađujemo navigabilan prototip kako bi odobrio svaki ekran prije nego što napišemo i jednu liniju koda. Bez bianco čekova.", "get": "Dobivaš: interaktivni prototip za odobrenje" },
+      "s3": { "title": "Gradimo opsjednuti brzinom.", "desc": "Performanse, tehnički SEO i praćenje namješteni od prve linije — jer lijepa stranica koja se sporo učitava je stranica koja ne prodaje.", "get": "Dobivaš: stranicu online, Lighthouse 95+" },
+      "s4": { "title": "Ne nestajemo nakon lansiranja.", "desc": "Mjerimo što tvoji posjetitelji rade, optimiziramo ono što koči konverzije i razvijamo stranicu s tobom, mjesec za mjesecom.", "get": "Dobivaš: izvještaje i stalna poboljšanja" }
     },
     "cases": {
       "eyebrow": "Nedavni radovi",
