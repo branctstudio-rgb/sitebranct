@@ -679,106 +679,58 @@
   },
   "wp": {
     "hero": {
-      "tag": "Siti Web Premium",
-      "line1": "SITI WEB",
-      "line2": "PREMIUM.",
-      "line3": "DESIGN",
-      "line4": "CON METRICA.",
-      "desc": "Un sito web che comunica valore e genera richieste reali. Struttura pensata per conversione, performance e SEO tecnico — con tracking pronto per misurare i risultati.",
-      "cta1": "Richiedi preventivo",
-      "cta2": "Vedi il processo",
-      "stat1": "Performance orientata ai CWV",
-      "stat2": "SEO tecnico + struttura",
-      "stat3": "Distribuzione globale (Edge/CDN)"
+      "eyebrow": "Siti Web Premium",
+      "title": "Un sito bello che non vende è solo decorazione.",
+      "sub": "Creiamo siti che si caricano in un istante, compaiono su Google e trasformano le visite in richieste — per PMI che trattano il digitale come canale di vendita, non come biglietto da visita.",
+      "cta1": "Richiedi un preventivo",
+      "cta2": "Vedi i lavori",
+      "t1": "Lighthouse 95+ garantito",
+      "t2": "Preventivo entro 48h",
+      "t3": "Fino a 4 lingue incluse"
     },
-    "tech": {
-      "tag": "Base tecnica",
-      "title": "Architettura per scalare",
-      "desc": "Scegliamo uno stack che protegge il tuo investimento: veloce, stabile e facile da evolvere. Meno attrito oggi; meno costi di rifacimento domani.",
-      "item1": "Next.js con rendering ibrido (SSR/SSG)",
-      "item2": "TypeScript per codice prevedibile",
-      "item3": "UI moderna con animazione discreta",
-      "item4": "Deploy su Edge/CDN",
-      "item5": "Integrazioni con database e servizi"
+    "proof": {
+      "s1": "Lighthouse sui siti consegnati",
+      "s2": "tempo di caricamento",
+      "s3": "clienti in 2 mercati"
     },
-    "float": {
-      "label1": "Performance",
-      "kw1": "VELOCE. SENZA RUMORE.",
-      "desc1": "Ottimizzazione reale: caricamento, immagini e codice.",
-      "label2": "Crescita",
-      "kw2": "SEO TECNICO",
-      "desc2": "Struttura semantica + schema dove ha senso.",
-      "label3": "Sicurezza",
-      "kw3": "BASE SICURA",
-      "desc3": "HTTPS, headers e best practice di protezione."
+    "feat": {
+      "eyebrow": "Cosa è incluso",
+      "title": "Tre cose che il tuo sito attuale probabilmente non fa.",
+      "f1": { "title": "Caricare prima che il cliente rinunci", "desc": "Più della metà delle visite mobile abbandona un sito che impiega 3 secondi ad aprirsi. I nostri si caricano in meno di 2 — Core Web Vitals nel verde, misurati su telefoni reali, non sul nostro Mac." },
+      "f2": { "title": "Comparire quando ti cercano", "desc": "SEO tecnico dalle fondamenta: struttura semantica, schema.org, sitemap e metadati ottimizzati. Google capisce il tuo sito — e lo mostra." },
+      "f3": { "title": "Trasformare le visite in richieste", "desc": "Architettura di conversione: un percorso chiaro verso l'azione in ogni pagina, moduli collegati al tuo CRM e tracking che ti dice da dove arriva ogni lead." },
+      "f4": { "title": "Crescere con te — in qualsiasi lingua", "desc": "Architettura modulare e multilingua (fino a 4 lingue incluse). Quando vuoi vendere all'estero o aggiungere una sezione, il sito ti segue — senza ricominciare da zero." }
     },
-    "matrix": {
-      "tag": "Livelli di consegna",
-      "title": "Scegli il livello giusto",
-      "subtitle": "Tre approcci, uno stesso standard: performance, chiarezza e conversione. La differenza sta nella profondità tecnica e nelle integrazioni.",
-      "badge": "PIÙ EQUILIBRATO",
-      "feat": {
-        "tech": "Tecnologia",
-        "perf": "Performance",
-        "design": "Design",
-        "seo": "SEO",
-        "crm": "CRM",
-        "ai": "Automazione IA",
-        "support": "Supporto"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Essenziale",
-        "price": "500€ + 50€/mese",
-        "tech": "React / Next.js",
-        "perf": "Best practice + CWV",
-        "design": "Clean premium",
-        "seo": "Base tecnica",
-        "support": "1 mese (aggiustamenti finali)",
-        "cta": "Richiedi preventivo"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performance & conversione",
-        "price": "900€ + 230€/mese",
-        "tech": "Next.js + GSAP",
-        "perf": "Ottimizzazione avanzata",
-        "design": "UI immersiva (senza eccessi)",
-        "seo": "SEO tecnico avanzato",
-        "support": "3 mesi (monitoraggio iniziale)",
-        "cta": "Scegli"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Tech-Luxury",
-        "price": "Su richiesta",
-        "tech": "3D/WebGL dove ha senso",
-        "perf": "Edge + rendering intelligente",
-        "design": "Esperienza premium su misura",
-        "seo": "SEO + struttura per autorità",
-        "support": "6 mesi (evoluzione continua)",
-        "cta": "Parlaci"
-      }
+    "meta": {
+      "eyebrow": "La prova è davanti a te",
+      "title": "Questo sito che stai guardando? <span class=\"text-gradient\">È la nostra proposta.</span>",
+      "sub": "Non ti chiediamo di credere alle promesse. Il sito BRANCT è costruito con la stessa ingegneria che vendiamo — misuralo tu stesso.",
+      "m1": "in caricamento su 4G — niente Three.js, niente peso morto",
+      "m2": "di JavaScript — una frazione della media dei siti",
+      "m3": "PT · EN · IT · HR — cambia in alto a destra",
+      "kicker": "Se costruiamo così il nostro sito, immagina cosa facciamo per il tuo."
     },
-    "bespoke": {
-      "title": "PROGETTI SU MISURA",
-      "tag": "Esclusività reale",
-      "desc": "Per brand che non entrano nei template. Design e implementazione su misura, integrazioni specifiche e una base tecnica pensata per evolvere con il tuo business.",
-      "cta": "Discuti il progetto"
+    "faq": {
+      "title": "Domande frequenti",
+      "q1": "Quanto tempo richiede un sito premium?",
+      "a1": "Dipende dall'ambito, ma la maggior parte dei progetti va dal briefing al sito online in 3-6 settimane. Il preventivo include un calendario con date concrete — e lo rispettiamo.",
+      "q2": "Quanto costa?",
+      "a2": "Ogni preventivo è su misura dell'ambito: numero di pagine, lingue, integrazioni. Inviaci il tuo obiettivo e in 48h hai un prezzo fisso — senza sorprese a metà progetto.",
+      "q3": "Ho già un sito. Vale la pena rifarlo?",
+      "a3": "Prima facciamo una diagnosi gratuita del tuo sito attuale: velocità, SEO e conversione. Se è buono, te lo diciamo — e sai a che punto sei. Se non lo è, ti mostriamo esattamente quanto ti costa in clienti.",
+      "q4": "Il SEO è incluso o è extra?",
+      "a4": "La base tecnica SEO (struttura, schema.org, sitemap, performance) è inclusa in ogni progetto — è il nostro modo di costruire, non un extra. La strategia di contenuti continua è un servizio a parte.",
+      "q5": "Dopo il lancio, resto solo?",
+      "a5": "No. Ogni progetto include supporto post-lancio, e puoi aggiungere l'evoluzione continua: monitoraggio, report e miglioramenti mensili guidati dai dati reali dei tuoi visitatori.",
+      "q6": "Il sito si collega a un CRM?",
+      "a6": "Sì — i moduli possono collegarsi al tuo CRM attuale o a Branct CRM, la nostra piattaforma con IA che risponde ai tuoi lead su WhatsApp 24/7. Sito e CRM della stessa casa significa zero lead persi tra i sistemi."
     },
-    "panel1": {
-      "title": "Continua a esplorare",
-      "desc": "Scopri come progettiamo un sito con metodo: strategia, esecuzione ed evoluzione."
-    },
-    "final": {
-      "tag": "// Pronto a convertire",
-      "title": "ELEVA LO STANDARD DELLA TUA PRESENZA.",
-      "desc": "Siti web premium per aumentare percezione di valore, velocità e conversione — con SEO tecnico e tracking per misurare ciò che conta.",
-      "cta": "Richiedi preventivo"
-    },
-    "footer": {
-      "rights": "Tutti i diritti riservati",
-      "back": "Torna all'inizio"
+    "cta": {
+      "eyebrow": "Preventivo entro 48h",
+      "title": "Il tuo prossimo cliente è su un sito proprio ora. <span class=\"text-gradient\">Che sia il tuo.</span>",
+      "sub": "Inviaci il tuo obiettivo e le scadenze. Ti rispondiamo con una diagnosi chiara, un piano e un prezzo fisso — entro 48 ore.",
+      "primary": "Richiedi un preventivo",
+      "whatsapp": "Scrivici su WhatsApp"
     }
   },
   "ct": {

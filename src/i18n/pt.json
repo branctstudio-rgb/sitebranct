@@ -679,106 +679,58 @@
   },
   "wp": {
     "hero": {
-      "tag": "Websites Premium",
-      "line1": "WEBSITES",
-      "line2": "PREMIUM.",
-      "line3": "DESIGN",
-      "line4": "COM MÉTRICA.",
-      "desc": "Um website que comunica valor e gera pedidos reais. Estrutura pensada para conversão, performance e SEO técnico — com tracking pronto para medir resultados.",
+      "eyebrow": "Websites Premium",
+      "title": "Um site bonito que não vende é só decoração.",
+      "sub": "Construímos sites que carregam num instante, aparecem no Google e transformam visitas em pedidos — para PMEs que tratam o digital como canal de vendas, não como cartão de visita.",
       "cta1": "Pedir proposta",
-      "cta2": "Ver processo",
-      "stat1": "Performance orientada a CWV",
-      "stat2": "SEO técnico + estrutura",
-      "stat3": "Entrega global (Edge/CDN)"
+      "cta2": "Ver trabalho feito",
+      "t1": "Lighthouse 95+ garantido",
+      "t2": "Proposta em 48h",
+      "t3": "Até 4 idiomas incluídos"
     },
-    "tech": {
-      "tag": "Base técnica",
-      "title": "Arquitetura para escalar",
-      "desc": "Escolhemos uma stack que protege o seu investimento: rápida, estável e fácil de evoluir. Menos atrito hoje; menos custos de refazer amanhã.",
-      "item1": "Next.js com render híbrido (SSR/SSG)",
-      "item2": "TypeScript para código previsível",
-      "item3": "UI moderna com animação discreta",
-      "item4": "Deploy em Edge/CDN",
-      "item5": "Integrações com base de dados e serviços"
+    "proof": {
+      "s1": "Lighthouse nos sites entregues",
+      "s2": "tempo de carregamento",
+      "s3": "clientes em 2 mercados"
     },
-    "float": {
-      "label1": "Performance",
-      "kw1": "RÁPIDO. SEM RUÍDO.",
-      "desc1": "Otimização real: carregamento, imagens e código.",
-      "label2": "Crescimento",
-      "kw2": "SEO TÉCNICO",
-      "desc2": "Estrutura semântica + schema onde faz sentido.",
-      "label3": "Segurança",
-      "kw3": "BASE SEGURA",
-      "desc3": "HTTPS, headers e boas práticas de proteção."
+    "feat": {
+      "eyebrow": "O que está incluído",
+      "title": "Três coisas que o teu site atual provavelmente não faz.",
+      "f1": { "title": "Carregar antes de o cliente desistir", "desc": "Mais de metade das visitas mobile abandona um site que demora 3 segundos a abrir. Os nossos carregam em menos de 2 — Core Web Vitals no verde, medidos em telemóveis reais, não no nosso Mac." },
+      "f2": { "title": "Aparecer quando procuram por ti", "desc": "SEO técnico de raiz: estrutura semântica, schema.org, sitemap e meta-dados afinados. O Google entende o teu site — e mostra-o." },
+      "f3": { "title": "Transformar visitas em pedidos", "desc": "Arquitetura de conversão: um caminho claro para a ação em cada página, formulários ligados ao teu CRM e tracking que te diz de onde veio cada lead." },
+      "f4": { "title": "Crescer contigo — em qualquer língua", "desc": "Arquitetura modular e multi-idioma (até 4 línguas incluídas). Quando quiseres vender para fora ou acrescentar uma área nova, o site acompanha — sem recomeçar do zero." }
     },
-    "matrix": {
-      "tag": "Níveis de entrega",
-      "title": "Escolha o nível certo",
-      "subtitle": "Três abordagens, o mesmo padrão: performance, clareza e conversão. A diferença está na profundidade técnica e nas integrações.",
-      "badge": "MAIS EQUILIBRADO",
-      "feat": {
-        "tech": "Tecnologia",
-        "perf": "Performance",
-        "design": "Design",
-        "seo": "SEO",
-        "crm": "CRM",
-        "ai": "Automação IA",
-        "support": "Suporte"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Essencial",
-        "price": "500€ + 50€/mês",
-        "tech": "React / Next.js",
-        "perf": "Boas práticas + CWV",
-        "design": "Clean premium",
-        "seo": "Base técnica",
-        "support": "1 mês (ajustes finais)",
-        "cta": "Pedir proposta"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performance & conversão",
-        "price": "900€ + 230€/mês",
-        "tech": "Next.js + GSAP",
-        "perf": "Otimização avançada",
-        "design": "UI imersiva (sem excessos)",
-        "seo": "SEO técnico avançado",
-        "support": "3 meses (monitorização inicial)",
-        "cta": "Escolher"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Tech-Luxury",
-        "price": "Sob proposta",
-        "tech": "3D/WebGL quando faz sentido",
-        "perf": "Edge + render inteligente",
-        "design": "Experiência premium sob medida",
-        "seo": "SEO + estrutura para autoridade",
-        "support": "6 meses (evolução contínua)",
-        "cta": "Falar connosco"
-      }
+    "meta": {
+      "eyebrow": "A prova está à tua frente",
+      "title": "Este site que estás a ver? <span class=\"text-gradient\">É a nossa proposta.</span>",
+      "sub": "Não te pedimos que acredites em promessas. O site da BRANCT é construído exatamente com a engenharia que vendemos — mede tu mesmo.",
+      "m1": "a carregar em 4G — sem Three.js, sem peso morto",
+      "m2": "de JavaScript — uma fração da média dos sites",
+      "m3": "PT · EN · IT · HR — troca no canto superior direito",
+      "kicker": "Se é assim que construímos o nosso site, imagina o que fazemos pelo teu."
     },
-    "bespoke": {
-      "title": "PROJECTOS À MEDIDA",
-      "tag": "Exclusividade real",
-      "desc": "Para marcas que não cabem em templates. Design e implementação sob medida, integrações específicas e uma base técnica pensada para evoluir com o seu negócio.",
-      "cta": "Discutir projecto"
+    "faq": {
+      "title": "Perguntas frequentes",
+      "q1": "Quanto tempo demora um site premium?",
+      "a1": "Depende do âmbito, mas a maioria dos projetos vai do briefing ao site no ar em 3 a 6 semanas. Na proposta recebes um cronograma com datas concretas — e cumprimo-lo.",
+      "q2": "Quanto custa?",
+      "a2": "Cada proposta é desenhada à medida do âmbito: número de páginas, idiomas, integrações. Envia-nos o teu objetivo e em 48h tens um valor fechado — sem surpresas a meio do projeto.",
+      "q3": "Já tenho um site. Vale a pena refazer?",
+      "a3": "Fazemos primeiro um diagnóstico gratuito ao teu site atual: velocidade, SEO e conversão. Se estiver bom, dizemos-te — e ficas a saber onde estás. Se não estiver, mostramos-te exatamente o que está a custar-te clientes.",
+      "q4": "O SEO está incluído ou é extra?",
+      "a4": "A base técnica de SEO (estrutura, schema.org, sitemap, performance) está incluída em todos os projetos — é assim que construímos, não é um extra. Estratégia de conteúdo contínua é um serviço à parte.",
+      "q5": "E depois do lançamento, fico sozinho?",
+      "a5": "Não. Todos os projetos incluem acompanhamento pós-lançamento, e podes contratar evolução contínua: monitorização, relatórios e melhorias mensais orientadas pelos dados reais dos teus visitantes.",
+      "q6": "O site fica ligado a um CRM?",
+      "a6": "Sim — os formulários podem ligar ao teu CRM atual ou ao Branct CRM, a nossa plataforma com IA que responde os teus leads no WhatsApp 24/7. Site e CRM da mesma casa significa zero leads perdidos entre sistemas."
     },
-    "panel1": {
-      "title": "Continue a explorar",
-      "desc": "Veja como desenhamos um website com método: estratégia, execução e evolução."
-    },
-    "final": {
-      "tag": "// Pronto para converter",
-      "title": "ELEVE O PADRÃO DA SUA PRESENÇA.",
-      "desc": "Websites premium para aumentar percepção de valor, velocidade e conversão — com SEO técnico e tracking para medir o que importa.",
-      "cta": "Pedir proposta"
-    },
-    "footer": {
-      "rights": "Todos os direitos reservados",
-      "back": "Voltar ao início"
+    "cta": {
+      "eyebrow": "Proposta em 48h",
+      "title": "O teu próximo cliente está agora num site. <span class=\"text-gradient\">Que seja no teu.</span>",
+      "sub": "Envia o teu objetivo e prazo. Devolvemos um diagnóstico claro, um plano e um valor fechado — em 48 horas.",
+      "primary": "Pedir proposta",
+      "whatsapp": "Falar no WhatsApp"
     }
   },
   "ct": {

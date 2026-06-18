@@ -679,106 +679,58 @@
   },
   "wp": {
     "hero": {
-      "tag": "Premium Web Stranice",
-      "line1": "PREMIUM",
-      "line2": "WEB STRANICE.",
-      "line3": "DIZAJN",
-      "line4": "S METRIKOM.",
-      "desc": "Web stranica koja komunicira vrijednost i generira stvarne upite. Struktura osmišljena za konverziju, performanse i tehnički SEO — s trackingom za mjerenje rezultata.",
-      "cta1": "Zatražite ponudu",
-      "cta2": "Pogledajte proces",
-      "stat1": "Performanse usmjerene na CWV",
-      "stat2": "Tehnički SEO + struktura",
-      "stat3": "Globalna isporuka (Edge/CDN)"
+      "eyebrow": "Premium Web Stranice",
+      "title": "Lijepa stranica koja ne prodaje samo je ukras.",
+      "sub": "Gradimo stranice koje se učitavaju u trenu, pojavljuju se na Googleu i pretvaraju posjete u upite — za male i srednje tvrtke koje digitalno tretiraju kao prodajni kanal, a ne posjetnicu.",
+      "cta1": "Zatraži ponudu",
+      "cta2": "Pogledaj radove",
+      "t1": "Lighthouse 95+ zajamčeno",
+      "t2": "Ponuda unutar 48h",
+      "t3": "Do 4 jezika uključeno"
     },
-    "tech": {
-      "tag": "Tehnička osnova",
-      "title": "Arhitektura za skaliranje",
-      "desc": "Biramo stack koji štiti vašu investiciju: brz, stabilan i lak za razvoj. Manje trenja danas; manji troškovi preradbe sutra.",
-      "item1": "Next.js s hibridnim renderiranjem (SSR/SSG)",
-      "item2": "TypeScript za predvidljiv kod",
-      "item3": "Moderna UI s diskretnom animacijom",
-      "item4": "Deploy na Edge/CDN",
-      "item5": "Integracije s bazama podataka i servisima"
+    "proof": {
+      "s1": "Lighthouse na isporučenim stranicama",
+      "s2": "vrijeme učitavanja",
+      "s3": "klijenti na 2 tržišta"
     },
-    "float": {
-      "label1": "Performanse",
-      "kw1": "BRZO. BEZ BUKE.",
-      "desc1": "Stvarna optimizacija: učitavanje, slike i kod.",
-      "label2": "Rast",
-      "kw2": "TEHNIČKI SEO",
-      "desc2": "Semantička struktura + schema gdje ima smisla.",
-      "label3": "Sigurnost",
-      "kw3": "SIGURNA OSNOVA",
-      "desc3": "HTTPS, zaglavlja i najbolje prakse zaštite."
+    "feat": {
+      "eyebrow": "Što je uključeno",
+      "title": "Tri stvari koje tvoja trenutna stranica vjerojatno ne radi.",
+      "f1": { "title": "Učitati se prije nego što klijent odustane", "desc": "Više od polovice mobilnih posjeta napušta stranicu koja se otvara 3 sekunde. Naše se učitavaju za manje od 2 — Core Web Vitals u zelenom, mjereno na stvarnim telefonima, ne na našem Macu." },
+      "f2": { "title": "Pojaviti se kad te traže", "desc": "Tehnički SEO od temelja: semantička struktura, schema.org, sitemap i podešeni metapodaci. Google razumije tvoju stranicu — i prikazuje je." },
+      "f3": { "title": "Pretvoriti posjete u upite", "desc": "Arhitektura konverzije: jasan put do akcije na svakoj stranici, obrasci povezani s tvojim CRM-om i praćenje koje ti govori odakle je došao svaki lead." },
+      "f4": { "title": "Rasti s tobom — na bilo kojem jeziku", "desc": "Modularna, višejezična arhitektura (do 4 jezika uključeno). Kad poželiš prodavati u inozemstvu ili dodati novu sekciju, stranica te prati — bez kretanja ispočetka." }
     },
-    "matrix": {
-      "tag": "Razine isporuke",
-      "title": "Odaberite pravu razinu",
-      "subtitle": "Tri pristupa, isti standard: performanse, jasnoća i konverzija. Razlika je u tehničkoj dubini i integracijama.",
-      "badge": "NAJBOLJE URAVNOTEŽENO",
-      "feat": {
-        "tech": "Tehnologija",
-        "perf": "Performanse",
-        "design": "Dizajn",
-        "seo": "SEO",
-        "crm": "CRM",
-        "ai": "AI Automatizacija",
-        "support": "Podrška"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Osnovno",
-        "price": "500€ + 50€/mj",
-        "tech": "React / Next.js",
-        "perf": "Najbolje prakse + CWV",
-        "design": "Clean premium",
-        "seo": "Tehnička osnova",
-        "support": "1 mjesec (završne prilagodbe)",
-        "cta": "Zatražite ponudu"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performanse & konverzija",
-        "price": "900€ + 230€/mj",
-        "tech": "Next.js + GSAP",
-        "perf": "Napredna optimizacija",
-        "design": "Imerzivni UI (bez viška)",
-        "seo": "Napredni tehnički SEO",
-        "support": "3 mjeseca (početni monitoring)",
-        "cta": "Odaberi"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Tech-Luxury",
-        "price": "Na upit",
-        "tech": "3D/WebGL gdje ima smisla",
-        "perf": "Edge + pametno renderiranje",
-        "design": "Premium iskustvo po mjeri",
-        "seo": "SEO + struktura za autoritet",
-        "support": "6 mjeseci (kontinuirana evolucija)",
-        "cta": "Razgovarajte s nama"
-      }
+    "meta": {
+      "eyebrow": "Dokaz je pred tobom",
+      "title": "Ova stranica koju gledaš? <span class=\"text-gradient\">To je naša ponuda.</span>",
+      "sub": "Ne tražimo da vjeruješ obećanjima. BRANCT stranica izgrađena je upravo onim inženjeringom koji prodajemo — izmjeri sam.",
+      "m1": "učitavanje na 4G — bez Three.js, bez mrtvog tereta",
+      "m2": "JavaScripta — djelić prosjeka stranica",
+      "m3": "PT · EN · IT · HR — promijeni u gornjem desnom kutu",
+      "kicker": "Ako tako gradimo vlastitu stranicu, zamisli što radimo za tvoju."
     },
-    "bespoke": {
-      "title": "PROJEKTI PO MJERI",
-      "tag": "Prava ekskluzivnost",
-      "desc": "Za brendove koji ne staju u predloške. Dizajn i implementacija po mjeri, specifične integracije i tehnička osnova osmišljena za evoluciju s vašim poslovanjem.",
-      "cta": "Razgovarajmo o projektu"
+    "faq": {
+      "title": "Česta pitanja",
+      "q1": "Koliko traje izrada premium stranice?",
+      "a1": "Ovisi o opsegu, ali većina projekata ide od briefinga do objave u 3 do 6 tjedana. Ponuda uključuje raspored s konkretnim datumima — i držimo ga.",
+      "q2": "Koliko košta?",
+      "a2": "Svaka ponuda je prilagođena opsegu: broj stranica, jezici, integracije. Pošalji nam svoj cilj i unutar 48h imaš fiksnu cijenu — bez iznenađenja usred projekta.",
+      "q3": "Već imam stranicu. Isplati li se obnoviti?",
+      "a3": "Prvo radimo besplatnu dijagnozu tvoje trenutne stranice: brzina, SEO i konverzija. Ako je dobra, reći ćemo ti — i znaš gdje stojiš. Ako nije, pokazat ćemo ti točno koliko te košta u klijentima.",
+      "q4": "Je li SEO uključen ili je dodatak?",
+      "a4": "Tehnička SEO osnova (struktura, schema.org, sitemap, performanse) uključena je u svaki projekt — tako gradimo, nije dodatak. Kontinuirana strategija sadržaja zasebna je usluga.",
+      "q5": "Nakon lansiranja, ostajem sam?",
+      "a5": "Ne. Svaki projekt uključuje podršku nakon lansiranja, a možeš dodati kontinuirani razvoj: praćenje, izvještaje i mjesečna poboljšanja vođena stvarnim podacima tvojih posjetitelja.",
+      "q6": "Povezuje li se stranica s CRM-om?",
+      "a6": "Da — obrasci se mogu povezati s tvojim trenutnim CRM-om ili s Branct CRM-om, našom platformom s AI-jem koji odgovara tvojim leadovima na WhatsAppu 24/7. Stranica i CRM iz iste kuće znače nula izgubljenih leadova između sustava."
     },
-    "panel1": {
-      "title": "Nastavite istraživati",
-      "desc": "Pogledajte kako dizajniramo web stranicu s metodom: strategija, izvršenje i evolucija."
-    },
-    "final": {
-      "tag": "// Spremni za konverziju",
-      "title": "PODIGNITE STANDARD SVOJE PRISUTNOSTI.",
-      "desc": "Premium web stranice za povećanje percepcije vrijednosti, brzine i konverzije — s tehničkim SEO-om i trackingom za mjerenje onoga što je važno.",
-      "cta": "Zatražite ponudu"
-    },
-    "footer": {
-      "rights": "Sva prava pridržana",
-      "back": "Natrag na početak"
+    "cta": {
+      "eyebrow": "Ponuda unutar 48h",
+      "title": "Tvoj sljedeći klijent je upravo sad na nekoj stranici. <span class=\"text-gradient\">Neka bude na tvojoj.</span>",
+      "sub": "Pošalji nam svoj cilj i rok. Vraćamo se s jasnom dijagnozom, planom i fiksnom cijenom — unutar 48 sati.",
+      "primary": "Zatraži ponudu",
+      "whatsapp": "Piši nam na WhatsApp"
     }
   },
   "ct": {

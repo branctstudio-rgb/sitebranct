@@ -679,106 +679,58 @@
   },
   "wp": {
     "hero": {
-      "tag": "Premium Websites",
-      "line1": "PREMIUM",
-      "line2": "WEBSITES.",
-      "line3": "DESIGN",
-      "line4": "WITH METRICS.",
-      "desc": "A website that communicates value and generates real enquiries. Built for conversion, performance and technical SEO — with tracking ready to measure results.",
+      "eyebrow": "Premium Websites",
+      "title": "A beautiful site that doesn't sell is just decoration.",
+      "sub": "We build sites that load in an instant, show up on Google and turn visits into enquiries — for SMBs that treat digital as a sales channel, not a business card.",
       "cta1": "Request a proposal",
-      "cta2": "See process",
-      "stat1": "CWV-oriented performance",
-      "stat2": "Technical SEO + structure",
-      "stat3": "Global delivery (Edge/CDN)"
+      "cta2": "See our work",
+      "t1": "Lighthouse 95+ guaranteed",
+      "t2": "Proposal within 48h",
+      "t3": "Up to 4 languages included"
     },
-    "tech": {
-      "tag": "Technical foundation",
-      "title": "Architecture built to scale",
-      "desc": "We choose a stack that protects your investment: fast, stable and easy to evolve. Less friction today; lower rebuild costs tomorrow.",
-      "item1": "Next.js with hybrid rendering (SSR/SSG)",
-      "item2": "TypeScript for predictable code",
-      "item3": "Modern UI with subtle animation",
-      "item4": "Edge/CDN deployment",
-      "item5": "Database and service integrations"
+    "proof": {
+      "s1": "Lighthouse on delivered sites",
+      "s2": "load time",
+      "s3": "clients in 2 markets"
     },
-    "float": {
-      "label1": "Performance",
-      "kw1": "FAST. NO NOISE.",
-      "desc1": "Real optimisation: loading, images and code.",
-      "label2": "Growth",
-      "kw2": "TECHNICAL SEO",
-      "desc2": "Semantic structure + schema where it matters.",
-      "label3": "Security",
-      "kw3": "SECURE FOUNDATION",
-      "desc3": "HTTPS, headers and protection best practices."
+    "feat": {
+      "eyebrow": "What's included",
+      "title": "Three things your current site probably doesn't do.",
+      "f1": { "title": "Load before the customer gives up", "desc": "More than half of mobile visits abandon a site that takes 3 seconds to open. Ours load in under 2 — Core Web Vitals in the green, measured on real phones, not on our Mac." },
+      "f2": { "title": "Show up when they search for you", "desc": "Technical SEO from the ground up: semantic structure, schema.org, sitemap and tuned metadata. Google understands your site — and shows it." },
+      "f3": { "title": "Turn visits into enquiries", "desc": "Conversion architecture: a clear path to action on every page, forms wired to your CRM and tracking that tells you where each lead came from." },
+      "f4": { "title": "Grow with you — in any language", "desc": "Modular, multi-language architecture (up to 4 languages included). When you want to sell abroad or add a new section, the site keeps up — no starting from scratch." }
     },
-    "matrix": {
-      "tag": "Delivery tiers",
-      "title": "Choose the right level",
-      "subtitle": "Three approaches, one standard: performance, clarity and conversion. The difference lies in technical depth and integrations.",
-      "badge": "BEST BALANCED",
-      "feat": {
-        "tech": "Technology",
-        "perf": "Performance",
-        "design": "Design",
-        "seo": "SEO",
-        "crm": "CRM",
-        "ai": "AI Automation",
-        "support": "Support"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Essential",
-        "price": "500€ + 50€/mo",
-        "tech": "React / Next.js",
-        "perf": "Best practices + CWV",
-        "design": "Clean premium",
-        "seo": "Technical foundation",
-        "support": "1 month (final adjustments)",
-        "cta": "Request a proposal"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performance & conversion",
-        "price": "900€ + 230€/mo",
-        "tech": "Next.js + GSAP",
-        "perf": "Advanced optimisation",
-        "design": "Immersive UI (no excess)",
-        "seo": "Advanced technical SEO",
-        "support": "3 months (initial monitoring)",
-        "cta": "Choose"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Tech-Luxury",
-        "price": "On request",
-        "tech": "3D/WebGL where it makes sense",
-        "perf": "Edge + smart rendering",
-        "design": "Bespoke premium experience",
-        "seo": "SEO + authority structure",
-        "support": "6 months (continuous evolution)",
-        "cta": "Talk to us"
-      }
+    "meta": {
+      "eyebrow": "The proof is in front of you",
+      "title": "This site you're looking at? <span class=\"text-gradient\">It's our proposal.</span>",
+      "sub": "We don't ask you to believe promises. The BRANCT site is built with the exact engineering we sell — measure it yourself.",
+      "m1": "loading on 4G — no Three.js, no dead weight",
+      "m2": "of JavaScript — a fraction of the average site",
+      "m3": "PT · EN · IT · HR — switch in the top-right corner",
+      "kicker": "If this is how we build our own site, imagine what we do for yours."
     },
-    "bespoke": {
-      "title": "BESPOKE PROJECTS",
-      "tag": "Real exclusivity",
-      "desc": "For brands that don't fit templates. Bespoke design and implementation, specific integrations and a technical foundation built to evolve with your business.",
-      "cta": "Discuss your project"
+    "faq": {
+      "title": "Frequently asked questions",
+      "q1": "How long does a premium site take?",
+      "a1": "It depends on scope, but most projects go from briefing to live in 3 to 6 weeks. The proposal includes a timeline with concrete dates — and we keep it.",
+      "q2": "How much does it cost?",
+      "a2": "Each proposal is tailored to scope: number of pages, languages, integrations. Send us your goal and within 48h you have a fixed price — no surprises mid-project.",
+      "q3": "I already have a site. Is it worth redoing?",
+      "a3": "First we run a free diagnosis of your current site: speed, SEO and conversion. If it's good, we tell you so — and you know where you stand. If it isn't, we show you exactly what it's costing you in customers.",
+      "q4": "Is SEO included or extra?",
+      "a4": "The technical SEO base (structure, schema.org, sitemap, performance) is included in every project — it's how we build, not an add-on. Ongoing content strategy is a separate service.",
+      "q5": "After launch, am I on my own?",
+      "a5": "No. Every project includes post-launch support, and you can add continuous evolution: monitoring, reports and monthly improvements driven by your visitors' real data.",
+      "q6": "Does the site connect to a CRM?",
+      "a6": "Yes — forms can connect to your current CRM or to Branct CRM, our platform with AI that answers your leads on WhatsApp 24/7. Site and CRM from the same house means zero leads lost between systems."
     },
-    "panel1": {
-      "title": "Keep exploring",
-      "desc": "See how we build a website with method: strategy, execution and evolution."
-    },
-    "final": {
-      "tag": "// Ready to convert",
-      "title": "RAISE THE STANDARD OF YOUR PRESENCE.",
-      "desc": "Premium websites to increase perceived value, speed and conversion — with technical SEO and tracking to measure what matters.",
-      "cta": "Request a proposal"
-    },
-    "footer": {
-      "rights": "All rights reserved",
-      "back": "Back to home"
+    "cta": {
+      "eyebrow": "Proposal within 48h",
+      "title": "Your next customer is on a website right now. <span class=\"text-gradient\">Make it yours.</span>",
+      "sub": "Send us your goal and deadline. We come back with a clear diagnosis, a plan and a fixed price — within 48 hours.",
+      "primary": "Request a proposal",
+      "whatsapp": "Chat on WhatsApp"
     }
   },
   "ct": {

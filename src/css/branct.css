@@ -154,6 +154,24 @@
     .section { padding-block: var(--section-y); position: relative; }
     .section--alt { background: var(--surface-2); }
 
+    /* Aurora UI — gradiente vivo em deriva lenta (só em secções dark) */
+    .aurora {
+        position: absolute; inset: -25%; pointer-events: none; z-index: 0;
+        background:
+            radial-gradient(38% 34% at 28% 32%, rgba(0,246,236,0.13), transparent 60%),
+            radial-gradient(34% 40% at 72% 64%, rgba(139,92,246,0.16), transparent 65%),
+            radial-gradient(28% 30% at 55% 20%, rgba(79,168,232,0.10), transparent 60%);
+        filter: blur(46px);
+        animation: aurora-drift 24s ease-in-out infinite;
+    }
+    @keyframes aurora-drift {
+        0%, 100% { transform: translate(-5%, -4%) rotate(0deg) scale(1); }
+        50% { transform: translate(5%, 4%) rotate(6deg) scale(1.08); }
+    }
+    @media (prefers-reduced-motion: reduce) { .aurora { animation: none; } }
+    .section--ink { position: relative; overflow: hidden; }
+    .section--ink > .container { position: relative; z-index: 1; }
+
     /* Secção dark de impacto (estilo Apple: faixa preta entre secções claras) */
     .section--ink {
         background:
@@ -377,7 +395,9 @@
             var(--surface-ink);
         border-color: rgba(255,255,255,0.10);
         color: #F4F7F9;
+        position: relative; overflow: hidden;
     }
+    .card--ink > :not(.aurora) { position: relative; z-index: 1; }
     .card--ink h3 { color: #FFFFFF; }
     .card--ink p { color: #A9BAC4; }
     .card--ink .card__icon { background: rgba(0,246,236,0.12); color: var(--accent-vivid); }
