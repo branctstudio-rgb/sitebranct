@@ -723,6 +723,20 @@
       "s3": "<b>Ti odlučuješ:</b> sa svime pred sobom. Ako ne kreneš, svejedno znaš gdje stojiš."
     }
   },
+  "proc": {
+    "hero": {
+      "eyebrow": "Proces",
+      "title": "Angažiranje agencije ne bi smjelo biti čin vjere.",
+      "sub": "Zato naš proces ima pisane rokove, konkretne rezultate i točke odobrenja gdje ti odlučuješ. Ovo se događa, redoslijedom kojim se događa."
+    },
+    "pr": {
+      "eyebrow": "Zašto ovako",
+      "title": "Tri pravila koja ne kršimo.",
+      "p1": { "title": "Rokovi su obećanja", "desc": "Raspored u ponudi ima datume, ne \"procjene\". Ako ikada neki promašimo, znat ćeš prije nego što pitaš — s novim rokom i razlogom." },
+      "p2": { "title": "Svaka faza završava nečim tvojim", "desc": "Nikad ne plaćaš \"rad u tijeku\". Svaka faza se zatvara rezultatom koji možeš vidjeti, testirati i odobriti — dijagnoza, prototip, stranica, izvještaj." },
+      "p3": { "title": "Brojke prije mišljenja", "desc": "\"Ispalo je lijepo\" nije metrika. Lighthouse, vrijeme učitavanja, leadovi i izvor svakoga — odlučujemo s tobom na temelju podataka, od prvog do zadnjeg dana." }
+    }
+  },
   "a11y": {
     "skipToContent": "Preskoči na sadržaj",
     "mainNav": "Glavna navigacija",

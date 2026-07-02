@@ -723,6 +723,20 @@
       "s3": "<b>You decide:</b> with everything in front of you. If you don't move forward, you still know where you stand."
     }
   },
+  "proc": {
+    "hero": {
+      "eyebrow": "The process",
+      "title": "Hiring an agency shouldn't be an act of faith.",
+      "sub": "That's why our process has written deadlines, concrete deliverables and approval points where you're in charge. This is what happens, in the order it happens."
+    },
+    "pr": {
+      "eyebrow": "Why this way",
+      "title": "Three rules we don't break.",
+      "p1": { "title": "Deadlines are promises", "desc": "The proposal timeline has dates, not \"estimates\". If we ever miss one, you'll know before you have to ask — with the new date and the reason." },
+      "p2": { "title": "Every stage ends in something you own", "desc": "You never pay for \"work in progress\". Each stage closes with a deliverable you can see, test and approve — diagnosis, prototype, site, report." },
+      "p3": { "title": "Numbers before opinions", "desc": "\"It looks nice\" isn't a metric. Lighthouse, load time, leads and the source of each one — we decide with you on top of data, from day one to the last." }
+    }
+  },
   "a11y": {
     "skipToContent": "Skip to content",
     "mainNav": "Main navigation",

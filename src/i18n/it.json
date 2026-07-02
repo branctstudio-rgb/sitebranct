@@ -723,6 +723,20 @@
       "s3": "<b>Decidi tu:</b> con tutto davanti. Se non procedi, sai comunque a che punto sei."
     }
   },
+  "proc": {
+    "hero": {
+      "eyebrow": "Il processo",
+      "title": "Assumere un'agenzia non dovrebbe essere un atto di fede.",
+      "sub": "Per questo il nostro processo ha scadenze scritte, risultati concreti e punti di approvazione dove comandi tu. Questo è ciò che succede, nell'ordine in cui succede."
+    },
+    "pr": {
+      "eyebrow": "Perché così",
+      "title": "Tre regole che non infrangiamo.",
+      "p1": { "title": "Le scadenze sono promesse", "desc": "Il calendario del preventivo ha date, non \"stime\". Se un giorno ne manchiamo una, lo saprai prima di chiedere — con la nuova data e il perché." },
+      "p2": { "title": "Ogni fase finisce in qualcosa di tuo", "desc": "Non paghi mai per \"lavoro in corso\". Ogni fase si chiude con un risultato che puoi vedere, testare e approvare — diagnosi, prototipo, sito, report." },
+      "p3": { "title": "Numeri prima delle opinioni", "desc": "\"È venuto bello\" non è una metrica. Lighthouse, tempo di caricamento, lead e origine di ognuno — decidiamo con te sui dati, dal primo giorno all'ultimo." }
+    }
+  },
   "a11y": {
     "skipToContent": "Vai al contenuto",
     "mainNav": "Navigazione principale",

@@ -723,6 +723,20 @@
       "s3": "<b>Tu decides:</b> com tudo à frente. Se não avançares, ficas na mesma a saber onde estás."
     }
   },
+  "proc": {
+    "hero": {
+      "eyebrow": "O processo",
+      "title": "Contratar uma agência não devia ser um ato de fé.",
+      "sub": "Por isso o nosso processo tem prazos escritos, entregáveis concretos e pontos de aprovação onde tu mandas. Isto é o que acontece, pela ordem em que acontece."
+    },
+    "pr": {
+      "eyebrow": "Porquê assim",
+      "title": "Três regras que não quebramos.",
+      "p1": { "title": "Prazos são promessas", "desc": "O cronograma da proposta tem datas, não \"estimativas\". Se algum dia falharmos uma, ficas a saber antes de perguntar — com o novo prazo e o porquê." },
+      "p2": { "title": "Cada etapa acaba em algo teu", "desc": "Nunca pagas por \"trabalho em curso\". Cada etapa fecha com um entregável que podes ver, testar e aprovar — diagnóstico, protótipo, site, relatório." },
+      "p3": { "title": "Números antes de opiniões", "desc": "\"Ficou bonito\" não é métrica. Lighthouse, tempo de carregamento, leads e origem de cada um — decidimos contigo em cima de dados, do primeiro dia ao último." }
+    }
+  },
   "a11y": {
     "skipToContent": "Pular para conteúdo",
     "mainNav": "Navegação principal",
