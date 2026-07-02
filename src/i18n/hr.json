@@ -695,46 +695,32 @@
   },
   "ct": {
     "hero": {
-      "tag": "// Kontakt",
-      "title": "Razgovarajmo.",
-      "subtitle": "Započnite s besplatnom dijagnostikom. Zajamčen odgovor unutar 24h."
+      "eyebrow": "Kontakt",
+      "title": "Reci nam što želiš izgraditi.",
+      "sub": "Odgovaramo za manje od 24 sata — s planom i sljedećim koracima, ne s \"primili smo vaš email\"."
     },
     "form": {
-      "name": "Ime",
-      "email": "Email",
-      "phone": "Telefon",
+      "name": "Tvoje ime *",
+      "email": "Poslovni email *",
+      "phone": "Telefon / WhatsApp",
       "company": "Tvrtka",
-      "interest": "Interes",
-      "interests": {
-        "website": "Premium Web Stranice",
-        "crm": "CRM & Upravljanje",
-        "automation": "Automatizacija & AI",
-        "branding": "Branding"
-      },
-      "message": "Poruka",
-      "submit": "Pošalji Dijagnostiku",
-      "success": {
-        "title": "Dijagnostika Poslana!",
-        "desc": "Naš tim će analizirati vaš zahtjev i javiti vam se unutar 24h.",
-        "back": "Pošalji Još Jedan"
-      }
+      "interest": "Što tražiš? *",
+      "optChoose": "Odaberi opciju…",
+      "optOther": "Drugo / još ne znam",
+      "message": "Ispričaj nam cilj (i rok, ako ga imaš) *",
+      "privacy": "Slanjem se slažeš s našim <a href=\"politica-privacidade.html#privacidade\">Pravilima privatnosti</a>. Tvoje podatke koristimo samo za odgovor na upit.",
+      "submit": "Pošalji upit →"
     },
-    "info": {
-      "title": "Izravni Kontakti",
-      "whatsapp": {
-        "title": "Izravan Chat",
-        "desc": "Odgovor unutar 10min"
-      },
-      "email": {
-        "title": "E-mail"
-      },
-      "schedule": {
-        "title": "Zakaži Poziv",
-        "desc": "Konzultacija od 30min"
-      },
-      "location": {
-        "title": "Lokacija"
-      }
+    "ch": {
+      "wa": { "title": "WhatsApp — odgovara naš AI", "desc": "935 183 488 · odgovor stiže u sekundama, u bilo koje doba. Čovjek se uključuje kad ima smisla.", "live": "online sada" },
+      "email": { "title": "Email — detaljan briefing", "desc": "contacto@branct.com · priloži zahtjeve, reference, što god imaš." },
+      "loc": { "title": "Guimarães, Portugal", "desc": "Klijenti u Portugalu i Brazilu — video sastanci, bez problema s vremenskim zonama." }
+    },
+    "next": {
+      "title": "Što slijedi",
+      "s1": "<b>Unutar 24h:</b> odgovaramo s pravim pitanjima — ili pozivom od 20 min, ako ti je draže.",
+      "s2": "<b>Unutar 48h:</b> dobivaš dijagnozu, plan i fiksnu cijenu. Bez iznenađenja poslije.",
+      "s3": "<b>Ti odlučuješ:</b> sa svime pred sobom. Ako ne kreneš, svejedno znaš gdje stojiš."
     }
   },
   "a11y": {

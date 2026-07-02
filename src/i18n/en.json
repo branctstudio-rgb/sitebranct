@@ -695,46 +695,32 @@
   },
   "ct": {
     "hero": {
-      "tag": "// Contact",
-      "title": "Let's Talk.",
-      "subtitle": "Start with a free diagnosis. Guaranteed response within 24h."
+      "eyebrow": "Contact",
+      "title": "Tell us what you want to build.",
+      "sub": "We reply in under 24 hours — with a plan and next steps, not with a \"we received your email\"."
     },
     "form": {
-      "name": "Name",
-      "email": "Email",
-      "phone": "Phone",
+      "name": "Your name *",
+      "email": "Work email *",
+      "phone": "Phone / WhatsApp",
       "company": "Company",
-      "interest": "Interest",
-      "interests": {
-        "website": "Premium Websites",
-        "crm": "CRM & Management",
-        "automation": "Automation & AI",
-        "branding": "Branding"
-      },
-      "message": "Message",
-      "submit": "Send Diagnosis",
-      "success": {
-        "title": "Diagnosis Sent!",
-        "desc": "Our team will review your request and get back to you within 24h.",
-        "back": "Send Another"
-      }
+      "interest": "What are you looking for? *",
+      "optChoose": "Choose an option…",
+      "optOther": "Other / not sure yet",
+      "message": "Tell us the goal (and the deadline, if you have one) *",
+      "privacy": "By sending, you agree to our <a href=\"politica-privacidade.html#privacidade\">Privacy Policy</a>. We use your data only to answer your request.",
+      "submit": "Send request →"
     },
-    "info": {
-      "title": "Direct Contacts",
-      "whatsapp": {
-        "title": "Direct Chat",
-        "desc": "Response within 10min"
-      },
-      "email": {
-        "title": "E-mail"
-      },
-      "schedule": {
-        "title": "Schedule Call",
-        "desc": "30min consultation"
-      },
-      "location": {
-        "title": "Location"
-      }
+    "ch": {
+      "wa": { "title": "WhatsApp — answered by our AI", "desc": "935 183 488 · a reply arrives within seconds, any hour. A human steps in when it makes sense.", "live": "online now" },
+      "email": { "title": "Email — detailed briefing", "desc": "contacto@branct.com · attach requirements, references, whatever you have." },
+      "loc": { "title": "Guimarães, Portugal", "desc": "Clients in Portugal and Brazil — video meetings, no timezone headaches." }
+    },
+    "next": {
+      "title": "What happens next",
+      "s1": "<b>Within 24h:</b> we reply with the right questions — or a 20-min call, if you prefer.",
+      "s2": "<b>Within 48h:</b> you get a diagnosis, a plan and a fixed price. No surprises later.",
+      "s3": "<b>You decide:</b> with everything in front of you. If you don't move forward, you still know where you stand."
     }
   },
   "a11y": {

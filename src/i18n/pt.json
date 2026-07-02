@@ -695,46 +695,32 @@
   },
   "ct": {
     "hero": {
-      "tag": "// Contactos",
-      "title": "Vamos Conversar.",
-      "subtitle": "Comece com um diagnóstico gratuito. Resposta garantida em 24h."
+      "eyebrow": "Contactos",
+      "title": "Diz-nos o que queres construir.",
+      "sub": "Respondemos em menos de 24 horas — com um plano e os próximos passos, não com um \"recebemos o seu email\"."
     },
     "form": {
-      "name": "Nome",
-      "email": "Email",
-      "phone": "Telefone",
+      "name": "O teu nome *",
+      "email": "Email profissional *",
+      "phone": "Telefone / WhatsApp",
       "company": "Empresa",
-      "interest": "Interesse",
-      "interests": {
-        "website": "Websites Premium",
-        "crm": "CRM & Gestão",
-        "automation": "Automação & IA",
-        "branding": "Branding"
-      },
-      "message": "Mensagem",
-      "submit": "Enviar Diagnóstico",
-      "success": {
-        "title": "Diagnóstico Enviado!",
-        "desc": "A nossa equipa vai analisar o seu pedido e entrar em contacto dentro de 24h.",
-        "back": "Enviar Outro"
-      }
+      "interest": "O que procuras? *",
+      "optChoose": "Escolhe uma opção…",
+      "optOther": "Outro / ainda não sei",
+      "message": "Conta-nos o objetivo (e o prazo, se tiveres) *",
+      "privacy": "Ao enviar, concordas com a nossa <a href=\"politica-privacidade.html#privacidade\">Política de Privacidade</a>. Usamos os teus dados só para responder ao pedido.",
+      "submit": "Enviar pedido →"
     },
-    "info": {
-      "title": "Contactos Diretos",
-      "whatsapp": {
-        "title": "Chat Direto",
-        "desc": "Resposta em até 10min"
-      },
-      "email": {
-        "title": "E-mail"
-      },
-      "schedule": {
-        "title": "Agendar Call",
-        "desc": "Consultoria de 30min"
-      },
-      "location": {
-        "title": "Localização"
-      }
+    "ch": {
+      "wa": { "title": "WhatsApp — atendido pela nossa IA", "desc": "935 183 488 · a resposta chega em segundos, a qualquer hora. Um humano entra quando fizer sentido.", "live": "online agora" },
+      "email": { "title": "Email — briefing detalhado", "desc": "contacto@branct.com · anexa requisitos, referências, o que tiveres." },
+      "loc": { "title": "Guimarães, Portugal", "desc": "Clientes em Portugal e no Brasil — reuniões por vídeo, sem fusos complicados." }
+    },
+    "next": {
+      "title": "O que acontece a seguir",
+      "s1": "<b>Em 24h:</b> respondemos com perguntas certas — ou com uma call de 20 min, se preferires.",
+      "s2": "<b>Em 48h:</b> recebes diagnóstico, plano e valor fechado. Sem surpresas depois.",
+      "s3": "<b>Tu decides:</b> com tudo à frente. Se não avançares, ficas na mesma a saber onde estás."
     }
   },
   "a11y": {

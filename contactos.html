@@ -1,105 +1,166 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-    <meta name="facebook-domain-verification" content="xesigh89y5u9bpq7aa0t44be00d63v" />
     <meta charset="UTF-8">
+    <meta name="facebook-domain-verification" content="xesigh89y5u9bpq7aa0t44be00d63v" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- SEO & Metadata -->
-    <title>BRANCT | Contactos — Diagnóstico Gratuito</title>
-    <meta name="description" content="Entre em contacto com a BRANCT. Diagnóstico gratuito para o seu projeto digital. Resposta garantida em 24h.">
-    <link rel="canonical" href="https://branct.com/contactos">
+    <!-- SEO -->
+    <title>Contactos | Respondemos em 24h com um plano — BRANCT</title>
+    <meta name="description" content="Fala com a BRANCT: pedido de proposta em 48h, WhatsApp com resposta em segundos (24/7) ou email. Guimarães, Portugal — clientes em PT e BR.">
+    <link rel="canonical" href="https://branct.com/contactos.html">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://branct.com/contactos">
-    <meta property="og:title" content="BRANCT | Contactos">
-    <meta property="og:description" content="Diagnóstico gratuito para o seu projeto digital.">
+    <meta property="og:url" content="https://branct.com/contactos.html">
+    <meta property="og:title" content="Contactos — BRANCT">
+    <meta property="og:description" content="Diz-nos o que queres construir. Respondemos em 24h com um plano — não com um 'recebemos o seu email'.">
+    <meta property="og:image" content="https://branct.com/og-image.jpg">
+    <meta name="twitter:card" content="summary_large_image">
 
-    <!-- Favicon -->
     <link rel="icon" href="src/img/favicon.ico" sizes="any">
     <link rel="icon" href="src/img/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="src/img/apple-touch-icon.png">
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="src/css/main.css">
+    <link rel="stylesheet" href="src/css/branct.css?v=20260618">
+    <style>
+    /* ============================================================
+       CONTACTOS — o balcão. Foco total: formulário + canais diretos.
+       ============================================================ */
+    .ct-hero {
+        background:
+            radial-gradient(50% 70% at 90% 0%, rgba(0,216,206,0.10), transparent 60%),
+            radial-gradient(40% 55% at 5% 40%, rgba(139,92,246,0.08), transparent 65%);
+        padding-block: clamp(56px, 7vw, 96px) clamp(32px, 4vw, 56px);
+    }
+    .ct-hero h1 { font-size: clamp(2.4rem, 1.6rem + 3.6vw, 4.2rem); max-width: 760px; margin-top: var(--sp-4); }
+    .ct-hero .sub { color: var(--muted); font-size: var(--fs-lead); max-width: 620px; margin-top: var(--sp-5); }
+
+    .ct-grid { display: grid; gap: var(--sp-8); align-items: start; }
+    @media (min-width: 960px) { .ct-grid { grid-template-columns: minmax(0, 11fr) minmax(0, 8fr); gap: var(--sp-12); } }
+
+    /* Formulário */
+    .ct-form-card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl);
+        padding: clamp(24px, 3.5vw, 44px);
+        box-shadow: var(--sh-3);
+    }
+    .ct-form-card form { display: grid; gap: var(--sp-4); grid-template-columns: 1fr 1fr; }
+    .ct-form-card .field--full { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .ct-form-card form { grid-template-columns: 1fr; } .ct-form-card .field--full { grid-column: auto; } }
+    .ct-form-card textarea.input { min-height: 120px; resize: vertical; font-family: inherit; }
+    .ct-form-card select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235C6B76' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; }
+    .ct-micro { grid-column: 1 / -1; font-size: 0.78rem; color: var(--muted); }
+    .ct-micro a { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Canais diretos */
+    .ct-channel {
+        display: flex; align-items: flex-start; gap: var(--sp-4);
+        padding: var(--sp-5); border-radius: var(--r-lg);
+        background: var(--surface); border: 1px solid var(--line);
+        transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur-fast) var(--ease);
+    }
+    a.ct-channel:hover { transform: translateY(-2px); box-shadow: var(--sh-2); border-color: #D8D5CE; }
+    .ct-channel + .ct-channel { margin-top: var(--sp-3); }
+    .ct-channel__icon {
+        width: 44px; height: 44px; border-radius: var(--r-md); flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--accent-tint); color: var(--accent-strong);
+    }
+    .ct-channel__icon svg { width: 22px; height: 22px; }
+    .ct-channel h3 { font-size: 1.02rem; }
+    .ct-channel p { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+    .ct-channel .live {
+        display: inline-flex; align-items: center; gap: 6px;
+        margin-top: 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--success);
+    }
+    .ct-channel .live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: ct-pulse 2s ease-in-out infinite; }
+    @keyframes ct-pulse { 50% { opacity: 0.4; } }
+    @media (prefers-reduced-motion: reduce) { .ct-channel .live::before { animation: none; } }
+
+    /* O que acontece a seguir */
+    .ct-next {
+        margin-top: var(--sp-6);
+        background: linear-gradient(165deg, #EAF7F8, #FFFFFF 75%);
+        border: 1px solid rgba(12,124,143,0.2); border-radius: var(--r-lg);
+        padding: var(--sp-6);
+    }
+    .ct-next h3 { font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: var(--sp-4); }
+    .ct-next ol { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .ct-next li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.92rem; color: var(--ink-2); }
+    .ct-next li b { color: var(--ink); }
+    .ct-next .n {
+        width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+        background: var(--accent-tint); color: var(--accent-strong);
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display); font-weight: 800; font-size: 0.78rem;
+    }
+    </style>
+
+    <!-- schema.org -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "url": "https://branct.com/contactos.html",
+        "mainEntity": {
+            "@type": "Organization",
+            "name": "BRANCT",
+            "email": "contacto@branct.com",
+            "telephone": "+351935183488",
+            "address": { "@type": "PostalAddress", "addressLocality": "Guimarães", "addressCountry": "PT" }
+        }
+    }
+    </script>
 </head>
 <body>
-    <!-- Skip link — visible on Tab -->
-    <a class="skip-link" href="#main-content" data-i18n="a11y.skipToContent">Pular para conteúdo</a>
+    <div class="scroll-progress" aria-hidden="true"></div>
+    <a class="skip-link" href="#main-content" data-i18n="a11y.skipToContent">Saltar para o conteúdo</a>
 
-    <!-- Preloader — Light Curtain -->
-    <div id="preloader" aria-live="polite">
-        <div class="loader-content">
-            <div class="loader-logo">BRANCT<span class="tech">.Tech</span></div>
-            <div class="loader-bar-container">
-                <div class="loader-bar" id="loader-bar"></div>
-            </div>
-            <div class="loader-percentage" id="loader-percentage">0%</div>
-        </div>
-        <div class="light-curtain"></div>
-    </div>
-
-    <canvas id="webgl-canvas" aria-hidden="true"></canvas>
-    <div class="overlay-gradient" aria-hidden="true"></div>
-
-    <!-- Header -->
-    <header class="header glass-panel">
-        <div class="container header__container">
-            <a href="index.html" class="logo">BRANCT<span class="tech">.Tech</span></a>
-
+    <!-- Header (partilhado) -->
+    <header class="header">
+        <div class="container header__inner">
+            <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
             <nav class="nav-desktop" aria-label="Principal">
                 <ul class="nav-list">
-                    <li><a href="index.html" data-i18n="nav.home">Início</a></li>
                     <li class="nav-item--dropdown">
                         <button class="nav-link" aria-haspopup="true" aria-expanded="false" aria-controls="services-submenu" data-i18n="nav.services">Serviços</button>
                         <ul class="services-submenu" id="services-submenu">
                             <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
                             <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
-                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & Gestão</a></li>
+                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
                             <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
                         </ul>
                     </li>
+                    <li><a href="crm-gestao.html">Branct CRM</a></li>
                     <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
                     <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
-                    <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área do Usuário</a></li>
-                    <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                    <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
                 </ul>
             </nav>
-
             <div class="header__actions">
-                <button class="theme-toggle" aria-label="Toggle theme" title="Toggle dark/light mode">
-                    <svg class="theme-toggle__sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    <svg class="theme-toggle__moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                </button>
                 <div class="lang-selector">
-                    <button class="lang-btn" aria-label="Select Language">
+                    <button class="lang-btn" aria-label="Idioma" aria-haspopup="listbox">
                         <span id="current-lang">PT</span>
-                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <ul class="lang-dropdown" role="listbox" aria-label="Idioma">
-                        <li data-lang="pt">PT</li>
-                        <li data-lang="en">EN</li>
-                        <li data-lang="it">IT</li>
-                        <li data-lang="hr">HR</li>
+                        <li data-lang="pt">PT</li><li data-lang="en">EN</li><li data-lang="it">IT</li><li data-lang="hr">HR</li>
                     </ul>
                 </div>
-                <a href="contactos.html" class="btn btn--primary" data-i18n="nav.cta">Pedir Proposta</a>
-                <button class="mobile-toggle" aria-label="Menu">
-                    <span></span><span></span>
-                </button>
+                <a href="#form" class="btn btn--primary btn--sm" data-i18n="nav.cta">Pedir proposta</a>
+                <button class="mobile-toggle" aria-label="Menu" aria-controls="mobile-drawer"><span></span><span></span></button>
             </div>
         </div>
     </header>
 
-    <!-- Mobile Drawer -->
-    <div class="mobile-drawer glass-panel" role="dialog" aria-label="Menu" aria-modal="true">
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <div class="mobile-drawer" id="mobile-drawer" role="dialog" aria-label="Menu" aria-modal="true">
         <nav aria-label="Mobile">
             <ul class="mobile-nav-list">
                 <li><a href="index.html" data-i18n="nav.home">Início</a></li>
@@ -108,196 +169,170 @@
                     <ul class="mobile-submenu" id="mobile-submenu">
                         <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
                         <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
-                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & Gestão</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
                         <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
                     </ul>
                 </li>
                 <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
                 <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
-                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área do Usuário</a></li>
+                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
                 <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
             </ul>
-            <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir Proposta</a>
         </nav>
+        <a href="#form" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir proposta</a>
     </div>
 
-    <main id="main-content" class="page-main">
-        <!-- ═══════════════ Contact Hero ═══════════════ -->
-        <section class="ct-hero section">
+    <main id="main-content">
+
+        <!-- ===== HERO COMPACTO ===== -->
+        <section class="ct-hero" aria-label="Contactos">
             <div class="container">
-                <span class="ct-hero__tag" data-i18n="ct.hero.tag">// Contactos</span>
-                <h1 class="ct-hero__title" data-i18n="ct.hero.title">Vamos Conversar.</h1>
-                <p class="ct-hero__subtitle" data-i18n="ct.hero.subtitle">Comece com um diagnóstico gratuito. Resposta garantida em 24h.</p>
+                <p class="eyebrow" data-i18n="ct.hero.eyebrow">Contactos</p>
+                <h1 data-i18n="ct.hero.title">Diz-nos o que queres construir.</h1>
+                <p class="sub" data-i18n="ct.hero.sub">Respondemos em menos de 24 horas — com um plano e os próximos passos, não com um "recebemos o seu email".</p>
             </div>
         </section>
 
-        <!-- ═══════════════ Contact Form + Info Grid ═══════════════ -->
-        <section class="ct-section section">
+        <!-- ===== FORM + CANAIS ===== -->
+        <section class="section" id="form" aria-label="Formulário de contacto" style="padding-top: var(--sp-6)">
             <div class="container">
                 <div class="ct-grid">
-
-                    <!-- ── Form Card (60%) ── -->
-                    <div class="ct-form-card" id="ct-form-card">
-                        <form id="contact-form" novalidate>
-                            <!-- Row 1: Nome + Email -->
-                            <div class="ct-form-row">
-                                <div class="floating-field">
-                                    <input type="text" id="ct-name" name="name" placeholder=" " required autocomplete="name">
-                                    <label for="ct-name" data-i18n="ct.form.name">Nome</label>
-                                    <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                </div>
-                                <div class="floating-field">
-                                    <input type="email" id="ct-email" name="email" placeholder=" " required autocomplete="email">
-                                    <label for="ct-email" data-i18n="ct.form.email">Email</label>
-                                    <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                </div>
+                    <!-- Formulário → webhook n8n via branct.js -->
+                    <div class="ct-form-card reveal">
+                        <form data-lead-form="contactos" novalidate>
+                            <div class="field">
+                                <label for="ct-nome" data-i18n="ct.form.name">O teu nome *</label>
+                                <input class="input" id="ct-nome" name="nome" type="text" required autocomplete="name">
                             </div>
-
-                            <!-- Row 2: Telefone + Empresa -->
-                            <div class="ct-form-row">
-                                <div class="floating-field">
-                                    <input type="tel" id="ct-phone" name="phone" placeholder=" " autocomplete="tel">
-                                    <label for="ct-phone" data-i18n="ct.form.phone">Telefone</label>
-                                    <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                                </div>
-                                <div class="floating-field">
-                                    <input type="text" id="ct-company" name="company" placeholder=" " autocomplete="organization">
-                                    <label for="ct-company" data-i18n="ct.form.company">Empresa</label>
-                                    <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                                </div>
+                            <div class="field">
+                                <label for="ct-email" data-i18n="ct.form.email">Email profissional *</label>
+                                <input class="input" id="ct-email" name="email" type="email" required autocomplete="email">
                             </div>
-
-                            <!-- Interesse (Select) -->
-                            <div class="floating-field floating-field--select">
-                                <select id="ct-interest" name="interest" required>
-                                    <option value="" disabled selected></option>
-                                    <option value="website" data-i18n="ct.form.interests.website">Websites Premium</option>
-                                    <option value="crm" data-i18n="ct.form.interests.crm">CRM & Gestão</option>
-                                    <option value="automation" data-i18n="ct.form.interests.automation">Automação & IA</option>
-                                    <option value="branding" data-i18n="ct.form.interests.branding">Branding</option>
+                            <div class="field">
+                                <label for="ct-telefone" data-i18n="ct.form.phone">Telefone / WhatsApp</label>
+                                <input class="input" id="ct-telefone" name="telefone" type="tel" autocomplete="tel">
+                            </div>
+                            <div class="field">
+                                <label for="ct-empresa" data-i18n="ct.form.company">Empresa</label>
+                                <input class="input" id="ct-empresa" name="empresa" type="text" autocomplete="organization">
+                            </div>
+                            <div class="field field--full">
+                                <label for="ct-interesse" data-i18n="ct.form.interest">O que procuras? *</label>
+                                <select class="input" id="ct-interesse" name="interesse" required>
+                                    <option value="" data-i18n="ct.form.optChoose">Escolhe uma opção…</option>
+                                    <option value="website-premium" data-i18n="servicesMenu.website">Website Premium</option>
+                                    <option value="landing-page" data-i18n="servicesMenu.landing">Landing Pages</option>
+                                    <option value="automacao-ia" data-i18n="servicesMenu.automation">Automação & IA</option>
+                                    <option value="branct-crm" data-i18n="servicesMenu.crm">Branct CRM</option>
+                                    <option value="outro" data-i18n="ct.form.optOther">Outro / ainda não sei</option>
                                 </select>
-                                <label for="ct-interest" data-i18n="ct.form.interest">Interesse</label>
-                                <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                                <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                             </div>
-
-                            <!-- Mensagem (Textarea) -->
-                            <div class="floating-field floating-field--textarea">
-                                <textarea id="ct-message" name="message" placeholder=" " rows="4" required></textarea>
-                                <label for="ct-message" data-i18n="ct.form.message">Mensagem</label>
-                                <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <div class="field field--full">
+                                <label for="ct-mensagem" data-i18n="ct.form.message">Conta-nos o objetivo (e o prazo, se tiveres) *</label>
+                                <textarea class="input" id="ct-mensagem" name="mensagem" required></textarea>
                             </div>
-
-                            <!-- Submit -->
-                            <button type="submit" class="btn--magnetic" id="ct-submit">
-                                <span data-i18n="ct.form.submit">Enviar Diagnóstico</span>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </button>
+                            <p class="ct-micro" data-i18n="ct.form.privacy" data-i18n-html>Ao enviar, concordas com a nossa <a href="politica-privacidade.html#privacidade">Política de Privacidade</a>. Usamos os teus dados só para responder ao pedido.</p>
+                            <div class="field--full">
+                                <button type="submit" class="btn btn--primary btn--lg" style="width:100%" data-i18n="ct.form.submit">Enviar pedido →</button>
+                            </div>
+                            <p class="form-msg field--full" role="status" aria-live="polite"></p>
                         </form>
-
-                        <!-- Success Overlay -->
-                        <div class="ct-success" id="ct-success">
-                            <div class="ct-success__check">
-                                <svg viewBox="0 0 52 52" width="72" height="72">
-                                    <circle class="ct-check-circle" cx="26" cy="26" r="25" fill="none"/>
-                                    <path class="ct-check-mark" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                                </svg>
-                            </div>
-                            <h3 data-i18n="ct.form.success.title">Diagnóstico Enviado!</h3>
-                            <p data-i18n="ct.form.success.desc">A nossa equipa vai analisar o seu pedido e entrar em contacto dentro de 24h.</p>
-                            <button type="button" class="ct-success__reset" id="ct-reset" data-i18n="ct.form.success.back">Enviar Outro</button>
-                        </div>
                     </div>
 
-                    <!-- ── Info Sidebar (40%) ── -->
-                    <aside class="ct-info">
-                        <h3 class="ct-info__title" data-i18n="ct.info.title">Contactos Diretos</h3>
-                        <div class="ct-info__cards">
-                            <!-- WhatsApp -->
-                            <a href="https://wa.me/351935183488" target="_blank" rel="noopener noreferrer" class="ct-info-card">
-                                <div class="ct-info-card__icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                                </div>
-                                <div class="ct-info-card__text">
-                                    <h4 data-i18n="ct.info.whatsapp.title">Chat Direto</h4>
-                                    <p data-i18n="ct.info.whatsapp.desc">Resposta em até 10min</p>
-                                </div>
-                                <svg class="ct-info-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </a>
-
-                            <!-- E-mail -->
-                            <a href="mailto:contacto@branct.com" class="ct-info-card">
-                                <div class="ct-info-card__icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                </div>
-                                <div class="ct-info-card__text">
-                                    <h4 data-i18n="ct.info.email.title">E-mail</h4>
-                                    <p>contacto@branct.com</p>
-                                </div>
-                                <svg class="ct-info-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </a>
-
-                            <!-- Agendar Call -->
-                            <a href="#" class="ct-info-card">
-                                <div class="ct-info-card__icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                </div>
-                                <div class="ct-info-card__text">
-                                    <h4 data-i18n="ct.info.schedule.title">Agendar Call</h4>
-                                    <p data-i18n="ct.info.schedule.desc">Consultoria de 30min</p>
-                                </div>
-                                <svg class="ct-info-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            </a>
-
-                            <!-- Localização -->
-                            <div class="ct-info-card ct-info-card--static">
-                                <div class="ct-info-card__icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                </div>
-                                <div class="ct-info-card__text">
-                                    <h4 data-i18n="ct.info.location.title">Localização</h4>
-                                    <p>Guimarães, Portugal</p>
-                                </div>
-                            </div>
+                    <!-- Canais diretos + expectativas -->
+                    <div class="reveal">
+                        <a class="ct-channel" href="https://wa.me/351935183488?text=Ol%C3%A1!%20Quero%20falar%20sobre%20um%20projeto." target="_blank" rel="noopener noreferrer">
+                            <span class="ct-channel__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+                            <span>
+                                <h3 data-i18n="ct.ch.wa.title">WhatsApp — atendido pela nossa IA</h3>
+                                <p data-i18n="ct.ch.wa.desc">935 183 488 · a resposta chega em segundos, a qualquer hora. Um humano entra quando fizer sentido.</p>
+                                <span class="live" data-i18n="ct.ch.wa.live">online agora</span>
+                            </span>
+                        </a>
+                        <a class="ct-channel" href="mailto:contacto@branct.com">
+                            <span class="ct-channel__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                            <span>
+                                <h3 data-i18n="ct.ch.email.title">Email — briefing detalhado</h3>
+                                <p data-i18n="ct.ch.email.desc">contacto@branct.com · anexa requisitos, referências, o que tiveres.</p>
+                            </span>
+                        </a>
+                        <div class="ct-channel">
+                            <span class="ct-channel__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                            <span>
+                                <h3 data-i18n="ct.ch.loc.title">Guimarães, Portugal</h3>
+                                <p data-i18n="ct.ch.loc.desc">Clientes em Portugal e no Brasil — reuniões por vídeo, sem fusos complicados.</p>
+                            </span>
                         </div>
-                    </aside>
 
+                        <div class="ct-next">
+                            <h3 data-i18n="ct.next.title">O que acontece a seguir</h3>
+                            <ol>
+                                <li><span class="n">1</span><span data-i18n="ct.next.s1" data-i18n-html><b>Em 24h:</b> respondemos com perguntas certas — ou com uma call de 20 min, se preferires.</span></li>
+                                <li><span class="n">2</span><span data-i18n="ct.next.s2" data-i18n-html><b>Em 48h:</b> recebes diagnóstico, plano e valor fechado. Sem surpresas depois.</span></li>
+                                <li><span class="n">3</span><span data-i18n="ct.next.s3" data-i18n-html><b>Tu decides:</b> com tudo à frente. Se não avançares, ficas na mesma a saber onde estás.</span></li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer (partilhado) -->
     <footer class="footer">
-        <div class="container footer__content">
-            <div class="footer__brand">
-                <span class="logo">BRANCT.</span>
-                <p>&copy; 2026 BRANCT. All rights reserved.</p>
+        <div class="container">
+            <div class="footer__grid">
+                <div class="footer__col">
+                    <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+                    <p style="margin-top:12px; max-width:280px" data-i18n="home.footer.tagline">Websites premium e um CRM com IA — engenharia digital para PMEs que querem crescer.</p>
+                </div>
+                <div class="footer__col">
+                    <h4 data-i18n="nav.services">Serviços</h4>
+                    <ul>
+                        <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
+                        <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
+                        <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
+                    </ul>
+                </div>
+                <div class="footer__col">
+                    <h4 data-i18n="home.footer.company">Empresa</h4>
+                    <ul>
+                        <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
+                        <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
+                        <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                        <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
+                    </ul>
+                </div>
+                <div class="footer__col">
+                    <h4 data-i18n="home.footer.legal">Legal</h4>
+                    <ul>
+                        <li><a href="politica-privacidade.html#privacidade" data-i18n="footer.privacy">Privacidade</a></li>
+                        <li><a href="politica-privacidade.html#termos" data-i18n="footer.terms">Termos</a></li>
+                    </ul>
+                </div>
             </div>
-            <div class="footer__links">
-                <a href="#" data-i18n="footer.privacy">Privacidade</a>
-                <a href="#" data-i18n="footer.terms">Termos</a>
+            <div class="footer__meta">
+                <span>&copy; 2026 BRANCT.Tech · Guimarães, Portugal</span>
+                <span><a href="mailto:contacto@branct.com">contacto@branct.com</a> · <a href="tel:+351935183488">935 183 488</a></span>
             </div>
         </div>
     </footer>
 
-    <!-- GSAP + ScrollTrigger + SplitType (defer to avoid render-blocking) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
+    <!-- Consent banner -->
+    <aside class="consent" id="consent-banner" role="dialog" aria-live="polite" aria-label="Consentimento de cookies" hidden>
+        <div class="consent__inner">
+            <div class="consent__text">
+                <strong data-i18n="home.consent.title">Privacidade primeiro.</strong>
+                <p data-i18n="home.consent.desc" data-i18n-html>Usamos cookies essenciais e cookies de marketing (Meta) para medir campanhas. Aceitas ou recusas — a escolha fica guardada. Vê a <a href="politica-privacidade.html#cookies">Política de Privacidade</a>.</p>
+            </div>
+            <div class="consent__actions">
+                <button type="button" class="btn btn--ghost" id="consent-reject" data-i18n="home.consent.reject">Recusar</button>
+                <button type="button" class="btn btn--primary" id="consent-accept" data-i18n="home.consent.accept">Aceitar</button>
+            </div>
+        </div>
+    </aside>
 
-    <!-- Import Map for Three.js -->
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-        }
-    }
-    </script>
-
-    <!-- Scripts -->
-    <script type="module" src="src/js/three-scene.js"></script>
-    <script type="module" src="src/js/main.js"></script>
+    <script src="src/js/branct.js?v=20260618" defer></script>
 </body>
 </html>
