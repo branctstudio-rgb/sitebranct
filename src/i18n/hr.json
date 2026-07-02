@@ -495,64 +495,75 @@
     "footerBack": "Natrag na Početak"
   },
   "ai": {
-    "heroBadge": "Umjetna Inteligencija",
-    "heroLine1": "VAŠA TVRTKA NA",
-    "heroLine2": "AUTOPILOTU.",
-    "heroSub": "Korisnička služba, prodaja i interni procesi rade 24/7. Bez pauza, bez ljudskih grešaka.",
-    "heroCta": "Pogledaj Demo",
-    "stats": {
-      "response": "Vrijeme Odgovora",
-      "availability": "Dostupnost",
-      "qualification": "Kvalifikacija"
+    "hero": {
+      "eyebrow": "Usluga 03 · Automatizacija & AI",
+      "title": "Tvoji leadovi nemaju radno vrijeme. <em>Sada ga nema ni tvoja podrška.</em>",
+      "sub": "AI treniran na tvom poslu odgovara na WhatsAppu u sekundama, kvalificira i zakazuje — i predaje tvom timu kad treba prava osoba. Automatski follow-up uključen.",
+      "cta1": "Zatraži ponudu",
+      "cta2": "Pogledaj AI na djelu ↓"
     },
-    "chatTag": "// Live Demo",
-    "chatTitle": "Pogledajte AI<br>u Akciji",
-    "chatDesc": "Dok čitate ovo, naš AI je već odgovorio 47 klijenata istovremeno. Kvalificirao leadove, zakazao sastanke i poslao ponude.",
-    "speedText": "Odgovori za <strong>0.2s</strong>. Trenutna konverzija.",
-    "chatOnline": "Online",
-    "solutionsTitle": "Rješenja za<br>Automatizaciju",
-    "solutionsSub": "Tehnologija koja radi dok vi spavate. Svaka interakcija, uhvaćena prilika.",
-    "solutions": {
-      "gpt": {
-        "title": "GPT-4 Chatbotovi",
-        "desc": "Konverzacijski AI treniran na vašem poslovanju. Kontekstualni odgovori, personalizacija u stvarnom vremenu i kontinuirano učenje."
-      },
-      "whatsapp": {
-        "title": "WhatsApp Business",
-        "desc": "Službeni API integriran. Masovno slanje poruka, automatski odgovori i prodajni tokovi."
-      },
-      "leads": {
-        "title": "Kvalifikacija Leadova",
-        "desc": "Automatsko bodovanje temeljeno na ponašanju. Fokusirajte se samo na vruće leadove."
-      },
-      "booking": {
-        "title": "Automatsko Zakazivanje",
-        "desc": "Sinkronizacija s Google Kalendarom i Calendlyjem. Sastanci zakazani bez ljudske intervencije."
-      },
-      "email": {
-        "title": "Email Sekvence",
-        "desc": "Automatsko njegovanje s dinamičkom personalizacijom. AI generiran tekst."
-      }
+    "spec": {
+      "s1": "vrijeme odgovora leadu, u bilo koje doba",
+      "s2": "bez smjena, bez praznika, bez \"odmah odgovaram\"",
+      "s3": "razgovora zabilježeno u CRM-u",
+      "s4w": "čovjek",
+      "s4": "uvijek na korak — primopredaja s kontekstom"
     },
-    "usecases": {
-      "support": "Korisnička Podrška",
-      "sales": "Automatizirana Prodaja",
-      "onboarding": "Onboarding Klijenata",
-      "booking": "Zakazivanje Sastanaka",
-      "qualification": "Kvalifikacija Leadova",
-      "followup": "Automatski Follow-up"
+    "night": {
+      "eyebrow": "Stvarna scena, nestvarno vrijeme",
+      "title": "3:07 je ujutro. Stiže lead. I što sad?",
+      "sub": "Pogledaj što se događa kad podrška ne ovisi o tome jesi li budan.",
+      "l1": { "title": "Lead piše. Ti spavaš.", "desc": "78% klijenata zaključi posao s onim tko prvi odgovori. U 3 ujutro, \"prvi\" obično nije nitko — od sada si to ti." },
+      "l2": { "title": "AI odgovara u sekundama — tvojim tonom", "desc": "Treniran na tvom poslu, tvojim uslugama i načinu na koji govoriš. Kvalificira, odgovara na pitanja i zakazuje — a da ne zvuči kao robot s izbornikom." },
+      "l3": { "title": "Tvoj tim ulazi sa svime pred sobom", "desc": "Cijeli razgovor je u CRM-u: ime, potreba, zakazani termin. Čovjek ulazi da zaključi, ne da kreće ispočetka." }
     },
-    "ctaTag": "// Spremni za Automatizaciju",
-    "ctaTitle": "Spremni za<br>Automatizaciju?",
-    "ctaDesc": "Oslobodite svoj tim od ponavljajućih zadataka. Neka AI radi za vas.",
-    "ctaButton": "Automatiziraj Sada",
-    "footerRights": "Sva Prava Pridržana",
-    "footerBack": "Natrag na Početak",
     "chat": {
-      "msg1": "Želio bih ponudu.",
-      "msg2": "Pozdrav! Naravno. Za koju uslugu?",
-      "msg3": "Automatizacija korisničke službe.",
-      "msg4": "Savršeno! Analiziram vaše potrebe..."
+      "biz": "Tvoja Tvrtka",
+      "status": "online",
+      "m1": "Dobra večer, radite li još ponude za kuhinje?<small>03:07</small>",
+      "m2": "Dobra večer! 👋 Radimo. Da odmah pripremim ponudu: je li renovacija ili novogradnja?<small>03:07</small>",
+      "m3": "Renovacija, oko 12m²<small>03:08</small>",
+      "m4": "Savršeno. Mogu ti zakazati besplatan tehnički pregled ovaj tjedan: četvrtak u 10 ili petak u 15?<small>03:08</small>",
+      "m5": "Petak u 15 👍<small>03:09</small>",
+      "m6": "Zakazano ✓ Potvrdu ćeš primiti ovdje. Laku noć!<small>03:09</small>",
+      "m7": "08:31 · Tvoj tim ulazi — s punim kontekstom u CRM-u"
+    },
+    "feat": {
+      "eyebrow": "Što je uključeno",
+      "title": "Automatizacija s ljudskim dodirom — ne robot s izbornicima.",
+      "f1": { "title": "AI na WhatsApp Businessu, 24/7", "desc": "Odgovara u sekundama na kanalu gdje tvoji klijenti već jesu. Kvalificira prirodnim pitanjima, zakazuje preglede i sastanke, i bilježi sve — dok konkurencija uzvraća pozive sutradan." },
+      "f2": { "title": "Ljudska primopredaja s kontekstom", "desc": "Kad razgovor treba osobu, AI ga predaje tvom timu s cijelom poviješću. Klijent nikad ne ponavlja svoju priču — i to se primijeti." },
+      "f3": { "title": "Follow-up koji nikoga ne zaboravlja", "desc": "WhatsApp i email sekvence pokrenute događajima: poslana ponuda, zakazan termin, 3 dana tišine. Svaki lead dobiva pravi dodir u pravom trenutku." },
+      "f4": { "title": "Sve povezano s CRM-om — od izvora do zaključenja", "desc": "Svaki razgovor, kvalifikacija i termin završava u Branct CRM-u (ili tvom): pipeline se ažurira sam, tim je usklađen, nula leadova izgubljeno između alata." }
+    },
+    "try": {
+      "eyebrow": "Ne vjeruj — testiraj",
+      "title": "Našu WhatsApp liniju vodi <span class=\"text-gradient\">upravo ovaj AI</span>.",
+      "sub": "Pošalji nam poruku sada — u 15h ili u 3 ujutro — i vlastitim očima vidi brzinu, ton i kvalifikaciju. Upravo to instaliramo u tvoj posao.",
+      "cta": "Razgovaraj s našim AI-jem sada",
+      "badge": "935 183 488 · odgovor u sekundama, u bilo koje doba"
+    },
+    "faq": {
+      "title": "Česta pitanja",
+      "q1": "Hoće li AI zamijeniti moj tim?",
+      "a1": "Ne — skida mu repetitivan posao s leđa. AI odgovara prvi, kvalificira i zakazuje; tvoj tim ulazi u razgovore vrijedne njegova vremena, s punim kontekstom. Više zaključenja, manje \"dobar dan, kako mogu pomoći?\".",
+      "q2": "Govori li AI kao moj brend ili kao robot?",
+      "a2": "Treniramo ga na tvom poslu: usluge, cijene, područja rada, ton glasa. Prije objave testiraš razgovore i zajedno ih podešavamo. Ako ne zna odgovor, predaje čovjeku — nikad ne izmišlja.",
+      "q3": "Koji su kanali uključeni?",
+      "a3": "WhatsApp Business (kralj kanala u Portugalu i Brazilu), email za follow-up sekvence i obrasci s weba povezani u tok. Sve se slijeva u isti CRM.",
+      "q4": "Za koliko vremena proradi?",
+      "a4": "Tipična instalacija traje 1 do 2 tjedna: povezivanje WhatsApp Businessa, treniranje AI-ja na tvom sadržaju, dizajn tokova kvalifikacije i stvarni test s tobom prije starta.",
+      "q5": "Radi li s CRM-om koji već koristim?",
+      "a5": "Najintegriranije iskustvo je s Branct CRM-om — AI, pipeline i razgovori pod istim krovom. Ali povezujemo se i s tvojim trenutnim CRM-om preko API-ja ili webhooka, ako želiš zadržati postojeće.",
+      "q6": "A GDPR, s automatiziranim razgovorima?",
+      "a6": "Shvaćen ozbiljno: privola zabilježena, podaci u EU, a kontakt u svakom trenutku može tražiti čovjeka ili brisanje. Automatizacija slijedi ista pravila kao tvoj tim."
+    },
+    "cta": {
+      "eyebrow": "Instalacija u 1–2 tjedna",
+      "title": "Koliko ti je leadova pisalo noćas <span class=\"text-gradient\">bez odgovora</span>?",
+      "sub": "Ispričaj nam kako danas izgleda tvoja podrška. Vraćamo dizajn toka s AI-jem — i što se mijenja u tvojim brojkama — unutar 48 sati.",
+      "primary": "Zatraži ponudu",
+      "whatsapp": "Testiraj AI na WhatsAppu"
     }
   },
   "pp": {

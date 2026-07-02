@@ -495,64 +495,75 @@
     "footerBack": "Back to Home"
   },
   "ai": {
-    "heroBadge": "Artificial Intelligence",
-    "heroLine1": "YOUR COMPANY ON",
-    "heroLine2": "AUTOPILOT.",
-    "heroSub": "Customer service, sales and internal processes running 24/7. No breaks, no human error.",
-    "heroCta": "See Demo",
-    "stats": {
-      "response": "Response Time",
-      "availability": "Availability",
-      "qualification": "Qualification"
+    "hero": {
+      "eyebrow": "Service 03 · Automation & AI",
+      "title": "Your leads don't keep office hours. <em>Now your customer service doesn't either.</em>",
+      "sub": "AI trained on your business, replying on WhatsApp within seconds, qualifying and booking — and handing over to your team when it takes a real person. Automated follow-up included.",
+      "cta1": "Request a proposal",
+      "cta2": "Watch the AI at work ↓"
     },
-    "chatTag": "// Live Demo",
-    "chatTitle": "See AI<br>in Action",
-    "chatDesc": "While you read this, our AI has already responded to 47 clients simultaneously. Qualified leads, scheduled meetings and sent proposals.",
-    "speedText": "Responses in <strong>0.2s</strong>. Instant conversion.",
-    "chatOnline": "Online",
-    "solutionsTitle": "Automation<br>Solutions",
-    "solutionsSub": "Technology that works while you sleep. Every interaction, an opportunity captured.",
-    "solutions": {
-      "gpt": {
-        "title": "GPT-4 Chatbots",
-        "desc": "Conversational AI trained on your business. Contextual responses, real-time personalization and continuous learning."
-      },
-      "whatsapp": {
-        "title": "WhatsApp Business",
-        "desc": "Official API integrated. Mass messaging, automatic responses and sales flows."
-      },
-      "leads": {
-        "title": "Lead Qualification",
-        "desc": "Automatic scoring based on behavior. Focus only on hot leads."
-      },
-      "booking": {
-        "title": "Automatic Scheduling",
-        "desc": "Sync with Google Calendar and Calendly. Meetings booked without human intervention."
-      },
-      "email": {
-        "title": "Email Sequences",
-        "desc": "Automatic nurturing with dynamic personalization. AI-generated copy."
-      }
+    "spec": {
+      "s1": "lead response time, at any hour",
+      "s2": "no shifts, no holidays, no \"I'll reply soon\"",
+      "s3": "of conversations logged in the CRM",
+      "s4w": "human",
+      "s4": "always one step away — handoff with context"
     },
-    "usecases": {
-      "support": "Customer Support",
-      "sales": "Automated Sales",
-      "onboarding": "Client Onboarding",
-      "booking": "Meeting Scheduling",
-      "qualification": "Lead Qualification",
-      "followup": "Automatic Follow-up"
+    "night": {
+      "eyebrow": "Real scene, unreal hour",
+      "title": "It's 3:07 am. A lead comes in. Now what?",
+      "sub": "See what happens when customer service doesn't depend on you being awake.",
+      "l1": { "title": "The lead writes. You sleep.", "desc": "78% of customers close with whoever answers first. At 3 am, \"first\" is usually nobody — from now on, it's you." },
+      "l2": { "title": "The AI replies in seconds — in your tone", "desc": "Trained on your business, your services and the way you speak. It qualifies, answers questions and books — without sounding like a menu robot." },
+      "l3": { "title": "Your team steps in with everything in front of them", "desc": "The whole conversation is in the CRM: name, need, visit booked. The human comes in to close, not to start from scratch." }
     },
-    "ctaTag": "// Ready to Automate",
-    "ctaTitle": "Ready to<br>Automate?",
-    "ctaDesc": "Free your team from repetitive tasks. Let AI work for you.",
-    "ctaButton": "Automate Now",
-    "footerRights": "All Rights Reserved",
-    "footerBack": "Back to Home",
     "chat": {
-      "msg1": "I'd like a quote.",
-      "msg2": "Hello! Sure. For which service?",
-      "msg3": "Customer service automation.",
-      "msg4": "Perfect! Analyzing your needs..."
+      "biz": "Your Company",
+      "status": "online",
+      "m1": "Good evening, do you still do kitchen quotes?<small>03:07</small>",
+      "m2": "Good evening! 👋 We do. To get your quote started: is it a renovation or a new build?<small>03:07</small>",
+      "m3": "Renovation, about 12m²<small>03:08</small>",
+      "m4": "Perfect. I can book you a free technical visit this week: Thursday at 10am or Friday at 3pm?<small>03:08</small>",
+      "m5": "Friday at 3pm 👍<small>03:09</small>",
+      "m6": "Booked ✓ You'll get the confirmation here. Sleep well!<small>03:09</small>",
+      "m7": "08:31 · Your team steps in — with full context in the CRM"
+    },
+    "feat": {
+      "eyebrow": "What's included",
+      "title": "Automation with a human touch — not a menu robot.",
+      "f1": { "title": "AI on WhatsApp Business, 24/7", "desc": "Replies in seconds on the channel your customers already use. Qualifies with natural questions, books visits and meetings, and logs everything — while competitors return calls the next day." },
+      "f2": { "title": "Human handoff with context", "desc": "When the conversation needs a person, the AI hands it to your team with the full history. The customer never repeats their story — and they notice." },
+      "f3": { "title": "Follow-up that forgets no one", "desc": "WhatsApp and email sequences triggered by events: proposal sent, visit booked, 3 days of silence. Every lead gets the right touch at the right moment." },
+      "f4": { "title": "Everything wired to the CRM — source to close", "desc": "Every conversation, qualification and booking lands in Branct CRM (or yours): pipeline updates itself, team stays aligned, zero leads lost between tools." }
+    },
+    "try": {
+      "eyebrow": "Don't believe it — test it",
+      "title": "Our WhatsApp line is answered <span class=\"text-gradient\">by this AI</span>.",
+      "sub": "Message us right now — at 3 pm or 3 am — and see the speed, tone and qualification with your own eyes. This is exactly what we install in your business.",
+      "cta": "Talk to our AI now",
+      "badge": "935 183 488 · reply within seconds, any hour"
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "q1": "Will the AI replace my team?",
+      "a1": "No — it takes the repetitive work off their plate. The AI answers first, qualifies and books; your team joins the conversations worth their time, with full context. More closings, fewer \"good afternoon, how can I help?\".",
+      "q2": "Does the AI speak like my brand or like a robot?",
+      "a2": "We train it on your business: services, prices, coverage areas, tone of voice. Before going live, you test the conversations and we tune together. If it doesn't know an answer, it hands over to a human — it never makes things up.",
+      "q3": "Which channels are included?",
+      "a3": "WhatsApp Business (the king channel in Portugal and Brazil), email for follow-up sequences, and website forms wired into the flow. All draining into the same CRM.",
+      "q4": "How long until it's up and running?",
+      "a4": "A typical setup takes 1 to 2 weeks: WhatsApp Business connection, AI training on your content, qualification flow design and a real test with you before launch.",
+      "q5": "Does it work with the CRM I already use?",
+      "a5": "The most integrated experience is with Branct CRM — AI, pipeline and conversations under one roof. But we also connect to your current CRM via API or webhooks if you'd rather keep what you have.",
+      "q6": "What about GDPR, with automated conversations?",
+      "a6": "Taken seriously: consent recorded, data hosted in the EU, and the contact can request a human or deletion at any time. The automation follows the same rules as your team."
+    },
+    "cta": {
+      "eyebrow": "Setup in 1–2 weeks",
+      "title": "How many leads wrote to you tonight and got <span class=\"text-gradient\">no reply</span>?",
+      "sub": "Tell us how your customer service works today. We'll return the AI flow design — and what changes in your numbers — within 48 hours.",
+      "primary": "Request a proposal",
+      "whatsapp": "Test the AI on WhatsApp"
     }
   },
   "pp": {

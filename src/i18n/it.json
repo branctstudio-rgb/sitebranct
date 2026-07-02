@@ -495,64 +495,75 @@
     "footerBack": "Torna all'Inizio"
   },
   "ai": {
-    "heroBadge": "Intelligenza Artificiale",
-    "heroLine1": "LA TUA AZIENDA IN",
-    "heroLine2": "PILOTA AUTOMATICO.",
-    "heroSub": "Assistenza clienti, vendite e processi interni attivi 24/7. Nessuna pausa, nessun errore umano.",
-    "heroCta": "Vedi Demo",
-    "stats": {
-      "response": "Tempo di Risposta",
-      "availability": "Disponibilità",
-      "qualification": "Qualificazione"
+    "hero": {
+      "eyebrow": "Servizio 03 · Automazione & IA",
+      "title": "I tuoi lead non hanno orari. <em>Ora nemmeno la tua assistenza.</em>",
+      "sub": "IA addestrata sul tuo business che risponde su WhatsApp in pochi secondi, qualifica e prenota — e passa al tuo team quando serve una persona vera. Follow-up automatico incluso.",
+      "cta1": "Richiedi un preventivo",
+      "cta2": "Guarda l'IA al lavoro ↓"
     },
-    "chatTag": "// Live Demo",
-    "chatTitle": "Guarda l'IA<br>in Azione",
-    "chatDesc": "Mentre leggi questo, la nostra IA ha già risposto a 47 clienti contemporaneamente. Ha qualificato lead, programmato riunioni e inviato proposte.",
-    "speedText": "Risposte in <strong>0.2s</strong>. Conversione istantanea.",
-    "chatOnline": "Online",
-    "solutionsTitle": "Soluzioni di<br>Automazione",
-    "solutionsSub": "Tecnologia che lavora mentre dormi. Ogni interazione, un'opportunità catturata.",
-    "solutions": {
-      "gpt": {
-        "title": "Chatbot GPT-4",
-        "desc": "IA conversazionale addestrata sul tuo business. Risposte contestuali, personalizzazione in tempo reale e apprendimento continuo."
-      },
-      "whatsapp": {
-        "title": "WhatsApp Business",
-        "desc": "API ufficiale integrata. Messaggi di massa, risposte automatiche e flussi di vendita."
-      },
-      "leads": {
-        "title": "Qualificazione Lead",
-        "desc": "Scoring automatico basato sul comportamento. Concentrati solo sui lead caldi."
-      },
-      "booking": {
-        "title": "Pianificazione Automatica",
-        "desc": "Sincronizzazione con Google Calendar e Calendly. Riunioni prenotate senza intervento umano."
-      },
-      "email": {
-        "title": "Sequenze Email",
-        "desc": "Nurturing automatico con personalizzazione dinamica. Copy generato da IA."
-      }
+    "spec": {
+      "s1": "tempo di risposta al lead, a qualsiasi ora",
+      "s2": "senza turni, senza festivi, senza \"rispondo subito\"",
+      "s3": "delle conversazioni registrate nel CRM",
+      "s4w": "umano",
+      "s4": "sempre a un passo — handoff con contesto"
     },
-    "usecases": {
-      "support": "Supporto Clienti",
-      "sales": "Vendite Automatizzate",
-      "onboarding": "Onboarding Clienti",
-      "booking": "Pianificazione Riunioni",
-      "qualification": "Qualificazione Lead",
-      "followup": "Follow-up Automatico"
+    "night": {
+      "eyebrow": "Scena reale, ora irreale",
+      "title": "Sono le 3:07 di notte. Arriva un lead. E adesso?",
+      "sub": "Guarda cosa succede quando l'assistenza non dipende dal fatto che tu sia sveglio.",
+      "l1": { "title": "Il lead scrive. Tu dormi.", "desc": "Il 78% dei clienti chiude con chi risponde per primo. Alle 3 di notte, \"primo\" di solito non è nessuno — da adesso sei tu." },
+      "l2": { "title": "L'IA risponde in secondi — con il tuo tono", "desc": "Addestrata sul tuo business, i tuoi servizi e il tuo modo di parlare. Qualifica, risponde ai dubbi e prenota — senza sembrare un robot da menu." },
+      "l3": { "title": "Il tuo team entra con tutto davanti", "desc": "L'intera conversazione è nel CRM: nome, esigenza, visita fissata. L'umano entra per chiudere, non per ricominciare da zero." }
     },
-    "ctaTag": "// Pronto ad Automatizzare",
-    "ctaTitle": "Pronto ad<br>Automatizzare?",
-    "ctaDesc": "Libera il tuo team dalle attività ripetitive. Lascia che l'IA lavori per te.",
-    "ctaButton": "Automatizza Ora",
-    "footerRights": "Tutti i Diritti Riservati",
-    "footerBack": "Torna all'Inizio",
     "chat": {
-      "msg1": "Vorrei un preventivo.",
-      "msg2": "Ciao! Certo. Per quale servizio?",
-      "msg3": "Automazione del servizio clienti.",
-      "msg4": "Perfetto! Analizzo le tue esigenze..."
+      "biz": "La Tua Azienda",
+      "status": "online",
+      "m1": "Buonasera, fate ancora preventivi per cucine?<small>03:07</small>",
+      "m2": "Buonasera! 👋 Certo. Per preparare subito il tuo preventivo: è una ristrutturazione o una costruzione nuova?<small>03:07</small>",
+      "m3": "Ristrutturazione, circa 12m²<small>03:08</small>",
+      "m4": "Perfetto. Posso fissarti un sopralluogo tecnico gratuito questa settimana: giovedì alle 10 o venerdì alle 15?<small>03:08</small>",
+      "m5": "Venerdì alle 15 👍<small>03:09</small>",
+      "m6": "Fissato ✓ Riceverai qui la conferma. Buon riposo!<small>03:09</small>",
+      "m7": "08:31 · Il tuo team entra — con tutto il contesto nel CRM"
+    },
+    "feat": {
+      "eyebrow": "Cosa è incluso",
+      "title": "Automazione con tocco umano — non un robot da menu.",
+      "f1": { "title": "IA su WhatsApp Business, 24/7", "desc": "Risponde in secondi sul canale dove i tuoi clienti già sono. Qualifica con domande naturali, fissa visite e riunioni, e registra tutto — mentre la concorrenza richiama il giorno dopo." },
+      "f2": { "title": "Handoff umano con contesto", "desc": "Quando la conversazione richiede una persona, l'IA la passa al tuo team con lo storico completo. Il cliente non ripete mai la sua storia — e si nota." },
+      "f3": { "title": "Follow-up che non dimentica nessuno", "desc": "Sequenze WhatsApp ed email attivate da eventi: preventivo inviato, visita fissata, 3 giorni di silenzio. Ogni lead riceve il tocco giusto al momento giusto." },
+      "f4": { "title": "Tutto collegato al CRM — dall'origine alla chiusura", "desc": "Ogni conversazione, qualifica e appuntamento finisce in Branct CRM (o nel tuo): pipeline che si aggiorna da sola, team allineato e zero lead persi tra gli strumenti." }
+    },
+    "try": {
+      "eyebrow": "Non crederci — provala",
+      "title": "La nostra linea WhatsApp è gestita <span class=\"text-gradient\">da questa IA</span>.",
+      "sub": "Scrivici adesso — alle 15 o alle 3 di notte — e guarda con i tuoi occhi la velocità, il tono e la qualificazione. È esattamente ciò che installiamo nel tuo business.",
+      "cta": "Parla con la nostra IA adesso",
+      "badge": "935 183 488 · risposta in secondi, a qualsiasi ora"
+    },
+    "faq": {
+      "title": "Domande frequenti",
+      "q1": "L'IA sostituirà il mio team?",
+      "a1": "No — gli toglie il lavoro ripetitivo. L'IA risponde per prima, qualifica e prenota; il tuo team entra nelle conversazioni che valgono il suo tempo, con tutto il contesto davanti. Più chiusure, meno \"buongiorno, come posso aiutarla?\".",
+      "q2": "L'IA parla come il mio brand o come un robot?",
+      "a2": "La addestriamo sul tuo business: servizi, prezzi, zone di attività, tono di voce. Prima del lancio testi le conversazioni e le regoliamo insieme. Se non sa rispondere, passa a un umano — non inventa mai.",
+      "q3": "Quali canali sono inclusi?",
+      "a3": "WhatsApp Business (il canale principe in Portogallo e Brasile), email per le sequenze di follow-up, e i moduli del sito collegati al flusso. Tutto confluisce nello stesso CRM.",
+      "q4": "In quanto tempo è operativa?",
+      "a4": "L'installazione tipica richiede 1-2 settimane: collegamento di WhatsApp Business, addestramento dell'IA sui tuoi contenuti, disegno dei flussi di qualificazione e test reale con te prima del via.",
+      "q5": "Funziona con il CRM che già uso?",
+      "a5": "L'esperienza più integrata è con Branct CRM — IA, pipeline e conversazioni sotto lo stesso tetto. Ma ci colleghiamo anche al tuo CRM attuale via API o webhook, se preferisci tenere quello che hai.",
+      "q6": "E il GDPR, con conversazioni automatizzate?",
+      "a6": "Preso sul serio: consenso registrato, dati ospitati nell'UE e il contatto può chiedere un umano o la cancellazione in qualsiasi momento. L'automazione segue le stesse regole del tuo team."
+    },
+    "cta": {
+      "eyebrow": "Installazione in 1–2 settimane",
+      "title": "Quanti lead ti hanno scritto stanotte <span class=\"text-gradient\">senza risposta</span>?",
+      "sub": "Raccontaci com'è la tua assistenza oggi. Ti restituiamo il disegno del flusso con IA — e cosa cambia nei tuoi numeri — entro 48 ore.",
+      "primary": "Richiedi un preventivo",
+      "whatsapp": "Prova l'IA su WhatsApp"
     }
   },
   "pp": {
