@@ -344,134 +344,61 @@
   },
   "lp": {
     "hero": {
-      "badge": "Conversion Engineering",
-      "line1": "Ingegneria",
-      "line2": "della",
-      "highlight": "Conversione.",
-      "subtitle": "Landing Page ad alte prestazioni che trasformano il traffico in entrate prevedibili. Zero template. 100% ingegneria.",
-      "cta": "Inizia Progetto"
+      "eyebrow": "Servizio 02 · Landing Page",
+      "title": "Paghi ogni clic. <em>Noi facciamo valere ognuno.</em>",
+      "sub": "Landing page progettate per campagne Meta e Google Ads: un messaggio, un percorso, un'azione — e tracking che ti dice esattamente cosa ha comprato il tuo denaro.",
+      "cta1": "Richiedi un preventivo",
+      "cta2": "Vedi il funnel dal vivo ↓"
     },
-    "metrics": {
-      "loadTime": "Tempo di Caricamento",
-      "roi": "Obiettivo ROI"
+    "spec": {
+      "s1w": "settimane", "s1": "dal briefing alla pagina online",
+      "s2w": "obiettivo", "s2": "per pagina — zero distrazioni",
+      "s3": "dei lead con campagna di origine",
+      "s4": "pronta per testare varianti"
     },
-    "reveal": {
-      "backTag": "// La Soluzione Branct",
-      "backTitle": "Performance<br>di Elite",
-      "backDesc": "Architettura moderna, codice ottimizzato e design che converte.",
-      "faster": "Più Veloce",
-      "conversion": "Conversione",
-      "frontTitle": "Landing Tradizionale",
-      "frontDesc": "Template generici. Caricamento lento. Conversione bassa.",
-      "scrollHint": "Scorri per rivelare"
+    "funnel": {
+      "eyebrow": "Il funnel dal vivo",
+      "title": "Dal clic al lead, senza perdite lungo il percorso.",
+      "sub": "È questo che costruiamo: i tre pezzi del funnel che raccontano la stessa storia — e si parlano tra loro.",
+      "f1": { "chip": "01 · Il clic", "title": "L'annuncio fa una promessa", "desc": "Ogni clic costa denaro reale. Per questo progettiamo pagina e annuncio come un pezzo unico — stesso messaggio, stesso tono." },
+      "f2": { "chip": "02 · La pagina", "title": "La landing mantiene la promessa", "desc": "Niente menu per scappare, niente distrazioni. Una headline che continua l'annuncio, prova sociale e un unico percorso: l'azione." },
+      "f3": { "chip": "03 · Il lead", "title": "Il ciclo si chiude nel CRM", "desc": "Il lead arriva nel tuo CRM con la campagna di origine allegata. Sai esattamente quale annuncio ha pagato questo contatto." }
     },
-    "bento": {
-      "title": "Ingegneria<br>dei Risultati",
-      "subtitle": "Ogni elemento è progettato con uno scopo. Ogni riga di codice lavora per la conversione. Niente eccessi, niente rumore.",
-      "speed": {
-        "title": "Velocità Estrema",
-        "desc": "Core Web Vitals ottimizzati ossessivamente. Ogni millisecondo eliminato aumenta il tuo tasso di conversione."
-      },
-      "ux": {
-        "title": "UX Direzionata",
-        "desc": "Gerarchia visiva che guida lo sguardo verso la CTA. Zero distrazioni."
-      },
-      "mobile": {
-        "title": "Mobile First",
-        "desc": "Il 70% del traffico viene da mobile. Priorizziamo questo in ogni decisione."
-      },
-      "copy": {
-        "title": "Copy Persuasivo",
-        "desc": "Trigger mentali e struttura AIDA. Headline che connettono."
-      },
-      "seo": {
-        "title": "SEO Tecnico",
-        "desc": "Schema markup e struttura semantica per il posizionamento organico."
-      },
-      "analytics": {
-        "title": "Analytics Profondo",
-        "desc": "GA4, Tag Manager e Heatmap configurati di fabbrica. Decisioni basate sui dati, non sulle supposizioni."
-      }
+    "feat": {
+      "eyebrow": "Cosa è incluso",
+      "title": "Ingegneria di conversione, non solo una bella pagina.",
+      "f1": { "title": "Message match: annuncio e pagina, una sola storia", "desc": "Quando la promessa cambia a metà strada, il visitatore diffida — e il costo per lead schizza. Allineiamo headline, tono e offerta con il tuo annuncio, parola per parola." },
+      "f2": { "title": "Velocità che protegge il budget", "desc": "Una pagina lenta sul traffico a pagamento è denaro bruciato prima ancora che la pagina si apra. Le nostre si caricano in meno di 2 secondi — il clic che hai pagato arriva a destinazione." },
+      "f3": { "title": "Tracking a ciclo completo", "desc": "Pixel con consenso GDPR, eventi con event_id per la deduplicazione e UTM preservati fino al CRM. Ogni lead racconta la sua origine — e tu ottimizzi con i dati, non a intuito." },
+      "f4": { "title": "Fatta per testare, non per restare ferma", "desc": "Struttura A/B-testabile: cambi headline, prova sociale o CTA senza rompere la pagina. La prima versione è il punto di partenza — i tuoi dati scelgono la vincente." }
     },
-    "features": {
-      "ab": {
-        "title": "A/B Testing Nativo",
-        "desc": "Struttura pronta per <strong>test di variazione</strong> dal primo giorno. Integrazione con Google Optimize, VWO o Optimizely."
-      },
-      "crm": {
-        "title": "Integrazione CRM",
-        "desc": "Connessione nativa con <strong>HubSpot, Pipedrive, n8n</strong> e qualsiasi strumento via API. Lead direttamente nella pipeline."
-      },
-      "i18n": {
-        "title": "Multi-lingua",
-        "desc": "Architettura <strong>i18n nativa</strong> per scalare globalmente. Una landing, più mercati."
-      },
-      "edge": {
-        "title": "Edge Deployment",
-        "desc": "<strong>Vercel Edge Network</strong> con latenza <50ms globale. La tua landing più vicina all'utente."
-      }
+    "meta": {
+      "eyebrow": "La prova",
+      "title": "La nostra landing sta ricevendo traffico <span class=\"text-gradient\">in questo momento</span>.",
+      "sub": "La pagina che riceve le campagne Meta di Branct CRM è stata costruita esattamente con questa ricetta: message match, velocità e tracking completo. Guardala dal vivo — e nota quanto è veloce.",
+      "cta": "Vedi la landing di Branct CRM →"
     },
-    "matrix": {
-      "tag": "Piani & Prezzi",
-      "title": "Scegli il tuo piano",
-      "subtitle": "Tre livelli di consegna, lo stesso standard di eccellenza. Landing page che convertono, indipendentemente dal piano.",
-      "badge": "PIÙ POPOLARE",
-      "feat": {
-        "pages": "Pagine",
-        "design": "Design",
-        "mobile": "Mobile",
-        "form": "Modulo",
-        "seo": "SEO",
-        "analytics": "Analytics",
-        "ab": "A/B Testing",
-        "support": "Supporto"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Essenziale",
-        "price": "180€",
-        "pages": "1 Landing Page",
-        "design": "Template premium",
-        "mobile": "Responsive",
-        "form": "Contatto base",
-        "seo": "Base tecnica",
-        "support": "15 giorni",
-        "cta": "Richiedi preventivo"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performance & conversione",
-        "price": "300€ + 90€/mese",
-        "pages": "Fino a 3 variazioni",
-        "design": "UI personalizzata",
-        "mobile": "Mobile-first + animazioni",
-        "form": "Multi-step + CRM",
-        "seo": "SEO avanzato",
-        "support": "3 mesi",
-        "cta": "Scegliere"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Massima conversione",
-        "price": "Su richiesta",
-        "pages": "Illimitate",
-        "design": "Premium su misura",
-        "mobile": "Mobile-first + 3D/WebGL",
-        "form": "Smart forms + IA",
-        "seo": "SEO + autorità",
-        "support": "6 mesi continuo",
-        "cta": "Parlaci"
-      }
+    "faq": {
+      "title": "Domande frequenti",
+      "q1": "In quanto tempo è pronta?",
+      "a1": "Nella maggior parte dei casi, 1-2 settimane dal briefing alla pagina online — le landing page sono progetti focalizzati. Se la campagna ha una data fissata, dicci e lavoriamo a ritroso da lì.",
+      "q2": "Ho già un sito. Mi serve davvero una landing?",
+      "a2": "Se compri traffico, sì. La tua homepage ha dieci percorsi possibili; una landing ne ha uno. Mandare traffico a pagamento sulla homepage è pagare visitatori e dargli un labirinto.",
+      "q3": "Gestite anche le campagne pubblicitarie?",
+      "a3": "Il nostro focus è la pagina e il tracking. Lavoriamo fianco a fianco con chi gestisce le tue campagne — il tuo team o un'agenzia — e consegniamo tutto pronto da misurare: pixel, eventi e UTM regolati.",
+      "q4": "Cosa ti serve da me per iniziare?",
+      "a4": "Un'offerta chiara e 30 minuti di conversazione. Se hai già l'annuncio (o l'idea), ancora meglio — progettiamo la pagina a partire dalla promessa che farai.",
+      "q5": "E il GDPR? Il tracking è legale?",
+      "a5": "Sì — niente parte senza consenso. Banner cookie con gate reale: se il visitatore rifiuta, il pixel non si avvia. Misuri ciò che puoi misurare, con la coscienza tranquilla.",
+      "q6": "Posso collegare la landing al mio CRM?",
+      "a6": "Sì — al tuo CRM attuale o a Branct CRM. Con il nostro, il lead arriva con la campagna di origine identificata e l'IA può rispondergli su WhatsApp in pochi secondi, 24/7."
     },
-    "final": {
-      "tag": "// Ready to Scale",
-      "title": "Pronto a<br>Scalare?",
-      "desc": "Landing page che non solo impressionano — convertono. Costruiamo la tua.",
-      "cta": "Parla con Specialista"
-    },
-    "footer": {
-      "rights": "Tutti i Diritti Riservati",
-      "back": "Torna all'Inizio"
+    "cta": {
+      "eyebrow": "Piano entro 48h",
+      "title": "Quanto ti è costato l'ultimo clic che <span class=\"text-gradient\">non ha convertito</span>?",
+      "sub": "Inviaci il tuo annuncio — o anche solo l'idea — e ti restituiamo il piano della pagina entro 48 ore: struttura, messaggio e tracking.",
+      "primary": "Richiedi un preventivo",
+      "whatsapp": "Scrivici su WhatsApp"
     }
   },
   "landingPages": {

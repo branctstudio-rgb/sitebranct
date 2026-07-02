@@ -344,134 +344,61 @@
   },
   "lp": {
     "hero": {
-      "badge": "Conversion Engineering",
-      "line1": "Engenharia",
-      "line2": "de",
-      "highlight": "Conversão.",
-      "subtitle": "Landing Pages de alta performance que transformam tráfego em receita previsível. Zero templates. 100% engenharia.",
-      "cta": "Iniciar Projeto"
+      "eyebrow": "Serviço 02 · Landing Pages",
+      "title": "Pagas por cada clique. <em>Nós fazemos cada um valer.</em>",
+      "sub": "Landing pages desenhadas para campanhas de Meta e Google Ads: uma mensagem, um caminho, uma ação — e tracking que te diz exatamente o que o teu dinheiro comprou.",
+      "cta1": "Pedir proposta",
+      "cta2": "Ver o funil ao vivo ↓"
     },
-    "metrics": {
-      "loadTime": "Load Time",
-      "roi": "ROI Target"
+    "spec": {
+      "s1w": "semanas", "s1": "do briefing à página no ar",
+      "s2w": "objetivo", "s2": "por página — zero distrações",
+      "s3": "dos leads com campanha de origem",
+      "s4": "pronta para testares variantes"
     },
-    "reveal": {
-      "backTag": "// A Solução Branct",
-      "backTitle": "Performance<br>de Elite",
-      "backDesc": "Arquitetura moderna, código otimizado e design que converte.",
-      "faster": "Mais Rápido",
-      "conversion": "Conversão",
-      "frontTitle": "Landing Tradicional",
-      "frontDesc": "Templates genéricos. Carregamento lento. Conversão baixa.",
-      "scrollHint": "Scroll para revelar"
+    "funnel": {
+      "eyebrow": "O funil ao vivo",
+      "title": "Do clique ao lead, sem fugas pelo caminho.",
+      "sub": "É isto que construímos: as três peças do funil a contar a mesma história — e a falarem umas com as outras.",
+      "f1": { "chip": "01 · O clique", "title": "O anúncio faz uma promessa", "desc": "Cada clique custa dinheiro real. Por isso desenhamos a página e o anúncio como uma peça só — a mesma mensagem, o mesmo tom." },
+      "f2": { "chip": "02 · A página", "title": "A landing cumpre a promessa", "desc": "Sem menus para fugir, sem distrações. Uma headline que continua o anúncio, prova social e um único caminho: a ação." },
+      "f3": { "chip": "03 · O lead", "title": "O ciclo fecha no CRM", "desc": "O lead cai no teu CRM com a campanha de origem agarrada. Sabes exatamente que anúncio pagou este contacto." }
     },
-    "bento": {
-      "title": "Engenharia<br>de Resultados",
-      "subtitle": "Cada elemento é projetado com propósito. Cada linha de código trabalha para a conversão. Sem excessos, sem ruído.",
-      "speed": {
-        "title": "Velocidade Extrema",
-        "desc": "Core Web Vitals otimizados obsessivamente. Cada milissegundo eliminado aumenta sua taxa de conversão."
-      },
-      "ux": {
-        "title": "UX Direcionado",
-        "desc": "Hierarquia visual que guia o olhar até o CTA. Zero distrações."
-      },
-      "mobile": {
-        "title": "Mobile First",
-        "desc": "70% do tráfego vem de mobile. Priorizamos isso em cada decisão."
-      },
-      "copy": {
-        "title": "Copy Persuasivo",
-        "desc": "Gatilhos mentais e estrutura AIDA. Headlines que conectam."
-      },
-      "seo": {
-        "title": "SEO Técnico",
-        "desc": "Schema markup e estrutura semântica para rankeamento orgânico."
-      },
-      "analytics": {
-        "title": "Analytics Profundo",
-        "desc": "GA4, Tag Manager e Heatmaps configurados de fábrica. Decisões baseadas em dados, não em achismos."
-      }
+    "feat": {
+      "eyebrow": "O que está incluído",
+      "title": "Engenharia de conversão, não só uma página gira.",
+      "f1": { "title": "Message match: anúncio e página, uma história só", "desc": "Quando a promessa muda a meio do caminho, o visitante desconfia — e o custo por lead dispara. Alinhamos headline, tom e oferta com o teu anúncio, palavra a palavra." },
+      "f2": { "title": "Velocidade que protege o orçamento", "desc": "Página lenta em tráfego pago é dinheiro queimado antes de a página abrir. As nossas carregam em menos de 2 segundos — o clique que pagaste chega ao destino." },
+      "f3": { "title": "Tracking de ciclo completo", "desc": "Pixel com consent RGPD, eventos com event_id para deduplicação e UTMs preservados até ao CRM. Cada lead conta a sua origem — e tu otimizas com dados, não com achismos." },
+      "f4": { "title": "Feita para testar, não para ficar parada", "desc": "Estrutura A/B-testável: trocas a headline, a prova social ou o CTA sem partir a página. A primeira versão é o ponto de partida — os teus dados escolhem a vencedora." }
     },
-    "features": {
-      "ab": {
-        "title": "A/B Testing Nativo",
-        "desc": "Estrutura preparada para <strong>testes de variação</strong> desde o primeiro dia. Integração com Google Optimize, VWO ou Optimizely."
-      },
-      "crm": {
-        "title": "CRM Integration",
-        "desc": "Conexão nativa com <strong>HubSpot, Pipedrive, n8n</strong> e qualquer ferramenta via API. Leads direto no pipeline."
-      },
-      "i18n": {
-        "title": "Multi-Language",
-        "desc": "Arquitetura <strong>i18n nativa</strong> para escalar globalmente. Uma landing, múltiplos mercados."
-      },
-      "edge": {
-        "title": "Edge Deployment",
-        "desc": "<strong>Vercel Edge Network</strong> com latência <50ms global. Sua landing mais perto do usuário."
-      }
+    "meta": {
+      "eyebrow": "A prova",
+      "title": "A nossa própria landing está a receber tráfego <span class=\"text-gradient\">neste momento</span>.",
+      "sub": "A página que recebe as campanhas Meta do Branct CRM foi construída exatamente com esta receita: message match, velocidade e tracking completo. Vê-a ao vivo — e repara no tempo que demora a abrir.",
+      "cta": "Ver a landing do Branct CRM →"
     },
-    "matrix": {
-      "tag": "Planos & Preços",
-      "title": "Escolha o seu plano",
-      "subtitle": "Três níveis de entrega, o mesmo padrão de excelência. Landing pages que convertem, independentemente do plano.",
-      "badge": "MAIS POPULAR",
-      "feat": {
-        "pages": "Páginas",
-        "design": "Design",
-        "mobile": "Mobile",
-        "form": "Formulário",
-        "seo": "SEO",
-        "analytics": "Analytics",
-        "ab": "A/B Testing",
-        "support": "Suporte"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Essencial",
-        "price": "180€",
-        "pages": "1 Landing Page",
-        "design": "Template premium",
-        "mobile": "Responsivo",
-        "form": "Contacto básico",
-        "seo": "Base técnica",
-        "support": "15 dias",
-        "cta": "Pedir proposta"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performance & conversão",
-        "price": "300€ + 90€/mês",
-        "pages": "Até 3 variações",
-        "design": "UI personalizada",
-        "mobile": "Mobile-first + animações",
-        "form": "Multi-step + CRM",
-        "seo": "SEO avançado",
-        "support": "3 meses",
-        "cta": "Escolher"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Máxima conversão",
-        "price": "Sob proposta",
-        "pages": "Ilimitadas",
-        "design": "Premium sob medida",
-        "mobile": "Mobile-first + 3D/WebGL",
-        "form": "Smart forms + IA",
-        "seo": "SEO + autoridade",
-        "support": "6 meses contínuo",
-        "cta": "Falar connosco"
-      }
+    "faq": {
+      "title": "Perguntas frequentes",
+      "q1": "Em quanto tempo fica pronta?",
+      "a1": "Na maioria dos casos, 1 a 2 semanas do briefing à página no ar — landing pages são projetos focados. Se a campanha tem data marcada, diz-nos e trabalhamos ao contrário a partir dela.",
+      "q2": "Já tenho site. Preciso mesmo de uma landing?",
+      "a2": "Se compras tráfego, sim. A tua homepage tem dez caminhos possíveis; uma landing tem um. Mandar tráfego pago para a homepage é pagar por visitantes e dar-lhes um labirinto.",
+      "q3": "Também gerem as campanhas de anúncios?",
+      "a3": "O nosso foco é a página e o tracking. Trabalhamos lado a lado com quem gere as tuas campanhas — seja a tua equipa ou uma agência — e entregamos tudo pronto a medir: pixel, eventos e UTMs afinados.",
+      "q4": "O que precisas de mim para começar?",
+      "a4": "Uma oferta clara e 30 minutos de conversa. Se já tens o anúncio (ou a ideia dele), melhor ainda — desenhamos a página a partir da promessa que vais fazer.",
+      "q5": "E o RGPD? O tracking é legal?",
+      "a5": "Sim — nada dispara sem consentimento. Banner de cookies com gate real: se o visitante recusa, o pixel não arranca. Medes o que podes medir, com a consciência tranquila.",
+      "q6": "Posso ligar a landing ao meu CRM?",
+      "a6": "Sim — ao teu CRM atual ou ao Branct CRM. Com o nosso, o lead chega com a campanha de origem identificada e a IA pode responder-lhe no WhatsApp em segundos, 24/7."
     },
-    "final": {
-      "tag": "// Ready to Scale",
-      "title": "Pronto Para<br>Escalar?",
-      "desc": "Landing pages que não apenas impressionam — convertem. Vamos construir a sua.",
-      "cta": "Falar com Especialista"
-    },
-    "footer": {
-      "rights": "Todos os Direitos Reservados",
-      "back": "Voltar ao Início"
+    "cta": {
+      "eyebrow": "Plano em 48h",
+      "title": "Quanto custou o último clique que <span class=\"text-gradient\">não converteu</span>?",
+      "sub": "Envia-nos o teu anúncio — ou só a ideia dele — e devolvemos o plano da página em 48 horas: estrutura, mensagem e tracking.",
+      "primary": "Pedir proposta",
+      "whatsapp": "Falar no WhatsApp"
     }
   },
   "landingPages": {

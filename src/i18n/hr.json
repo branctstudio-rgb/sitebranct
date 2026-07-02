@@ -344,134 +344,61 @@
   },
   "lp": {
     "hero": {
-      "badge": "Conversion Engineering",
-      "line1": "Inženjering",
-      "line2": "",
-      "highlight": "Konverzije.",
-      "subtitle": "Landing stranice visokih performansi koje pretvaraju promet u predvidljiv prihod. Nula predložaka. 100% inženjering.",
-      "cta": "Pokreni Projekt"
+      "eyebrow": "Usluga 02 · Landing Stranice",
+      "title": "Plaćaš svaki klik. <em>Mi činimo da se svaki isplati.</em>",
+      "sub": "Landing stranice dizajnirane za Meta i Google Ads kampanje: jedna poruka, jedan put, jedna akcija — i praćenje koje ti točno govori što je tvoj novac kupio.",
+      "cta1": "Zatraži ponudu",
+      "cta2": "Pogledaj funnel uživo ↓"
     },
-    "metrics": {
-      "loadTime": "Vrijeme Učitavanja",
-      "roi": "Cilj ROI"
+    "spec": {
+      "s1w": "tjedna", "s1": "od briefinga do objave",
+      "s2w": "cilj", "s2": "po stranici — nula distrakcija",
+      "s3": "leadova s izvornom kampanjom",
+      "s4": "spremna za testiranje varijanti"
     },
-    "reveal": {
-      "backTag": "// Branct Rješenje",
-      "backTitle": "Elitna<br>Performansa",
-      "backDesc": "Moderna arhitektura, optimizirani kod i dizajn koji konvertira.",
-      "faster": "Brže",
-      "conversion": "Konverzija",
-      "frontTitle": "Tradicionalni Landing",
-      "frontDesc": "Generički predlošci. Sporo učitavanje. Niska konverzija.",
-      "scrollHint": "Klizite za otkrivanje"
+    "funnel": {
+      "eyebrow": "Funnel uživo",
+      "title": "Od klika do leada, bez curenja usput.",
+      "sub": "Ovo gradimo: tri dijela funnela koji pričaju istu priču — i razgovaraju jedni s drugima.",
+      "f1": { "chip": "01 · Klik", "title": "Oglas daje obećanje", "desc": "Svaki klik košta pravi novac. Zato dizajniramo stranicu i oglas kao jednu cjelinu — ista poruka, isti ton." },
+      "f2": { "chip": "02 · Stranica", "title": "Landing ispunjava obećanje", "desc": "Bez izbornika za bijeg, bez distrakcija. Naslov koji nastavlja oglas, društveni dokaz i jedan jedini put: akcija." },
+      "f3": { "chip": "03 · Lead", "title": "Krug se zatvara u CRM-u", "desc": "Lead pada u tvoj CRM s priloženom izvornom kampanjom. Točno znaš koji je oglas platio ovaj kontakt." }
     },
-    "bento": {
-      "title": "Inženjering<br>Rezultata",
-      "subtitle": "Svaki element je dizajniran sa svrhom. Svaka linija koda radi za konverziju. Bez viška, bez buke.",
-      "speed": {
-        "title": "Ekstremna Brzina",
-        "desc": "Core Web Vitals opsesivno optimizirani. Svaka eliminirana milisekunda povećava vašu stopu konverzije."
-      },
-      "ux": {
-        "title": "Usmjereni UX",
-        "desc": "Vizualna hijerarhija koja vodi pogled prema CTA. Nula distrakcija."
-      },
-      "mobile": {
-        "title": "Mobile First",
-        "desc": "70% prometa dolazi s mobilnih uređaja. To prioritiziramo u svakoj odluci."
-      },
-      "copy": {
-        "title": "Uvjerljivi Copy",
-        "desc": "Mentalni okidači i AIDA struktura. Naslovi koji povezuju."
-      },
-      "seo": {
-        "title": "Tehnički SEO",
-        "desc": "Schema markup i semantička struktura za organsko rangiranje."
-      },
-      "analytics": {
-        "title": "Duboka Analitika",
-        "desc": "GA4, Tag Manager i Heatmaps konfigurirani iz tvornice. Odluke temeljene na podacima, ne na nagađanjima."
-      }
+    "feat": {
+      "eyebrow": "Što je uključeno",
+      "title": "Inženjering konverzije, ne samo lijepa stranica.",
+      "f1": { "title": "Message match: oglas i stranica, jedna priča", "desc": "Kad se obećanje promijeni na pola puta, posjetitelj postane sumnjičav — a cijena po leadu skače. Usklađujemo naslov, ton i ponudu s tvojim oglasom, riječ po riječ." },
+      "f2": { "title": "Brzina koja štiti budžet", "desc": "Spora stranica na plaćenom prometu je novac spaljen prije nego što se stranica otvori. Naše se učitavaju za manje od 2 sekunde — klik koji si platio stiže na odredište." },
+      "f3": { "title": "Praćenje punog kruga", "desc": "Pixel s GDPR privolom, događaji s event_id za deduplikaciju i UTM-ovi sačuvani sve do CRM-a. Svaki lead priča svoje porijeklo — a ti optimiziraš podacima, ne nagađanjem." },
+      "f4": { "title": "Napravljena za testiranje, ne za mirovanje", "desc": "A/B struktura: mijenjaš naslov, dokaz ili CTA bez rušenja stranice. Prva verzija je polazna točka — tvoji podaci biraju pobjednicu." }
     },
-    "features": {
-      "ab": {
-        "title": "Nativno A/B Testiranje",
-        "desc": "Struktura spremna za <strong>testiranje varijacija</strong> od prvog dana. Integracija s Google Optimize, VWO ili Optimizely."
-      },
-      "crm": {
-        "title": "CRM Integracija",
-        "desc": "Nativna veza s <strong>HubSpot, Pipedrive, n8n</strong> i bilo kojim alatom putem API-ja. Leadovi direktno u vašem pipelineu."
-      },
-      "i18n": {
-        "title": "Višejezičnost",
-        "desc": "<strong>Nativna i18n arhitektura</strong> za globalno skaliranje. Jedan landing, više tržišta."
-      },
-      "edge": {
-        "title": "Edge Deployment",
-        "desc": "<strong>Vercel Edge Network</strong> s latencijom <50ms globalno. Vaš landing bliže korisniku."
-      }
+    "meta": {
+      "eyebrow": "Dokaz",
+      "title": "Naša vlastita landing stranica prima promet <span class=\"text-gradient\">upravo sada</span>.",
+      "sub": "Stranica koja prima Meta kampanje Branct CRM-a izgrađena je točno ovim receptom: message match, brzina i potpuno praćenje. Pogledaj je uživo — i primijeti koliko se brzo otvara.",
+      "cta": "Pogledaj Branct CRM landing →"
     },
-    "matrix": {
-      "tag": "Planovi i Cijene",
-      "title": "Odaberite svoj plan",
-      "subtitle": "Tri razine isporuke, isti standard izvrsnosti. Landing stranice koje konvertiraju, bez obzira na plan.",
-      "badge": "NAJPOPULARNIJI",
-      "feat": {
-        "pages": "Stranice",
-        "design": "Dizajn",
-        "mobile": "Mobilno",
-        "form": "Obrazac",
-        "seo": "SEO",
-        "analytics": "Analitika",
-        "ab": "A/B Testiranje",
-        "support": "Podrška"
-      },
-      "core": {
-        "name": "CORE",
-        "label": "Osnovno",
-        "price": "180€",
-        "pages": "1 Landing stranica",
-        "design": "Premium predložak",
-        "mobile": "Responzivno",
-        "form": "Osnovni kontakt",
-        "seo": "Tehnička baza",
-        "support": "15 dana",
-        "cta": "Zatražite ponudu"
-      },
-      "advanced": {
-        "name": "ADVANCED",
-        "label": "Performanse & konverzija",
-        "price": "300€ + 90€/mj",
-        "pages": "Do 3 varijacije",
-        "design": "Prilagođeni UI",
-        "mobile": "Mobile-first + animacije",
-        "form": "Multi-step + CRM",
-        "seo": "Napredni SEO",
-        "support": "3 mjeseca",
-        "cta": "Odabrati"
-      },
-      "ultimate": {
-        "name": "ULTIMATE",
-        "label": "Maksimalna konverzija",
-        "price": "Na upit",
-        "pages": "Neograničeno",
-        "design": "Premium po mjeri",
-        "mobile": "Mobile-first + 3D/WebGL",
-        "form": "Smart obrasci + AI",
-        "seo": "SEO + autoritet",
-        "support": "6 mjeseci kontinuirano",
-        "cta": "Razgovarajte s nama"
-      }
+    "faq": {
+      "title": "Česta pitanja",
+      "q1": "Koliko brzo može biti gotova?",
+      "a1": "U većini slučajeva, 1 do 2 tjedna od briefinga do objave — landing stranice su fokusirani projekti. Ako kampanja ima zakazan datum, reci nam i radimo unatrag od njega.",
+      "q2": "Već imam web stranicu. Treba li mi stvarno landing?",
+      "a2": "Ako kupuješ promet, da. Tvoja početna stranica ima deset mogućih puteva; landing ima jedan. Slati plaćeni promet na početnu znači plaćati posjetitelje i dati im labirint.",
+      "q3": "Vodite li i oglasne kampanje?",
+      "a3": "Naš fokus je stranica i praćenje. Radimo rame uz rame s onima koji vode tvoje kampanje — tvoj tim ili agencija — i isporučujemo sve spremno za mjerenje: pixel, događaje i UTM-ove podešene.",
+      "q4": "Što trebaš od mene za početak?",
+      "a4": "Jasnu ponudu i 30 minuta razgovora. Ako već imaš oglas (ili ideju za njega), još bolje — dizajniramo stranicu iz obećanja koje ćeš dati.",
+      "q5": "A GDPR? Je li praćenje legalno?",
+      "a5": "Da — ništa se ne pokreće bez privole. Cookie banner sa stvarnim gateom: ako posjetitelj odbije, pixel se ne pali. Mjeriš što smiješ mjeriti, mirne savjesti.",
+      "q6": "Mogu li povezati landing sa svojim CRM-om?",
+      "a6": "Da — s tvojim trenutnim CRM-om ili s Branct CRM-om. S našim, lead stiže s identificiranom izvornom kampanjom i AI mu može odgovoriti na WhatsAppu u sekundama, 24/7."
     },
-    "final": {
-      "tag": "// Ready to Scale",
-      "title": "Spremni za<br>Skaliranje?",
-      "desc": "Landing stranice koje ne samo impresioniraju — konvertiraju. Izgradimo vašu.",
-      "cta": "Razgovarajte sa Specijalistom"
-    },
-    "footer": {
-      "rights": "Sva Prava Pridržana",
-      "back": "Natrag na Početak"
+    "cta": {
+      "eyebrow": "Plan unutar 48h",
+      "title": "Koliko te koštao zadnji klik koji <span class=\"text-gradient\">nije konvertirao</span>?",
+      "sub": "Pošalji nam svoj oglas — ili samo ideju — i vraćamo plan stranice unutar 48 sati: strukturu, poruku i praćenje.",
+      "primary": "Zatraži ponudu",
+      "whatsapp": "Piši nam na WhatsApp"
     }
   },
   "landingPages": {

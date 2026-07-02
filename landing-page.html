@@ -1,2527 +1,476 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-    <meta name="facebook-domain-verification" content="xesigh89y5u9bpq7aa0t44be00d63v" />
     <meta charset="UTF-8">
+    <meta name="facebook-domain-verification" content="xesigh89y5u9bpq7aa0t44be00d63v" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRANCT.Tech | Engenharia de Conversão</title>
-    <meta name="description" content="Landing Pages de alta performance que transformam tráfego em receita. Engenharia de conversão de elite.">
+
+    <!-- SEO -->
+    <title>Landing Pages | Páginas que fazem cada clique valer — BRANCT</title>
+    <meta name="description" content="Landing pages para campanhas de Meta e Google Ads: uma mensagem, um caminho, uma ação — e tracking completo até ao CRM. Prontas em 1–2 semanas.">
+    <link rel="canonical" href="https://branct.com/landing-page.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://branct.com/landing-page.html">
+    <meta property="og:title" content="Landing Pages — BRANCT">
+    <meta property="og:description" content="Páginas de campanha que fazem cada clique valer: message match, velocidade e tracking até ao CRM.">
+    <meta property="og:image" content="https://branct.com/og-image.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="src/img/favicon.ico" sizes="any">
+    <link rel="icon" href="src/img/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="src/img/apple-touch-icon.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
 
-    <!-- Three.js -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-            }
-        }
-    </script>
-
-    <!-- GSAP + ScrollTrigger -->
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
-
+    <link rel="stylesheet" href="src/css/branct.css?v=20260618">
     <style>
-        /* ========================================
-           RESET & VARIABLES
-           ======================================== */
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --branct-deep: #09121c;
-            --branct-cyan: #06b6d4;
-            --branct-cyan-dim: rgba(6, 182, 212, 0.3);
-            --branct-cyan-glow: rgba(6, 182, 212, 0.4);
-            --branct-magenta: #d946ef;
-            --branct-slate: #94a3b8;
-            --branct-light: #0b1a28;
-            --branct-white: #ffffff;
-            --branct-border: rgba(255, 255, 255, 0.08);
-            --branct-border-strong: rgba(255, 255, 255, 0.12);
-            --branct-dark-border: rgba(255, 255, 255, 0.1);
-            --branct-grid: rgba(255, 255, 255, 0.03);
-            --branct-text: #e2e8f0;
-            --glass-blur: 12px;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: radial-gradient(ellipse at 50% 0%, #0d1f2d 0%, var(--branct-deep) 70%);
-            color: var(--branct-text);
-            line-height: 1.5;
-            overflow-x: hidden;
-        }
-
-        /* ========================================
-           3D CANVAS - Background Wireframe
-           ======================================== */
-        #canvas-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        /* ========================================
-           HEADER - Technical Style
-           ======================================== */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(9, 18, 28, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .logo {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--branct-white);
-            text-decoration: none;
-            letter-spacing: -0.02em;
-            text-transform: uppercase;
-        }
-
-        .logo .tech {
-            color: var(--branct-cyan);
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .header-nav a {
-            padding: 0.5rem 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--branct-slate);
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .header-nav a:hover {
-            color: var(--branct-white);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-header {
-            padding: 0.6rem 1.25rem;
-            background: var(--branct-cyan);
-            color: var(--branct-deep);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 1px solid var(--branct-cyan);
-            transition: all 0.2s ease;
-        }
-
-        .btn-header:hover {
-            background: transparent;
-            color: var(--branct-cyan);
-            border-color: var(--branct-cyan);
-            box-shadow: 0 0 20px var(--branct-cyan-glow);
-        }
-
-        /* header-nav hidden at 768px: handled in unified branct-header @media block below */
-
-        /* ========================================
-           HERO SECTION - Lando Grid Style
-           ======================================== */
-        .hero {
-            min-height: 100vh;
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            border-bottom: 1px solid var(--branct-border);
-            padding-top: 60px;
-        }
-
-        .hero-left {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 4rem;
-            border-right: 1px solid var(--branct-border);
-        }
-
-        .hero-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .hero-tag-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--branct-cyan);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-
-        .hero-tag-text {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--branct-cyan);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .hero h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 800;
-            line-height: 0.95;
-            letter-spacing: -0.03em;
-            color: var(--branct-white);
-            text-transform: uppercase;
-            margin-bottom: 2rem;
-            text-shadow: 0 0 20px rgba(110, 193, 228, 0.4);
-        }
-
-        .hero h1 .line {
-            display: block;
-            overflow: hidden;
-        }
-
-        .hero h1 .highlight {
-            color: var(--branct-cyan);
-        }
-
-        .hero-subtitle {
-            font-size: 1.1rem;
-            font-weight: 400;
-            color: var(--branct-slate);
-            max-width: 500px;
-            line-height: 1.7;
-            margin-bottom: 3rem;
-        }
-
-        .hero-cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 2rem;
-            background: transparent;
-            color: var(--branct-white);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .hero-cta:hover {
-            background: var(--branct-cyan);
-            color: var(--branct-deep);
-            border-color: var(--branct-cyan);
-            box-shadow: 0 0 30px var(--branct-cyan-glow);
-        }
-
-        .hero-cta svg {
-            transition: transform 0.3s ease;
-        }
-
-        .hero-cta:hover svg {
-            transform: translateX(4px);
-        }
-
-        /* Hero Right - Metrics Panel */
-        .hero-right {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .metrics-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .metric-row {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2rem;
-            border-bottom: 1px solid var(--branct-border);
-        }
-
-        .metric-row:last-child {
-            border-bottom: none;
-        }
-
-        .metric-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--branct-slate);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .metric-value {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--branct-white);
-            letter-spacing: -0.02em;
-        }
-
-        .metric-value.cyan {
-            color: var(--branct-cyan);
-        }
-
-        .metric-unit {
-            font-size: 1rem;
-            font-weight: 400;
-            color: var(--branct-slate);
-            margin-left: 0.25rem;
-        }
-
-        @media (max-width: 1024px) {
-            .hero {
-                grid-template-columns: 1fr;
-            }
-            .hero-left {
-                border-right: none;
-                border-bottom: 1px solid var(--branct-border);
-                padding: 3rem 2rem;
-            }
-            .hero-right {
-                min-height: 300px;
-            }
-        }
-
-        /* ========================================
-           PORTAVIA REVEAL SECTION
-           ======================================== */
-        .reveal-section {
-            height: 450vh;
-            position: relative;
-        }
-
-        .reveal-container {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .reveal-wrapper {
-            position: relative;
-            width: 90%;
-            max-width: 1200px;
-            height: 70vh;
-            perspective: 1200px;
-        }
-
-        .reveal-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 16px;
-            overflow: hidden;
-            backface-visibility: hidden;
-            transform-style: preserve-3d;
-        }
-
-        /* Back Layer - Vibrant Solution */
-        .reveal-back {
-            background: linear-gradient(135deg, var(--branct-deep) 0%, #0c1829 100%);
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-        }
-
-        .reveal-back::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(circle at 30% 20%, rgba(6, 182, 212, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 70% 80%, rgba(6, 182, 212, 0.2) 0%, transparent 40%);
-            pointer-events: none;
-        }
-
-        .reveal-back-content {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-        }
-
-        .reveal-back-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--branct-cyan);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 1.5rem;
-        }
-
-        .reveal-back h2 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2rem, 5vw, 4rem);
-            font-weight: 700;
-            color: var(--branct-white);
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            margin-bottom: 1rem;
-        }
-
-        .reveal-back p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.6);
-            max-width: 500px;
-            margin: 0 auto 2rem;
-        }
-
-        .reveal-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            margin-top: 2rem;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .reveal-stat {
-            text-align: center;
-            padding: 1.5rem;
-            border: 1px solid var(--branct-dark-border);
-            border-radius: 8px;
-        }
-
-        .reveal-stat-value {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--branct-cyan);
-        }
-
-        .reveal-stat-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 0.5rem;
-        }
-
-        /* Front Layer - Gray/Old */
-        .reveal-front {
-            background: rgba(15, 25, 40, 0.95);
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
-        }
-
-        .reveal-front-content {
-            text-align: center;
-            opacity: 0.6;
-        }
-
-        .reveal-front-icon {
-            font-size: 4rem;
-            margin-bottom: 2rem;
-            filter: grayscale(100%);
-        }
-
-        .reveal-front h3 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(1.5rem, 3vw, 2.5rem);
-            font-weight: 600;
-            color: var(--branct-slate);
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-        }
-
-        .reveal-front p {
-            font-size: 1rem;
-            color: var(--branct-slate);
-            max-width: 400px;
-        }
-
-        .reveal-front-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-top: 2rem;
-            opacity: 0.4;
-        }
-
-        .old-stat {
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .old-stat-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--branct-slate);
-        }
-
-        .old-stat-label {
-            font-size: 0.65rem;
-            color: var(--branct-slate);
-            text-transform: uppercase;
-            margin-top: 0.25rem;
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--branct-slate);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            z-index: 10;
-        }
-
-        .scroll-indicator svg {
-            animation: scrollBounce 2s ease-in-out infinite;
-        }
-
-        @keyframes scrollBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(8px); }
-        }
-
-        /* ========================================
-           BENTO GRID - Technical Cards
-           ======================================== */
-        .bento-section {
-            padding: 100px 2rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .bento-header {
-            max-width: 1200px;
-            margin: 0 auto 4rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: end;
-            padding-bottom: 3rem;
-            border-bottom: 1px solid var(--branct-border);
-        }
-
-        .bento-header h2 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            font-weight: 700;
-            color: var(--branct-white);
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-            text-shadow: 0 0 20px rgba(110, 193, 228, 0.4);
-        }
-
-        .bento-header p {
-            font-size: 1rem;
-            color: var(--branct-slate);
-            line-height: 1.7;
-        }
-
-        /* Holographic Dashboard — below title */
-        .holo-container {
-            perspective: 1200px;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: center;
-        }
-
-        .holo-card {
-            width: 100%;
-            max-width: 780px;
-            background: rgba(9, 18, 28, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 36px 44px;
-            transform-style: preserve-3d;
-            transform: rotateY(-6deg) rotateX(3deg);
-            transition: transform 0.15s ease-out, border-color 0.4s ease, box-shadow 0.4s ease;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
-            animation: floatCard 6s ease-in-out infinite;
-            will-change: transform;
-        }
-
-        .holo-card:hover {
-            border-color: var(--branct-cyan);
-            box-shadow: 0 30px 80px rgba(6, 182, 212, 0.15), 0 0 40px rgba(6, 182, 212, 0.08);
-        }
-
-        .holo-card .holo-content {
-            transform: translateZ(30px);
-            transition: transform 0.15s ease-out;
-        }
-
-        .holo-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 16px;
-            transform: translateZ(20px);
-        }
-
-        .dots { display: flex; gap: 8px; }
-        .dots span { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
-        .dots .red { background: #ff5f56; }
-        .dots .yellow { background: #ffbd2e; }
-        .dots .green { background: #27c93f; }
-
-        .holo-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: #64748b;
-            letter-spacing: 1.5px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 18px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1rem;
-            color: #94a3b8;
-        }
-
-        .stat-row .value { font-weight: 700; color: #fff; font-size: 1.1rem; }
-        .stat-row .text-cyan { color: var(--branct-cyan); text-shadow: 0 0 12px rgba(6, 182, 212, 0.4); }
-
-        .holo-chart {
-            display: flex;
-            align-items: flex-end;
-            gap: 14px;
-            height: 120px;
-            margin-top: 28px;
-        }
-
-        .holo-chart .bar {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 4px;
-            height: var(--h);
-            transition: transform 0.2s ease-out;
-        }
-
-        .holo-chart .bar.active {
-            background: var(--branct-cyan);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
-        }
-
-        @keyframes floatCard {
-            0%, 100% { transform: rotateY(-6deg) rotateX(3deg) translateY(0); }
-            50% { transform: rotateY(-6deg) rotateX(3deg) translateY(-12px); }
-        }
-
-        .bento-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            background: rgba(255, 255, 255, 0.06);
-            max-width: 1200px;
-            margin: 0 auto;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .tech-card {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 2rem;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .tech-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .tech-card.span-2 {
-            grid-column: span 2;
-        }
-
-        .tech-card-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 1.5rem;
-            font-size: 1.25rem;
-        }
-
-        .tech-card-icon.cyan {
-            background: rgba(6, 182, 212, 0.1);
-            border-color: rgba(6, 182, 212, 0.3);
-        }
-
-        .tech-card-number {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
-            font-weight: 500;
-            color: var(--branct-border-strong);
-        }
-
-        .tech-card h3 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--branct-white);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.75rem;
-        }
-
-        .tech-card p {
-            font-size: 0.9rem;
-            color: var(--branct-slate);
-            line-height: 1.6;
-        }
-
-        .tech-card-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .tech-tag {
-            padding: 0.3rem 0.6rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.6rem;
-            font-weight: 500;
-            color: var(--branct-slate);
-            text-transform: uppercase;
-        }
-
-        @media (max-width: 1024px) {
-            .bento-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .bento-header {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .bento-grid {
-                grid-template-columns: 1fr;
-            }
-            .tech-card.span-2 {
-                grid-column: span 1;
-            }
-        }
-
-        /* ========================================
-           FEATURE LIST - Large Typography
-           ======================================== */
-        .features-section {
-            padding: 0;
-            background: transparent;
-        }
-
-        .feature-row {
-            display: grid;
-            grid-template-columns: 80px 1fr 1fr;
-            border-bottom: 1px solid var(--branct-border);
-            transition: background 0.3s ease;
-        }
-
-        .feature-row:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .feature-number {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-right: 1px solid var(--branct-border);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--branct-cyan);
-        }
-
-        .feature-title {
-            padding: 3rem 2rem;
-            border-right: 1px solid var(--branct-border);
-            display: flex;
-            align-items: center;
-        }
-
-        .feature-title h3 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-            font-weight: 600;
-            color: var(--branct-white);
-            text-transform: uppercase;
-            letter-spacing: -0.01em;
-        }
-
-        .feature-desc {
-            padding: 3rem 2rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .feature-desc p {
-            font-size: 0.95rem;
-            color: var(--branct-slate);
-            line-height: 1.7;
-        }
-
-        .feature-desc strong {
-            color: var(--branct-white);
-            font-weight: 600;
-        }
-
-        /* feature-row mobile: handled in consolidated @media (max-width: 768px) block below */
-
-        /* ========================================
-           CTA FOOTER - Deep Blue Impact
-           ======================================== */
-        .cta-footer {
-            background: var(--branct-deep);
-            padding: 120px 2rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta-footer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 20% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 40%);
-            pointer-events: none;
-        }
-
-        .cta-content {
-            position: relative;
-            z-index: 1;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .cta-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--branct-cyan);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 2rem;
-        }
-
-        .cta-footer h2 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2.5rem, 7vw, 5rem);
-            font-weight: 700;
-            color: var(--branct-white);
-            text-transform: uppercase;
-            letter-spacing: -0.03em;
-            line-height: 1.0;
-            margin-bottom: 2rem;
-        }
-
-        .cta-footer p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 3rem;
-        }
-
-        .btn-cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.25rem 3rem;
-            background: var(--branct-cyan);
-            color: var(--branct-deep);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 2px solid var(--branct-cyan);
-            transition: all 0.3s ease;
-        }
-
-        .btn-cta:hover {
-            background: transparent;
-            box-shadow: 0 0 40px var(--branct-cyan-glow);
-        }
-
-        .btn-cta svg {
-            transition: transform 0.3s ease;
-        }
-
-        .btn-cta:hover svg {
-            transform: translateX(4px);
-        }
-
-        /* ========================================
-           FOOTER
-           ======================================== */
-        .footer {
-            background: var(--branct-deep);
-            padding: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--branct-dark-border);
-        }
-
-        .footer p {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .footer a {
-            color: var(--branct-cyan);
-            text-decoration: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .footer a:hover {
-            opacity: 0.7;
-        }
-
-        @media (max-width: 640px) {
-            .footer {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-        }
-
-        /* ========================================
-           SCROLL PROGRESS
-           ======================================== */
-        .scroll-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 2px;
-            background: var(--branct-cyan);
-            z-index: 9999;
-            transform-origin: left;
-            transform: scaleX(0);
-        }
-
-        /* ========================================
-           LANGUAGE SELECTOR
-           ======================================== */
-        .lang-selector {
-            position: relative;
-            margin-left: 1rem;
-        }
-
-        .lang-current {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--branct-text);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .lang-current:hover {
-            border-color: var(--branct-cyan);
-            color: var(--branct-cyan);
-        }
-
-        .lang-current svg {
-            width: 12px;
-            height: 12px;
-            transition: transform 0.2s ease;
-        }
-
-        .lang-selector.open .lang-current svg {
-            transform: rotate(180deg);
-        }
-
-        .lang-dropdown {
-            position: absolute;
-            top: calc(100% + 0.5rem);
-            right: 0;
-            min-width: 120px;
-            background: rgba(9, 18, 28, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 100;
-        }
-
-        .lang-selector.open .lang-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .lang-option {
-            display: block;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: transparent;
-            border: none;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--branct-slate);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .lang-option:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--branct-white);
-        }
-
-        .lang-option.active {
-            color: var(--branct-cyan);
-            background: rgba(6, 182, 212, 0.05);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-    
-        /* ========================================
-           UNIFIED BRANCT HEADER (matches home)
-           ======================================== */
-        .branct-header {
-            position: fixed !important; top: 0; left: 0; width: 100%; z-index: 1000;
-            padding: 20px 0 !important;
-            background: rgba(5, 10, 15, 0.6) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-            display: block !important;
-        }
-        .branct-header .logo { color: #efeeee !important; font-size: 1.5rem; letter-spacing: -0.03em; }
-        .branct-header .logo .tech { color: #6ec1e4 !important; }
-        .branct-header__container {
-            width: 90%; max-width: 1200px; margin: 0 auto;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .branct-nav-desktop .branct-nav-list {
-            display: flex; align-items: center; gap: 40px; list-style: none;
-        }
-        .branct-nav-desktop a,
-        .branct-nav-desktop .branct-nav-link {
-            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
-            color: rgba(255,255,255,0.8); text-decoration: none;
-            background: none; border: none; cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        .branct-nav-desktop a:hover,
-        .branct-nav-desktop .branct-nav-link:hover { color: #6ec1e4; opacity: 1; }
-        .branct-nav-dropdown { position: relative; }
-        .branct-submenu {
-            position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-            margin-top: 20px; padding: 20px;
-            background: rgba(9, 18, 28, 0.85);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            display: flex; flex-direction: column; gap: 15px;
-            min-width: 220px; list-style: none;
-            opacity: 0; visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        .branct-nav-dropdown:hover .branct-submenu {
-            opacity: 1; visibility: visible; margin-top: 15px;
-        }
-        .branct-submenu a { white-space: nowrap; color: rgba(255,255,255,0.8) !important; }
-        .branct-submenu a:hover { color: #6ec1e4 !important; }
-        .branct-header__actions { display: flex; align-items: center; gap: 20px; }
-        .branct-lang-selector { position: relative; }
-        .branct-lang-btn {
-            background: transparent; border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 8px 16px; border-radius: 20px;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
-            font-family: 'Inter', sans-serif;
-        }
-        .branct-lang-dropdown {
-            position: absolute; top: 100%; right: 0; margin-top: 15px;
-            background: #072c3d; border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 10px; min-width: 80px;
-            opacity: 0; pointer-events: none; transform: translateY(-10px);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            list-style: none;
-        }
-        .branct-lang-dropdown.active { opacity: 1; pointer-events: all; transform: translateY(0); }
-        .branct-lang-dropdown li { padding: 8px; cursor: pointer; text-align: center; border-radius: 6px; color: white; }
-        .branct-lang-dropdown li:hover { background: #1c5a74; }
-        .branct-cta-btn {
-            display: inline-block; padding: 14px 32px; border-radius: 50px;
-            font-weight: 600; font-size: 0.95rem; cursor: pointer;
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); color: white;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            text-decoration: none;
-        }
-        .branct-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(9,118,151,0.3); }
-        .branct-mobile-toggle {
-            display: none; background: none; border: none;
-            cursor: pointer; flex-direction: column; gap: 6px;
-        }
-        .branct-mobile-toggle span { width: 25px; height: 2px; background: white; display: block; transition: 0.3s; }
-        .branct-mobile-drawer {
-            position: fixed; top: 0; right: -100%;
-            width: 80%; height: 100vh;
-            background: #072c3d; z-index: 999;
-            padding: 100px 40px;
-            transition: 0.4s cubic-bezier(0.77, 0, 0.175, 1);
-        }
-        .branct-mobile-drawer.open { right: 0; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
-        .branct-mobile-nav-list { list-style: none; }
-        .branct-mobile-nav-list > li { margin-bottom: 20px; }
-        .branct-mobile-nav-list a {
-            font-size: 1.5rem; font-family: 'Space Grotesk', sans-serif;
-            color: #efeeee; text-decoration: none;
-        }
-        .branct-mobile-nav-list .branct-nav-link {
-            font-size: 1.5rem; font-family: 'Space Grotesk', sans-serif;
-            background: none; border: none; color: #efeeee;
-            cursor: pointer; text-align: left; width: 100%;
-        }
-        .branct-mobile-submenu { display: none; padding-left: 20px; margin-top: 15px; list-style: none; }
-        .branct-mobile-submenu li { margin-bottom: 15px; }
-        .branct-mobile-submenu a { font-size: 1.1rem; }
-        .mobile-drawer-cta {
-            display: block; text-align: center; margin-top: 2rem; width: 100%;
-            padding: 14px 32px; border-radius: 50px; font-weight: 600; font-size: 0.95rem;
-            color: #efeeee; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
-            text-decoration: none; transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .mobile-drawer-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(9,118,151,0.3); }
-
-        /* ========================================
-           COMPARISON MATRIX
-           ======================================== */
-        .lp-comparison-matrix {
-            padding: clamp(4rem, 8vh, 8rem) clamp(1.5rem, 4vw, 4rem);
-            background: radial-gradient(circle at 50% 50%, #112233 0%, #050a0f 100%);
-            border-top: 1px solid rgba(255,255,255,0.08);
-            overflow: hidden;
-            position: relative;
-            z-index: 1;
-        }
-        .lp-matrix-header {
-            max-width: 600px;
-            margin-bottom: clamp(2rem, 4vh, 4rem);
-        }
-        .lp-matrix-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            color: #06b6d4;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 1rem;
-            display: block;
-        }
-        .lp-matrix-tag::before { content: '// '; color: #94a3b8; }
-        .lp-matrix-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #ffffff;
-            margin-bottom: 1rem;
-            text-shadow: 0 0 20px rgba(110, 193, 228, 0.4);
-        }
-        .lp-matrix-subtitle {
-            color: #94a3b8;
-            line-height: 1.7;
-            font-size: 1rem;
-        }
-        .lp-matrix-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            max-width: 1200px;
-            margin: 0 auto;
-            perspective: 1000px;
-        }
-        .lp-matrix-card {
-            padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 2.5vw, 2rem);
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-right: none;
-            position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .lp-matrix-card:last-child { border-right: 1px solid rgba(255, 255, 255, 0.1); }
-        .lp-matrix-card:hover { transform: translateY(-4px); }
-        .lp-matrix-card.featured {
-            background: #050a0f;
-            border-color: rgba(6, 182, 212, 0.3);
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.2), 0 0 80px rgba(6, 182, 212, 0.08), inset 0 1px 0 rgba(6, 182, 212, 0.2);
-        }
-        .lp-matrix-card.featured:hover { transform: translateY(-6px); box-shadow: 0 0 50px rgba(6, 182, 212, 0.3), 0 0 100px rgba(6, 182, 212, 0.1); }
-        .lp-card-badge {
-            position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
-            background: #06b6d4; color: #050a0f;
-            font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; font-weight: 600;
-            letter-spacing: 2px; padding: 5px 16px; text-transform: uppercase; white-space: nowrap;
-        }
-        .lp-plan-name {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(1.1rem, 2vw, 1.4rem);
-            font-weight: 700; text-transform: uppercase; color: #ffffff; margin-bottom: 0.25rem;
-        }
-        .lp-plan-label {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
-            color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
-            display: block; margin-bottom: 1.5rem;
-        }
-        .lp-matrix-card.featured .lp-plan-label { color: #06b6d4; }
-        .lp-power-meter {
-            width: 100%; height: 3px; background: rgba(255, 255, 255, 0.08);
-            border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden;
-        }
-        .lp-power-bar {
-            height: 100%; width: 0;
-            background: linear-gradient(90deg, #06b6d4, #22d3ee);
-            border-radius: 2px; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .lp-plan-price {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: #ffffff;
-            margin-bottom: 2rem; padding-bottom: 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .lp-matrix-card.featured .lp-plan-price { border-color: rgba(255, 255, 255, 0.1); }
-        .lp-feature-list { list-style: none; padding: 0; margin: 0; }
-        .lp-feature-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.75rem clamp(1.25rem, 2.5vw, 2rem);
-            margin: 0 calc(-1 * clamp(1.25rem, 2.5vw, 2rem));
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            transition: background 0.3s ease;
-        }
-        .lp-feature-row:last-child { border-bottom: none; }
-        .lp-feature-row:hover { background: linear-gradient(90deg, rgba(6, 182, 212, 0.06), transparent); }
-        .lp-matrix-card.featured .lp-feature-row:hover { background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), transparent); }
-        .lp-feat-name {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
-            color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .lp-matrix-card.featured .lp-feat-name { color: rgba(255, 255, 255, 0.5); }
-        .lp-feat-value {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
-            color: #e2e8f0; font-weight: 600; text-align: right;
-        }
-        .lp-matrix-card.featured .lp-feat-value { color: #ffffff; }
-        .lp-feat-icon { display: flex; align-items: center; }
-        .lp-feat-icon--check { color: #06b6d4; }
-        .lp-feat-icon--cross { color: #94a3b8; opacity: 0.3; }
-        .lp-matrix-card.featured .lp-feat-icon--cross { color: rgba(255, 255, 255, 0.15); opacity: 1; }
-        .lp-matrix-cta {
-            display: block; text-align: center; margin-top: 2rem; padding: 1rem;
-            font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 2px; text-decoration: none; transition: all 0.3s ease;
-        }
-        .lp-matrix-cta--outline {
-            background: transparent; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        .lp-matrix-cta--outline:hover { border-color: #06b6d4; color: #06b6d4; }
-        .lp-matrix-cta--fill {
-            background: #06b6d4; color: #050a0f; border: 1px solid #06b6d4;
-        }
-        .lp-matrix-cta--fill:hover {
-            background: #ffffff; transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
-        }
-
-        /* ========================================
-           COMPREHENSIVE MOBILE RESPONSIVE
-           ======================================== */
-        @media (max-width: 768px) {
-
-            /* --- HEADER / NAV --- */
-            .header { padding: 0.75rem 1rem; }
-            .header-nav { display: none; }
-            .branct-nav-desktop { display: none; }
-            .branct-mobile-toggle { display: flex; }
-            .branct-cta-btn { display: none; }
-            .branct-header { padding: 14px 0 !important; }
-            .branct-header__container { width: 92%; }
-            .branct-header__actions { gap: 12px; }
-            .branct-lang-btn { padding: 6px 12px; font-size: 0.8rem; }
-            .header-right { gap: 0.25rem; }
-            .lang-selector { margin-left: 0.5rem; }
-
-            /* --- MOBILE DRAWER --- */
-            .branct-mobile-drawer {
-                width: 85%;
-                max-width: 320px;
-                padding: 90px 30px 40px;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            .branct-mobile-nav-list > li { margin-bottom: 16px; }
-            .branct-mobile-nav-list a { font-size: 1.3rem; }
-            .branct-mobile-nav-list .branct-nav-link { font-size: 1.3rem; }
-            .branct-mobile-submenu { padding-left: 16px; margin-top: 12px; }
-            .branct-mobile-submenu a { font-size: 1rem; }
-
-            /* --- HERO SECTION --- */
-            .hero {
-                grid-template-columns: 1fr;
-                min-height: auto;
-                padding-top: 70px;
-            }
-            .hero-left {
-                padding: 2.5rem 1.25rem 2rem;
-                border-right: none;
-                border-bottom: 1px solid var(--branct-border);
-            }
-            .hero h1 {
-                font-size: clamp(2.2rem, 10vw, 3.2rem);
-                margin-bottom: 1.25rem;
-            }
-            .hero-subtitle {
-                font-size: 0.95rem;
-                margin-bottom: 2rem;
-                max-width: 100%;
-            }
-            .hero-tag { margin-bottom: 1.25rem; }
-            .hero-cta {
-                padding: 0.85rem 1.5rem;
-                font-size: 0.75rem;
-                width: 100%;
-                justify-content: center;
-            }
-            .hero-right { min-height: auto; }
-            .metric-row {
-                padding: 1.25rem 1.25rem;
-            }
-            .metric-value {
-                font-size: 1.8rem;
-            }
-            /* Override inline style="font-size: 1.5rem;" on metric-value */
-            .metric-value[style] {
-                font-size: 1.2rem !important;
-            }
-            .metric-label {
-                font-size: 0.65rem;
-                letter-spacing: 1.5px;
-            }
-
-            /* --- REVEAL SECTION --- */
-            .reveal-section { height: 350vh; }
-            .reveal-wrapper {
-                width: 95%;
-                height: 65vh;
-            }
-            .reveal-back { padding: 2rem 1.25rem; }
-            .reveal-back h2 { font-size: clamp(1.5rem, 6vw, 2.5rem); }
-            .reveal-back p { font-size: 0.95rem; margin-bottom: 1.5rem; }
-            .reveal-back-tag { font-size: 0.65rem; letter-spacing: 2px; }
-            .reveal-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-                max-width: 260px;
-            }
-            .reveal-stat { padding: 1rem; }
-            .reveal-stat-value { font-size: 1.5rem; }
-            .reveal-stat-label { font-size: 0.6rem; }
-            .reveal-front { padding: 2rem 1.25rem; }
-            .reveal-front h3 { font-size: clamp(1.2rem, 5vw, 1.8rem); }
-            .reveal-front p { font-size: 0.9rem; }
-            .reveal-front-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-            .reveal-front-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 0.5rem;
-            }
-            .old-stat { padding: 0.75rem 0.5rem; }
-            .old-stat-value { font-size: 1rem; }
-            .scroll-indicator { font-size: 0.6rem; bottom: 1rem; }
-
-            /* --- BENTO SECTION --- */
-            .bento-section { padding: 60px 1rem; }
-            .bento-header {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                margin-bottom: 2.5rem;
-                padding-bottom: 2rem;
-            }
-            .bento-header h2 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
-            .bento-header p { font-size: 0.9rem; }
-            .holo-card { transform: none; animation: none; max-width: 100%; padding: 24px; border-radius: 14px; }
-            .holo-card:hover { transform: none; }
-            .holo-header-row { margin-bottom: 18px; padding-bottom: 10px; transform: none; }
-            .holo-card .holo-content { transform: none; }
-            .stat-row { font-size: 0.85rem; margin-bottom: 12px; }
-            .stat-row .value { font-size: 0.95rem; }
-            .holo-chart { height: 70px; gap: 8px; margin-top: 18px; }
-
-            /* --- FEATURE LIST --- */
-            .feature-row {
-                grid-template-columns: 1fr;
-            }
-            .feature-number {
-                border-right: none;
-                border-bottom: 1px solid var(--branct-border);
-                padding: 1rem;
-                justify-content: flex-start;
-            }
-            .feature-title {
-                padding: 1.25rem 1.25rem 0.5rem;
-                border-right: none;
-            }
-            .feature-title h3 { font-size: clamp(1rem, 4vw, 1.35rem); }
-            .feature-desc {
-                padding: 0.5rem 1.25rem 1.5rem;
-            }
-            .feature-desc p { font-size: 0.85rem; }
-
-            /* --- COMPARISON MATRIX --- */
-            .lp-comparison-matrix { padding: 3rem 1rem; }
-            .lp-matrix-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-            .lp-matrix-card { border-right: 1px solid rgba(255,255,255,0.1); border-radius: 8px; }
-            .lp-matrix-card.featured { margin-top: 0; }
-            .lp-matrix-title { font-size: clamp(1.5rem, 6vw, 2.5rem); }
-            .lp-plan-price { font-size: clamp(1.2rem, 5vw, 1.6rem); }
-            .lp-feat-name { font-size: 0.65rem; }
-            .lp-feat-value { font-size: 0.7rem; }
-
-            /* --- CTA FOOTER --- */
-            .cta-footer { padding: 60px 1.25rem; }
-            .cta-footer h2 { font-size: clamp(2rem, 8vw, 3rem); }
-            .cta-footer p { font-size: 0.95rem; margin-bottom: 2rem; }
-            .cta-tag { font-size: 0.65rem; letter-spacing: 2px; margin-bottom: 1.5rem; }
-            .btn-cta {
-                padding: 1rem 2rem;
-                font-size: 0.75rem;
-                width: 100%;
-                justify-content: center;
-            }
-
-            /* --- FOOTER --- */
-            .footer {
-                flex-direction: column;
-                gap: 0.75rem;
-                text-align: center;
-                padding: 1.5rem 1rem;
-            }
-            .footer p { font-size: 0.65rem; }
-
-            /* --- GLOBAL TEXT OVERFLOW PROTECTION --- */
-            h1, h2, h3, h4, h5, h6, p, span, a {
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-            }
-            body { overflow-x: hidden; }
-        }
-
-        /* Extra-small screens */
-        @media (max-width: 400px) {
-            .hero h1 { font-size: 2rem; }
-            .hero-left { padding: 2rem 1rem 1.5rem; }
-            .metric-value { font-size: 1.5rem; }
-            .metric-value[style] { font-size: 1rem !important; }
-            .reveal-wrapper { height: 60vh; }
-            .reveal-back h2 { font-size: 1.4rem; }
-            .cta-footer h2 { font-size: 1.8rem; }
-            .branct-mobile-drawer { width: 90%; padding: 80px 20px 30px; }
-        }
-
-</style>
+    /* ============================================================
+       LANDING PAGES — página de catálogo · identidade AZUL
+       Conceito: "o funil ao vivo" — anúncio → página → lead,
+       desenhado na própria página.
+       ============================================================ */
+    :root {
+        --lp-blue: #2D6BB4;
+        --lp-blue-soft: #4FA8E8;
+        --lp-tint: #EBF2FB;
+    }
+
+    /* --- Hero de catálogo: banho azul --- */
+    .lp-hero {
+        background:
+            radial-gradient(70% 90% at 85% -10%, rgba(79,168,232,0.22), transparent 60%),
+            radial-gradient(50% 70% at 0% 100%, rgba(45,107,180,0.10), transparent 65%),
+            linear-gradient(180deg, #EAF2FB 0%, var(--bg) 88%);
+        padding-block: clamp(64px, 9vw, 130px) clamp(48px, 6vw, 80px);
+        position: relative; overflow: hidden;
+    }
+    .lp-hero__badge {
+        display: inline-flex; align-items: center; gap: 10px;
+        font-size: var(--fs-label); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--lp-blue);
+        padding: 8px 16px; border-radius: var(--r-full);
+        background: rgba(255,255,255,0.7); border: 1px solid rgba(45,107,180,0.3);
+    }
+    .lp-hero h1 { font-size: clamp(2.6rem, 1.6rem + 4.6vw, 5rem); max-width: 940px; margin-top: var(--sp-6); }
+    .lp-hero h1 em { font-style: normal; color: var(--lp-blue); }
+    .lp-hero__sub { color: var(--ink-2); font-size: var(--fs-lead); max-width: 660px; margin-block: var(--sp-6) var(--sp-8); }
+    .lp-spec {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3);
+        margin-top: var(--sp-10); max-width: 1020px;
+    }
+    @media (max-width: 860px) { .lp-spec { grid-template-columns: repeat(2, 1fr); } }
+    .lp-spec .spec-item {
+        background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
+        border: 1px solid rgba(45,107,180,0.22); border-radius: var(--r-md);
+        padding: var(--sp-4) var(--sp-5);
+    }
+    .lp-spec b { display: block; font-family: var(--font-display); font-size: 1.25rem; letter-spacing: -0.02em; }
+    .lp-spec span { color: var(--muted); font-size: 0.82rem; }
+
+    /* --- O FUNIL AO VIVO (assinatura da página) --- */
+    .funnel { position: relative; }
+    .funnel__grid { display: grid; gap: var(--sp-10); position: relative; }
+    @media (min-width: 960px) { .funnel__grid { grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-8); } }
+    .fstage { position: relative; }
+    .fstage__chip {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--lp-blue); background: var(--lp-tint);
+        padding: 6px 14px; border-radius: var(--r-full); margin-bottom: var(--sp-4);
+    }
+    .fstage h3 { font-size: 1.3rem; margin-bottom: var(--sp-2); }
+    .fstage > p { color: var(--muted); font-size: 0.95rem; margin-bottom: var(--sp-5); min-height: 3.6em; }
+
+    /* Mockups dos 3 estágios (HTML puro) */
+    .mock {
+        border-radius: var(--r-lg); border: 1px solid var(--line);
+        background: var(--surface); box-shadow: var(--sh-2);
+        overflow: hidden; font-size: 0.8rem;
+        transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    }
+    .fstage:hover .mock { transform: translateY(-4px); box-shadow: var(--sh-3); }
+    /* 01 — anúncio */
+    .mock--ad { padding: var(--sp-4); }
+    .mock--ad .ad-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .mock--ad .ad-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--lp-blue-soft), var(--lp-blue)); flex-shrink: 0; }
+    .mock--ad .ad-head b { display: block; font-size: 0.8rem; }
+    .mock--ad .ad-head small { color: var(--muted); font-size: 0.68rem; }
+    .mock--ad .ad-media {
+        border-radius: var(--r-sm); height: 110px;
+        background: linear-gradient(135deg, #1E3A5F 0%, #2D6BB4 60%, #4FA8E8 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+        text-align: center; padding: 0 16px;
+    }
+    .mock--ad .ad-cta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .mock--ad .ad-cta span { color: var(--muted); font-size: 0.72rem; }
+    .mock--ad .ad-btn { background: var(--lp-tint); color: var(--lp-blue); font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; }
+    /* 02 — página */
+    .mock--page .frame__bar { padding: 8px 10px; display: flex; gap: 5px; border-bottom: 1px solid var(--line); }
+    .mock--page .frame__bar span { width: 7px; height: 7px; border-radius: 50%; background: #D8D5CE; }
+    .mock--page .pg { padding: var(--sp-4); }
+    .mock--page .pg-h {
+        font-family: var(--font-display); font-weight: 800; font-size: 0.98rem; letter-spacing: -0.01em;
+        margin-bottom: 8px;
+    }
+    .mock--page .pg-line { height: 7px; border-radius: 4px; background: #ECEAE4; margin-bottom: 6px; }
+    .mock--page .pg-line.w60 { width: 60%; }
+    .mock--page .pg-btn {
+        margin-top: 12px; display: inline-block;
+        background: var(--lp-blue); color: #fff; font-weight: 800;
+        padding: 8px 18px; border-radius: 99px; font-size: 0.75rem;
+        box-shadow: 0 6px 16px -6px rgba(45,107,180,0.5);
+        animation: lp-pulse 2.6s ease-in-out infinite;
+    }
+    @keyframes lp-pulse { 0%,100% { box-shadow: 0 6px 16px -6px rgba(45,107,180,0.5); } 50% { box-shadow: 0 6px 24px -4px rgba(45,107,180,0.85); } }
+    /* 03 — lead no CRM */
+    .mock--lead { padding: var(--sp-4); }
+    .mock--lead .lead-row { display: flex; align-items: center; gap: 10px; }
+    .mock--lead .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .mock--lead b { font-size: 0.85rem; }
+    .mock--lead small { display: block; color: var(--muted); font-size: 0.7rem; }
+    .mock--lead .utm {
+        margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+        background: var(--surface-2); font-family: ui-monospace, monospace; font-size: 0.66rem; color: var(--ink-2);
+        overflow-wrap: anywhere;
+    }
+    .mock--lead .lead-tag { display: inline-block; margin-top: 10px; background: #E8F6EC; color: var(--success); font-weight: 800; font-size: 0.68rem; padding: 4px 10px; border-radius: 99px; }
+    /* setas do fluxo */
+    .farrow {
+        display: none; position: absolute; top: 52%; z-index: 2; width: 52px; height: 24px;
+    }
+    @media (min-width: 960px) {
+        .farrow { display: block; }
+        .farrow--1 { left: calc(33.33% - 26px); }
+        .farrow--2 { left: calc(66.66% - 26px); }
+    }
+    .farrow path { stroke: var(--lp-blue-soft); stroke-width: 3; fill: none; stroke-dasharray: 6 6; animation: lp-dash 1.2s linear infinite; }
+    @keyframes lp-dash { to { stroke-dashoffset: -12; } }
+    @media (prefers-reduced-motion: reduce) { .farrow path, .mock--page .pg-btn { animation: none; } }
+
+    /* CTA final azul */
+    .lp-cta {
+        background:
+            radial-gradient(60% 80% at 80% 20%, rgba(79,168,232,0.22), transparent 60%),
+            linear-gradient(165deg, #16365C 0%, #0D1B24 80%);
+        border-radius: var(--r-xl);
+        padding: clamp(40px, 6vw, 80px);
+        text-align: center; color: #fff;
+        position: relative; overflow: hidden;
+    }
+    .lp-cta > * { position: relative; z-index: 1; }
+    .lp-cta p { color: #A9C0D6; }
+    </style>
+
+    <!-- schema.org -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Landing Pages",
+        "serviceType": "Design e desenvolvimento de landing pages",
+        "provider": { "@type": "Organization", "name": "BRANCT", "url": "https://branct.com/", "telephone": "+351935183488" },
+        "areaServed": ["PT", "BR"],
+        "url": "https://branct.com/landing-page.html",
+        "description": "Landing pages para tráfego pago: arquitetura de conversão, velocidade e tracking completo de UTMs e eventos até ao CRM."
+    }
+    </script>
 </head>
 <body>
+    <div class="scroll-progress" aria-hidden="true"></div>
+    <a class="skip-link" href="#main-content" data-i18n="a11y.skipToContent">Saltar para o conteúdo</a>
 
-    <!-- Scroll Progress -->
-    <div class="scroll-progress" id="scroll-progress"></div>
-
-    <!-- 3D Background Canvas -->
-    <canvas id="canvas-bg"></canvas>
-
-    <!-- Header -->
-        <header class="header branct-header">
-        <div class="branct-header__container">
-            <a href="index.html" class="logo">BRANCT<span class="tech">.Tech</span></a>
-            <nav class="branct-nav-desktop">
-                <ul class="branct-nav-list">
-                    <li><a href="index.html" data-i18n="nav.home">Início</a></li>
-                    <li class="branct-nav-dropdown">
-                        <button class="branct-nav-link" aria-haspopup="true" aria-expanded="false" data-i18n="nav.services">Serviços</button>
-                        <ul class="branct-submenu">
+    <!-- Header (partilhado) -->
+    <header class="header">
+        <div class="container header__inner">
+            <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+            <nav class="nav-desktop" aria-label="Principal">
+                <ul class="nav-list">
+                    <li class="nav-item--dropdown">
+                        <button class="nav-link" aria-haspopup="true" aria-expanded="false" aria-controls="services-submenu" data-i18n="nav.services">Serviços</button>
+                        <ul class="services-submenu" id="services-submenu">
                             <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
                             <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
-                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & Gestão</a></li>
+                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
                             <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
                         </ul>
                     </li>
+                    <li><a href="crm-gestao.html">Branct CRM</a></li>
                     <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
                     <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
-                    <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área do Usuário</a></li>
-                    <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                    <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
                 </ul>
             </nav>
-            <div class="branct-header__actions">
-                <div class="branct-lang-selector">
-                    <button class="branct-lang-btn" aria-label="Select Language">
-                        <span class="branct-current-lang">PT</span>
-                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="header__actions">
+                <div class="lang-selector">
+                    <button class="lang-btn" aria-label="Idioma" aria-haspopup="listbox">
+                        <span id="current-lang">PT</span>
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <ul class="branct-lang-dropdown">
-                        <li data-lang="pt">PT</li>
-                        <li data-lang="en">EN</li>
-                        <li data-lang="it">IT</li>
-                        <li data-lang="hr">HR</li>
+                    <ul class="lang-dropdown" role="listbox" aria-label="Idioma">
+                        <li data-lang="pt">PT</li><li data-lang="en">EN</li><li data-lang="it">IT</li><li data-lang="hr">HR</li>
                     </ul>
                 </div>
-                <a href="contactos.html" class="branct-cta-btn" data-i18n="nav.cta">Pedir Proposta</a>
-                <button class="branct-mobile-toggle" aria-label="Menu"><span></span><span></span></button>
+                <a href="contactos.html" class="btn btn--primary btn--sm" data-i18n="nav.cta">Pedir proposta</a>
+                <button class="mobile-toggle" aria-label="Menu" aria-controls="mobile-drawer"><span></span><span></span></button>
             </div>
         </div>
     </header>
 
-    <div class="branct-mobile-drawer">
-        <nav>
-            <ul class="branct-mobile-nav-list">
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <div class="mobile-drawer" id="mobile-drawer" role="dialog" aria-label="Menu" aria-modal="true">
+        <nav aria-label="Mobile">
+            <ul class="mobile-nav-list">
                 <li><a href="index.html" data-i18n="nav.home">Início</a></li>
-                <li class="branct-mobile-accordion">
-                    <button class="branct-nav-link" aria-expanded="false" data-i18n="nav.services">Serviços</button>
-                    <ul class="branct-mobile-submenu">
+                <li class="nav-item--accordion">
+                    <button class="nav-link" aria-expanded="false" aria-controls="mobile-submenu" data-i18n="nav.services">Serviços</button>
+                    <ul class="mobile-submenu" id="mobile-submenu">
                         <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
                         <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
-                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & Gestão</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
                         <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
                     </ul>
                 </li>
                 <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
                 <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
-                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área do Usuário</a></li>
+                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
                 <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
             </ul>
-            <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir Proposta</a>
         </nav>
+        <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir proposta</a>
     </div>
 
+    <main id="main-content">
 
-    <!-- Hero Section - Lando Grid Style -->
-    <section class="hero" id="hero">
-        <div class="hero-left">
-            <div class="hero-tag">
-                <span class="hero-tag-dot"></span>
-                <span class="hero-tag-text" data-i18n="lp.hero.badge">Conversion Engineering</span>
-            </div>
-
-            <h1>
-                <span class="line" data-i18n="lp.hero.line1">Engenharia</span>
-                <span class="line"><span data-i18n="lp.hero.line2">de</span> <span class="highlight" data-i18n="lp.hero.highlight">Conversão.</span></span>
-            </h1>
-
-            <p class="hero-subtitle" data-i18n="lp.hero.subtitle">
-                Landing Pages de alta performance que transformam tráfego em receita previsível. Zero templates. 100% engenharia.
-            </p>
-
-            <a href="contactos.html" class="hero-cta">
-                <span data-i18n="lp.hero.cta">Iniciar Projeto</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-            </a>
-        </div>
-
-        <div class="hero-right">
-            <div class="metrics-panel">
-                <div class="metric-row">
-                    <span class="metric-label" data-i18n="lp.metrics.loadTime">Load Time</span>
-                    <span class="metric-value">&lt;0.8<span class="metric-unit">s</span></span>
+        <!-- ===== HERO DE CATÁLOGO (azul) ===== -->
+        <section class="lp-hero" aria-label="Landing Pages">
+            <div class="container">
+                <span class="lp-hero__badge" data-i18n="lp.hero.eyebrow">Serviço 02 · Landing Pages</span>
+                <h1 data-i18n="lp.hero.title" data-i18n-html>Pagas por cada clique. <em>Nós fazemos cada um valer.</em></h1>
+                <p class="lp-hero__sub" data-i18n="lp.hero.sub">Landing pages desenhadas para campanhas de Meta e Google Ads: uma mensagem, um caminho, uma ação — e tracking que te diz exatamente o que o teu dinheiro comprou.</p>
+                <div class="hero__cta-row">
+                    <a href="contactos.html" class="btn btn--primary btn--lg" data-i18n="lp.hero.cta1">Pedir proposta</a>
+                    <a href="#funil" class="btn btn--ghost btn--lg" data-i18n="lp.hero.cta2">Ver o funil ao vivo ↓</a>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">Lighthouse</span>
-                    <span class="metric-value cyan">98+</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label" data-i18n="lp.metrics.roi">ROI Target</span>
-                    <span class="metric-value">MAX</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Framework</span>
-                    <span class="metric-value" style="font-size: 1.5rem;">Next.js 14</span>
+                <div class="lp-spec reveal-stagger">
+                    <div class="spec-item"><b>1–2 <span style="font-size:0.9rem" data-i18n="lp.spec.s1w">semanas</span></b><span data-i18n="lp.spec.s1">do briefing à página no ar</span></div>
+                    <div class="spec-item"><b>1 <span style="font-size:0.9rem" data-i18n="lp.spec.s2w">objetivo</span></b><span data-i18n="lp.spec.s2">por página — zero distrações</span></div>
+                    <div class="spec-item"><b>100%</b><span data-i18n="lp.spec.s3">dos leads com campanha de origem</span></div>
+                    <div class="spec-item"><b>A/B</b><span data-i18n="lp.spec.s4">pronta para testares variantes</span></div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Portavia Reveal Section -->
-    <section class="reveal-section" id="reveal">
-        <div class="reveal-container">
-            <div class="reveal-wrapper">
-                <!-- Back Layer: Vibrant Solution -->
-                <div class="reveal-layer reveal-back">
-                    <div class="reveal-back-content">
-                        <div class="reveal-back-tag" data-i18n="lp.reveal.backTag">// A Solução Branct</div>
-                        <h2 data-i18n="lp.reveal.backTitle" data-i18n-html="true">Performance<br>de Elite</h2>
-                        <p data-i18n="lp.reveal.backDesc">Arquitetura moderna, código otimizado e design que converte.</p>
+        <!-- ===== O FUNIL AO VIVO (assinatura) ===== -->
+        <section class="section funnel" id="funil" aria-label="O funil ao vivo">
+            <div class="container">
+                <div class="section-head fx-rise">
+                    <p class="eyebrow" style="color:var(--lp-blue)" data-i18n="lp.funnel.eyebrow">O funil ao vivo</p>
+                    <h2 style="margin-top:12px" data-i18n="lp.funnel.title">Do clique ao lead, sem fugas pelo caminho.</h2>
+                    <p class="section-head__sub" data-i18n="lp.funnel.sub">É isto que construímos: as três peças do funil a contar a mesma história — e a falarem umas com as outras.</p>
+                </div>
+                <div class="funnel__grid reveal-stagger">
+                    <svg class="farrow farrow--1" viewBox="0 0 52 24" aria-hidden="true"><path d="M2 12 H42 M34 4 L44 12 L34 20"/></svg>
+                    <svg class="farrow farrow--2" viewBox="0 0 52 24" aria-hidden="true"><path d="M2 12 H42 M34 4 L44 12 L34 20"/></svg>
 
-                        <div class="reveal-grid">
-                            <div class="reveal-stat">
-                                <div class="reveal-stat-value">3.5x</div>
-                                <div class="reveal-stat-label" data-i18n="lp.reveal.faster">Mais Rápido</div>
-                            </div>
-                            <div class="reveal-stat">
-                                <div class="reveal-stat-value">95+</div>
-                                <div class="reveal-stat-label">Lighthouse</div>
-                            </div>
-                            <div class="reveal-stat">
-                                <div class="reveal-stat-value">+40%</div>
-                                <div class="reveal-stat-label" data-i18n="lp.reveal.conversion">Conversão</div>
+                    <div class="fstage">
+                        <span class="fstage__chip" data-i18n="lp.funnel.f1.chip">01 · O clique</span>
+                        <h3 data-i18n="lp.funnel.f1.title">O anúncio faz uma promessa</h3>
+                        <p data-i18n="lp.funnel.f1.desc">Cada clique custa dinheiro real. Por isso desenhamos a página e o anúncio como uma peça só — a mesma mensagem, o mesmo tom.</p>
+                        <div class="mock mock--ad" aria-hidden="true">
+                            <div class="ad-head"><span class="ad-avatar"></span><span><b>A Tua Marca</b><small>Patrocinado · </small></span></div>
+                            <div class="ad-media">Simulação gratuita em 2 minutos</div>
+                            <div class="ad-cta"><span>atuamarca.pt</span><span class="ad-btn">Saber mais</span></div>
+                        </div>
+                    </div>
+
+                    <div class="fstage">
+                        <span class="fstage__chip" data-i18n="lp.funnel.f2.chip">02 · A página</span>
+                        <h3 data-i18n="lp.funnel.f2.title">A landing cumpre a promessa</h3>
+                        <p data-i18n="lp.funnel.f2.desc">Sem menus para fugir, sem distrações. Uma headline que continua o anúncio, prova social e um único caminho: a ação.</p>
+                        <div class="mock mock--page" aria-hidden="true">
+                            <div class="frame__bar"><span></span><span></span><span></span></div>
+                            <div class="pg">
+                                <div class="pg-h">A tua simulação em 2 minutos.</div>
+                                <div class="pg-line"></div>
+                                <div class="pg-line w60"></div>
+                                <span class="pg-btn">Começar agora →</span>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Front Layer: Old/Gray -->
-                <div class="reveal-layer reveal-front" id="reveal-front">
-                    <div class="reveal-front-content">
-                        <div class="reveal-front-icon">&#128683;</div>
-                        <h3 data-i18n="lp.reveal.frontTitle">Landing Tradicional</h3>
-                        <p data-i18n="lp.reveal.frontDesc">Templates genéricos. Carregamento lento. Conversão baixa.</p>
-
-                        <div class="reveal-front-grid">
-                            <div class="old-stat">
-                                <div class="old-stat-value">4.2s</div>
-                                <div class="old-stat-label">Load</div>
-                            </div>
-                            <div class="old-stat">
-                                <div class="old-stat-value">52</div>
-                                <div class="old-stat-label">Score</div>
-                            </div>
-                            <div class="old-stat">
-                                <div class="old-stat-value">1.2%</div>
-                                <div class="old-stat-label">Conv.</div>
-                            </div>
+                    <div class="fstage">
+                        <span class="fstage__chip" data-i18n="lp.funnel.f3.chip">03 · O lead</span>
+                        <h3 data-i18n="lp.funnel.f3.title">O ciclo fecha no CRM</h3>
+                        <p data-i18n="lp.funnel.f3.desc">O lead cai no teu CRM com a campanha de origem agarrada. Sabes exatamente que anúncio pagou este contacto.</p>
+                        <div class="mock mock--lead" aria-hidden="true">
+                            <div class="lead-row"><span class="dot"></span><span><b>Maria Santos</b><small>maria@empresa.pt · há 12 segundos</small></span></div>
+                            <div class="utm">utm_source=meta · utm_campaign=verao_25</div>
+                            <span class="lead-tag">✓ Lead atribuído à campanha</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="scroll-indicator">
-                <span data-i18n="lp.reveal.scrollHint">Scroll para revelar</span>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                </svg>
-            </div>
-        </div>
-    </section>
-
-    <!-- Bento Section - Engineering Results -->
-    <section class="bento-section" id="bento">
-        <div class="bento-header">
-            <h2 data-i18n="lp.bento.title" data-i18n-html="true">Engenharia<br>de Resultados</h2>
-            <p data-i18n="lp.bento.subtitle">Cada elemento é projetado com propósito. Cada linha de código trabalha para a conversão. Sem excessos, sem ruído.</p>
-        </div>
-
-        <!-- Holographic Dashboard -->
-        <div class="holo-container">
-            <div class="holo-card">
-                <div class="holo-header-row">
-                    <div class="dots"><span class="red"></span><span class="yellow"></span><span class="green"></span></div>
-                    <span class="holo-tag">LIVE ANALYTICS</span>
+        <!-- ===== KILLER FEATURES (bento azul) ===== -->
+        <section class="section section--alt" aria-label="O que está incluído">
+            <div class="container">
+                <div class="section-head fx-rise">
+                    <p class="eyebrow" style="color:var(--lp-blue)" data-i18n="lp.feat.eyebrow">O que está incluído</p>
+                    <h2 style="margin-top:12px" data-i18n="lp.feat.title">Engenharia de conversão, não só uma página gira.</h2>
                 </div>
-                <div class="holo-content">
-                    <div class="stat-row">
-                        <span class="label">Conversion Rate</span>
-                        <span class="value text-cyan">+24.8%</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="label">Page Speed</span>
-                        <span class="value">99/100</span>
-                    </div>
-                    <div class="holo-chart">
-                        <div class="bar" style="--h:40%"></div>
-                        <div class="bar" style="--h:65%"></div>
-                        <div class="bar" style="--h:50%"></div>
-                        <div class="bar" style="--h:85%"></div>
-                        <div class="bar active" style="--h:100%"></div>
-                    </div>
+                <div class="bento reveal-stagger">
+                    <article class="card card--hover tilt span-7" style="background: linear-gradient(165deg, #EBF2FB 0%, #E2EDFA 100%); border-color: rgba(45,107,180,0.22)">
+                        <div class="card__icon tilt__pop" style="background: rgba(45,107,180,0.12); color: var(--lp-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                        <h3 data-i18n="lp.feat.f1.title">Message match: anúncio e página, uma história só</h3>
+                        <p data-i18n="lp.feat.f1.desc">Quando a promessa muda a meio do caminho, o visitante desconfia — e o custo por lead dispara. Alinhamos headline, tom e oferta com o teu anúncio, palavra a palavra.</p>
+                    </article>
+                    <article class="card card--hover tilt span-5">
+                        <div class="card__icon tilt__pop" style="background: rgba(45,107,180,0.12); color: var(--lp-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                        <h3 data-i18n="lp.feat.f2.title">Velocidade que protege o orçamento</h3>
+                        <p data-i18n="lp.feat.f2.desc">Página lenta em tráfego pago é dinheiro queimado antes de a página abrir. As nossas carregam em menos de 2 segundos — o clique que pagaste chega ao destino.</p>
+                    </article>
+                    <article class="card card--hover card--ink tilt span-5">
+                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                        <h3 data-i18n="lp.feat.f3.title">Tracking de ciclo completo</h3>
+                        <p data-i18n="lp.feat.f3.desc">Pixel com consent RGPD, eventos com event_id para deduplicação e UTMs preservados até ao CRM. Cada lead conta a sua origem — e tu otimizas com dados, não com achismos.</p>
+                    </article>
+                    <article class="card card--hover card--tint-violet tilt span-7">
+                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+                        <h3 data-i18n="lp.feat.f4.title">Feita para testar, não para ficar parada</h3>
+                        <p data-i18n="lp.feat.f4.desc">Estrutura A/B-testável: trocas a headline, a prova social ou o CTA sem partir a página. A primeira versão é o ponto de partida — os teus dados escolhem a vencedora.</p>
+                    </article>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Comparison Matrix -->
-    <section class="lp-comparison-matrix" id="lp-comparison-matrix">
-        <div class="lp-matrix-header">
-            <span class="lp-matrix-tag" data-i18n="lp.matrix.tag">Planos & Preços</span>
-            <h2 class="lp-matrix-title" data-i18n="lp.matrix.title">Escolha o seu plano</h2>
-            <p class="lp-matrix-subtitle" data-i18n="lp.matrix.subtitle">Três níveis de entrega, o mesmo padrão de excelência. Landing pages que convertem, independentemente do plano.</p>
-        </div>
+        <!-- ===== META-PROVA (dark + aurora) ===== -->
+        <section class="section section--ink" aria-label="A prova">
+            <div class="aurora" aria-hidden="true"></div>
+            <div class="container">
+                <div class="section-head fx-rise">
+                    <p class="eyebrow" data-i18n="lp.meta.eyebrow">A prova</p>
+                    <h2 style="margin-top:12px" data-i18n="lp.meta.title" data-i18n-html>A nossa própria landing está a receber tráfego <span class="text-gradient">neste momento</span>.</h2>
+                    <p class="section-head__sub" data-i18n="lp.meta.sub">A página que recebe as campanhas Meta do Branct CRM foi construída exatamente com esta receita: message match, velocidade e tracking completo. Vê-a ao vivo — e repara no tempo que demora a abrir.</p>
+                </div>
+                <div class="fx-rise" style="margin-top: var(--sp-8)">
+                    <a href="crm-gestao.html" class="btn btn--ghost btn--lg" style="border-color: rgba(255,255,255,0.35); color: #fff" data-i18n="lp.meta.cta">Ver a landing do Branct CRM →</a>
+                </div>
+            </div>
+        </section>
 
-        <div class="lp-matrix-grid">
-            <!-- CORE -->
-            <div class="lp-matrix-card" data-plan="core">
-                <h3 class="lp-plan-name" data-i18n="lp.matrix.core.name">CORE</h3>
-                <span class="lp-plan-label" data-i18n="lp.matrix.core.label">Essencial</span>
-                <div class="lp-power-meter"><div class="lp-power-bar" data-power="35"></div></div>
-                <div class="lp-plan-price" data-i18n="lp.matrix.core.price">180€</div>
-                <ul class="lp-feature-list">
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.pages">Páginas</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.core.pages">1 Landing Page</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.design">Design</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.core.design">Template premium</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.mobile">Mobile</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.core.mobile">Responsivo</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.form">Formulário</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.core.form">Contacto básico</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.seo">SEO</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.core.seo">Base técnica</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.analytics">Analytics</span>
-                        <span class="lp-feat-icon lp-feat-icon--cross"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.ab">A/B Testing</span>
-                        <span class="lp-feat-icon lp-feat-icon--cross"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.support">Suporte</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.core.support">15 dias</span>
-                    </li>
-                </ul>
-                <a href="contactos.html" class="lp-matrix-cta lp-matrix-cta--outline" data-i18n="lp.matrix.core.cta">Pedir proposta</a>
+        <!-- ===== FAQ ===== -->
+        <section class="section" aria-label="Perguntas frequentes">
+            <div class="container">
+                <div class="section-head section-head--center fx-rise">
+                    <h2 data-i18n="lp.faq.title">Perguntas frequentes</h2>
+                </div>
+                <div class="faq fx-rise">
+                    <details>
+                        <summary data-i18n="lp.faq.q1">Em quanto tempo fica pronta?</summary>
+                        <p data-i18n="lp.faq.a1">Na maioria dos casos, 1 a 2 semanas do briefing à página no ar — landing pages são projetos focados. Se a campanha tem data marcada, diz-nos e trabalhamos ao contrário a partir dela.</p>
+                    </details>
+                    <details>
+                        <summary data-i18n="lp.faq.q2">Já tenho site. Preciso mesmo de uma landing?</summary>
+                        <p data-i18n="lp.faq.a2">Se compras tráfego, sim. A tua homepage tem dez caminhos possíveis; uma landing tem um. Mandar tráfego pago para a homepage é pagar por visitantes e dar-lhes um labirinto.</p>
+                    </details>
+                    <details>
+                        <summary data-i18n="lp.faq.q3">Também gerem as campanhas de anúncios?</summary>
+                        <p data-i18n="lp.faq.a3">O nosso foco é a página e o tracking. Trabalhamos lado a lado com quem gere as tuas campanhas — seja a tua equipa ou uma agência — e entregamos tudo pronto a medir: pixel, eventos e UTMs afinados.</p>
+                    </details>
+                    <details>
+                        <summary data-i18n="lp.faq.q4">O que precisas de mim para começar?</summary>
+                        <p data-i18n="lp.faq.a4">Uma oferta clara e 30 minutos de conversa. Se já tens o anúncio (ou a ideia dele), melhor ainda — desenhamos a página a partir da promessa que vais fazer.</p>
+                    </details>
+                    <details>
+                        <summary data-i18n="lp.faq.q5">E o RGPD? O tracking é legal?</summary>
+                        <p data-i18n="lp.faq.a5">Sim — nada dispara sem consentimento. Banner de cookies com gate real: se o visitante recusa, o pixel não arranca. Medes o que podes medir, com a consciência tranquila.</p>
+                    </details>
+                    <details>
+                        <summary data-i18n="lp.faq.q6">Posso ligar a landing ao meu CRM?</summary>
+                        <p data-i18n="lp.faq.a6">Sim — ao teu CRM atual ou ao Branct CRM. Com o nosso, o lead chega com a campanha de origem identificada e a IA pode responder-lhe no WhatsApp em segundos, 24/7.</p>
+                    </details>
+                </div>
             </div>
+        </section>
 
-            <!-- ADVANCED (Featured) -->
-            <div class="lp-matrix-card featured" data-plan="advanced">
-                <div class="lp-card-badge" data-i18n="lp.matrix.badge">MAIS POPULAR</div>
-                <h3 class="lp-plan-name" data-i18n="lp.matrix.advanced.name">ADVANCED</h3>
-                <span class="lp-plan-label" data-i18n="lp.matrix.advanced.label">Performance & conversão</span>
-                <div class="lp-power-meter"><div class="lp-power-bar" data-power="70"></div></div>
-                <div class="lp-plan-price" data-i18n="lp.matrix.advanced.price">300€ + 90€/mês</div>
-                <ul class="lp-feature-list">
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.pages">Páginas</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.pages">Até 3 variações</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.design">Design</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.design">UI personalizada</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.mobile">Mobile</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.mobile">Mobile-first + animações</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.form">Formulário</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.form">Multi-step + CRM</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.seo">SEO</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.seo">SEO avançado</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.analytics">Analytics</span>
-                        <span class="lp-feat-icon lp-feat-icon--check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.ab">A/B Testing</span>
-                        <span class="lp-feat-icon lp-feat-icon--cross"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.support">Suporte</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.advanced.support">3 meses</span>
-                    </li>
-                </ul>
-                <a href="contactos.html" class="lp-matrix-cta lp-matrix-cta--fill" data-i18n="lp.matrix.advanced.cta">Escolher</a>
+        <!-- ===== CTA FINAL (azul) ===== -->
+        <section class="section" aria-label="Pedir proposta" style="padding-top:0">
+            <div class="container">
+                <div class="lp-cta reveal">
+                    <div class="aurora" aria-hidden="true"></div>
+                    <p class="eyebrow" style="justify-content:center; color:var(--lp-blue-soft)" data-i18n="lp.cta.eyebrow">Plano em 48h</p>
+                    <h2 style="margin-top:14px" data-i18n="lp.cta.title" data-i18n-html>Quanto custou o último clique que <span class="text-gradient">não converteu</span>?</h2>
+                    <p style="max-width:540px; margin:16px auto 32px" data-i18n="lp.cta.sub">Envia-nos o teu anúncio — ou só a ideia dele — e devolvemos o plano da página em 48 horas: estrutura, mensagem e tracking.</p>
+                    <div class="hero__cta-row" style="justify-content:center">
+                        <a href="contactos.html" class="btn btn--lg" style="background:#fff; color:var(--ink)" data-i18n="lp.cta.primary">Pedir proposta</a>
+                        <a href="https://wa.me/351935183488" target="_blank" rel="noopener noreferrer" class="btn btn--ghost btn--lg" style="border-color:rgba(255,255,255,0.35); color:#fff" data-i18n="lp.cta.whatsapp">Falar no WhatsApp</a>
+                    </div>
+                </div>
             </div>
+        </section>
+    </main>
 
-            <!-- ULTIMATE -->
-            <div class="lp-matrix-card" data-plan="ultimate">
-                <h3 class="lp-plan-name" data-i18n="lp.matrix.ultimate.name">ULTIMATE</h3>
-                <span class="lp-plan-label" data-i18n="lp.matrix.ultimate.label">Máxima conversão</span>
-                <div class="lp-power-meter"><div class="lp-power-bar" data-power="100"></div></div>
-                <div class="lp-plan-price" data-i18n="lp.matrix.ultimate.price">Sob proposta</div>
-                <ul class="lp-feature-list">
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.pages">Páginas</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.pages">Ilimitadas</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.design">Design</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.design">Premium sob medida</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.mobile">Mobile</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.mobile">Mobile-first + 3D/WebGL</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.form">Formulário</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.form">Smart forms + IA</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.seo">SEO</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.seo">SEO + autoridade</span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.analytics">Analytics</span>
-                        <span class="lp-feat-icon lp-feat-icon--check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.ab">A/B Testing</span>
-                        <span class="lp-feat-icon lp-feat-icon--check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    </li>
-                    <li class="lp-feature-row">
-                        <span class="lp-feat-name" data-i18n="lp.matrix.feat.support">Suporte</span>
-                        <span class="lp-feat-value" data-i18n="lp.matrix.ultimate.support">6 meses contínuo</span>
-                    </li>
-                </ul>
-                <a href="contactos.html" class="lp-matrix-cta lp-matrix-cta--outline" data-i18n="lp.matrix.ultimate.cta">Falar connosco</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Feature List -->
-    <section class="features-section" id="features">
-        <div class="feature-row">
-            <div class="feature-number">01</div>
-            <div class="feature-title">
-                <h3 data-i18n="lp.features.ab.title">A/B Testing Nativo</h3>
-            </div>
-            <div class="feature-desc">
-                <p data-i18n="lp.features.ab.desc" data-i18n-html="true">Estrutura preparada para <strong>testes de variação</strong> desde o primeiro dia. Integração com Google Optimize, VWO ou Optimizely.</p>
-            </div>
-        </div>
-
-        <div class="feature-row">
-            <div class="feature-number">02</div>
-            <div class="feature-title">
-                <h3 data-i18n="lp.features.crm.title">CRM Integration</h3>
-            </div>
-            <div class="feature-desc">
-                <p data-i18n="lp.features.crm.desc" data-i18n-html="true">Conexão nativa com <strong>HubSpot, Pipedrive, n8n</strong> e qualquer ferramenta via API. Leads direto no pipeline.</p>
-            </div>
-        </div>
-
-        <div class="feature-row">
-            <div class="feature-number">03</div>
-            <div class="feature-title">
-                <h3 data-i18n="lp.features.i18n.title">Multi-Language</h3>
-            </div>
-            <div class="feature-desc">
-                <p data-i18n="lp.features.i18n.desc" data-i18n-html="true">Arquitetura <strong>i18n nativa</strong> para escalar globalmente. Uma landing, múltiplos mercados.</p>
-            </div>
-        </div>
-
-        <div class="feature-row">
-            <div class="feature-number">04</div>
-            <div class="feature-title">
-                <h3 data-i18n="lp.features.edge.title">Edge Deployment</h3>
-            </div>
-            <div class="feature-desc">
-                <p data-i18n="lp.features.edge.desc" data-i18n-html="true"><strong>Vercel Edge Network</strong> com latência &lt;50ms global. Sua landing mais perto do usuário.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Footer -->
-    <section class="cta-footer" id="cta">
-        <div class="cta-content">
-            <div class="cta-tag" data-i18n="lp.final.tag">// Ready to Scale</div>
-            <h2 data-i18n="lp.final.title" data-i18n-html="true">Pronto Para<br>Escalar?</h2>
-            <p data-i18n="lp.final.desc">Landing pages que não apenas impressionam — convertem. Vamos construir a sua.</p>
-            <a href="contactos.html" class="btn-cta">
-                <span data-i18n="lp.final.cta">Falar com Especialista</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-            </a>
-        </div>
-    </section>
-
-    <!-- Footer -->
+    <!-- Footer (partilhado) -->
     <footer class="footer">
-        <p>&copy; 2026 BRANCT.Tech — <span data-i18n="lp.footer.rights">All Rights Reserved</span></p>
-        <p><a href="index.html" data-i18n="lp.footer.back">Back to Home</a></p>
+        <div class="container">
+            <div class="footer__grid">
+                <div class="footer__col">
+                    <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+                    <p style="margin-top:12px; max-width:280px" data-i18n="home.footer.tagline">Websites premium e um CRM com IA — engenharia digital para PMEs que querem crescer.</p>
+                </div>
+                <div class="footer__col">
+                    <h4 data-i18n="nav.services">Serviços</h4>
+                    <ul>
+                        <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
+                        <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
+                        <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
+                    </ul>
+                </div>
+                <div class="footer__col">
+                    <h4 data-i18n="home.footer.company">Empresa</h4>
+                    <ul>
+                        <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
+                        <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
+                        <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                        <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
+                    </ul>
+                </div>
+                <div class="footer__col">
+                    <h4 data-i18n="home.footer.legal">Legal</h4>
+                    <ul>
+                        <li><a href="politica-privacidade.html#privacidade" data-i18n="footer.privacy">Privacidade</a></li>
+                        <li><a href="politica-privacidade.html#termos" data-i18n="footer.terms">Termos</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer__meta">
+                <span>&copy; 2026 BRANCT.Tech · Guimarães, Portugal</span>
+                <span><a href="mailto:contacto@branct.com">contacto@branct.com</a> · <a href="tel:+351935183488">935 183 488</a></span>
+            </div>
+        </div>
     </footer>
 
-    <!-- Three.js + GSAP Script -->
-    <script type="module">
-        import * as THREE from 'three';
-
-        // ========================================
-        // GSAP Setup
-        // ========================================
-        gsap.registerPlugin(ScrollTrigger);
-
-        // Scroll Progress Bar
-        gsap.to('#scroll-progress', {
-            scaleX: 1,
-            ease: 'none',
-            scrollTrigger: {
-                trigger: document.body,
-                start: 'top top',
-                end: 'bottom bottom',
-                scrub: 0.3
-            }
-        });
-
-        // ========================================
-        // THREE.JS - Wireframe Terrain Background
-        // ========================================
-        const canvas = document.getElementById('canvas-bg');
-        const scene = new THREE.Scene();
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 5, 15);
-        camera.lookAt(0, 0, 0);
-
-        const renderer = new THREE.WebGLRenderer({
-            canvas: canvas,
-            antialias: true,
-            alpha: true
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-        // ========================================
-        // WIREFRAME TERRAIN
-        // ========================================
-        const terrainGeometry = new THREE.PlaneGeometry(50, 50, 60, 60);
-
-        // Animate vertices for wave effect
-        const positions = terrainGeometry.attributes.position.array;
-        const originalPositions = new Float32Array(positions.length);
-        for (let i = 0; i < positions.length; i++) {
-            originalPositions[i] = positions[i];
-        }
-
-        const terrainMaterial = new THREE.MeshBasicMaterial({
-            color: 0x06b6d4,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.3
-        });
-
-        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-        terrain.rotation.x = -Math.PI / 2.5;
-        terrain.position.y = -3;
-        scene.add(terrain);
-
-        // ========================================
-        // FLOATING PARTICLES
-        // ========================================
-        const particlesCount = 200;
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesPositions = new Float32Array(particlesCount * 3);
-
-        for (let i = 0; i < particlesCount * 3; i += 3) {
-            particlesPositions[i] = (Math.random() - 0.5) * 40;
-            particlesPositions[i + 1] = (Math.random() - 0.5) * 20;
-            particlesPositions[i + 2] = (Math.random() - 0.5) * 40;
-        }
-
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlesPositions, 3));
-
-        const particlesMaterial = new THREE.PointsMaterial({
-            color: 0x06b6d4,
-            size: 0.05,
-            transparent: true,
-            opacity: 0.6
-        });
-
-        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particles);
-
-        // ========================================
-        // ANIMATION LOOP
-        // ========================================
-        let time = 0;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            time += 0.01;
-
-            // Animate terrain waves
-            const positions = terrainGeometry.attributes.position.array;
-            for (let i = 0; i < positions.length; i += 3) {
-                const x = originalPositions[i];
-                const y = originalPositions[i + 1];
-                positions[i + 2] = Math.sin(x * 0.3 + time) * Math.cos(y * 0.3 + time) * 1.5;
-            }
-            terrainGeometry.attributes.position.needsUpdate = true;
-
-            // Rotate particles slowly
-            particles.rotation.y += 0.0005;
-
-            // Camera subtle movement based on scroll
-            const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-            camera.position.y = 5 - scrollProgress * 3;
-            camera.rotation.x = -0.2 - scrollProgress * 0.3;
-
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // ========================================
-        // RESIZE HANDLER
-        // ========================================
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // ========================================
-        // GSAP ANIMATIONS
-        // ========================================
-
-        // Hero text animation
-        gsap.from('.hero h1 .line', {
-            y: 100,
-            opacity: 0,
-            duration: 1,
-            stagger: 0.2,
-            ease: 'power3.out',
-            delay: 0.3
-        });
-
-        gsap.from('.hero-tag', {
-            opacity: 0,
-            y: 20,
-            duration: 0.8,
-            delay: 0.1,
-            ease: 'power3.out'
-        });
-
-        gsap.from('.hero-subtitle', {
-            opacity: 0,
-            y: 30,
-            duration: 0.8,
-            delay: 0.7,
-            ease: 'power3.out'
-        });
-
-        gsap.from('.hero-cta', {
-            opacity: 0,
-            y: 20,
-            duration: 0.8,
-            delay: 0.9,
-            ease: 'power3.out'
-        });
-
-        gsap.from('.metric-row', {
-            opacity: 0,
-            x: 50,
-            duration: 0.6,
-            stagger: 0.15,
-            delay: 0.5,
-            ease: 'power3.out'
-        });
-
-        // ========================================
-        // PORTAVIA REVEAL ANIMATION
-        // ========================================
-        const revealTl = gsap.timeline({
-            scrollTrigger: {
-                trigger: '#reveal',
-                start: 'top top',
-                end: 'bottom top',
-                scrub: 1.5,
-                pin: false
-            }
-        });
-
-        revealTl.to('#reveal-front', {
-            yPercent: 110,
-            rotationX: -15,
-            scale: 0.85,
-            opacity: 0.3,
-            duration: 1,
-            ease: 'power2.inOut'
-        });
-
-        // Hide scroll indicator on scroll
-        gsap.to('.scroll-indicator', {
-            opacity: 0,
-            scrollTrigger: {
-                trigger: '#reveal',
-                start: 'top 80%',
-                end: 'top 50%',
-                scrub: true
-            }
-        });
-
-        // ========================================
-        // BENTO HEADER + HOLO DASHBOARD ANIMATION
-        // ========================================
-        gsap.from('.bento-header h2, .bento-header p', {
-            scrollTrigger: {
-                trigger: '.bento-section',
-                start: 'top 90%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0,
-            y: 30,
-            duration: 0.8,
-            stagger: 0.2,
-            ease: 'power3.out'
-        });
-
-        gsap.from('.holo-card', {
-            scrollTrigger: {
-                trigger: '.holo-container',
-                start: 'top 90%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0,
-            y: 40,
-            rotateY: -20,
-            duration: 1,
-            ease: 'power3.out'
-        });
-
-        // Animate holo chart bars on scroll
-        gsap.from('.holo-chart .bar', {
-            scrollTrigger: {
-                trigger: '.holo-container',
-                start: 'top 85%',
-                toggleActions: 'play none none reverse'
-            },
-            scaleY: 0,
-            transformOrigin: 'bottom',
-            duration: 0.8,
-            stagger: 0.1,
-            ease: 'power3.out'
-        });
-
-        // Interactive 3D mouse-tracking tilt on holo-card
-        (function() {
-            const card = document.querySelector('.holo-card');
-            if (!card || window.innerWidth < 768) return;
-
-            const content = card.querySelector('.holo-content');
-            const headerRow = card.querySelector('.holo-header-row');
-            const maxRotate = 18;
-            let rafId = null;
-            let currentX = -6, currentY = 3;
-            let targetX = -6, targetY = 3;
-            let isHovering = false;
-
-            function lerp(a, b, t) { return a + (b - a) * t; }
-
-            function updateTransform() {
-                currentX = lerp(currentX, targetX, 0.08);
-                currentY = lerp(currentY, targetY, 0.08);
-
-                card.style.animation = 'none';
-                card.style.transform = 'rotateY(' + currentX + 'deg) rotateX(' + currentY + 'deg)';
-
-                if (content) {
-                    const shiftX = currentX * 0.8;
-                    const shiftY = currentY * -0.6;
-                    content.style.transform = 'translateZ(30px) translateX(' + shiftX + 'px) translateY(' + shiftY + 'px)';
-                }
-                if (headerRow) {
-                    headerRow.style.transform = 'translateZ(20px) translateX(' + (currentX * 0.4) + 'px)';
-                }
-
-                if (Math.abs(currentX - targetX) > 0.01 || Math.abs(currentY - targetY) > 0.01 || isHovering) {
-                    rafId = requestAnimationFrame(updateTransform);
-                } else if (!isHovering) {
-                    card.style.animation = '';
-                    card.style.transform = '';
-                    if (content) content.style.transform = '';
-                    if (headerRow) headerRow.style.transform = '';
-                }
-            }
-
-            card.addEventListener('mousemove', function(e) {
-                const rect = card.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width;
-                const y = (e.clientY - rect.top) / rect.height;
-
-                targetX = (x - 0.5) * maxRotate;
-                targetY = (0.5 - y) * maxRotate;
-
-                if (!isHovering) {
-                    isHovering = true;
-                    if (rafId) cancelAnimationFrame(rafId);
-                    rafId = requestAnimationFrame(updateTransform);
-                }
-            });
-
-            card.addEventListener('mouseleave', function() {
-                isHovering = false;
-                targetX = -6;
-                targetY = 3;
-                if (rafId) cancelAnimationFrame(rafId);
-                rafId = requestAnimationFrame(updateTransform);
-            });
-        })();
-
-        // ========================================
-        // COMPARISON MATRIX ANIMATION
-        // ========================================
-        gsap.from('.lp-matrix-header', {
-            scrollTrigger: {
-                trigger: '.lp-comparison-matrix',
-                start: 'top 85%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0, y: 30, duration: 0.8, ease: 'power3.out'
-        });
-
-        gsap.from('.lp-matrix-card', {
-            scrollTrigger: {
-                trigger: '.lp-matrix-grid',
-                start: 'top 80%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0, y: 50, duration: 0.7, stagger: 0.15, ease: 'power3.out',
-            onComplete: function() {
-                // Animate power bars after cards are visible
-                document.querySelectorAll('.lp-power-bar').forEach(bar => {
-                    const power = bar.getAttribute('data-power');
-                    bar.style.width = power + '%';
-                });
-            }
-        });
-
-        // ========================================
-        // FEATURE ROWS ANIMATION
-        // ========================================
-        gsap.utils.toArray('.feature-row').forEach((row, i) => {
-            gsap.from(row.children, {
-                scrollTrigger: {
-                    trigger: row,
-                    start: 'top 85%',
-                    toggleActions: 'play none none reverse'
-                },
-                opacity: 0,
-                x: -30,
-                duration: 0.6,
-                stagger: 0.15,
-                ease: 'power3.out'
-            });
-        });
-
-        // ========================================
-        // CTA FOOTER ANIMATION
-        // ========================================
-        gsap.from('.cta-content', {
-            scrollTrigger: {
-                trigger: '.cta-footer',
-                start: 'top 75%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0,
-            y: 50,
-            duration: 1,
-            ease: 'power3.out'
-        });
-
-    </script>
-
-    <!-- i18n System -->
-    <script>
-        // ========================================
-        // INTERNATIONALIZATION (i18n) SYSTEM
-        // ========================================
-        const I18N = {
-            currentLang: 'pt',
-            translations: {},
-
-            async init() {
-                // Get saved language or detect from browser
-                const savedLang = localStorage.getItem('branct-lang');
-                const browserLang = navigator.language.split('-')[0];
-                const supportedLangs = ['pt', 'en', 'it', 'hr'];
-
-                if (savedLang && supportedLangs.includes(savedLang)) {
-                    this.currentLang = savedLang;
-                } else if (supportedLangs.includes(browserLang)) {
-                    this.currentLang = browserLang;
-                }
-
-                await this.loadTranslations(this.currentLang);
-                this.applyTranslations();
-                this.setupLanguageSelector();
-            },
-
-            async loadTranslations(lang) {
-                try {
-                    const response = await fetch(`src/i18n/${lang}.json`);
-                    if (!response.ok) throw new Error('Translation file not found');
-                    this.translations = await response.json();
-                    this.currentLang = lang;
-                    localStorage.setItem('branct-lang', lang);
-                } catch (error) {
-                    console.warn(`Could not load ${lang} translations, falling back to pt`);
-                    if (lang !== 'pt') {
-                        await this.loadTranslations('pt');
-                    }
-                }
-            },
-
-            getNestedValue(obj, path) {
-                return path.split('.').reduce((current, key) =>
-                    current && current[key] !== undefined ? current[key] : null, obj);
-            },
-
-            applyTranslations() {
-                document.querySelectorAll('[data-i18n]').forEach(el => {
-                    const key = el.getAttribute('data-i18n');
-                    const value = this.getNestedValue(this.translations, key);
-
-                    if (value) {
-                        if (el.hasAttribute('data-i18n-html')) {
-                            el.innerHTML = value;
-                        } else {
-                            el.textContent = value;
-                        }
-                    }
-                });
-
-                // Update HTML lang attribute
-                document.documentElement.lang = this.currentLang === 'pt' ? 'pt-PT' :
-                                                 this.currentLang === 'en' ? 'en' :
-                                                 this.currentLang === 'it' ? 'it' : 'hr';
-
-                // Update current language display
-                const langText = document.getElementById('current-lang-text');
-                if (langText) {
-                    langText.textContent = this.currentLang.toUpperCase();
-                }
-
-                // Update active state in dropdown
-                document.querySelectorAll('.lang-option').forEach(opt => {
-                    opt.classList.toggle('active', opt.dataset.lang === this.currentLang);
-                });
-            },
-
-            setupLanguageSelector() {
-                const selector = document.getElementById('lang-selector');
-                const current = document.getElementById('lang-current');
-                const dropdown = document.getElementById('lang-dropdown');
-
-                if (!selector || !current || !dropdown) return;
-
-                // Toggle dropdown
-                current.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selector.classList.toggle('open');
-                });
-
-                // Close on click outside
-                document.addEventListener('click', () => {
-                    selector.classList.remove('open');
-                });
-
-                // Language options
-                dropdown.querySelectorAll('.lang-option').forEach(option => {
-                    option.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        const lang = option.dataset.lang;
-                        if (lang !== this.currentLang) {
-                            await this.loadTranslations(lang);
-                            this.applyTranslations();
-                        }
-                        selector.classList.remove('open');
-                    });
-                });
-            }
-        };
-
-        // Initialize i18n when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            I18N.init();
-        });
-    </script>
-
-
-    <script>
-    // Unified Header Navigation
-    (function() {
-        // Mobile Toggle
-        const toggle = document.querySelector('.branct-mobile-toggle');
-        const drawer = document.querySelector('.branct-mobile-drawer');
-        if (toggle && drawer) {
-            toggle.addEventListener('click', () => {
-                drawer.classList.toggle('open');
-                document.body.style.overflow = drawer.classList.contains('open') ? 'hidden' : '';
-            });
-        }
-
-        // Mobile Accordion
-        const accordionBtn = document.querySelector('.branct-mobile-accordion button');
-        const mobileSubmenu = document.querySelector('.branct-mobile-submenu');
-        if (accordionBtn && mobileSubmenu) {
-            accordionBtn.addEventListener('click', () => {
-                const expanded = accordionBtn.getAttribute('aria-expanded') === 'true';
-                accordionBtn.setAttribute('aria-expanded', !expanded);
-                mobileSubmenu.style.display = expanded ? 'none' : 'block';
-            });
-        }
-
-        // Desktop Dropdown
-        const dropdownBtn = document.querySelector('.branct-nav-dropdown button');
-        const submenu = document.querySelector('.branct-submenu');
-        if (dropdownBtn && submenu) {
-            dropdownBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                submenu.style.opacity = submenu.style.opacity === '1' ? '0' : '1';
-                submenu.style.visibility = submenu.style.visibility === 'visible' ? 'hidden' : 'visible';
-                submenu.style.marginTop = submenu.style.visibility === 'visible' ? '15px' : '20px';
-            });
-            document.addEventListener('click', () => {
-                submenu.style.opacity = '0';
-                submenu.style.visibility = 'hidden';
-            });
-        }
-
-        // Language Selector — connected to I18N system
-        const langBtn = document.querySelector('.branct-lang-btn');
-        const langDropdown = document.querySelector('.branct-lang-dropdown');
-        if (langBtn && langDropdown) {
-            langBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                langDropdown.classList.toggle('active');
-            });
-            document.addEventListener('click', () => langDropdown.classList.remove('active'));
-            langDropdown.querySelectorAll('li').forEach(li => {
-                li.addEventListener('click', async () => {
-                    const lang = li.dataset.lang;
-                    document.querySelector('.branct-current-lang').textContent = lang.toUpperCase();
-                    langDropdown.classList.remove('active');
-                    // Load translations and apply via I18N system
-                    if (typeof I18N !== 'undefined') {
-                        await I18N.loadTranslations(lang);
-                        I18N.applyTranslations();
-                    }
-                });
-            });
-        }
-    })();
-    </script>
+    <!-- Consent banner -->
+    <aside class="consent" id="consent-banner" role="dialog" aria-live="polite" aria-label="Consentimento de cookies" hidden>
+        <div class="consent__inner">
+            <div class="consent__text">
+                <strong data-i18n="home.consent.title">Privacidade primeiro.</strong>
+                <p data-i18n="home.consent.desc" data-i18n-html>Usamos cookies essenciais e cookies de marketing (Meta) para medir campanhas. Aceitas ou recusas — a escolha fica guardada. Vê a <a href="politica-privacidade.html#cookies">Política de Privacidade</a>.</p>
+            </div>
+            <div class="consent__actions">
+                <button type="button" class="btn btn--ghost" id="consent-reject" data-i18n="home.consent.reject">Recusar</button>
+                <button type="button" class="btn btn--primary" id="consent-accept" data-i18n="home.consent.accept">Aceitar</button>
+            </div>
+        </div>
+    </aside>
+
+    <script src="src/js/branct.js?v=20260618" defer></script>
 </body>
 </html>
