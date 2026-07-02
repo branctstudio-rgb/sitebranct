@@ -54,6 +54,40 @@
     .wp-hero h1 em { font-style: normal; color: var(--accent-strong); }
     .wp-hero__sub { color: var(--ink-2); font-size: var(--fs-lead); max-width: 640px; margin-block: var(--sp-6) var(--sp-8); }
 
+    /* Cena 3D do hero: browser em perspetiva + cartões flutuantes */
+    .wp-hero__grid { display: grid; gap: var(--sp-12); align-items: center; }
+    @media (min-width: 980px) { .wp-hero__grid { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); } }
+    .wp-scene { perspective: 1400px; position: relative; }
+    @media (max-width: 979px) { .wp-scene { display: none; } }
+    .wp-browser {
+        transform: rotateY(-16deg) rotateX(5deg) rotateZ(1deg);
+        transform-style: preserve-3d;
+        border-radius: var(--r-lg);
+        background: var(--surface-ink);
+        padding: 10px;
+        box-shadow: -30px 40px 80px -30px rgba(13,27,36,0.45), 0 0 0 1px rgba(255,255,255,0.08);
+        transition: transform 0.6s var(--ease);
+    }
+    .wp-scene:hover .wp-browser { transform: rotateY(-10deg) rotateX(3deg) rotateZ(0.5deg); }
+    .wp-browser img { border-radius: calc(var(--r-lg) - 8px); width: 100%; height: auto; display: block; }
+    .wp-float {
+        position: absolute; z-index: 2;
+        background: rgba(255,255,255,0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(12,124,143,0.2); border-radius: var(--r-md);
+        box-shadow: 0 24px 50px -20px rgba(13,27,36,0.35);
+        padding: 14px 18px;
+        display: flex; align-items: center; gap: 12px;
+        font-size: var(--fs-small); font-weight: 700;
+    }
+    .wp-float--score { top: -26px; right: -14px; animation: wp-bob 6s ease-in-out infinite; }
+    .wp-float--lead { bottom: -22px; left: -26px; animation: wp-bob 7s ease-in-out 1.2s infinite; }
+    .wp-float small { display: block; color: var(--muted); font-weight: 500; }
+    .wp-float .ring { width: 46px; height: 46px; flex-shrink: 0; }
+    .wp-float .ring text { font: 800 11px 'Manrope', sans-serif; fill: var(--accent-strong); }
+    .wp-float .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    @keyframes wp-bob { 0%, 100% { transform: translateY(0) translateZ(60px); } 50% { transform: translateY(-10px) translateZ(60px); } }
+    @media (prefers-reduced-motion: reduce) { .wp-float { animation: none; } .wp-scene:hover .wp-browser { transform: rotateY(-16deg) rotateX(5deg) rotateZ(1deg); } }
+
     /* Ficha de especificações no hero (vibe catálogo de produto) */
     .spec-strip {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3);
@@ -287,12 +321,34 @@
         <!-- ===== HERO DE CATÁLOGO ===== -->
         <section class="wp-hero" aria-label="Websites Premium">
             <div class="container">
-                <span class="wp-hero__badge" data-i18n="wp.hero.eyebrow">Serviço 01 · Websites Premium</span>
-                <h1 data-i18n="wp.hero.title" data-i18n-html>O teu site tem um emprego: <em>vender</em>. Nós construímos os que cumprem.</h1>
-                <p class="wp-hero__sub" data-i18n="wp.hero.sub">Não vendemos "páginas bonitas". Vendemos uma máquina comercial com cinco camadas de engenharia — e nesta página vais ver cada uma delas.</p>
-                <div class="hero__cta-row">
-                    <a href="contactos.html" class="btn btn--primary btn--lg" data-i18n="wp.hero.cta1">Pedir proposta</a>
-                    <a href="#anatomia" class="btn btn--ghost btn--lg" data-i18n="wp.hero.cta2">Ver a anatomia ↓</a>
+                <div class="wp-hero__grid">
+                    <div>
+                        <span class="wp-hero__badge" data-i18n="wp.hero.eyebrow">Serviço 01 · Websites Premium</span>
+                        <h1 data-i18n="wp.hero.title" data-i18n-html>O teu site tem um emprego: <em>vender</em>. Nós construímos os que cumprem.</h1>
+                        <p class="wp-hero__sub" data-i18n="wp.hero.sub">Não vendemos "páginas bonitas". Vendemos uma máquina comercial com cinco camadas de engenharia — e nesta página vais ver cada uma delas.</p>
+                        <div class="hero__cta-row">
+                            <a href="contactos.html" class="btn btn--primary btn--lg" data-i18n="wp.hero.cta1">Pedir proposta</a>
+                            <a href="#anatomia" class="btn btn--ghost btn--lg" data-i18n="wp.hero.cta2">Ver a anatomia ↓</a>
+                        </div>
+                    </div>
+                    <div class="wp-scene" aria-hidden="true">
+                        <div class="wp-browser">
+                            <div class="frame__bar"><span></span><span></span><span></span></div>
+                            <img src="src/img/website.jpg" alt="" width="1280" height="853" loading="eager" decoding="async" fetchpriority="high">
+                        </div>
+                        <div class="wp-float wp-float--score">
+                            <svg class="ring" viewBox="0 0 46 46">
+                                <circle cx="23" cy="23" r="19" fill="none" stroke="#E3F4F6" stroke-width="5"/>
+                                <circle cx="23" cy="23" r="19" fill="none" stroke="#0C7C8F" stroke-width="5" stroke-linecap="round" stroke-dasharray="117 120" transform="rotate(-90 23 23)"/>
+                                <text x="23" y="27" text-anchor="middle">98</text>
+                            </svg>
+                            <span>Performance<small>Lighthouse · mobile</small></span>
+                        </div>
+                        <div class="wp-float wp-float--lead">
+                            <span class="dot"></span>
+                            <span>Novo pedido recebido<small>formulário → CRM · agora</small></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="spec-strip reveal-stagger">
                     <div class="spec-item"><b>3–6 <span style="font-size:0.9rem">semanas</span></b><span data-i18n="wp.spec.s1">do briefing ao site no ar</span></div>
