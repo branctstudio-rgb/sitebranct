@@ -679,27 +679,49 @@
   },
   "wp": {
     "hero": {
-      "eyebrow": "Premium Websites",
-      "title": "A beautiful site that doesn't sell is just decoration.",
-      "sub": "We build sites that load in an instant, show up on Google and turn visits into enquiries — for SMBs that treat digital as a sales channel, not a business card.",
+      "eyebrow": "Service 01 · Premium Websites",
+      "title": "Your website has one job: <em>selling</em>. We build the ones that deliver.",
+      "sub": "We don't sell \"pretty pages\". We sell a sales machine with five layers of engineering — and on this page you'll see every one of them.",
       "cta1": "Request a proposal",
-      "cta2": "See our work",
-      "t1": "Lighthouse 95+ guaranteed",
-      "t2": "Proposal within 48h",
-      "t3": "Up to 4 languages included"
+      "cta2": "See the anatomy ↓"
     },
-    "proof": {
-      "s1": "Lighthouse on delivered sites",
-      "s2": "load time",
-      "s3": "clients in 2 markets"
+    "spec": {
+      "s1": "from briefing to site live",
+      "s2": "Lighthouse guaranteed by contract",
+      "s3": "languages included, if you need them",
+      "s4": "to receive proposal and price"
     },
-    "feat": {
-      "eyebrow": "What's included",
-      "title": "Three things your current site probably doesn't do.",
-      "f1": { "title": "Load before the customer gives up", "desc": "More than half of mobile visits abandon a site that takes 3 seconds to open. Ours load in under 2 — Core Web Vitals in the green, measured on real phones, not on our Mac." },
-      "f2": { "title": "Show up when they search for you", "desc": "Technical SEO from the ground up: semantic structure, schema.org, sitemap and tuned metadata. Google understands your site — and shows it." },
-      "f3": { "title": "Turn visits into enquiries", "desc": "Conversion architecture: a clear path to action on every page, forms wired to your CRM and tracking that tells you where each lead came from." },
-      "f4": { "title": "Grow with you — in any language", "desc": "Modular, multi-language architecture (up to 4 languages included). When you want to sell abroad or add a new section, the site keeps up — no starting from scratch." }
+    "anatomy": {
+      "eyebrow": "The anatomy",
+      "title": "A site that sells has 5 layers. Most only build the first.",
+      "sub": "Hover (or tap) each layer to see what it does for your business.",
+      "l1": { "title": "Design that builds trust", "desc": "First impressions form in 0.05 seconds. Hierarchy, typography and instant credibility — designed from scratch, zero templates." },
+      "l2": { "title": "Performance that holds the visit", "desc": "LCP under 2 seconds on 4G. Every extra second costs you around 7% of conversions — we don't waste them." },
+      "l3": { "title": "Technical SEO that puts you on the map", "desc": "Semantic structure, schema.org and sitemap. Google reads your site like a map — and shows it to people searching." },
+      "l4": { "title": "Conversion that turns visits into enquiries", "desc": "A path to action on every screen, CTAs where the eye lands, friction-free forms wired to your CRM." },
+      "l5": { "title": "Tracking that tells you what works", "desc": "Pixel, events and UTMs with GDPR consent. You know where every enquiry came from — and where to invest the next euro." }
+    },
+    "sheet": {
+      "eyebrow": "Spec sheet",
+      "title": "What you take home.",
+      "sub": "No fine print: this is what's inside a BRANCT Premium Website.",
+      "c1": { "title": "Design & Content", "i1": "Navigable prototype approved by you before any code", "i2": "Designed from scratch for your brand — zero templates", "i3": "Conversion-driven copywriting", "i4": "Up to 4 languages with adapted copy, not translations" },
+      "c2": { "title": "Engineering", "i1": "Lighthouse 95+ guaranteed by contract", "i2": "Technical SEO: schema.org, sitemap, metadata", "i3": "Meta/Google tracking with GDPR consent", "i4": "Forms wired to your CRM (or to Branct CRM)" },
+      "c3": { "title": "Post-launch", "i1": "Bug-fix guarantee included", "i2": "Performance report after launch", "i3": "Training so you can edit content yourself", "i4": "Optional monthly evolution, data-driven" }
+    },
+    "compare": {
+      "eyebrow": "Drag and compare",
+      "title": "The site you have vs. the site you could have.",
+      "tagBefore": "The typical site",
+      "tagAfter": "A BRANCT site",
+      "beforeTitle": "Pretty on delivery day. Invisible the rest.",
+      "b1": "to load — half your visits give up",
+      "b2": "Lighthouse — Google demotes it",
+      "b3": "leads per month — nobody knows where they come from",
+      "afterTitle": "Fast, findable, measurable.",
+      "a1": "to load on real 4G",
+      "a2": "Lighthouse, guaranteed by contract",
+      "a3": "of leads with identified source"
     },
     "meta": {
       "eyebrow": "The proof is in front of you",

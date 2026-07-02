@@ -679,27 +679,49 @@
   },
   "wp": {
     "hero": {
-      "eyebrow": "Premium Web Stranice",
-      "title": "Lijepa stranica koja ne prodaje samo je ukras.",
-      "sub": "Gradimo stranice koje se učitavaju u trenu, pojavljuju se na Googleu i pretvaraju posjete u upite — za male i srednje tvrtke koje digitalno tretiraju kao prodajni kanal, a ne posjetnicu.",
+      "eyebrow": "Usluga 01 · Premium Web Stranice",
+      "title": "Tvoja stranica ima jedan posao: <em>prodavati</em>. Mi gradimo one koje ga obavljaju.",
+      "sub": "Ne prodajemo \"lijepe stranice\". Prodajemo prodajni stroj s pet slojeva inženjeringa — i na ovoj stranici vidjet ćeš svaki od njih.",
       "cta1": "Zatraži ponudu",
-      "cta2": "Pogledaj radove",
-      "t1": "Lighthouse 95+ zajamčeno",
-      "t2": "Ponuda unutar 48h",
-      "t3": "Do 4 jezika uključeno"
+      "cta2": "Pogledaj anatomiju ↓"
     },
-    "proof": {
-      "s1": "Lighthouse na isporučenim stranicama",
-      "s2": "vrijeme učitavanja",
-      "s3": "klijenti na 2 tržišta"
+    "spec": {
+      "s1": "od briefinga do objave",
+      "s2": "Lighthouse zajamčen ugovorom",
+      "s3": "jezika uključeno, ako ih trebaš",
+      "s4": "za primanje ponude i cijene"
     },
-    "feat": {
-      "eyebrow": "Što je uključeno",
-      "title": "Tri stvari koje tvoja trenutna stranica vjerojatno ne radi.",
-      "f1": { "title": "Učitati se prije nego što klijent odustane", "desc": "Više od polovice mobilnih posjeta napušta stranicu koja se otvara 3 sekunde. Naše se učitavaju za manje od 2 — Core Web Vitals u zelenom, mjereno na stvarnim telefonima, ne na našem Macu." },
-      "f2": { "title": "Pojaviti se kad te traže", "desc": "Tehnički SEO od temelja: semantička struktura, schema.org, sitemap i podešeni metapodaci. Google razumije tvoju stranicu — i prikazuje je." },
-      "f3": { "title": "Pretvoriti posjete u upite", "desc": "Arhitektura konverzije: jasan put do akcije na svakoj stranici, obrasci povezani s tvojim CRM-om i praćenje koje ti govori odakle je došao svaki lead." },
-      "f4": { "title": "Rasti s tobom — na bilo kojem jeziku", "desc": "Modularna, višejezična arhitektura (do 4 jezika uključeno). Kad poželiš prodavati u inozemstvu ili dodati novu sekciju, stranica te prati — bez kretanja ispočetka." }
+    "anatomy": {
+      "eyebrow": "Anatomija",
+      "title": "Stranica koja prodaje ima 5 slojeva. Većina gradi samo prvi.",
+      "sub": "Prijeđi mišem (ili dodirni) svaki sloj da vidiš što čini za tvoj posao.",
+      "l1": { "title": "Dizajn koji gradi povjerenje", "desc": "Prvi dojam nastaje u 0,05 sekundi. Hijerarhija, tipografija i trenutna vjerodostojnost — dizajnirano od nule, nula predložaka." },
+      "l2": { "title": "Performanse koje zadržavaju posjet", "desc": "LCP ispod 2 sekunde na 4G. Svaka dodatna sekunda košta te oko 7% konverzija — mi ih ne rasipamo." },
+      "l3": { "title": "Tehnički SEO koji te stavlja na kartu", "desc": "Semantička struktura, schema.org i sitemap. Google čita tvoju stranicu kao kartu — i prikazuje je onima koji traže." },
+      "l4": { "title": "Konverzija koja pretvara u upite", "desc": "Put do akcije na svakom ekranu, CTA-ovi gdje oko slijeće, obrasci bez trenja povezani s tvojim CRM-om." },
+      "l5": { "title": "Praćenje koje ti govori što radi", "desc": "Pixel, događaji i UTM-ovi s GDPR privolom. Znaš odakle je došao svaki upit — i gdje uložiti sljedeći euro." }
+    },
+    "sheet": {
+      "eyebrow": "Tehnički list",
+      "title": "Što nosiš kući.",
+      "sub": "Bez sitnih slova: ovo je ono što je unutar BRANCT Premium Stranice.",
+      "c1": { "title": "Dizajn & Sadržaj", "i1": "Navigabilan prototip koji odobravaš prije koda", "i2": "Dizajn od nule za tvoj brend — nula predložaka", "i3": "Copywriting usmjeren na konverziju", "i4": "Do 4 jezika s prilagođenim tekstom, ne prijevodima" },
+      "c2": { "title": "Inženjering", "i1": "Lighthouse 95+ zajamčen ugovorom", "i2": "Tehnički SEO: schema.org, sitemap, metapodaci", "i3": "Meta/Google praćenje s GDPR privolom", "i4": "Obrasci povezani s tvojim CRM-om (ili Branct CRM-om)" },
+      "c3": { "title": "Nakon lansiranja", "i1": "Jamstvo ispravaka uključeno", "i2": "Izvještaj o performansama nakon objave", "i3": "Obuka da sam uređuješ sadržaj", "i4": "Opcionalni mjesečni razvoj, vođen podacima" }
+    },
+    "compare": {
+      "eyebrow": "Povuci i usporedi",
+      "title": "Stranica koju imaš vs. stranica koju bi mogao imati.",
+      "tagBefore": "Tipična stranica",
+      "tagAfter": "BRANCT stranica",
+      "beforeTitle": "Lijepa na dan isporuke. Nevidljiva ostatak vremena.",
+      "b1": "za učitavanje — polovica posjeta odustaje",
+      "b2": "Lighthouse — Google je degradira",
+      "b3": "leadova mjesečno — nitko ne zna odakle dolaze",
+      "afterTitle": "Brza, pronalažljiva, mjerljiva.",
+      "a1": "za učitavanje na stvarnom 4G",
+      "a2": "Lighthouse, zajamčen ugovorom",
+      "a3": "leadova s identificiranim izvorom"
     },
     "meta": {
       "eyebrow": "Dokaz je pred tobom",

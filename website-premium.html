@@ -26,9 +26,173 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="src/css/branct.css?v=20260612">
+    <link rel="stylesheet" href="src/css/branct.css?v=20260618">
     <style>
-    /* Específicos desta página */
+    /* ============================================================
+       WEBSITE PREMIUM — página de catálogo · identidade CYAN
+       Conceito: "a anatomia de um site que vende" — a página
+       demonstra o serviço em vez de o descrever.
+       ============================================================ */
+
+    /* --- Hero de catálogo: banho cyan, tipografia dominante --- */
+    .wp-hero {
+        background:
+            radial-gradient(70% 90% at 85% -10%, rgba(0,246,236,0.18), transparent 60%),
+            radial-gradient(50% 70% at 0% 100%, rgba(12,124,143,0.10), transparent 65%),
+            linear-gradient(180deg, #E8F6F7 0%, var(--bg) 88%);
+        padding-block: clamp(64px, 9vw, 130px) clamp(48px, 6vw, 80px);
+        position: relative; overflow: hidden;
+    }
+    .wp-hero__badge {
+        display: inline-flex; align-items: center; gap: 10px;
+        font-size: var(--fs-label); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--accent-strong);
+        padding: 8px 16px; border-radius: var(--r-full);
+        background: rgba(255,255,255,0.7); border: 1px solid rgba(12,124,143,0.25);
+    }
+    .wp-hero h1 { font-size: clamp(2.6rem, 1.6rem + 4.6vw, 5rem); max-width: 900px; margin-top: var(--sp-6); }
+    .wp-hero h1 em { font-style: normal; color: var(--accent-strong); }
+    .wp-hero__sub { color: var(--ink-2); font-size: var(--fs-lead); max-width: 640px; margin-block: var(--sp-6) var(--sp-8); }
+
+    /* Ficha de especificações no hero (vibe catálogo de produto) */
+    .spec-strip {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3);
+        margin-top: var(--sp-10); max-width: 980px;
+    }
+    @media (max-width: 860px) { .spec-strip { grid-template-columns: repeat(2, 1fr); } }
+    .spec-item {
+        background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
+        border: 1px solid rgba(12,124,143,0.18); border-radius: var(--r-md);
+        padding: var(--sp-4) var(--sp-5);
+    }
+    .spec-item b { display: block; font-family: var(--font-display); font-size: 1.25rem; letter-spacing: -0.02em; }
+    .spec-item span { color: var(--muted); font-size: 0.82rem; }
+
+    /* --- Anatomia: camadas 3D interativas --- */
+    .anatomy { overflow: hidden; }
+    .anatomy__grid { display: grid; gap: var(--sp-12); align-items: center; }
+    @media (min-width: 920px) { .anatomy__grid { grid-template-columns: 1fr 1fr; } }
+    .layer-stack {
+        position: relative; height: 480px;
+        perspective: 1400px; perspective-origin: 60% 30%;
+    }
+    .layer {
+        position: absolute; left: 8%; right: 8%; top: 44%;
+        height: 190px; border-radius: 18px;
+        transform: rotateX(58deg) rotateZ(-32deg) translateZ(var(--z, 0px));
+        transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease), opacity 0.4s ease;
+        border: 1.5px solid rgba(12,124,143,0.35);
+        background: rgba(234,247,248,0.75);
+        box-shadow: 0 20px 40px -18px rgba(13,27,36,0.25);
+        display: flex; align-items: flex-start; justify-content: flex-end;
+        padding: 12px 18px;
+        font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+        color: var(--accent-strong);
+    }
+    .layer[data-n="1"] { --z: 0px; }
+    .layer[data-n="2"] { --z: 55px; }
+    .layer[data-n="3"] { --z: 110px; }
+    .layer[data-n="4"] { --z: 165px; }
+    .layer[data-n="5"] { --z: 220px; background: rgba(13,27,36,0.92); color: var(--accent-vivid); border-color: rgba(0,246,236,0.5); }
+    .layer.is-active {
+        transform: rotateX(58deg) rotateZ(-32deg) translateZ(calc(var(--z) + 46px));
+        box-shadow: 0 30px 60px -18px rgba(12,124,143,0.5), 0 0 0 2px var(--accent);
+    }
+    .anatomy__legend { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .anatomy__item {
+        text-align: left; width: 100%;
+        display: grid; grid-template-columns: 44px 1fr; gap: var(--sp-4); align-items: start;
+        padding: var(--sp-4) var(--sp-5); border-radius: var(--r-md);
+        border: 1px solid transparent;
+        transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+        cursor: pointer;
+    }
+    .anatomy__item:hover { background: var(--surface); }
+    .anatomy__item.is-active { background: var(--surface); border-color: rgba(12,124,143,0.3); box-shadow: var(--sh-2); }
+    .anatomy__item .n {
+        width: 44px; height: 44px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display); font-weight: 800;
+        background: var(--accent-tint); color: var(--accent-strong);
+    }
+    .anatomy__item h3 { font-size: 1.1rem; }
+    .anatomy__item p { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
+
+    /* --- Ficha técnica (o que recebes) --- */
+    .sheet-grid { display: grid; gap: var(--sp-4); }
+    @media (min-width: 860px) { .sheet-grid { grid-template-columns: repeat(3, 1fr); } }
+    .sheet-col { border-radius: var(--r-lg); padding: var(--sp-8); border: 1px solid var(--line); background: var(--surface); }
+    .sheet-col--cyan { background: linear-gradient(170deg, #EAF7F8, #FFFFFF 70%); border-color: rgba(12,124,143,0.2); }
+    .sheet-col--blue { background: linear-gradient(170deg, #EBF2FB, #FFFFFF 70%); border-color: rgba(79,168,232,0.3); }
+    .sheet-col--violet { background: linear-gradient(170deg, #F1EBFE, #FFFFFF 70%); border-color: rgba(139,92,246,0.25); }
+    .sheet-col h3 { font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: var(--sp-5); }
+    .sheet-col--cyan h3 { color: var(--accent-strong); }
+    .sheet-col--blue h3 { color: #2D6BB4; }
+    .sheet-col--violet h3 { color: var(--violet-ink); }
+    .sheet-col ul { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .sheet-col li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; color: var(--ink-2); }
+    .sheet-col li svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 4px; color: var(--success); }
+
+    /* --- Comparador antes/depois (slider) --- */
+    .compare {
+        position: relative; border-radius: var(--r-xl); overflow: hidden;
+        border: 1px solid var(--line); box-shadow: var(--sh-3);
+        max-width: 980px; margin-inline: auto;
+    }
+    .compare__panel { padding: clamp(28px, 4vw, 56px); min-height: 380px; }
+    .compare__panel--before { background: #1A222B; color: #B8C2CA; }
+    .compare__panel--after {
+        position: absolute; inset: 0;
+        background: linear-gradient(160deg, #F2FBFB, #FFFFFF);
+        clip-path: inset(0 0 0 var(--cut, 50%));
+    }
+    .compare h3 { font-size: 1.4rem; margin-bottom: var(--sp-5); }
+    .compare__panel--before h3 { color: #fff; }
+    .compare__metrics { display: flex; flex-direction: column; gap: var(--sp-3); max-width: 420px; }
+    .compare__metrics.right { margin-left: auto; text-align: right; align-items: flex-end; }
+    .cmetric { display: flex; gap: 12px; align-items: baseline; font-size: 1rem; }
+    .cmetric b { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: -0.02em; }
+    .compare__panel--before .cmetric b { color: #FF7A6E; }
+    .compare__panel--after .cmetric b { color: var(--accent-strong); }
+    .compare__handle {
+        position: absolute; top: 0; bottom: 0; left: var(--cut, 50%); width: 3px;
+        background: var(--accent); z-index: 3; pointer-events: none;
+        transform: translateX(-50%);
+    }
+    .compare__handle::after {
+        content: '⟷'; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 46px; height: 46px; border-radius: 50%;
+        background: var(--accent); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; box-shadow: var(--sh-2);
+    }
+    .compare input[type="range"] {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        opacity: 0; cursor: ew-resize; z-index: 4; margin: 0;
+    }
+    .compare__tag {
+        position: absolute; top: 18px; z-index: 2;
+        font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+        padding: 6px 12px; border-radius: var(--r-full);
+    }
+    .compare__tag--before { left: 18px; background: rgba(255,255,255,0.12); color: #fff; }
+    .compare__tag--after { right: 18px; background: var(--accent-tint); color: var(--accent-strong); z-index: 2; }
+
+    /* --- CTA final cyan (distinto do ink da home) --- */
+    .wp-cta {
+        background:
+            radial-gradient(60% 80% at 80% 20%, rgba(0,246,236,0.16), transparent 60%),
+            linear-gradient(165deg, #0B4E5C 0%, #0D1B24 80%);
+        border-radius: var(--r-xl);
+        padding: clamp(40px, 6vw, 80px);
+        text-align: center; color: #fff;
+        position: relative; overflow: hidden;
+    }
+    .wp-cta > * { position: relative; z-index: 1; }
+    .wp-cta p { color: #A9C6CC; }
+
+    /* Métricas meta-prova (mantidas) */
     .metric-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); margin-top: var(--sp-8); }
     @media (max-width: 720px) { .metric-tiles { grid-template-columns: 1fr; } }
     .metric-tile {
@@ -120,77 +284,135 @@
 
     <main id="main-content">
 
-        <!-- ===== HERO ===== -->
-        <section class="hero" aria-label="Websites Premium">
-            <div class="container split">
-                <div>
-                    <p class="eyebrow" data-i18n="wp.hero.eyebrow">Websites Premium</p>
-                    <h1 style="margin-top:16px" data-i18n="wp.hero.title">Um site bonito que não vende é só decoração.</h1>
-                    <p class="hero__sub" data-i18n="wp.hero.sub">Construímos sites que carregam num instante, aparecem no Google e transformam visitas em pedidos — para PMEs que tratam o digital como canal de vendas, não como cartão de visita.</p>
-                    <div class="hero__cta-row">
-                        <a href="contactos.html" class="btn btn--primary btn--lg" data-i18n="wp.hero.cta1">Pedir proposta</a>
-                        <a href="#trabalho" class="btn btn--ghost btn--lg" data-i18n="wp.hero.cta2">Ver trabalho feito</a>
-                    </div>
-                    <div class="trust-row">
-                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.hero.t1">Lighthouse 95+ garantido</span></span>
-                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.hero.t2">Proposta em 48h</span></span>
-                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.hero.t3">Até 4 idiomas incluídos</span></span>
-                    </div>
+        <!-- ===== HERO DE CATÁLOGO ===== -->
+        <section class="wp-hero" aria-label="Websites Premium">
+            <div class="container">
+                <span class="wp-hero__badge" data-i18n="wp.hero.eyebrow">Serviço 01 · Websites Premium</span>
+                <h1 data-i18n="wp.hero.title" data-i18n-html>O teu site tem um emprego: <em>vender</em>. Nós construímos os que cumprem.</h1>
+                <p class="wp-hero__sub" data-i18n="wp.hero.sub">Não vendemos "páginas bonitas". Vendemos uma máquina comercial com cinco camadas de engenharia — e nesta página vais ver cada uma delas.</p>
+                <div class="hero__cta-row">
+                    <a href="contactos.html" class="btn btn--primary btn--lg" data-i18n="wp.hero.cta1">Pedir proposta</a>
+                    <a href="#anatomia" class="btn btn--ghost btn--lg" data-i18n="wp.hero.cta2">Ver a anatomia ↓</a>
                 </div>
-                <div class="hero-visual">
-                    <div class="frame frame--glow">
-                        <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
-                        <img src="src/img/website.jpg" alt="Website premium desenvolvido pela BRANCT" width="1280" height="853" loading="eager" decoding="async" fetchpriority="high">
-                    </div>
+                <div class="spec-strip reveal-stagger">
+                    <div class="spec-item"><b>3–6 <span style="font-size:0.9rem">semanas</span></b><span data-i18n="wp.spec.s1">do briefing ao site no ar</span></div>
+                    <div class="spec-item"><b>95+</b><span data-i18n="wp.spec.s2">Lighthouse garantido em contrato</span></div>
+                    <div class="spec-item"><b>4</b><span data-i18n="wp.spec.s3">idiomas incluídos, se precisares</span></div>
+                    <div class="spec-item"><b>48h</b><span data-i18n="wp.spec.s4">para receberes proposta e valor</span></div>
                 </div>
             </div>
         </section>
 
-        <!-- ===== PROVA SOCIAL ===== -->
-        <section class="proof-strip" aria-label="Prova social" style="background: var(--surface-2); border-block: 1px solid var(--line); padding-block: var(--sp-10);">
-            <div class="container fx-rise" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap: var(--sp-8)">
-                <div style="display:flex; flex-wrap:wrap; gap: var(--sp-3) var(--sp-8); align-items:center">
-                    <a href="https://www.neoprag.com.br" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:#9AA6AE">Neoprag</a>
-                    <a href="https://www.vertexway.pt" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:#9AA6AE">VertexWay</a>
-                    <a href="https://albinosantos.pt/t4-rua-damiao-de-gois-porto/" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:#9AA6AE">Albino Santos</a>
-                    <a href="https://www.kbassessoriacontabil.com.br" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:#9AA6AE">KB Assessoria</a>
-                </div>
-                <div style="display:flex; gap: var(--sp-10)">
-                    <div class="stat"><span class="stat__value">95+</span><span class="stat__label" data-i18n="wp.proof.s1">Lighthouse nos sites entregues</span></div>
-                    <div class="stat"><span class="stat__value">&lt;2s</span><span class="stat__label" data-i18n="wp.proof.s2">tempo de carregamento</span></div>
-                    <div class="stat"><span class="stat__value">PT·BR</span><span class="stat__label" data-i18n="wp.proof.s3">clientes em 2 mercados</span></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ===== KILLER FEATURES (bento) ===== -->
-        <section class="section" aria-label="O que torna um site premium">
+        <!-- ===== ANATOMIA (assinatura da página) ===== -->
+        <section class="section anatomy" id="anatomia" aria-label="A anatomia de um site que vende">
             <div class="container">
                 <div class="section-head fx-rise">
-                    <p class="eyebrow" data-i18n="wp.feat.eyebrow">O que está incluído</p>
-                    <h2 style="margin-top:12px" data-i18n="wp.feat.title">Três coisas que o teu site atual provavelmente não faz.</h2>
+                    <p class="eyebrow" data-i18n="wp.anatomy.eyebrow">A anatomia</p>
+                    <h2 style="margin-top:12px" data-i18n="wp.anatomy.title">Um site que vende tem 5 camadas. A maioria só constrói a primeira.</h2>
+                    <p class="section-head__sub" data-i18n="wp.anatomy.sub">Passa o rato (ou toca) em cada camada para ver o que ela faz pelo teu negócio.</p>
                 </div>
-                <div class="bento reveal-stagger">
-                    <article class="card card--hover card--tint-cyan tilt span-7">
-                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-                        <h3 data-i18n="wp.feat.f1.title">Carregar antes de o cliente desistir</h3>
-                        <p data-i18n="wp.feat.f1.desc">Mais de metade das visitas mobile abandona um site que demora 3 segundos a abrir. Os nossos carregam em menos de 2 — Core Web Vitals no verde, medidos em telemóveis reais, não no nosso Mac.</p>
-                    </article>
-                    <article class="card card--hover tilt span-5">
-                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
-                        <h3 data-i18n="wp.feat.f2.title">Aparecer quando procuram por ti</h3>
-                        <p data-i18n="wp.feat.f2.desc">SEO técnico de raiz: estrutura semântica, schema.org, sitemap e meta-dados afinados. O Google entende o teu site — e mostra-o.</p>
-                    </article>
-                    <article class="card card--hover card--ink tilt span-5">
-                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-                        <h3 data-i18n="wp.feat.f3.title">Transformar visitas em pedidos</h3>
-                        <p data-i18n="wp.feat.f3.desc">Arquitetura de conversão: um caminho claro para a ação em cada página, formulários ligados ao teu CRM e tracking que te diz de onde veio cada lead.</p>
-                    </article>
-                    <article class="card card--hover card--tint-violet tilt span-7">
-                        <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-                        <h3 data-i18n="wp.feat.f4.title">Crescer contigo — em qualquer língua</h3>
-                        <p data-i18n="wp.feat.f4.desc">Arquitetura modular e multi-idioma (até 4 línguas incluídas). Quando quiseres vender para fora ou acrescentar uma área nova, o site acompanha — sem recomeçar do zero.</p>
-                    </article>
+                <div class="anatomy__grid">
+                    <div class="layer-stack" aria-hidden="true">
+                        <div class="layer" data-n="1">01 · Design</div>
+                        <div class="layer" data-n="2">02 · Performance</div>
+                        <div class="layer" data-n="3">03 · SEO</div>
+                        <div class="layer" data-n="4">04 · Conversão</div>
+                        <div class="layer" data-n="5">05 · Tracking</div>
+                    </div>
+                    <div class="anatomy__legend" role="list">
+                        <button type="button" class="anatomy__item is-active" data-layer="1" role="listitem">
+                            <span class="n">01</span>
+                            <span><h3 data-i18n="wp.anatomy.l1.title">Design que gera confiança</h3><p data-i18n="wp.anatomy.l1.desc">A primeira impressão forma-se em 0,05 segundos. Hierarquia, tipografia e credibilidade instantânea — desenhado de raiz, zero templates.</p></span>
+                        </button>
+                        <button type="button" class="anatomy__item" data-layer="2">
+                            <span class="n">02</span>
+                            <span><h3 data-i18n="wp.anatomy.l2.title">Performance que segura a visita</h3><p data-i18n="wp.anatomy.l2.desc">LCP abaixo de 2 segundos em 4G. Cada segundo a mais custa-te cerca de 7% das conversões — nós não os desperdiçamos.</p></span>
+                        </button>
+                        <button type="button" class="anatomy__item" data-layer="3">
+                            <span class="n">03</span>
+                            <span><h3 data-i18n="wp.anatomy.l3.title">SEO técnico que te põe no mapa</h3><p data-i18n="wp.anatomy.l3.desc">Estrutura semântica, schema.org e sitemap. O Google lê o teu site como um mapa — e mostra-o a quem procura.</p></span>
+                        </button>
+                        <button type="button" class="anatomy__item" data-layer="4">
+                            <span class="n">04</span>
+                            <span><h3 data-i18n="wp.anatomy.l4.title">Conversão que transforma em pedidos</h3><p data-i18n="wp.anatomy.l4.desc">Um caminho para a ação em cada ecrã, CTAs onde o olho aterra, formulários sem atrito ligados ao teu CRM.</p></span>
+                        </button>
+                        <button type="button" class="anatomy__item" data-layer="5">
+                            <span class="n">05</span>
+                            <span><h3 data-i18n="wp.anatomy.l5.title">Tracking que te diz o que funciona</h3><p data-i18n="wp.anatomy.l5.desc">Pixel, eventos e UTMs com consentimento RGPD. Sabes de onde veio cada pedido — e onde investir o próximo euro.</p></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== FICHA TÉCNICA ===== -->
+        <section class="section section--alt" aria-label="O que recebes">
+            <div class="container">
+                <div class="section-head fx-rise">
+                    <p class="eyebrow" data-i18n="wp.sheet.eyebrow">Ficha técnica</p>
+                    <h2 style="margin-top:12px" data-i18n="wp.sheet.title">O que levas para casa.</h2>
+                    <p class="section-head__sub" data-i18n="wp.sheet.sub">Sem letras pequenas: isto é o que está dentro de um Website Premium da BRANCT.</p>
+                </div>
+                <div class="sheet-grid reveal-stagger">
+                    <div class="sheet-col sheet-col--cyan">
+                        <h3 data-i18n="wp.sheet.c1.title">Design & Conteúdo</h3>
+                        <ul>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c1.i1">Protótipo navegável aprovado por ti antes do código</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c1.i2">Design de raiz para a tua marca — zero templates</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c1.i3">Copywriting orientado a conversão em pt-PT</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c1.i4">Até 4 idiomas com copy adaptado, não traduzido</span></li>
+                        </ul>
+                    </div>
+                    <div class="sheet-col sheet-col--blue">
+                        <h3 data-i18n="wp.sheet.c2.title">Engenharia</h3>
+                        <ul>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i1">Lighthouse 95+ garantido em contrato</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i2">SEO técnico: schema.org, sitemap, meta-dados</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i3">Tracking Meta/Google com consentimento RGPD</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i4">Formulários ligados ao teu CRM (ou ao Branct CRM)</span></li>
+                        </ul>
+                    </div>
+                    <div class="sheet-col sheet-col--violet">
+                        <h3 data-i18n="wp.sheet.c3.title">Pós-lançamento</h3>
+                        <ul>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c3.i1">Garantia de correções incluída</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c3.i2">Relatório de performance após o lançamento</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c3.i3">Formação para editares o conteúdo sozinho</span></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c3.i4">Evolução mensal opcional, orientada por dados</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ANTES / DEPOIS (comparador) ===== -->
+        <section class="section" aria-label="Antes e depois">
+            <div class="container">
+                <div class="section-head section-head--center fx-rise">
+                    <p class="eyebrow" data-i18n="wp.compare.eyebrow">Arrasta e compara</p>
+                    <h2 style="margin-top:12px" data-i18n="wp.compare.title">O site que tens vs. o site que podias ter.</h2>
+                </div>
+                <div class="compare fx-rise" id="compare">
+                    <span class="compare__tag compare__tag--before" data-i18n="wp.compare.tagBefore">O site típico</span>
+                    <span class="compare__tag compare__tag--after" data-i18n="wp.compare.tagAfter">Um site BRANCT</span>
+                    <div class="compare__panel compare__panel--before">
+                        <div class="compare__metrics">
+                            <h3 data-i18n="wp.compare.beforeTitle">Bonito no dia da entrega. Invisível no resto.</h3>
+                            <div class="cmetric"><b>4,8s</b> <span data-i18n="wp.compare.b1">a carregar — metade das visitas desiste</span></div>
+                            <div class="cmetric"><b>52</b> <span data-i18n="wp.compare.b2">de Lighthouse — o Google despromove-o</span></div>
+                            <div class="cmetric"><b>?</b> <span data-i18n="wp.compare.b3">leads por mês — ninguém sabe de onde vêm</span></div>
+                        </div>
+                    </div>
+                    <div class="compare__panel compare__panel--after">
+                        <div class="compare__metrics right">
+                            <h3 style="color:var(--ink)" data-i18n="wp.compare.afterTitle">Rápido, encontrável, mensurável.</h3>
+                            <div class="cmetric"><b>1,8s</b> <span data-i18n="wp.compare.a1">a carregar em 4G real</span></div>
+                            <div class="cmetric"><b>95+</b> <span data-i18n="wp.compare.a2">de Lighthouse, garantido em contrato</span></div>
+                            <div class="cmetric"><b>100%</b> <span data-i18n="wp.compare.a3">dos leads com origem identificada</span></div>
+                        </div>
+                    </div>
+                    <div class="compare__handle" aria-hidden="true"></div>
+                    <input type="range" min="8" max="92" value="50" aria-label="Comparar antes e depois">
                 </div>
             </div>
         </section>
@@ -219,83 +441,6 @@
                     </div>
                 </div>
                 <p style="color:#8DA0AC; text-align:center; margin-top:var(--sp-8)" class="fx-rise" data-i18n="wp.meta.kicker">Se é assim que construímos o nosso site, imagina o que fazemos pelo teu.</p>
-            </div>
-        </section>
-
-        <!-- ===== COMO FUNCIONA (timeline partilhada) ===== -->
-        <section class="section" aria-label="Como funciona">
-            <div class="container">
-                <div class="section-head fx-rise">
-                    <p class="eyebrow" data-i18n="home.process.eyebrow">Como trabalhamos</p>
-                    <h2 style="margin-top:12px" data-i18n="home.process.title">Sabes sempre o que acontece a seguir.</h2>
-                    <p class="section-head__sub" data-i18n="home.process.sub">Quatro etapas, prazos claros e um entregável concreto em cada uma. É assim que um projeto deve correr.</p>
-                </div>
-                <div class="process-flow reveal-stagger">
-                    <article class="process-step">
-                        <div class="process-step__num">01</div>
-                        <div>
-                            <h3 data-i18n="home.process.s1.title">Ouvimos primeiro.</h3>
-                            <p data-i18n="home.process.s1.desc">Percebemos o teu negócio, os teus clientes e o que te está a travar — e só depois desenhamos a solução. Nada de propostas de gaveta.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s1.get">Recebes: diagnóstico e proposta em 48h</span></span>
-                        </div>
-                    </article>
-                    <article class="process-step">
-                        <div class="process-step__num">02</div>
-                        <div>
-                            <h3 data-i18n="home.process.s2.title">Vês o site antes de ele existir.</h3>
-                            <p data-i18n="home.process.s2.desc">Desenhamos um protótipo navegável para aprovares cada ecrã antes de escrevermos uma linha de código. Sem cheques em branco.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s2.get">Recebes: protótipo interativo para aprovar</span></span>
-                        </div>
-                    </article>
-                    <article class="process-step">
-                        <div class="process-step__num">03</div>
-                        <div>
-                            <h3 data-i18n="home.process.s3.title">Construímos obcecados com velocidade.</h3>
-                            <p data-i18n="home.process.s3.desc">Performance, SEO técnico e tracking afinados desde a primeira linha — porque um site bonito que demora a abrir é um site que não vende.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s3.get">Recebes: site no ar, Lighthouse 95+</span></span>
-                        </div>
-                    </article>
-                    <article class="process-step">
-                        <div class="process-step__num">04</div>
-                        <div>
-                            <h3 data-i18n="home.process.s4.title">Não desaparecemos depois do lançamento.</h3>
-                            <p data-i18n="home.process.s4.desc">Medimos o que os teus visitantes fazem, otimizamos o que trava conversões e fazemos o site evoluir contigo, mês após mês.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s4.get">Recebes: relatórios e melhorias contínuas</span></span>
-                        </div>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <!-- ===== TRABALHO ===== -->
-        <section class="section section--alt" id="trabalho" aria-label="Trabalho recente">
-            <div class="container">
-                <div class="section-head fx-rise">
-                    <p class="eyebrow" data-i18n="home.cases.eyebrow">Trabalho recente</p>
-                    <h2 style="margin-top:12px" data-i18n="home.cases.title">Marcas que já confiaram.</h2>
-                </div>
-                <div>
-                    <a href="https://www.neoprag.com.br" target="_blank" rel="noopener noreferrer" class="case-item fx-rise" data-img="src/img/case-neoprag.webp">
-                        <span class="case-item__num">01</span><h3>Neoprag</h3>
-                        <span class="case-item__tag" data-i18n="home.cases.neoprag">Web institucional · BR</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                    </a>
-                    <a href="https://www.vertexway.pt" target="_blank" rel="noopener noreferrer" class="case-item fx-rise" data-img="src/img/case-vertexway.webp">
-                        <span class="case-item__num">02</span><h3>VertexWay</h3>
-                        <span class="case-item__tag" data-i18n="home.cases.vertexway">Website e marca · PT</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                    </a>
-                    <a href="https://albinosantos.pt/t4-rua-damiao-de-gois-porto/" target="_blank" rel="noopener noreferrer" class="case-item fx-rise" data-img="src/img/case-albino.webp">
-                        <span class="case-item__num">03</span><h3>Albino Santos</h3>
-                        <span class="case-item__tag" data-i18n="home.cases.albino">Imobiliário · landing page · PT</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                    </a>
-                    <a href="https://www.kbassessoriacontabil.com.br" target="_blank" rel="noopener noreferrer" class="case-item fx-rise" data-img="src/img/case-kb.webp">
-                        <span class="case-item__num">04</span><h3>KB Assessoria</h3>
-                        <span class="case-item__tag" data-i18n="home.cases.kb">Contabilidade · website · BR</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                    </a>
-                </div>
             </div>
         </section>
 
@@ -334,17 +479,17 @@
             </div>
         </section>
 
-        <!-- ===== CTA FINAL ===== -->
-        <section class="section cta-final" aria-label="Pedir proposta" style="padding-top:0">
+        <!-- ===== CTA FINAL (cyan, próprio da página) ===== -->
+        <section class="section" aria-label="Pedir proposta" style="padding-top:0">
             <div class="container">
-                <div class="card card--ink reveal">
+                <div class="wp-cta reveal">
                     <div class="aurora" aria-hidden="true"></div>
-                    <p class="eyebrow" style="justify-content:center" data-i18n="wp.cta.eyebrow">Proposta em 48h</p>
+                    <p class="eyebrow" style="justify-content:center; color:var(--accent-vivid)" data-i18n="wp.cta.eyebrow">Proposta em 48h</p>
                     <h2 style="margin-top:14px" data-i18n="wp.cta.title" data-i18n-html>O teu próximo cliente está agora num site. <span class="text-gradient">Que seja no teu.</span></h2>
-                    <p data-i18n="wp.cta.sub">Envia o teu objetivo e prazo. Devolvemos um diagnóstico claro, um plano e um valor fechado — em 48 horas.</p>
+                    <p style="max-width:520px; margin:16px auto 32px" data-i18n="wp.cta.sub">Envia o teu objetivo e prazo. Devolvemos um diagnóstico claro, um plano e um valor fechado — em 48 horas.</p>
                     <div class="hero__cta-row" style="justify-content:center">
                         <a href="contactos.html" class="btn btn--lg" style="background:#fff; color:var(--ink)" data-i18n="wp.cta.primary">Pedir proposta</a>
-                        <a href="https://wa.me/351935183488" target="_blank" rel="noopener noreferrer" class="btn btn--ghost btn--lg" data-i18n="wp.cta.whatsapp">Falar no WhatsApp</a>
+                        <a href="https://wa.me/351935183488" target="_blank" rel="noopener noreferrer" class="btn btn--ghost btn--lg" style="border-color:rgba(255,255,255,0.35); color:#fff" data-i18n="wp.cta.whatsapp">Falar no WhatsApp</a>
                     </div>
                 </div>
             </div>
@@ -406,6 +551,33 @@
         </div>
     </aside>
 
-    <script src="src/js/branct.js?v=20260612" defer></script>
+    <script src="src/js/branct.js?v=20260618" defer></script>
+    <script>
+    // Interações exclusivas desta página (anatomia + comparador) — ~20 linhas
+    (function () {
+        // Anatomia: legenda controla a camada ativa
+        var items = document.querySelectorAll('.anatomy__item');
+        var layers = document.querySelectorAll('.layer');
+        function activate(n) {
+            items.forEach(function (i) { i.classList.toggle('is-active', i.dataset.layer === n); });
+            layers.forEach(function (l) { l.classList.toggle('is-active', l.dataset.n === n); });
+        }
+        items.forEach(function (item) {
+            item.addEventListener('mouseenter', function () { activate(item.dataset.layer); });
+            item.addEventListener('focus', function () { activate(item.dataset.layer); });
+            item.addEventListener('click', function () { activate(item.dataset.layer); });
+        });
+        activate('1');
+
+        // Comparador antes/depois
+        var compare = document.getElementById('compare');
+        if (compare) {
+            var range = compare.querySelector('input[type="range"]');
+            range.addEventListener('input', function () {
+                compare.style.setProperty('--cut', range.value + '%');
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

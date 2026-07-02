@@ -679,27 +679,49 @@
   },
   "wp": {
     "hero": {
-      "eyebrow": "Websites Premium",
-      "title": "Um site bonito que não vende é só decoração.",
-      "sub": "Construímos sites que carregam num instante, aparecem no Google e transformam visitas em pedidos — para PMEs que tratam o digital como canal de vendas, não como cartão de visita.",
+      "eyebrow": "Serviço 01 · Websites Premium",
+      "title": "O teu site tem um emprego: <em>vender</em>. Nós construímos os que cumprem.",
+      "sub": "Não vendemos \"páginas bonitas\". Vendemos uma máquina comercial com cinco camadas de engenharia — e nesta página vais ver cada uma delas.",
       "cta1": "Pedir proposta",
-      "cta2": "Ver trabalho feito",
-      "t1": "Lighthouse 95+ garantido",
-      "t2": "Proposta em 48h",
-      "t3": "Até 4 idiomas incluídos"
+      "cta2": "Ver a anatomia ↓"
     },
-    "proof": {
-      "s1": "Lighthouse nos sites entregues",
-      "s2": "tempo de carregamento",
-      "s3": "clientes em 2 mercados"
+    "spec": {
+      "s1": "do briefing ao site no ar",
+      "s2": "Lighthouse garantido em contrato",
+      "s3": "idiomas incluídos, se precisares",
+      "s4": "para receberes proposta e valor"
     },
-    "feat": {
-      "eyebrow": "O que está incluído",
-      "title": "Três coisas que o teu site atual provavelmente não faz.",
-      "f1": { "title": "Carregar antes de o cliente desistir", "desc": "Mais de metade das visitas mobile abandona um site que demora 3 segundos a abrir. Os nossos carregam em menos de 2 — Core Web Vitals no verde, medidos em telemóveis reais, não no nosso Mac." },
-      "f2": { "title": "Aparecer quando procuram por ti", "desc": "SEO técnico de raiz: estrutura semântica, schema.org, sitemap e meta-dados afinados. O Google entende o teu site — e mostra-o." },
-      "f3": { "title": "Transformar visitas em pedidos", "desc": "Arquitetura de conversão: um caminho claro para a ação em cada página, formulários ligados ao teu CRM e tracking que te diz de onde veio cada lead." },
-      "f4": { "title": "Crescer contigo — em qualquer língua", "desc": "Arquitetura modular e multi-idioma (até 4 línguas incluídas). Quando quiseres vender para fora ou acrescentar uma área nova, o site acompanha — sem recomeçar do zero." }
+    "anatomy": {
+      "eyebrow": "A anatomia",
+      "title": "Um site que vende tem 5 camadas. A maioria só constrói a primeira.",
+      "sub": "Passa o rato (ou toca) em cada camada para ver o que ela faz pelo teu negócio.",
+      "l1": { "title": "Design que gera confiança", "desc": "A primeira impressão forma-se em 0,05 segundos. Hierarquia, tipografia e credibilidade instantânea — desenhado de raiz, zero templates." },
+      "l2": { "title": "Performance que segura a visita", "desc": "LCP abaixo de 2 segundos em 4G. Cada segundo a mais custa-te cerca de 7% das conversões — nós não os desperdiçamos." },
+      "l3": { "title": "SEO técnico que te põe no mapa", "desc": "Estrutura semântica, schema.org e sitemap. O Google lê o teu site como um mapa — e mostra-o a quem procura." },
+      "l4": { "title": "Conversão que transforma em pedidos", "desc": "Um caminho para a ação em cada ecrã, CTAs onde o olho aterra, formulários sem atrito ligados ao teu CRM." },
+      "l5": { "title": "Tracking que te diz o que funciona", "desc": "Pixel, eventos e UTMs com consentimento RGPD. Sabes de onde veio cada pedido — e onde investir o próximo euro." }
+    },
+    "sheet": {
+      "eyebrow": "Ficha técnica",
+      "title": "O que levas para casa.",
+      "sub": "Sem letras pequenas: isto é o que está dentro de um Website Premium da BRANCT.",
+      "c1": { "title": "Design & Conteúdo", "i1": "Protótipo navegável aprovado por ti antes do código", "i2": "Design de raiz para a tua marca — zero templates", "i3": "Copywriting orientado a conversão em pt-PT", "i4": "Até 4 idiomas com copy adaptado, não traduzido" },
+      "c2": { "title": "Engenharia", "i1": "Lighthouse 95+ garantido em contrato", "i2": "SEO técnico: schema.org, sitemap, meta-dados", "i3": "Tracking Meta/Google com consentimento RGPD", "i4": "Formulários ligados ao teu CRM (ou ao Branct CRM)" },
+      "c3": { "title": "Pós-lançamento", "i1": "Garantia de correções incluída", "i2": "Relatório de performance após o lançamento", "i3": "Formação para editares o conteúdo sozinho", "i4": "Evolução mensal opcional, orientada por dados" }
+    },
+    "compare": {
+      "eyebrow": "Arrasta e compara",
+      "title": "O site que tens vs. o site que podias ter.",
+      "tagBefore": "O site típico",
+      "tagAfter": "Um site BRANCT",
+      "beforeTitle": "Bonito no dia da entrega. Invisível no resto.",
+      "b1": "a carregar — metade das visitas desiste",
+      "b2": "de Lighthouse — o Google despromove-o",
+      "b3": "leads por mês — ninguém sabe de onde vêm",
+      "afterTitle": "Rápido, encontrável, mensurável.",
+      "a1": "a carregar em 4G real",
+      "a2": "de Lighthouse, garantido em contrato",
+      "a3": "dos leads com origem identificada"
     },
     "meta": {
       "eyebrow": "A prova está à tua frente",
