@@ -37,10 +37,22 @@
       "title": "Quattro fronti, un metodo.",
       "cta": "Scopri di più",
       "crmCta": "Prova gratis 7 giorni",
-      "web": { "title": "Siti Web Premium", "desc": "Siti veloci, eleganti e costruiti per convertire — con basi tecniche solide per SEO, performance e scalabilità." },
-      "landing": { "title": "Landing Page", "desc": "Pagine di campagna con un messaggio, un percorso e un'azione. Pronte per il traffico a pagamento, con tracking preciso." },
-      "crm": { "title": "Branct CRM", "desc": "La nostra piattaforma: pipeline visiva, IA su WhatsApp e dashboard. Prova di 7 giorni senza carta." },
-      "auto": { "title": "Automazione & IA", "desc": "Gestione e nurturing dei lead con il pilota automatico, senza perdere il tocco umano — flussi, segmentazione e IA che risponde." }
+      "web": {
+        "title": "Siti Web Premium",
+        "desc": "Siti veloci, eleganti e costruiti per convertire — con basi tecniche solide per SEO, performance e scalabilità."
+      },
+      "landing": {
+        "title": "Landing Page",
+        "desc": "Pagine di campagna con un messaggio, un percorso e un'azione. Pronte per il traffico a pagamento, con tracking preciso."
+      },
+      "crm": {
+        "title": "Branct CRM",
+        "desc": "La nostra piattaforma: pipeline visiva, IA su WhatsApp e dashboard. Prova di 7 giorni senza carta."
+      },
+      "auto": {
+        "title": "Automazione & IA",
+        "desc": "Gestione e nurturing dei lead con il pilota automatico, senza perdere il tocco umano — flussi, segmentazione e IA che risponde."
+      }
     },
     "crm": {
       "eyebrow": "Prodotto proprio · Branct CRM",
@@ -55,10 +67,26 @@
       "eyebrow": "Come lavoriamo",
       "title": "Sai sempre cosa succede dopo.",
       "sub": "Quattro fasi, scadenze chiare e un risultato concreto in ognuna. È così che dovrebbe andare un progetto.",
-      "s1": { "title": "Prima ascoltiamo.", "desc": "Conosciamo il tuo business, i tuoi clienti e cosa ti frena — e solo dopo progettiamo la soluzione. Niente proposte preconfezionate.", "get": "Ricevi: analisi e preventivo entro 48h" },
-      "s2": { "title": "Vedi il sito prima che esista.", "desc": "Progettiamo un prototipo navigabile così approvi ogni schermata prima che scriviamo una riga di codice. Niente assegni in bianco.", "get": "Ricevi: un prototipo interattivo da approvare" },
-      "s3": { "title": "Costruiamo ossessionati dalla velocità.", "desc": "Performance, SEO tecnico e tracking perfetti dalla prima riga — perché un bel sito che carica lento è un sito che non vende.", "get": "Ricevi: sito online, Lighthouse 95+" },
-      "s4": { "title": "Non spariamo dopo il lancio.", "desc": "Misuriamo cosa fanno i tuoi visitatori, ottimizziamo ciò che blocca le conversioni e facciamo crescere il sito con te, mese dopo mese.", "get": "Ricevi: report e miglioramenti continui" }
+      "s1": {
+        "title": "Prima ascoltiamo.",
+        "desc": "Conosciamo il tuo business, i tuoi clienti e cosa ti frena — e solo dopo progettiamo la soluzione. Niente proposte preconfezionate.",
+        "get": "Ricevi: analisi e preventivo entro 48h"
+      },
+      "s2": {
+        "title": "Vedi il sito prima che esista.",
+        "desc": "Progettiamo un prototipo navigabile così approvi ogni schermata prima che scriviamo una riga di codice. Niente assegni in bianco.",
+        "get": "Ricevi: un prototipo interattivo da approvare"
+      },
+      "s3": {
+        "title": "Costruiamo ossessionati dalla velocità.",
+        "desc": "Performance, SEO tecnico e tracking perfetti dalla prima riga — perché un bel sito che carica lento è un sito che non vende.",
+        "get": "Ricevi: sito online, Lighthouse 95+"
+      },
+      "s4": {
+        "title": "Non spariamo dopo il lancio.",
+        "desc": "Misuriamo cosa fanno i tuoi visitatori, ottimizziamo ciò che blocca le conversioni e facciamo crescere il sito con te, mese dopo mese.",
+        "get": "Ricevi: report e miglioramenti continui"
+      }
     },
     "cases": {
       "eyebrow": "Lavori recenti",
@@ -103,11 +131,26 @@
     "subtitle": "Siti Web Tech-Luxury, Automazione Intelligente e Performance d'Elite.",
     "scroll": "Scorri",
     "proof": {
-      "perf": { "title": "Performance", "desc": "Core Web Vitals ottimizzati." },
-      "seo": { "title": "SEO Premium", "desc": "Struttura semantica avanzata." },
-      "ai": { "title": "Automazione IA", "desc": "Flussi neurali e CRM." },
-      "i18n": { "title": "Multi-lingua", "desc": "Scalabilità globale nativa." },
-      "sec": { "title": "Sicurezza", "desc": "Protocolli Zero-Trust." }
+      "perf": {
+        "title": "Performance",
+        "desc": "Core Web Vitals ottimizzati."
+      },
+      "seo": {
+        "title": "SEO Premium",
+        "desc": "Struttura semantica avanzata."
+      },
+      "ai": {
+        "title": "Automazione IA",
+        "desc": "Flussi neurali e CRM."
+      },
+      "i18n": {
+        "title": "Multi-lingua",
+        "desc": "Scalabilità globale nativa."
+      },
+      "sec": {
+        "title": "Sicurezza",
+        "desc": "Protocolli Zero-Trust."
+      }
     }
   },
   "cta": {
@@ -123,8 +166,17 @@
         "badge": "PERFORMANCE",
         "title": "Siti Web Premium",
         "desc": "Siti web veloci, eleganti e orientati alla conversione — con una base tecnica solida per SEO, performance e crescita.",
-        "bullets": ["UX/UI orientato ai lead", "Core Web Vitals ottimizzati", "SEO tecnico (struttura + schema)", "Architettura modulare e scalabile"],
-        "chips": ["CWV 99+", "PWA", "SSR"],
+        "bullets": [
+          "UX/UI orientato ai lead",
+          "Core Web Vitals ottimizzati",
+          "SEO tecnico (struttura + schema)",
+          "Architettura modulare e scalabile"
+        ],
+        "chips": [
+          "CWV 99+",
+          "PWA",
+          "SSR"
+        ],
         "cta_primary": "Richiedi Preventivo",
         "cta_secondary": "Vedi Dettagli"
       },
@@ -132,8 +184,17 @@
         "badge": "CONVERSION",
         "title": "Landing Pages",
         "desc": "Interfacce ad alta conversione con psicologia di vendita applicata. Trasforma il traffico in entrate.",
-        "bullets": ["Copywriting Persuasivo", "A/B Testing Ready", "Caricamento Istantaneo", "Focus sul ROI"],
-        "chips": ["CRO", "Analytics", "Heatmaps"],
+        "bullets": [
+          "Copywriting Persuasivo",
+          "A/B Testing Ready",
+          "Caricamento Istantaneo",
+          "Focus sul ROI"
+        ],
+        "chips": [
+          "CRO",
+          "Analytics",
+          "Heatmaps"
+        ],
         "cta_primary": "Richiedi Preventivo",
         "cta_secondary": "Vedi Dettagli"
       },
@@ -141,8 +202,17 @@
         "badge": "AI READY",
         "title": "CRM & Gestione",
         "desc": "Centralizza dati, team e opportunità in un unico posto — con visibilità del funnel e automazioni per accelerare l'operazione commerciale.",
-        "bullets": ["Pipeline con fasi e regole", "Dashboard e metriche in tempo reale", "Integrazioni API e webhook", "Automazione di attività e follow-up"],
-        "chips": ["n8n", "OpenAI", "API REST"],
+        "bullets": [
+          "Pipeline con fasi e regole",
+          "Dashboard e metriche in tempo reale",
+          "Integrazioni API e webhook",
+          "Automazione di attività e follow-up"
+        ],
+        "chips": [
+          "n8n",
+          "OpenAI",
+          "API REST"
+        ],
         "cta_primary": "Richiedi Preventivo",
         "cta_secondary": "Vedi Dettagli"
       },
@@ -150,8 +220,17 @@
         "badge": "AUTOMATION",
         "title": "Automazione & IA",
         "desc": "Automatizza assistenza e follow-up senza perdere personalizzazione — con flussi, segmentazione e tracking per decisioni rapide.",
-        "bullets": ["WhatsApp (API) e chat operativa", "Email e sequenze di nurturing", "Automazione per eventi e fasi", "Qualificazione e instradamento lead"],
-        "chips": ["WhatsApp API", "SMTP", "Webhooks"],
+        "bullets": [
+          "WhatsApp (API) e chat operativa",
+          "Email e sequenze di nurturing",
+          "Automazione per eventi e fasi",
+          "Qualificazione e instradamento lead"
+        ],
+        "chips": [
+          "WhatsApp API",
+          "SMTP",
+          "Webhooks"
+        ],
         "cta_primary": "Richiedi Preventivo",
         "cta_secondary": "Vedi Dettagli"
       },
@@ -159,8 +238,17 @@
         "badge": "BRAND SYSTEM",
         "title": "Branding & Contenuti",
         "desc": "Identità visiva e verbale coerente. Costruiamo narrazioni che connettono i brand al futuro.",
-        "bullets": ["Strategia del Brand", "Tono di Voce", "Design System", "Creazione Contenuti"],
-        "chips": ["Storytelling", "UI Kit", "Strategy"],
+        "bullets": [
+          "Strategia del Brand",
+          "Tono di Voce",
+          "Design System",
+          "Creazione Contenuti"
+        ],
+        "chips": [
+          "Storytelling",
+          "UI Kit",
+          "Strategy"
+        ],
         "cta_primary": "Richiedi Preventivo",
         "cta_secondary": "Vedi Dettagli"
       }
@@ -184,10 +272,18 @@
   "projects": {
     "title": "Progetti Recenti",
     "items": {
-      "neoprag": { "tag": "Web / Istituzionale" },
-      "vertexway": { "tag": "Sito Web / Brand" },
-      "albino": { "tag": "Immobiliare / Landing Page" },
-      "kb": { "tag": "Contabilità / Sito Web" }
+      "neoprag": {
+        "tag": "Web / Istituzionale"
+      },
+      "vertexway": {
+        "tag": "Sito Web / Brand"
+      },
+      "albino": {
+        "tag": "Immobiliare / Landing Page"
+      },
+      "kb": {
+        "tag": "Contabilità / Sito Web"
+      }
     }
   },
   "process": {
@@ -195,22 +291,34 @@
     "step1": {
       "title": "Diagnosi",
       "desc": "Allineiamo obiettivi, pubblico e priorità. Definiamo l'architettura prima del design.",
-      "chips": ["Analisi di Mercato", "Architettura"]
+      "chips": [
+        "Analisi di Mercato",
+        "Architettura"
+      ]
     },
     "step2": {
       "title": "Design",
       "desc": "UI/UX e prototipo validabile. Chiarezza, credibilità e focus sulla conversione.",
-      "chips": ["UI/UX", "Prototipo 3D"]
+      "chips": [
+        "UI/UX",
+        "Prototipo 3D"
+      ]
     },
     "step3": {
       "title": "Sviluppo",
       "desc": "Implementazione con performance, SEO tecnico e integrazioni per tracking e automazione.",
-      "chips": ["Clean Code", "SEO Nativo"]
+      "chips": [
+        "Clean Code",
+        "SEO Nativo"
+      ]
     },
     "step4": {
       "title": "Scala",
       "desc": "Monitoraggio e ottimizzazione continua. Evoluzione guidata dai dati.",
-      "chips": ["Analytics", "Growth"]
+      "chips": [
+        "Analytics",
+        "Growth"
+      ]
     }
   },
   "contact": {
@@ -351,8 +459,10 @@
       "cta2": "Vedi il funnel dal vivo ↓"
     },
     "spec": {
-      "s1w": "settimane", "s1": "dal briefing alla pagina online",
-      "s2w": "obiettivo", "s2": "per pagina — zero distrazioni",
+      "s1w": "settimane",
+      "s1": "dal briefing alla pagina online",
+      "s2w": "obiettivo",
+      "s2": "per pagina — zero distrazioni",
       "s3": "dei lead con campagna di origine",
       "s4": "pronta per testare varianti"
     },
@@ -360,17 +470,41 @@
       "eyebrow": "Il funnel dal vivo",
       "title": "Dal clic al lead, senza perdite lungo il percorso.",
       "sub": "È questo che costruiamo: i tre pezzi del funnel che raccontano la stessa storia — e si parlano tra loro.",
-      "f1": { "chip": "01 · Il clic", "title": "L'annuncio fa una promessa", "desc": "Ogni clic costa denaro reale. Per questo progettiamo pagina e annuncio come un pezzo unico — stesso messaggio, stesso tono." },
-      "f2": { "chip": "02 · La pagina", "title": "La landing mantiene la promessa", "desc": "Niente menu per scappare, niente distrazioni. Una headline che continua l'annuncio, prova sociale e un unico percorso: l'azione." },
-      "f3": { "chip": "03 · Il lead", "title": "Il ciclo si chiude nel CRM", "desc": "Il lead arriva nel tuo CRM con la campagna di origine allegata. Sai esattamente quale annuncio ha pagato questo contatto." }
+      "f1": {
+        "chip": "01 · Il clic",
+        "title": "L'annuncio fa una promessa",
+        "desc": "Ogni clic costa denaro reale. Per questo progettiamo pagina e annuncio come un pezzo unico — stesso messaggio, stesso tono."
+      },
+      "f2": {
+        "chip": "02 · La pagina",
+        "title": "La landing mantiene la promessa",
+        "desc": "Niente menu per scappare, niente distrazioni. Una headline che continua l'annuncio, prova sociale e un unico percorso: l'azione."
+      },
+      "f3": {
+        "chip": "03 · Il lead",
+        "title": "Il ciclo si chiude nel CRM",
+        "desc": "Il lead arriva nel tuo CRM con la campagna di origine allegata. Sai esattamente quale annuncio ha pagato questo contatto."
+      }
     },
     "feat": {
       "eyebrow": "Cosa è incluso",
       "title": "Ingegneria di conversione, non solo una bella pagina.",
-      "f1": { "title": "Message match: annuncio e pagina, una sola storia", "desc": "Quando la promessa cambia a metà strada, il visitatore diffida — e il costo per lead schizza. Allineiamo headline, tono e offerta con il tuo annuncio, parola per parola." },
-      "f2": { "title": "Velocità che protegge il budget", "desc": "Una pagina lenta sul traffico a pagamento è denaro bruciato prima ancora che la pagina si apra. Le nostre si caricano in meno di 2 secondi — il clic che hai pagato arriva a destinazione." },
-      "f3": { "title": "Tracking a ciclo completo", "desc": "Pixel con consenso GDPR, eventi con event_id per la deduplicazione e UTM preservati fino al CRM. Ogni lead racconta la sua origine — e tu ottimizzi con i dati, non a intuito." },
-      "f4": { "title": "Fatta per testare, non per restare ferma", "desc": "Struttura A/B-testabile: cambi headline, prova sociale o CTA senza rompere la pagina. La prima versione è il punto di partenza — i tuoi dati scelgono la vincente." }
+      "f1": {
+        "title": "Message match: annuncio e pagina, una sola storia",
+        "desc": "Quando la promessa cambia a metà strada, il visitatore diffida — e il costo per lead schizza. Allineiamo headline, tono e offerta con il tuo annuncio, parola per parola."
+      },
+      "f2": {
+        "title": "Velocità che protegge il budget",
+        "desc": "Una pagina lenta sul traffico a pagamento è denaro bruciato prima ancora che la pagina si apra. Le nostre si caricano in meno di 2 secondi — il clic che hai pagato arriva a destinazione."
+      },
+      "f3": {
+        "title": "Tracking a ciclo completo",
+        "desc": "Pixel con consenso GDPR, eventi con event_id per la deduplicazione e UTM preservati fino al CRM. Ogni lead racconta la sua origine — e tu ottimizzi con i dati, non a intuito."
+      },
+      "f4": {
+        "title": "Fatta per testare, non per restare ferma",
+        "desc": "Struttura A/B-testabile: cambi headline, prova sociale o CTA senza rompere la pagina. La prima versione è il punto di partenza — i tuoi dati scelgono la vincente."
+      }
     },
     "meta": {
       "eyebrow": "La prova",
@@ -439,11 +573,26 @@
       "desc": "Non siamo solo designer. Siamo ingegneri della conversione che combinano estetica premium con performance tecnica d'élite.",
       "checklistTitle": "// Checklist di Ingegneria",
       "items": [
-        { "title": "Lighthouse Score 95+", "desc": "Performance, Accessibilità, SEO ottimizzati" },
-        { "title": "A/B Testing Ready", "desc": "Struttura preparata per test di variazione" },
-        { "title": "Analytics Integrato", "desc": "GA4, Tag Manager, Heatmaps configurati" },
-        { "title": "CRM Ready", "desc": "Integrazione con HubSpot, Pipedrive, n8n" },
-        { "title": "Multi-lingua", "desc": "Pronto per scalare globalmente" }
+        {
+          "title": "Lighthouse Score 95+",
+          "desc": "Performance, Accessibilità, SEO ottimizzati"
+        },
+        {
+          "title": "A/B Testing Ready",
+          "desc": "Struttura preparata per test di variazione"
+        },
+        {
+          "title": "Analytics Integrato",
+          "desc": "GA4, Tag Manager, Heatmaps configurati"
+        },
+        {
+          "title": "CRM Ready",
+          "desc": "Integrazione con HubSpot, Pipedrive, n8n"
+        },
+        {
+          "title": "Multi-lingua",
+          "desc": "Pronto per scalare globalmente"
+        }
       ]
     },
     "final": {
@@ -513,9 +662,18 @@
       "eyebrow": "Scena reale, ora irreale",
       "title": "Sono le 3:07 di notte. Arriva un lead. E adesso?",
       "sub": "Guarda cosa succede quando l'assistenza non dipende dal fatto che tu sia sveglio.",
-      "l1": { "title": "Il lead scrive. Tu dormi.", "desc": "Il 78% dei clienti chiude con chi risponde per primo. Alle 3 di notte, \"primo\" di solito non è nessuno — da adesso sei tu." },
-      "l2": { "title": "L'IA risponde in secondi — con il tuo tono", "desc": "Addestrata sul tuo business, i tuoi servizi e il tuo modo di parlare. Qualifica, risponde ai dubbi e prenota — senza sembrare un robot da menu." },
-      "l3": { "title": "Il tuo team entra con tutto davanti", "desc": "L'intera conversazione è nel CRM: nome, esigenza, visita fissata. L'umano entra per chiudere, non per ricominciare da zero." }
+      "l1": {
+        "title": "Il lead scrive. Tu dormi.",
+        "desc": "Il 78% dei clienti chiude con chi risponde per primo. Alle 3 di notte, \"primo\" di solito non è nessuno — da adesso sei tu."
+      },
+      "l2": {
+        "title": "L'IA risponde in secondi — con il tuo tono",
+        "desc": "Addestrata sul tuo business, i tuoi servizi e il tuo modo di parlare. Qualifica, risponde ai dubbi e prenota — senza sembrare un robot da menu."
+      },
+      "l3": {
+        "title": "Il tuo team entra con tutto davanti",
+        "desc": "L'intera conversazione è nel CRM: nome, esigenza, visita fissata. L'umano entra per chiudere, non per ricominciare da zero."
+      }
     },
     "chat": {
       "biz": "La Tua Azienda",
@@ -531,10 +689,22 @@
     "feat": {
       "eyebrow": "Cosa è incluso",
       "title": "Automazione con tocco umano — non un robot da menu.",
-      "f1": { "title": "IA su WhatsApp Business, 24/7", "desc": "Risponde in secondi sul canale dove i tuoi clienti già sono. Qualifica con domande naturali, fissa visite e riunioni, e registra tutto — mentre la concorrenza richiama il giorno dopo." },
-      "f2": { "title": "Handoff umano con contesto", "desc": "Quando la conversazione richiede una persona, l'IA la passa al tuo team con lo storico completo. Il cliente non ripete mai la sua storia — e si nota." },
-      "f3": { "title": "Follow-up che non dimentica nessuno", "desc": "Sequenze WhatsApp ed email attivate da eventi: preventivo inviato, visita fissata, 3 giorni di silenzio. Ogni lead riceve il tocco giusto al momento giusto." },
-      "f4": { "title": "Tutto collegato al CRM — dall'origine alla chiusura", "desc": "Ogni conversazione, qualifica e appuntamento finisce in Branct CRM (o nel tuo): pipeline che si aggiorna da sola, team allineato e zero lead persi tra gli strumenti." }
+      "f1": {
+        "title": "IA su WhatsApp Business, 24/7",
+        "desc": "Risponde in secondi sul canale dove i tuoi clienti già sono. Qualifica con domande naturali, fissa visite e riunioni, e registra tutto — mentre la concorrenza richiama il giorno dopo."
+      },
+      "f2": {
+        "title": "Handoff umano con contesto",
+        "desc": "Quando la conversazione richiede una persona, l'IA la passa al tuo team con lo storico completo. Il cliente non ripete mai la sua storia — e si nota."
+      },
+      "f3": {
+        "title": "Follow-up che non dimentica nessuno",
+        "desc": "Sequenze WhatsApp ed email attivate da eventi: preventivo inviato, visita fissata, 3 giorni di silenzio. Ogni lead riceve il tocco giusto al momento giusto."
+      },
+      "f4": {
+        "title": "Tutto collegato al CRM — dall'origine alla chiusura",
+        "desc": "Ogni conversazione, qualifica e appuntamento finisce in Branct CRM (o nel tuo): pipeline che si aggiorna da sola, team allineato e zero lead persi tra gli strumenti."
+      }
     },
     "try": {
       "eyebrow": "Non crederci — provala",
@@ -633,19 +803,52 @@
       "eyebrow": "L'anatomia",
       "title": "Un sito che vende ha 5 strati. La maggior parte costruisce solo il primo.",
       "sub": "Passa il mouse (o tocca) ogni strato per vedere cosa fa per il tuo business.",
-      "l1": { "title": "Design che genera fiducia", "desc": "La prima impressione si forma in 0,05 secondi. Gerarchia, tipografia e credibilità istantanea — progettato da zero, zero template." },
-      "l2": { "title": "Performance che trattiene la visita", "desc": "LCP sotto i 2 secondi su 4G. Ogni secondo in più ti costa circa il 7% delle conversioni — noi non li sprechiamo." },
-      "l3": { "title": "SEO tecnico che ti mette sulla mappa", "desc": "Struttura semantica, schema.org e sitemap. Google legge il tuo sito come una mappa — e lo mostra a chi cerca." },
-      "l4": { "title": "Conversione che trasforma in richieste", "desc": "Un percorso verso l'azione in ogni schermata, CTA dove atterra l'occhio, moduli senza attrito collegati al tuo CRM." },
-      "l5": { "title": "Tracking che ti dice cosa funziona", "desc": "Pixel, eventi e UTM con consenso GDPR. Sai da dove arriva ogni richiesta — e dove investire il prossimo euro." }
+      "l1": {
+        "title": "Design che genera fiducia",
+        "desc": "La prima impressione si forma in 0,05 secondi. Gerarchia, tipografia e credibilità istantanea — progettato da zero, zero template."
+      },
+      "l2": {
+        "title": "Performance che trattiene la visita",
+        "desc": "LCP sotto i 2 secondi su 4G. Ogni secondo in più ti costa circa il 7% delle conversioni — noi non li sprechiamo."
+      },
+      "l3": {
+        "title": "SEO tecnico che ti mette sulla mappa",
+        "desc": "Struttura semantica, schema.org e sitemap. Google legge il tuo sito come una mappa — e lo mostra a chi cerca."
+      },
+      "l4": {
+        "title": "Conversione che trasforma in richieste",
+        "desc": "Un percorso verso l'azione in ogni schermata, CTA dove atterra l'occhio, moduli senza attrito collegati al tuo CRM."
+      },
+      "l5": {
+        "title": "Tracking che ti dice cosa funziona",
+        "desc": "Pixel, eventi e UTM con consenso GDPR. Sai da dove arriva ogni richiesta — e dove investire il prossimo euro."
+      }
     },
     "sheet": {
       "eyebrow": "Scheda tecnica",
       "title": "Cosa porti a casa.",
       "sub": "Senza asterischi: questo è ciò che c'è dentro un Sito Premium BRANCT.",
-      "c1": { "title": "Design & Contenuti", "i1": "Prototipo navigabile approvato da te prima del codice", "i2": "Design da zero per il tuo brand — zero template", "i3": "Copywriting orientato alla conversione", "i4": "Fino a 4 lingue con copy adattato, non tradotto" },
-      "c2": { "title": "Ingegneria", "i1": "Lighthouse 95+ garantito da contratto", "i2": "SEO tecnico: schema.org, sitemap, metadati", "i3": "Tracking Meta/Google con consenso GDPR", "i4": "Moduli collegati al tuo CRM (o a Branct CRM)" },
-      "c3": { "title": "Post-lancio", "i1": "Garanzia di correzioni inclusa", "i2": "Report di performance dopo il lancio", "i3": "Formazione per modificare i contenuti da solo", "i4": "Evoluzione mensile opzionale, guidata dai dati" }
+      "c1": {
+        "title": "Design & Contenuti",
+        "i1": "Prototipo navigabile approvato da te prima del codice",
+        "i2": "Design da zero per il tuo brand — zero template",
+        "i3": "Copywriting orientato alla conversione",
+        "i4": "Fino a 4 lingue con copy adattato, non tradotto"
+      },
+      "c2": {
+        "title": "Ingegneria",
+        "i1": "Lighthouse 95+ garantito da contratto",
+        "i2": "SEO tecnico: schema.org, sitemap, metadati",
+        "i3": "Tracking Meta/Google con consenso GDPR",
+        "i4": "Moduli collegati al tuo CRM (o a Branct CRM)"
+      },
+      "c3": {
+        "title": "Post-lancio",
+        "i1": "Garanzia di correzioni inclusa",
+        "i2": "Report di performance dopo il lancio",
+        "i3": "Formazione per modificare i contenuti da solo",
+        "i4": "Evoluzione mensile opzionale, guidata dai dati"
+      }
     },
     "compare": {
       "eyebrow": "Trascina e confronta",
@@ -712,9 +915,19 @@
       "submit": "Invia richiesta →"
     },
     "ch": {
-      "wa": { "title": "WhatsApp — risponde la nostra IA", "desc": "935 183 488 · la risposta arriva in secondi, a qualsiasi ora. Un umano entra quando ha senso.", "live": "online adesso" },
-      "email": { "title": "Email — briefing dettagliato", "desc": "contacto@branct.com · allega requisiti, riferimenti, quello che hai." },
-      "loc": { "title": "Guimarães, Portogallo", "desc": "Clienti in Portogallo e Brasile — riunioni video, senza problemi di fuso." }
+      "wa": {
+        "title": "WhatsApp — risponde la nostra IA",
+        "desc": "935 183 488 · la risposta arriva in secondi, a qualsiasi ora. Un umano entra quando ha senso.",
+        "live": "online adesso"
+      },
+      "email": {
+        "title": "Email — briefing dettagliato",
+        "desc": "contacto@branct.com · allega requisiti, riferimenti, quello che hai."
+      },
+      "loc": {
+        "title": "Guimarães, Portogallo",
+        "desc": "Clienti in Portogallo e Brasile — riunioni video, senza problemi di fuso."
+      }
     },
     "next": {
       "title": "Cosa succede dopo",
@@ -732,9 +945,18 @@
     "pr": {
       "eyebrow": "Perché così",
       "title": "Tre regole che non infrangiamo.",
-      "p1": { "title": "Le scadenze sono promesse", "desc": "Il calendario del preventivo ha date, non \"stime\". Se un giorno ne manchiamo una, lo saprai prima di chiedere — con la nuova data e il perché." },
-      "p2": { "title": "Ogni fase finisce in qualcosa di tuo", "desc": "Non paghi mai per \"lavoro in corso\". Ogni fase si chiude con un risultato che puoi vedere, testare e approvare — diagnosi, prototipo, sito, report." },
-      "p3": { "title": "Numeri prima delle opinioni", "desc": "\"È venuto bello\" non è una metrica. Lighthouse, tempo di caricamento, lead e origine di ognuno — decidiamo con te sui dati, dal primo giorno all'ultimo." }
+      "p1": {
+        "title": "Le scadenze sono promesse",
+        "desc": "Il calendario del preventivo ha date, non \"stime\". Se un giorno ne manchiamo una, lo saprai prima di chiedere — con la nuova data e il perché."
+      },
+      "p2": {
+        "title": "Ogni fase finisce in qualcosa di tuo",
+        "desc": "Non paghi mai per \"lavoro in corso\". Ogni fase si chiude con un risultato che puoi vedere, testare e approvare — diagnosi, prototipo, sito, report."
+      },
+      "p3": {
+        "title": "Numeri prima delle opinioni",
+        "desc": "\"È venuto bello\" non è una metrica. Lighthouse, tempo di caricamento, lead e origine di ognuno — decidiamo con te sui dati, dal primo giorno all'ultimo."
+      }
     }
   },
   "a11y": {
@@ -743,5 +965,11 @@
     "mobileNav": "Menu di navigazione",
     "langSelector": "Seleziona lingua",
     "scrollService": "Servizio {current} di {total}: {title}"
+  },
+  "au": {
+    "title": "La tua area clienti vive nel Branct CRM.",
+    "sub": "Lead, conversazioni con IA, pipeline e dashboard — tutto su app.branct.com, dal browser o dal telefono.",
+    "cta": "Accedi su app.branct.com →",
+    "note": "Non hai ancora un account? <a href=\"crm-gestao.html\">Provalo gratis per 7 giorni — senza carta.</a>"
   }
 }

@@ -37,10 +37,22 @@
       "title": "Četiri fronte, jedna metoda.",
       "cta": "Saznaj više",
       "crmCta": "Isprobaj besplatno 7 dana",
-      "web": { "title": "Premium Web Stranice", "desc": "Brze, elegantne stranice građene za konverziju — na čvrstim tehničkim temeljima za SEO, performanse i skalabilnost." },
-      "landing": { "title": "Landing Stranice", "desc": "Kampanjske stranice s jednom porukom, jednim putem i jednom akcijom. Spremne za plaćeni promet, s preciznim praćenjem." },
-      "crm": { "title": "Branct CRM", "desc": "Naša platforma: vizualni pipeline, WhatsApp AI i nadzorne ploče. Probno razdoblje od 7 dana bez kartice." },
-      "auto": { "title": "Automatizacija & AI", "desc": "Obrada i njegovanje leadova na autopilotu, bez gubitka ljudskog dodira — tokovi, segmentacija i AI koji odgovara." }
+      "web": {
+        "title": "Premium Web Stranice",
+        "desc": "Brze, elegantne stranice građene za konverziju — na čvrstim tehničkim temeljima za SEO, performanse i skalabilnost."
+      },
+      "landing": {
+        "title": "Landing Stranice",
+        "desc": "Kampanjske stranice s jednom porukom, jednim putem i jednom akcijom. Spremne za plaćeni promet, s preciznim praćenjem."
+      },
+      "crm": {
+        "title": "Branct CRM",
+        "desc": "Naša platforma: vizualni pipeline, WhatsApp AI i nadzorne ploče. Probno razdoblje od 7 dana bez kartice."
+      },
+      "auto": {
+        "title": "Automatizacija & AI",
+        "desc": "Obrada i njegovanje leadova na autopilotu, bez gubitka ljudskog dodira — tokovi, segmentacija i AI koji odgovara."
+      }
     },
     "crm": {
       "eyebrow": "Vlastiti proizvod · Branct CRM",
@@ -55,10 +67,26 @@
       "eyebrow": "Kako radimo",
       "title": "Uvijek znaš što slijedi.",
       "sub": "Četiri faze, jasni rokovi i konkretan rezultat u svakoj. Tako bi projekt trebao teći.",
-      "s1": { "title": "Prvo slušamo.", "desc": "Upoznajemo tvoj posao, tvoje klijente i ono što te koči — i tek onda osmišljavamo rješenje. Bez gotovih ponuda iz ladice.", "get": "Dobivaš: dijagnozu i ponudu unutar 48h" },
-      "s2": { "title": "Vidiš stranicu prije nego što postoji.", "desc": "Izrađujemo navigabilan prototip kako bi odobrio svaki ekran prije nego što napišemo i jednu liniju koda. Bez bianco čekova.", "get": "Dobivaš: interaktivni prototip za odobrenje" },
-      "s3": { "title": "Gradimo opsjednuti brzinom.", "desc": "Performanse, tehnički SEO i praćenje namješteni od prve linije — jer lijepa stranica koja se sporo učitava je stranica koja ne prodaje.", "get": "Dobivaš: stranicu online, Lighthouse 95+" },
-      "s4": { "title": "Ne nestajemo nakon lansiranja.", "desc": "Mjerimo što tvoji posjetitelji rade, optimiziramo ono što koči konverzije i razvijamo stranicu s tobom, mjesec za mjesecom.", "get": "Dobivaš: izvještaje i stalna poboljšanja" }
+      "s1": {
+        "title": "Prvo slušamo.",
+        "desc": "Upoznajemo tvoj posao, tvoje klijente i ono što te koči — i tek onda osmišljavamo rješenje. Bez gotovih ponuda iz ladice.",
+        "get": "Dobivaš: dijagnozu i ponudu unutar 48h"
+      },
+      "s2": {
+        "title": "Vidiš stranicu prije nego što postoji.",
+        "desc": "Izrađujemo navigabilan prototip kako bi odobrio svaki ekran prije nego što napišemo i jednu liniju koda. Bez bianco čekova.",
+        "get": "Dobivaš: interaktivni prototip za odobrenje"
+      },
+      "s3": {
+        "title": "Gradimo opsjednuti brzinom.",
+        "desc": "Performanse, tehnički SEO i praćenje namješteni od prve linije — jer lijepa stranica koja se sporo učitava je stranica koja ne prodaje.",
+        "get": "Dobivaš: stranicu online, Lighthouse 95+"
+      },
+      "s4": {
+        "title": "Ne nestajemo nakon lansiranja.",
+        "desc": "Mjerimo što tvoji posjetitelji rade, optimiziramo ono što koči konverzije i razvijamo stranicu s tobom, mjesec za mjesecom.",
+        "get": "Dobivaš: izvještaje i stalna poboljšanja"
+      }
     },
     "cases": {
       "eyebrow": "Nedavni radovi",
@@ -103,11 +131,26 @@
     "subtitle": "Tech-Luxury Web Stranice, Inteligentna Automatizacija i Vrhunske Performanse.",
     "scroll": "Klizite",
     "proof": {
-      "perf": { "title": "Performanse", "desc": "Optimizirani Core Web Vitals." },
-      "seo": { "title": "Premium SEO", "desc": "Napredna semantička struktura." },
-      "ai": { "title": "AI Automatizacija", "desc": "Neuralni tijekovi i CRM." },
-      "i18n": { "title": "Višejezicnost", "desc": "Nativna globalna skalabilnost." },
-      "sec": { "title": "Sigurnost", "desc": "Zero-Trust protokoli." }
+      "perf": {
+        "title": "Performanse",
+        "desc": "Optimizirani Core Web Vitals."
+      },
+      "seo": {
+        "title": "Premium SEO",
+        "desc": "Napredna semantička struktura."
+      },
+      "ai": {
+        "title": "AI Automatizacija",
+        "desc": "Neuralni tijekovi i CRM."
+      },
+      "i18n": {
+        "title": "Višejezicnost",
+        "desc": "Nativna globalna skalabilnost."
+      },
+      "sec": {
+        "title": "Sigurnost",
+        "desc": "Zero-Trust protokoli."
+      }
     }
   },
   "cta": {
@@ -123,8 +166,17 @@
         "badge": "PERFORMANCE",
         "title": "Premium Web Stranice",
         "desc": "Brze, elegantne web stranice usmjerene na konverziju — s čvrstom tehničkom osnovom za SEO, performanse i rast.",
-        "bullets": ["UX/UI usmjeren na leadove", "Core Web Vitals optimizirani", "Tehnički SEO (struktura + schema)", "Modularna i skalabilna arhitektura"],
-        "chips": ["CWV 99+", "PWA", "SSR"],
+        "bullets": [
+          "UX/UI usmjeren na leadove",
+          "Core Web Vitals optimizirani",
+          "Tehnički SEO (struktura + schema)",
+          "Modularna i skalabilna arhitektura"
+        ],
+        "chips": [
+          "CWV 99+",
+          "PWA",
+          "SSR"
+        ],
         "cta_primary": "Zatražite Ponudu",
         "cta_secondary": "Pogledaj Detalje"
       },
@@ -132,8 +184,17 @@
         "badge": "CONVERSION",
         "title": "Landing Stranice",
         "desc": "Sučelja visoke konverzije s primijenjenom psihologijom prodaje. Pretvorite promet u prihod.",
-        "bullets": ["Uvjerljiv Copywriting", "Spremno za A/B Testiranje", "Trenutno Učitavanje", "Fokus na ROI"],
-        "chips": ["CRO", "Analytics", "Heatmaps"],
+        "bullets": [
+          "Uvjerljiv Copywriting",
+          "Spremno za A/B Testiranje",
+          "Trenutno Učitavanje",
+          "Fokus na ROI"
+        ],
+        "chips": [
+          "CRO",
+          "Analytics",
+          "Heatmaps"
+        ],
         "cta_primary": "Zatražite Ponudu",
         "cta_secondary": "Pogledaj Detalje"
       },
@@ -141,8 +202,17 @@
         "badge": "AI READY",
         "title": "CRM & Upravljanje",
         "desc": "Centralizirajte podatke, timove i prilike na jednom mjestu — s vidljivošću funnela i automatizacijama za ubrzanje prodajne operacije.",
-        "bullets": ["Pipeline s fazama i pravilima", "Dashboardi i metrike u stvarnom vremenu", "API i webhook integracije", "Automatizacija zadataka i follow-upova"],
-        "chips": ["n8n", "OpenAI", "API REST"],
+        "bullets": [
+          "Pipeline s fazama i pravilima",
+          "Dashboardi i metrike u stvarnom vremenu",
+          "API i webhook integracije",
+          "Automatizacija zadataka i follow-upova"
+        ],
+        "chips": [
+          "n8n",
+          "OpenAI",
+          "API REST"
+        ],
         "cta_primary": "Zatražite Ponudu",
         "cta_secondary": "Pogledaj Detalje"
       },
@@ -150,8 +220,17 @@
         "badge": "AUTOMATION",
         "title": "Automatizacija & AI",
         "desc": "Automatizirajte korisničku podršku i follow-up bez gubitka personalizacije — s tokovima, segmentacijom i trackingom za brze odluke.",
-        "bullets": ["WhatsApp (API) i operativni chat", "Email i nurturing sekvence", "Automatizacija po događajima i fazama", "Kvalifikacija i usmjeravanje leadova"],
-        "chips": ["WhatsApp API", "SMTP", "Webhooks"],
+        "bullets": [
+          "WhatsApp (API) i operativni chat",
+          "Email i nurturing sekvence",
+          "Automatizacija po događajima i fazama",
+          "Kvalifikacija i usmjeravanje leadova"
+        ],
+        "chips": [
+          "WhatsApp API",
+          "SMTP",
+          "Webhooks"
+        ],
         "cta_primary": "Zatražite Ponudu",
         "cta_secondary": "Pogledaj Detalje"
       },
@@ -159,8 +238,17 @@
         "badge": "BRAND SYSTEM",
         "title": "Branding & Sadržaj",
         "desc": "Koherentan vizualni i verbalni identitet. Gradimo narative koji povezuju brendove s budućnošću.",
-        "bullets": ["Strategija Brenda", "Ton Glasa", "Design System", "Stvaranje Sadržaja"],
-        "chips": ["Storytelling", "UI Kit", "Strategy"],
+        "bullets": [
+          "Strategija Brenda",
+          "Ton Glasa",
+          "Design System",
+          "Stvaranje Sadržaja"
+        ],
+        "chips": [
+          "Storytelling",
+          "UI Kit",
+          "Strategy"
+        ],
         "cta_primary": "Zatražite Ponudu",
         "cta_secondary": "Pogledaj Detalje"
       }
@@ -184,10 +272,18 @@
   "projects": {
     "title": "Nedavni Projekti",
     "items": {
-      "neoprag": { "tag": "Web / Institucionalno" },
-      "vertexway": { "tag": "Web Stranica / Brend" },
-      "albino": { "tag": "Nekretnine / Landing Stranica" },
-      "kb": { "tag": "Računovodstvo / Web Stranica" }
+      "neoprag": {
+        "tag": "Web / Institucionalno"
+      },
+      "vertexway": {
+        "tag": "Web Stranica / Brend"
+      },
+      "albino": {
+        "tag": "Nekretnine / Landing Stranica"
+      },
+      "kb": {
+        "tag": "Računovodstvo / Web Stranica"
+      }
     }
   },
   "process": {
@@ -195,22 +291,34 @@
     "step1": {
       "title": "Dijagnostika",
       "desc": "Usklađujemo ciljeve, publiku i prioritete. Definiramo arhitekturu prije dizajna.",
-      "chips": ["Analiza Tržišta", "Arhitektura"]
+      "chips": [
+        "Analiza Tržišta",
+        "Arhitektura"
+      ]
     },
     "step2": {
       "title": "Dizajn",
       "desc": "UI/UX i provjerljiv prototip. Jasnoća, kredibilitet i fokus na konverziju.",
-      "chips": ["UI/UX", "3D Prototip"]
+      "chips": [
+        "UI/UX",
+        "3D Prototip"
+      ]
     },
     "step3": {
       "title": "Razvoj",
       "desc": "Implementacija s performansama, tehničkim SEO-om i integracijama za tracking i automatizaciju.",
-      "chips": ["Clean Code", "SEO Native"]
+      "chips": [
+        "Clean Code",
+        "SEO Native"
+      ]
     },
     "step4": {
       "title": "Skaliranje",
       "desc": "Kontinuirano praćenje i optimizacija. Evolucija vođena podacima.",
-      "chips": ["Analytics", "Growth"]
+      "chips": [
+        "Analytics",
+        "Growth"
+      ]
     }
   },
   "contact": {
@@ -351,8 +459,10 @@
       "cta2": "Pogledaj funnel uživo ↓"
     },
     "spec": {
-      "s1w": "tjedna", "s1": "od briefinga do objave",
-      "s2w": "cilj", "s2": "po stranici — nula distrakcija",
+      "s1w": "tjedna",
+      "s1": "od briefinga do objave",
+      "s2w": "cilj",
+      "s2": "po stranici — nula distrakcija",
       "s3": "leadova s izvornom kampanjom",
       "s4": "spremna za testiranje varijanti"
     },
@@ -360,17 +470,41 @@
       "eyebrow": "Funnel uživo",
       "title": "Od klika do leada, bez curenja usput.",
       "sub": "Ovo gradimo: tri dijela funnela koji pričaju istu priču — i razgovaraju jedni s drugima.",
-      "f1": { "chip": "01 · Klik", "title": "Oglas daje obećanje", "desc": "Svaki klik košta pravi novac. Zato dizajniramo stranicu i oglas kao jednu cjelinu — ista poruka, isti ton." },
-      "f2": { "chip": "02 · Stranica", "title": "Landing ispunjava obećanje", "desc": "Bez izbornika za bijeg, bez distrakcija. Naslov koji nastavlja oglas, društveni dokaz i jedan jedini put: akcija." },
-      "f3": { "chip": "03 · Lead", "title": "Krug se zatvara u CRM-u", "desc": "Lead pada u tvoj CRM s priloženom izvornom kampanjom. Točno znaš koji je oglas platio ovaj kontakt." }
+      "f1": {
+        "chip": "01 · Klik",
+        "title": "Oglas daje obećanje",
+        "desc": "Svaki klik košta pravi novac. Zato dizajniramo stranicu i oglas kao jednu cjelinu — ista poruka, isti ton."
+      },
+      "f2": {
+        "chip": "02 · Stranica",
+        "title": "Landing ispunjava obećanje",
+        "desc": "Bez izbornika za bijeg, bez distrakcija. Naslov koji nastavlja oglas, društveni dokaz i jedan jedini put: akcija."
+      },
+      "f3": {
+        "chip": "03 · Lead",
+        "title": "Krug se zatvara u CRM-u",
+        "desc": "Lead pada u tvoj CRM s priloženom izvornom kampanjom. Točno znaš koji je oglas platio ovaj kontakt."
+      }
     },
     "feat": {
       "eyebrow": "Što je uključeno",
       "title": "Inženjering konverzije, ne samo lijepa stranica.",
-      "f1": { "title": "Message match: oglas i stranica, jedna priča", "desc": "Kad se obećanje promijeni na pola puta, posjetitelj postane sumnjičav — a cijena po leadu skače. Usklađujemo naslov, ton i ponudu s tvojim oglasom, riječ po riječ." },
-      "f2": { "title": "Brzina koja štiti budžet", "desc": "Spora stranica na plaćenom prometu je novac spaljen prije nego što se stranica otvori. Naše se učitavaju za manje od 2 sekunde — klik koji si platio stiže na odredište." },
-      "f3": { "title": "Praćenje punog kruga", "desc": "Pixel s GDPR privolom, događaji s event_id za deduplikaciju i UTM-ovi sačuvani sve do CRM-a. Svaki lead priča svoje porijeklo — a ti optimiziraš podacima, ne nagađanjem." },
-      "f4": { "title": "Napravljena za testiranje, ne za mirovanje", "desc": "A/B struktura: mijenjaš naslov, dokaz ili CTA bez rušenja stranice. Prva verzija je polazna točka — tvoji podaci biraju pobjednicu." }
+      "f1": {
+        "title": "Message match: oglas i stranica, jedna priča",
+        "desc": "Kad se obećanje promijeni na pola puta, posjetitelj postane sumnjičav — a cijena po leadu skače. Usklađujemo naslov, ton i ponudu s tvojim oglasom, riječ po riječ."
+      },
+      "f2": {
+        "title": "Brzina koja štiti budžet",
+        "desc": "Spora stranica na plaćenom prometu je novac spaljen prije nego što se stranica otvori. Naše se učitavaju za manje od 2 sekunde — klik koji si platio stiže na odredište."
+      },
+      "f3": {
+        "title": "Praćenje punog kruga",
+        "desc": "Pixel s GDPR privolom, događaji s event_id za deduplikaciju i UTM-ovi sačuvani sve do CRM-a. Svaki lead priča svoje porijeklo — a ti optimiziraš podacima, ne nagađanjem."
+      },
+      "f4": {
+        "title": "Napravljena za testiranje, ne za mirovanje",
+        "desc": "A/B struktura: mijenjaš naslov, dokaz ili CTA bez rušenja stranice. Prva verzija je polazna točka — tvoji podaci biraju pobjednicu."
+      }
     },
     "meta": {
       "eyebrow": "Dokaz",
@@ -439,11 +573,26 @@
       "desc": "Nismo samo dizajneri. Mi smo inženjeri konverzije koji kombiniraju premium estetiku s elitnom tehničkom performansom.",
       "checklistTitle": "// Inženjerski Popis",
       "items": [
-        { "title": "Lighthouse Score 95+", "desc": "Performansa, Pristupačnost, SEO optimizirani" },
-        { "title": "A/B Testing Spremno", "desc": "Struktura pripremljena za testiranje varijacija" },
-        { "title": "Integrirana Analitika", "desc": "GA4, Tag Manager, Heatmaps konfigurirani" },
-        { "title": "CRM Spremno", "desc": "Integracija s HubSpot, Pipedrive, n8n" },
-        { "title": "Višejezičnost", "desc": "Spremno za globalno skaliranje" }
+        {
+          "title": "Lighthouse Score 95+",
+          "desc": "Performansa, Pristupačnost, SEO optimizirani"
+        },
+        {
+          "title": "A/B Testing Spremno",
+          "desc": "Struktura pripremljena za testiranje varijacija"
+        },
+        {
+          "title": "Integrirana Analitika",
+          "desc": "GA4, Tag Manager, Heatmaps konfigurirani"
+        },
+        {
+          "title": "CRM Spremno",
+          "desc": "Integracija s HubSpot, Pipedrive, n8n"
+        },
+        {
+          "title": "Višejezičnost",
+          "desc": "Spremno za globalno skaliranje"
+        }
       ]
     },
     "final": {
@@ -513,9 +662,18 @@
       "eyebrow": "Stvarna scena, nestvarno vrijeme",
       "title": "3:07 je ujutro. Stiže lead. I što sad?",
       "sub": "Pogledaj što se događa kad podrška ne ovisi o tome jesi li budan.",
-      "l1": { "title": "Lead piše. Ti spavaš.", "desc": "78% klijenata zaključi posao s onim tko prvi odgovori. U 3 ujutro, \"prvi\" obično nije nitko — od sada si to ti." },
-      "l2": { "title": "AI odgovara u sekundama — tvojim tonom", "desc": "Treniran na tvom poslu, tvojim uslugama i načinu na koji govoriš. Kvalificira, odgovara na pitanja i zakazuje — a da ne zvuči kao robot s izbornikom." },
-      "l3": { "title": "Tvoj tim ulazi sa svime pred sobom", "desc": "Cijeli razgovor je u CRM-u: ime, potreba, zakazani termin. Čovjek ulazi da zaključi, ne da kreće ispočetka." }
+      "l1": {
+        "title": "Lead piše. Ti spavaš.",
+        "desc": "78% klijenata zaključi posao s onim tko prvi odgovori. U 3 ujutro, \"prvi\" obično nije nitko — od sada si to ti."
+      },
+      "l2": {
+        "title": "AI odgovara u sekundama — tvojim tonom",
+        "desc": "Treniran na tvom poslu, tvojim uslugama i načinu na koji govoriš. Kvalificira, odgovara na pitanja i zakazuje — a da ne zvuči kao robot s izbornikom."
+      },
+      "l3": {
+        "title": "Tvoj tim ulazi sa svime pred sobom",
+        "desc": "Cijeli razgovor je u CRM-u: ime, potreba, zakazani termin. Čovjek ulazi da zaključi, ne da kreće ispočetka."
+      }
     },
     "chat": {
       "biz": "Tvoja Tvrtka",
@@ -531,10 +689,22 @@
     "feat": {
       "eyebrow": "Što je uključeno",
       "title": "Automatizacija s ljudskim dodirom — ne robot s izbornicima.",
-      "f1": { "title": "AI na WhatsApp Businessu, 24/7", "desc": "Odgovara u sekundama na kanalu gdje tvoji klijenti već jesu. Kvalificira prirodnim pitanjima, zakazuje preglede i sastanke, i bilježi sve — dok konkurencija uzvraća pozive sutradan." },
-      "f2": { "title": "Ljudska primopredaja s kontekstom", "desc": "Kad razgovor treba osobu, AI ga predaje tvom timu s cijelom poviješću. Klijent nikad ne ponavlja svoju priču — i to se primijeti." },
-      "f3": { "title": "Follow-up koji nikoga ne zaboravlja", "desc": "WhatsApp i email sekvence pokrenute događajima: poslana ponuda, zakazan termin, 3 dana tišine. Svaki lead dobiva pravi dodir u pravom trenutku." },
-      "f4": { "title": "Sve povezano s CRM-om — od izvora do zaključenja", "desc": "Svaki razgovor, kvalifikacija i termin završava u Branct CRM-u (ili tvom): pipeline se ažurira sam, tim je usklađen, nula leadova izgubljeno između alata." }
+      "f1": {
+        "title": "AI na WhatsApp Businessu, 24/7",
+        "desc": "Odgovara u sekundama na kanalu gdje tvoji klijenti već jesu. Kvalificira prirodnim pitanjima, zakazuje preglede i sastanke, i bilježi sve — dok konkurencija uzvraća pozive sutradan."
+      },
+      "f2": {
+        "title": "Ljudska primopredaja s kontekstom",
+        "desc": "Kad razgovor treba osobu, AI ga predaje tvom timu s cijelom poviješću. Klijent nikad ne ponavlja svoju priču — i to se primijeti."
+      },
+      "f3": {
+        "title": "Follow-up koji nikoga ne zaboravlja",
+        "desc": "WhatsApp i email sekvence pokrenute događajima: poslana ponuda, zakazan termin, 3 dana tišine. Svaki lead dobiva pravi dodir u pravom trenutku."
+      },
+      "f4": {
+        "title": "Sve povezano s CRM-om — od izvora do zaključenja",
+        "desc": "Svaki razgovor, kvalifikacija i termin završava u Branct CRM-u (ili tvom): pipeline se ažurira sam, tim je usklađen, nula leadova izgubljeno između alata."
+      }
     },
     "try": {
       "eyebrow": "Ne vjeruj — testiraj",
@@ -633,19 +803,52 @@
       "eyebrow": "Anatomija",
       "title": "Stranica koja prodaje ima 5 slojeva. Većina gradi samo prvi.",
       "sub": "Prijeđi mišem (ili dodirni) svaki sloj da vidiš što čini za tvoj posao.",
-      "l1": { "title": "Dizajn koji gradi povjerenje", "desc": "Prvi dojam nastaje u 0,05 sekundi. Hijerarhija, tipografija i trenutna vjerodostojnost — dizajnirano od nule, nula predložaka." },
-      "l2": { "title": "Performanse koje zadržavaju posjet", "desc": "LCP ispod 2 sekunde na 4G. Svaka dodatna sekunda košta te oko 7% konverzija — mi ih ne rasipamo." },
-      "l3": { "title": "Tehnički SEO koji te stavlja na kartu", "desc": "Semantička struktura, schema.org i sitemap. Google čita tvoju stranicu kao kartu — i prikazuje je onima koji traže." },
-      "l4": { "title": "Konverzija koja pretvara u upite", "desc": "Put do akcije na svakom ekranu, CTA-ovi gdje oko slijeće, obrasci bez trenja povezani s tvojim CRM-om." },
-      "l5": { "title": "Praćenje koje ti govori što radi", "desc": "Pixel, događaji i UTM-ovi s GDPR privolom. Znaš odakle je došao svaki upit — i gdje uložiti sljedeći euro." }
+      "l1": {
+        "title": "Dizajn koji gradi povjerenje",
+        "desc": "Prvi dojam nastaje u 0,05 sekundi. Hijerarhija, tipografija i trenutna vjerodostojnost — dizajnirano od nule, nula predložaka."
+      },
+      "l2": {
+        "title": "Performanse koje zadržavaju posjet",
+        "desc": "LCP ispod 2 sekunde na 4G. Svaka dodatna sekunda košta te oko 7% konverzija — mi ih ne rasipamo."
+      },
+      "l3": {
+        "title": "Tehnički SEO koji te stavlja na kartu",
+        "desc": "Semantička struktura, schema.org i sitemap. Google čita tvoju stranicu kao kartu — i prikazuje je onima koji traže."
+      },
+      "l4": {
+        "title": "Konverzija koja pretvara u upite",
+        "desc": "Put do akcije na svakom ekranu, CTA-ovi gdje oko slijeće, obrasci bez trenja povezani s tvojim CRM-om."
+      },
+      "l5": {
+        "title": "Praćenje koje ti govori što radi",
+        "desc": "Pixel, događaji i UTM-ovi s GDPR privolom. Znaš odakle je došao svaki upit — i gdje uložiti sljedeći euro."
+      }
     },
     "sheet": {
       "eyebrow": "Tehnički list",
       "title": "Što nosiš kući.",
       "sub": "Bez sitnih slova: ovo je ono što je unutar BRANCT Premium Stranice.",
-      "c1": { "title": "Dizajn & Sadržaj", "i1": "Navigabilan prototip koji odobravaš prije koda", "i2": "Dizajn od nule za tvoj brend — nula predložaka", "i3": "Copywriting usmjeren na konverziju", "i4": "Do 4 jezika s prilagođenim tekstom, ne prijevodima" },
-      "c2": { "title": "Inženjering", "i1": "Lighthouse 95+ zajamčen ugovorom", "i2": "Tehnički SEO: schema.org, sitemap, metapodaci", "i3": "Meta/Google praćenje s GDPR privolom", "i4": "Obrasci povezani s tvojim CRM-om (ili Branct CRM-om)" },
-      "c3": { "title": "Nakon lansiranja", "i1": "Jamstvo ispravaka uključeno", "i2": "Izvještaj o performansama nakon objave", "i3": "Obuka da sam uređuješ sadržaj", "i4": "Opcionalni mjesečni razvoj, vođen podacima" }
+      "c1": {
+        "title": "Dizajn & Sadržaj",
+        "i1": "Navigabilan prototip koji odobravaš prije koda",
+        "i2": "Dizajn od nule za tvoj brend — nula predložaka",
+        "i3": "Copywriting usmjeren na konverziju",
+        "i4": "Do 4 jezika s prilagođenim tekstom, ne prijevodima"
+      },
+      "c2": {
+        "title": "Inženjering",
+        "i1": "Lighthouse 95+ zajamčen ugovorom",
+        "i2": "Tehnički SEO: schema.org, sitemap, metapodaci",
+        "i3": "Meta/Google praćenje s GDPR privolom",
+        "i4": "Obrasci povezani s tvojim CRM-om (ili Branct CRM-om)"
+      },
+      "c3": {
+        "title": "Nakon lansiranja",
+        "i1": "Jamstvo ispravaka uključeno",
+        "i2": "Izvještaj o performansama nakon objave",
+        "i3": "Obuka da sam uređuješ sadržaj",
+        "i4": "Opcionalni mjesečni razvoj, vođen podacima"
+      }
     },
     "compare": {
       "eyebrow": "Povuci i usporedi",
@@ -712,9 +915,19 @@
       "submit": "Pošalji upit →"
     },
     "ch": {
-      "wa": { "title": "WhatsApp — odgovara naš AI", "desc": "935 183 488 · odgovor stiže u sekundama, u bilo koje doba. Čovjek se uključuje kad ima smisla.", "live": "online sada" },
-      "email": { "title": "Email — detaljan briefing", "desc": "contacto@branct.com · priloži zahtjeve, reference, što god imaš." },
-      "loc": { "title": "Guimarães, Portugal", "desc": "Klijenti u Portugalu i Brazilu — video sastanci, bez problema s vremenskim zonama." }
+      "wa": {
+        "title": "WhatsApp — odgovara naš AI",
+        "desc": "935 183 488 · odgovor stiže u sekundama, u bilo koje doba. Čovjek se uključuje kad ima smisla.",
+        "live": "online sada"
+      },
+      "email": {
+        "title": "Email — detaljan briefing",
+        "desc": "contacto@branct.com · priloži zahtjeve, reference, što god imaš."
+      },
+      "loc": {
+        "title": "Guimarães, Portugal",
+        "desc": "Klijenti u Portugalu i Brazilu — video sastanci, bez problema s vremenskim zonama."
+      }
     },
     "next": {
       "title": "Što slijedi",
@@ -732,9 +945,18 @@
     "pr": {
       "eyebrow": "Zašto ovako",
       "title": "Tri pravila koja ne kršimo.",
-      "p1": { "title": "Rokovi su obećanja", "desc": "Raspored u ponudi ima datume, ne \"procjene\". Ako ikada neki promašimo, znat ćeš prije nego što pitaš — s novim rokom i razlogom." },
-      "p2": { "title": "Svaka faza završava nečim tvojim", "desc": "Nikad ne plaćaš \"rad u tijeku\". Svaka faza se zatvara rezultatom koji možeš vidjeti, testirati i odobriti — dijagnoza, prototip, stranica, izvještaj." },
-      "p3": { "title": "Brojke prije mišljenja", "desc": "\"Ispalo je lijepo\" nije metrika. Lighthouse, vrijeme učitavanja, leadovi i izvor svakoga — odlučujemo s tobom na temelju podataka, od prvog do zadnjeg dana." }
+      "p1": {
+        "title": "Rokovi su obećanja",
+        "desc": "Raspored u ponudi ima datume, ne \"procjene\". Ako ikada neki promašimo, znat ćeš prije nego što pitaš — s novim rokom i razlogom."
+      },
+      "p2": {
+        "title": "Svaka faza završava nečim tvojim",
+        "desc": "Nikad ne plaćaš \"rad u tijeku\". Svaka faza se zatvara rezultatom koji možeš vidjeti, testirati i odobriti — dijagnoza, prototip, stranica, izvještaj."
+      },
+      "p3": {
+        "title": "Brojke prije mišljenja",
+        "desc": "\"Ispalo je lijepo\" nije metrika. Lighthouse, vrijeme učitavanja, leadovi i izvor svakoga — odlučujemo s tobom na temelju podataka, od prvog do zadnjeg dana."
+      }
     }
   },
   "a11y": {
@@ -743,5 +965,11 @@
     "mobileNav": "Izbornik navigacije",
     "langSelector": "Odaberi jezik",
     "scrollService": "Usluga {current} od {total}: {title}"
+  },
+  "au": {
+    "title": "Tvoje korisničko područje živi u Branct CRM-u.",
+    "sub": "Leadovi, AI razgovori, pipeline i nadzorne ploče — sve na app.branct.com, u pregledniku ili na mobitelu.",
+    "cta": "Prijavi se na app.branct.com →",
+    "note": "Još nemaš račun? <a href=\"crm-gestao.html\">Isprobaj besplatno 7 dana — bez kartice.</a>"
   }
 }
