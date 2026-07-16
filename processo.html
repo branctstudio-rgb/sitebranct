@@ -28,18 +28,131 @@
 
     <link rel="stylesheet" href="src/css/branct.css?v=20260618">
     <style>
-    /* PROCESSO — a promessa de método. Neutro com acentos do espectro. */
+    /* ============================================================
+       PROCESSO — página de catálogo · identidade SLATE (#124359)
+       Conceito: "o contrato de método" — prazos escritos, entregáveis
+       em formato recibo, e uma linha de progresso que se preenche
+       à medida que lês. Linguagem: papel timbrado, não blueprint.
+       Paleta oficial: #124359 como cor da página.
+       ============================================================ */
+    :root {
+        --proc:      #124359;
+        --proc-soft: #1c5a74;
+        --proc-tint: #E9F0F4;
+        --proc-line: rgba(18,67,89,0.22);
+        --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+    }
+
+    /* Identidade da página: eyebrows e seleção em slate */
+    .eyebrow { color: var(--proc); }
+    .eyebrow::before { background: var(--proc-soft); }
+    ::selection { background: var(--proc-tint); color: var(--proc); }
+
     .proc-hero {
         background:
-            radial-gradient(50% 70% at 88% 0%, rgba(0,216,206,0.10), transparent 60%),
-            radial-gradient(40% 55% at 8% 60%, rgba(139,92,246,0.08), transparent 65%);
+            radial-gradient(52% 74% at 86% 0%, rgba(18,67,89,0.12), transparent 62%),
+            radial-gradient(42% 58% at 6% 72%, rgba(28,90,116,0.08), transparent 65%);
         padding-block: clamp(56px, 7vw, 96px) clamp(24px, 3vw, 40px);
     }
     .proc-hero h1 { font-size: clamp(2.4rem, 1.6rem + 3.8vw, 4.4rem); max-width: 860px; margin-top: var(--sp-4); }
+    .proc-hero h1 em { font-style: normal; color: var(--proc); }
     .proc-hero .sub { color: var(--muted); font-size: var(--fs-lead); max-width: 640px; margin-top: var(--sp-5); }
 
+    /* --- Timeline com linha que se preenche ao scroll --- */
+    .proc-steps {
+        position: relative; max-width: 880px;
+        list-style: none; padding: 0; margin: 0;
+        counter-reset: etapa;
+    }
+    /* trilho */
+    .proc-steps::before {
+        content: ''; position: absolute; left: 27px; top: 36px; bottom: 56px; width: 3px;
+        background: var(--line); border-radius: 3px;
+    }
+    /* preenchimento — fallback discreto via --fill (JS), scrubbed onde houver suporte */
+    .proc-steps::after {
+        content: ''; position: absolute; left: 27px; top: 36px; bottom: 56px; width: 3px;
+        background: linear-gradient(180deg, var(--proc-soft), var(--proc));
+        border-radius: 3px; transform-origin: top center;
+        scale: 1 var(--fill, 0);
+        transition: scale 0.7s var(--ease);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        @supports (animation-timeline: view()) {
+            .proc-steps::after {
+                transition: none;
+                animation: proc-fill linear both;
+                animation-timeline: view();
+                animation-range: contain 0% contain 92%;
+            }
+        }
+    }
+    @keyframes proc-fill { from { scale: 1 0; } to { scale: 1 1; } }
+    @media (prefers-reduced-motion: reduce) { .proc-steps::after { scale: 1 1; } }
+
+    .proc-step {
+        position: relative;
+        display: grid; grid-template-columns: 56px 1fr; gap: var(--sp-6);
+        padding-block: var(--sp-10);
+    }
+    .proc-step + .proc-step { border-top: 1px solid var(--line-soft); }
+    .proc-step__num {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: var(--surface); border: 2px solid var(--proc-line);
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display); font-weight: 800; font-size: 1.15rem;
+        color: var(--proc);
+        position: relative; z-index: 1;
+        transition: background var(--dur-slow) var(--ease), color var(--dur-slow) var(--ease),
+                    border-color var(--dur-slow) var(--ease), box-shadow var(--dur-slow) var(--ease);
+    }
+    .proc-step.is-passed .proc-step__num {
+        background: var(--proc); border-color: var(--proc); color: #FFFFFF;
+        box-shadow: 0 0 0 5px var(--proc-tint), var(--sh-2);
+    }
+    .proc-step__week {
+        display: inline-block;
+        font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--proc-soft);
+        margin-bottom: var(--sp-2);
+    }
+    .proc-step h3 { font-size: clamp(1.3rem, 1.15rem + 0.7vw, 1.65rem); }
+    .proc-step p { color: var(--muted); margin-top: var(--sp-2); max-width: 640px; }
+
+    /* Recibo do entregável — cada etapa fecha com algo teu */
+    .receipt {
+        display: flex; align-items: center; gap: var(--sp-4);
+        margin-top: var(--sp-5); max-width: 520px;
+        background: var(--surface);
+        border: 1.5px dashed var(--proc-line); border-radius: 10px;
+        padding: 12px 18px;
+        rotate: -0.4deg;
+        box-shadow: var(--sh-1);
+        opacity: 0.65;
+        transition: opacity var(--dur-slow) var(--ease), rotate var(--dur-slow) var(--ease),
+                    border-color var(--dur-slow) var(--ease);
+    }
+    .proc-step.is-passed .receipt { opacity: 1; rotate: 0deg; border-color: rgba(18,67,89,0.45); }
+    .receipt__no {
+        font-family: var(--font-mono); font-size: 0.64rem; font-weight: 600;
+        letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--proc-soft); white-space: nowrap;
+        border-right: 1px dashed var(--proc-line); padding-right: var(--sp-4);
+    }
+    .receipt__no b { display: block; font-size: 0.92rem; color: var(--proc); letter-spacing: 0.08em; }
+    .receipt__what { display: inline-flex; align-items: flex-start; gap: 8px; font-size: 0.95rem; font-weight: 600; color: var(--ink-2); }
+    .receipt__what svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 3px; color: var(--proc); transition: color var(--dur-slow) var(--ease); }
+    .proc-step.is-passed .receipt__what svg { color: var(--success); }
+
+    /* --- Princípios em slate --- */
     .principles { display: grid; gap: var(--sp-4); }
     @media (min-width: 860px) { .principles { grid-template-columns: repeat(3, 1fr); } }
+    .card--tint-slate {
+        background: linear-gradient(165deg, #EBF1F5 0%, #E2EBF1 100%);
+        border-color: rgba(18,67,89,0.18);
+    }
+    .principles .card__icon { background: var(--proc-tint); color: var(--proc); }
     </style>
 
     <!-- schema.org -->
@@ -133,43 +246,59 @@
             </div>
         </section>
 
-        <!-- ===== TIMELINE (partilhada, já traduzida) ===== -->
+        <!-- ===== TIMELINE (própria da página: linha preenche ao scroll, entregáveis em recibo) ===== -->
         <section class="section" aria-label="As quatro etapas" style="padding-top: var(--sp-8)">
             <div class="container">
-                <div class="process-flow reveal-stagger">
-                    <article class="process-step">
-                        <div class="process-step__num">01</div>
+                <ol class="proc-steps" id="proc-steps">
+                    <li class="proc-step">
+                        <div class="proc-step__num" aria-hidden="true">01</div>
                         <div>
+                            <span class="proc-step__week">Semana 0 · Arranque</span>
                             <h3 data-i18n="home.process.s1.title">Ouvimos primeiro.</h3>
                             <p data-i18n="home.process.s1.desc">Percebemos o teu negócio, os teus clientes e o que te está a travar — e só depois desenhamos a solução. Nada de propostas de gaveta.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s1.get">Recebes: diagnóstico e proposta em 48h</span></span>
+                            <div class="receipt">
+                                <span class="receipt__no">Entregável<b>№ 01</b></span>
+                                <span class="receipt__what"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s1.get">Recebes: diagnóstico e proposta em 48h</span></span>
+                            </div>
                         </div>
-                    </article>
-                    <article class="process-step">
-                        <div class="process-step__num">02</div>
+                    </li>
+                    <li class="proc-step">
+                        <div class="proc-step__num" aria-hidden="true">02</div>
                         <div>
+                            <span class="proc-step__week">Semana 1 · Design</span>
                             <h3 data-i18n="home.process.s2.title">Vês o site antes de ele existir.</h3>
                             <p data-i18n="home.process.s2.desc">Desenhamos um protótipo navegável para aprovares cada ecrã antes de escrevermos uma linha de código. Sem cheques em branco.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s2.get">Recebes: protótipo interativo para aprovar</span></span>
+                            <div class="receipt">
+                                <span class="receipt__no">Entregável<b>№ 02</b></span>
+                                <span class="receipt__what"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s2.get">Recebes: protótipo interativo para aprovar</span></span>
+                            </div>
                         </div>
-                    </article>
-                    <article class="process-step">
-                        <div class="process-step__num">03</div>
+                    </li>
+                    <li class="proc-step">
+                        <div class="proc-step__num" aria-hidden="true">03</div>
                         <div>
+                            <span class="proc-step__week">Semanas 3–6 · Construção</span>
                             <h3 data-i18n="home.process.s3.title">Construímos obcecados com velocidade.</h3>
                             <p data-i18n="home.process.s3.desc">Performance, SEO técnico e tracking afinados desde a primeira linha — porque um site bonito que demora a abrir é um site que não vende.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s3.get">Recebes: site no ar, Lighthouse 95+</span></span>
+                            <div class="receipt">
+                                <span class="receipt__no">Entregável<b>№ 03</b></span>
+                                <span class="receipt__what"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s3.get">Recebes: site no ar, Lighthouse 95+</span></span>
+                            </div>
                         </div>
-                    </article>
-                    <article class="process-step">
-                        <div class="process-step__num">04</div>
+                    </li>
+                    <li class="proc-step">
+                        <div class="proc-step__num" aria-hidden="true">04</div>
                         <div>
+                            <span class="proc-step__week">Contínuo · Evolução</span>
                             <h3 data-i18n="home.process.s4.title">Não desaparecemos depois do lançamento.</h3>
                             <p data-i18n="home.process.s4.desc">Medimos o que os teus visitantes fazem, otimizamos o que trava conversões e fazemos o site evoluir contigo, mês após mês.</p>
-                            <span class="process-step__get"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s4.get">Recebes: relatórios e melhorias contínuas</span></span>
+                            <div class="receipt">
+                                <span class="receipt__no">Entregável<b>№ 04</b></span>
+                                <span class="receipt__what"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="home.process.s4.get">Recebes: relatórios e melhorias contínuas</span></span>
+                            </div>
                         </div>
-                    </article>
-                </div>
+                    </li>
+                </ol>
             </div>
         </section>
 
@@ -181,7 +310,7 @@
                     <h2 style="margin-top:12px" data-i18n="proc.pr.title">Três regras que não quebramos.</h2>
                 </div>
                 <div class="principles reveal-stagger">
-                    <article class="card card--hover card--tint-cyan tilt">
+                    <article class="card card--hover card--tint-slate tilt">
                         <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                         <h3 data-i18n="proc.pr.p1.title">Prazos são promessas</h3>
                         <p data-i18n="proc.pr.p1.desc">O cronograma da proposta tem datas, não "estimativas". Se algum dia falharmos uma, ficas a saber antes de perguntar — com o novo prazo e o porquê.</p>
@@ -191,7 +320,7 @@
                         <h3 data-i18n="proc.pr.p2.title">Cada etapa acaba em algo teu</h3>
                         <p data-i18n="proc.pr.p2.desc">Nunca pagas por "trabalho em curso". Cada etapa fecha com um entregável que podes ver, testar e aprovar — diagnóstico, protótipo, site, relatório.</p>
                     </article>
-                    <article class="card card--hover card--tint-violet tilt">
+                    <article class="card card--hover card--tint-slate tilt">
                         <div class="card__icon tilt__pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
                         <h3 data-i18n="proc.pr.p3.title">Números antes de opiniões</h3>
                         <p data-i18n="proc.pr.p3.desc">"Ficou bonito" não é métrica. Lighthouse, tempo de carregamento, leads e origem de cada um — decidimos contigo em cima de dados, do primeiro dia ao último.</p>
@@ -273,5 +402,35 @@
     </aside>
 
     <script src="src/js/branct.js?v=20260618" defer></script>
+    <script>
+    // Timeline: cada etapa "acende" ao entrar em cena; em browsers sem
+    // animation-timeline, a linha preenche-se por quartos via --fill.
+    (function () {
+        'use strict';
+        var flow = document.getElementById('proc-steps');
+        if (!flow) return;
+        var steps = Array.prototype.slice.call(flow.querySelectorAll('.proc-step'));
+        var supportsSDA = window.CSS && CSS.supports && CSS.supports('animation-timeline: view()');
+        var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function pass(step) {
+            step.classList.add('is-passed');
+            if (!supportsSDA && !noMotion) {
+                var passed = flow.querySelectorAll('.proc-step.is-passed').length;
+                flow.style.setProperty('--fill', (passed / steps.length).toFixed(2));
+            }
+        }
+        if (!('IntersectionObserver' in window) || noMotion) {
+            steps.forEach(pass);
+            return;
+        }
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) { pass(entry.target); io.unobserve(entry.target); }
+            });
+        }, { threshold: 0.55 });
+        steps.forEach(function (s) { io.observe(s); });
+    })();
+    </script>
 </body>
 </html>
