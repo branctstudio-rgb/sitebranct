@@ -122,16 +122,82 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .btn--lg { padding: 19px 36px; font-size: 1.07rem; }
 .btn:disabled { opacity: 0.6; cursor: wait; }
 
-/* ===== HEADER ===== */
+/* ===== HEADER (padrão do site — portado de branct.css) ===== */
 .header {
-    position: sticky; top: 0; z-index: 50;
+    position: sticky; top: 0; z-index: 100;
     background: color-mix(in srgb, var(--bg) 85%, transparent);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
 }
-.header__inner { display: flex; align-items: center; justify-content: space-between; padding-block: 13px; }
+.header__inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 13px; }
 .logo { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em; }
 .logo span { color: var(--accent); font-weight: 600; }
+.header__actions { display: flex; align-items: center; gap: 12px; }
+.btn--sm { padding: 10px 18px; font-size: 0.9rem; }
+
+.nav-desktop { display: none; }
+@media (min-width: 940px) {
+    .nav-desktop { display: block; }
+    .nav-list { display: flex; align-items: center; gap: 24px; list-style: none; }
+    .nav-list a, .nav-list .nav-link {
+        font-size: 0.95rem; font-weight: 600; color: var(--ink-2);
+        transition: color 0.15s var(--ease);
+    }
+    .nav-list a:hover, .nav-list .nav-link:hover { color: var(--ink); }
+}
+.nav-item--dropdown { position: relative; }
+.services-submenu {
+    position: absolute; top: calc(100% + 10px); left: 50%; translate: -50% 0;
+    min-width: 230px; padding: 8px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-md); box-shadow: var(--sh-3);
+    list-style: none;
+    opacity: 0; visibility: hidden; transform: translateY(-6px);
+    transition: opacity 0.15s var(--ease), transform 0.15s var(--ease), visibility 0.15s;
+}
+.nav-item--dropdown:hover .services-submenu,
+.nav-item--dropdown:focus-within .services-submenu {
+    opacity: 1; visibility: visible; transform: translateY(0);
+}
+.services-submenu a {
+    display: block; padding: 10px 14px; border-radius: 8px;
+    font-size: 0.92rem; font-weight: 600; color: var(--ink-2);
+}
+.services-submenu a:hover { background: var(--surface-2); color: var(--ink); }
+
+.mobile-toggle { display: flex; flex-direction: column; gap: 5px; padding: 8px; }
+.mobile-toggle span { width: 22px; height: 2px; background: var(--ink); border-radius: 2px; transition: transform 0.25s var(--ease), opacity 0.25s; }
+.mobile-toggle.is-active span:first-child { transform: translateY(7px) rotate(45deg); }
+.mobile-toggle.is-active span:last-child { transform: translateY(-7px) rotate(-45deg); }
+@media (min-width: 940px) { .mobile-toggle { display: none; } }
+
+.mobile-drawer {
+    position: fixed; inset: 0 0 0 auto; width: min(86vw, 380px); z-index: 150;
+    background: var(--surface); border-left: 1px solid var(--line);
+    padding: 88px 24px 32px;
+    transform: translateX(100%);
+    transition: transform 0.45s var(--ease);
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+}
+.mobile-drawer.is-open { transform: translateX(0); box-shadow: var(--sh-3); }
+.mobile-nav-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.mobile-nav-list a, .mobile-nav-list .nav-link {
+    display: block; width: 100%; text-align: left;
+    padding: 12px 10px; border-radius: 8px;
+    font-size: 1.05rem; font-weight: 700;
+}
+.mobile-nav-list a:hover { background: var(--surface-2); }
+.mobile-submenu { list-style: none; padding-left: 16px; }
+.mobile-submenu a { font-size: 0.95rem; font-weight: 600; color: var(--ink-2); }
+.mobile-drawer-cta { margin-top: auto; }
+.drawer-overlay {
+    position: fixed; inset: 0; z-index: 140;
+    background: rgba(13,27,36,0.35);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.25s var(--ease), visibility 0.25s;
+}
+.drawer-overlay.is-visible { opacity: 1; visibility: visible; }
 
 /* ===== HERO ===== */
 .hero { padding: clamp(56px, 9vw, 100px) 0 clamp(40px, 6vw, 64px); position: relative; }
@@ -156,8 +222,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .frame__bar { display: flex; gap: 6px; padding: 4px 6px 10px; }
 .frame__bar span { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.16); }
 .frame__media { position: relative; border-radius: calc(var(--r-xl) - 10px); overflow: hidden; }
-.frame img { width: 100%; height: auto; aspect-ratio: 2551 / 1398; background: #0a141d; }
-.frame video { width: 100%; height: auto; aspect-ratio: 1280 / 694; background: #0a141d; }
+.frame img { width: 100%; height: auto; aspect-ratio: 1704 / 928; background: #0a141d; }
+.frame video { width: 100%; height: auto; aspect-ratio: 1280 / 696; background: #0a141d; }
 .frame--glow::after {
     content: ''; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; pointer-events: none;
     background: radial-gradient(60% 50% at 50% 0%, rgba(0,246,236,0.16), transparent 70%);
@@ -431,13 +497,51 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 <body>
 <div class="scroll-progress" aria-hidden="true"></div>
 
-<!-- ===== HEADER ===== -->
+<!-- ===== HEADER (padrão do site; CTA mantém o objetivo da página: trial) ===== -->
 <header class="header">
     <div class="container header__inner">
-        <a href="#top" class="logo">BRANCT<span>.Tech</span></a>
-        <a href="#trial-signup" class="btn btn--ghost" data-cta="header">Testa grátis 7 dias</a>
+        <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+        <nav class="nav-desktop" aria-label="Principal">
+            <ul class="nav-list">
+                <li class="nav-item--dropdown">
+                    <button class="nav-link" aria-haspopup="true" aria-expanded="false" aria-controls="services-submenu">Serviços</button>
+                    <ul class="services-submenu" id="services-submenu">
+                        <li><a href="website-premium.html">Website Premium</a></li>
+                        <li><a href="landing-page.html">Landing Pages</a></li>
+                        <li><a href="crm-gestao.html" aria-current="page">Branct CRM</a></li>
+                        <li><a href="automacao-ia.html">Automação & IA</a></li>
+                    </ul>
+                </li>
+                <li><a href="crm-gestao.html" aria-current="page">Branct CRM</a></li>
+                <li><a href="processo.html">Processo</a></li>
+                <li><a href="contactos.html">Contactos</a></li>
+                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer">Área de Cliente</a></li>
+            </ul>
+        </nav>
+        <div class="header__actions">
+            <a href="#trial-signup" class="btn btn--accent btn--sm" data-cta="header">Testa grátis 7 dias</a>
+            <button class="mobile-toggle" aria-label="Menu" aria-controls="mobile-drawer"><span></span><span></span></button>
+        </div>
     </div>
 </header>
+
+<div class="drawer-overlay" aria-hidden="true"></div>
+<div class="mobile-drawer" id="mobile-drawer" role="dialog" aria-label="Menu" aria-modal="true">
+    <nav aria-label="Mobile">
+        <ul class="mobile-nav-list">
+            <li><a href="index.html">Início</a></li>
+            <li><a href="website-premium.html">Website Premium</a></li>
+            <li><a href="landing-page.html">Landing Pages</a></li>
+            <li><a href="crm-gestao.html" aria-current="page">Branct CRM</a></li>
+            <li><a href="automacao-ia.html">Automação & IA</a></li>
+            <li><a href="processo.html">Processo</a></li>
+            <li><a href="contactos.html">Contactos</a></li>
+            <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer">Área de Cliente</a></li>
+            <li><a href="blog.html">Blog</a></li>
+        </ul>
+    </nav>
+    <a href="#trial-signup" class="btn btn--accent mobile-drawer-cta" data-cta="drawer">Testa grátis 7 dias</a>
+</div>
 
 <main id="top">
 
@@ -883,6 +987,42 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 
 <!-- Trial signup form: UTM/ref capture + Lead (1x, no submit) + redirect p/ app.branct.com/signup -->
 <script src="src/js/trial.js?v=20260611" defer></script>
+
+<script>
+// Header padrão: drawer mobile + dropdown (portado de branct.js, sem tocar no consent/Pixel desta página)
+(function () {
+    'use strict';
+    var toggle = document.querySelector('.mobile-toggle');
+    var drawer = document.querySelector('.mobile-drawer');
+    var overlay = document.querySelector('.drawer-overlay');
+    if (toggle && drawer) {
+        var setOpen = function (open) {
+            drawer.classList.toggle('is-open', open);
+            toggle.classList.toggle('is-active', open);
+            toggle.setAttribute('aria-expanded', open);
+            if (overlay) overlay.classList.toggle('is-visible', open);
+            document.body.style.overflow = open ? 'hidden' : '';
+        };
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.addEventListener('click', function () { setOpen(!drawer.classList.contains('is-open')); });
+        if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && drawer.classList.contains('is-open')) setOpen(false);
+        });
+        drawer.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () { setOpen(false); });
+        });
+    }
+    var dd = document.querySelector('.nav-item--dropdown');
+    var ddBtn = dd ? dd.querySelector('button') : null;
+    if (dd && ddBtn) {
+        ddBtn.addEventListener('click', function () {
+            var open = dd.classList.toggle('is-open');
+            ddBtn.setAttribute('aria-expanded', open);
+        });
+    }
+})();
+</script>
 
 </body>
 </html>
