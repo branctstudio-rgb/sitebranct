@@ -9,6 +9,7 @@
     <title>Websites Premium | Sites que carregam rápido e vendem — BRANCT</title>
     <meta name="description" content="Websites premium para PMEs: carregam em menos de 2 segundos, aparecem no Google e transformam visitas em pedidos. Proposta em 48h.">
     <link rel="canonical" href="https://branct.com/website-premium.html">
+    <meta name="theme-color" content="#09121c">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
@@ -29,32 +30,125 @@
     <link rel="stylesheet" href="src/css/branct.css?v=20260618">
     <style>
     /* ============================================================
-       WEBSITE PREMIUM — página de catálogo · identidade CYAN
-       Conceito: "a anatomia de um site que vende" — a página
-       demonstra o serviço em vez de o descrever.
+       WEBSITE PREMIUM — página de catálogo · SHOWROOM ESCURO
+       A única página escura do site (estilo Apple/MacBook Pro):
+       quando entras na sala do produto mais caro, baixam as luzes.
+       100% família da paleta oficial: #09121c #072c3d #124359
+       #1c5a74 · #097697 #6ec1e4 · #efeeee #d2d2d2.
+       Estratégia: re-mapear os tokens semânticos do design system
+       ao nível da página — header, footer, FAQ e consent vestem
+       o escuro sozinhos. Estilos fora de @layer ganham ao sistema.
        ============================================================ */
 
-    /* --- Hero de catálogo: banho cyan, tipografia dominante --- */
-    .wp-hero {
-        background:
-            radial-gradient(70% 90% at 85% -10%, rgba(0,246,236,0.18), transparent 60%),
-            radial-gradient(50% 70% at 0% 100%, rgba(12,124,143,0.10), transparent 65%),
-            linear-gradient(180deg, #E8F6F7 0%, var(--bg) 88%);
-        padding-block: clamp(64px, 9vw, 130px) clamp(48px, 6vw, 80px);
-        position: relative; overflow: hidden;
+    :root {
+        color-scheme: dark;
+
+        /* Superfícies — showroom */
+        --bg:           #09121c;
+        --surface:      #0E2433;
+        --surface-2:    #071B2A;
+        --surface-ink:  #050B12;
+        --line:         rgba(110,193,228,0.16);
+        --line-soft:    rgba(110,193,228,0.08);
+
+        /* Tinta invertida */
+        --ink:          #EFEEEE;
+        --ink-2:        #C7D5DE;
+        --muted:        #8FA5B4;
+
+        /* Acento em registo dark: o cyan claro passa a interativo */
+        --accent:        #6EC1E4;
+        --accent-strong: #9FD9F2;
+        --accent-tint:   rgba(110,193,228,0.12);
+        --violet-tint:   rgba(139,92,246,0.16);
+
+        --success:       #6EE7A0;
+        --success-tint:  rgba(21,128,61,0.22);
+
+        /* Sombras profundas do showroom */
+        --sh-1: 0 1px 2px rgba(0,0,0,0.4);
+        --sh-2: 0 1px 2px rgba(0,0,0,0.35), 0 12px 32px -8px rgba(0,0,0,0.5);
+        --sh-3: 0 2px 4px rgba(0,0,0,0.4), 0 28px 64px -16px rgba(0,0,0,0.6);
+        --sh-frame: 0 2px 6px rgba(0,0,0,0.5), 0 40px 100px -24px rgba(0,0,0,0.75);
+
+        /* Mono técnico (system stack — zero bytes extra) */
+        --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
     }
+
+    /* Correções pontuais do sistema em registo dark */
+    .skip-link { color: var(--bg); }
+    .btn--primary { color: #09121c; --btn-edge: #A9BCC8; --btn-glow: rgba(110,193,228,0.35); }
+    .btn--primary:hover { background: #FFFFFF; }
+    .btn--primary::after { background: linear-gradient(115deg, transparent 30%, rgba(9,118,151,0.18) 48%, rgba(110,193,228,0.22) 52%, transparent 70%); }
+    .btn--ghost:hover { border-color: var(--accent); color: var(--accent-strong); }
+    ::selection { background: rgba(110,193,228,0.3); color: #FFFFFF; }
+    .card--hover:hover { border-color: rgba(110,193,228,0.35); }
+
+    /* Vinheta do showroom — luz a cair de cima, uma vez, sem repaint */
+    body {
+        background-image:
+            radial-gradient(90% 46% at 50% 0%, rgba(28,90,116,0.28), transparent 70%);
+        background-repeat: no-repeat;
+    }
+
+    /* --- Hero: a entrada do showroom --- */
+    .wp-hero {
+        position: relative; overflow: hidden;
+        padding-block: clamp(72px, 10vw, 150px) clamp(48px, 6vw, 88px);
+        background:
+            radial-gradient(46% 60% at 50% -12%, rgba(110,193,228,0.16), transparent 62%),
+            radial-gradient(36% 48% at 88% 16%, rgba(18,67,89,0.5), transparent 70%),
+            linear-gradient(180deg, #0B1B2A 0%, var(--bg) 72%);
+    }
+    /* Grelha blueprint — desvanece a partir do cone de luz */
+    .wp-hero::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background-image:
+            linear-gradient(rgba(110,193,228,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(110,193,228,0.05) 1px, transparent 1px);
+        background-size: 56px 56px;
+        -webkit-mask-image: radial-gradient(75% 85% at 50% 0%, #000 25%, transparent 78%);
+        mask-image: radial-gradient(75% 85% at 50% 0%, #000 25%, transparent 78%);
+    }
+    .wp-hero > .container { position: relative; z-index: 1; }
     .wp-hero__badge {
         display: inline-flex; align-items: center; gap: 10px;
-        font-size: var(--fs-label); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
-        color: var(--accent-strong);
+        font-family: var(--font-mono);
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--accent);
         padding: 8px 16px; border-radius: var(--r-full);
-        background: rgba(255,255,255,0.7); border: 1px solid rgba(12,124,143,0.25);
+        background: rgba(7,44,61,0.55); border: 1px solid rgba(110,193,228,0.28);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     }
-    .wp-hero h1 { font-size: clamp(2.6rem, 1.6rem + 4.6vw, 5rem); max-width: 900px; margin-top: var(--sp-6); }
-    .wp-hero h1 em { font-style: normal; color: var(--accent-strong); }
+    .wp-hero__badge::before {
+        content: ''; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--accent); box-shadow: 0 0 10px rgba(110,193,228,0.9);
+    }
+    .wp-hero h1 {
+        font-size: clamp(2.6rem, 1.6rem + 4.6vw, 5rem);
+        max-width: 900px; margin-top: var(--sp-6); color: #FFFFFF;
+    }
+    .wp-hero h1 em {
+        font-style: normal; color: var(--accent);
+        text-shadow: 0 0 28px rgba(110,193,228,0.45);
+    }
     .wp-hero__sub { color: var(--ink-2); font-size: var(--fs-lead); max-width: 640px; margin-block: var(--sp-6) var(--sp-8); }
 
-    /* Cena 3D do hero: browser em perspetiva + cartões flutuantes */
+    /* Entrada em palco: elementos do hero sobem uma vez no load */
+    @media (prefers-reduced-motion: no-preference) {
+        .wp-hero__badge, .wp-hero h1, .wp-hero__sub, .wp-hero .hero__cta-row, .wp-hero .spec-strip {
+            animation: wp-enter 0.7s var(--ease) both;
+        }
+        .wp-hero h1 { animation-delay: 0.08s; }
+        .wp-hero__sub { animation-delay: 0.16s; }
+        .wp-hero .hero__cta-row { animation-delay: 0.24s; }
+        .wp-hero .spec-strip { animation-delay: 0.34s; }
+        .wp-scene { animation: wp-enter-scene 0.9s var(--ease) 0.2s both; }
+    }
+    @keyframes wp-enter { from { opacity: 0; translate: 0 26px; } to { opacity: 1; translate: 0 0; } }
+    @keyframes wp-enter-scene { from { opacity: 0; translate: 0 34px; } to { opacity: 1; translate: 0 0; } }
+
+    /* Cena 3D do hero: browser em perspetiva, vidro navy com aura cyan */
     .wp-hero__grid { display: grid; gap: var(--sp-12); align-items: center; }
     @media (min-width: 980px) { .wp-hero__grid { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); } }
     .wp-scene { perspective: 1400px; position: relative; }
@@ -65,44 +159,48 @@
         border-radius: var(--r-lg);
         background: var(--surface-ink);
         padding: 10px;
-        box-shadow: -30px 40px 80px -30px rgba(13,27,36,0.45), 0 0 0 1px rgba(255,255,255,0.08);
+        box-shadow:
+            -30px 48px 90px -30px rgba(0,0,0,0.8),
+            0 0 0 1px rgba(110,193,228,0.22),
+            0 0 60px -12px rgba(110,193,228,0.25);
         transition: transform 0.6s var(--ease);
     }
     .wp-scene:hover .wp-browser { transform: rotateY(-10deg) rotateX(3deg) rotateZ(0.5deg); }
     .wp-browser img { border-radius: calc(var(--r-lg) - 8px); width: 100%; height: auto; display: block; }
     .wp-float {
         position: absolute; z-index: 2;
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(12,124,143,0.2); border-radius: var(--r-md);
-        box-shadow: 0 24px 50px -20px rgba(13,27,36,0.35);
+        background: rgba(7,44,61,0.78);
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(110,193,228,0.3); border-radius: var(--r-md);
+        box-shadow: 0 24px 50px -20px rgba(0,0,0,0.7);
         padding: 14px 18px;
         display: flex; align-items: center; gap: 12px;
-        font-size: var(--fs-small); font-weight: 700;
+        font-size: var(--fs-small); font-weight: 700; color: #EFEEEE;
     }
     .wp-float--score { top: -26px; right: -14px; animation: wp-bob 6s ease-in-out infinite; }
     .wp-float--lead { bottom: -22px; left: -26px; animation: wp-bob 7s ease-in-out 1.2s infinite; }
     .wp-float small { display: block; color: var(--muted); font-weight: 500; }
     .wp-float .ring { width: 46px; height: 46px; flex-shrink: 0; }
-    .wp-float .ring text { font: 800 11px 'Manrope', sans-serif; fill: var(--accent-strong); }
-    .wp-float .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .wp-float .ring text { font: 800 11px 'Manrope', sans-serif; fill: var(--accent); }
+    .wp-float .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px rgba(110,231,160,0.8); flex-shrink: 0; }
     @keyframes wp-bob { 0%, 100% { transform: translateY(0) translateZ(60px); } 50% { transform: translateY(-10px) translateZ(60px); } }
     @media (prefers-reduced-motion: reduce) { .wp-float { animation: none; } .wp-scene:hover .wp-browser { transform: rotateY(-16deg) rotateX(5deg) rotateZ(1deg); } }
 
-    /* Ficha de especificações no hero (vibe catálogo de produto) */
+    /* Ficha de especificações no hero — chips de vidro escuro */
     .spec-strip {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3);
         margin-top: var(--sp-10); max-width: 980px;
     }
     @media (max-width: 860px) { .spec-strip { grid-template-columns: repeat(2, 1fr); } }
     .spec-item {
-        background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
-        border: 1px solid rgba(12,124,143,0.18); border-radius: var(--r-md);
+        background: rgba(7,44,61,0.4);
+        border: 1px solid var(--line); border-radius: var(--r-md);
         padding: var(--sp-4) var(--sp-5);
     }
-    .spec-item b { display: block; font-family: var(--font-display); font-size: 1.25rem; letter-spacing: -0.02em; }
+    .spec-item b { display: block; font-family: var(--font-display); font-size: 1.25rem; letter-spacing: -0.02em; color: #FFFFFF; }
     .spec-item span { color: var(--muted); font-size: 0.82rem; }
 
-    /* --- Anatomia: camadas 3D interativas --- */
+    /* --- Anatomia: as 5 camadas montam-se ao entrar no viewport --- */
     .anatomy { overflow: hidden; }
     .anatomy__grid { display: grid; gap: var(--sp-12); align-items: center; }
     @media (min-width: 920px) { .anatomy__grid { grid-template-columns: 1fr 1fr; } }
@@ -113,24 +211,44 @@
     .layer {
         position: absolute; left: 8%; right: 8%; top: 44%;
         height: 190px; border-radius: 18px;
-        transform: rotateX(58deg) rotateZ(-32deg) translateZ(var(--z, 0px));
-        transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease), opacity 0.4s ease;
-        border: 1.5px solid rgba(12,124,143,0.35);
-        background: rgba(234,247,248,0.75);
-        box-shadow: 0 20px 40px -18px rgba(13,27,36,0.25);
+        /* estado inicial: pousadas umas nas outras, à espera do scroll */
+        transform: rotateX(58deg) rotateZ(-32deg) translateZ(calc(var(--z, 0px) * 0.06));
+        opacity: 0.4;
+        transition: transform 0.7s var(--ease), box-shadow 0.5s var(--ease), opacity 0.5s ease;
+        border: 1.5px solid rgba(110,193,228,0.38);
+        background: rgba(18,67,89,0.38);
+        box-shadow: 0 20px 40px -18px rgba(0,0,0,0.6);
         display: flex; align-items: flex-start; justify-content: flex-end;
         padding: 12px 18px;
         font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
-        color: var(--accent-strong);
+        color: var(--accent);
     }
-    .layer[data-n="1"] { --z: 0px; }
-    .layer[data-n="2"] { --z: 55px; }
-    .layer[data-n="3"] { --z: 110px; }
-    .layer[data-n="4"] { --z: 165px; }
-    .layer[data-n="5"] { --z: 220px; background: rgba(13,27,36,0.92); color: var(--accent-vivid); border-color: rgba(0,246,236,0.5); }
-    .layer.is-active {
+    .layer[data-n="1"] { --z: 0px;   transition-delay: 0ms; }
+    .layer[data-n="2"] { --z: 55px;  transition-delay: 90ms; }
+    .layer[data-n="3"] { --z: 110px; transition-delay: 180ms; }
+    .layer[data-n="4"] { --z: 165px; transition-delay: 270ms; }
+    .layer[data-n="5"] {
+        --z: 220px; transition-delay: 360ms;
+        background: rgba(110,193,228,0.92); color: #09121c;
+        border-color: rgba(110,193,228,0.9);
+        box-shadow: 0 20px 50px -14px rgba(110,193,228,0.35);
+    }
+    /* montado: cada camada levanta até à sua cota */
+    .layer-stack.is-built .layer {
+        transform: rotateX(58deg) rotateZ(-32deg) translateZ(var(--z));
+        opacity: 1; transition-delay: 0ms;
+    }
+    .layer-stack.is-built .layer[data-n="2"] { transition-delay: 70ms; }
+    .layer-stack.is-built .layer[data-n="3"] { transition-delay: 140ms; }
+    .layer-stack.is-built .layer[data-n="4"] { transition-delay: 210ms; }
+    .layer-stack.is-built .layer[data-n="5"] { transition-delay: 280ms; }
+    .layer-stack.is-built .layer.is-active {
         transform: rotateX(58deg) rotateZ(-32deg) translateZ(calc(var(--z) + 46px));
-        box-shadow: 0 30px 60px -18px rgba(12,124,143,0.5), 0 0 0 2px var(--accent);
+        box-shadow: 0 0 0 2px var(--accent), 0 30px 70px -16px rgba(110,193,228,0.4);
+        transition-delay: 0ms;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .layer { transform: rotateX(58deg) rotateZ(-32deg) translateZ(var(--z)); opacity: 1; }
     }
     .anatomy__legend { display: flex; flex-direction: column; gap: var(--sp-2); }
     .anatomy__item {
@@ -142,62 +260,121 @@
         cursor: pointer;
     }
     .anatomy__item:hover { background: var(--surface); }
-    .anatomy__item.is-active { background: var(--surface); border-color: rgba(12,124,143,0.3); box-shadow: var(--sh-2); }
+    .anatomy__item.is-active {
+        background: var(--surface);
+        border-color: rgba(110,193,228,0.35);
+        box-shadow: 0 0 40px -18px rgba(110,193,228,0.35), var(--sh-2);
+    }
     .anatomy__item .n {
         width: 44px; height: 44px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-family: var(--font-display); font-weight: 800;
-        background: var(--accent-tint); color: var(--accent-strong);
+        background: var(--accent-tint); color: var(--accent);
+        border: 1px solid rgba(110,193,228,0.25);
     }
-    .anatomy__item h3 { font-size: 1.1rem; }
+    .anatomy__item h3 { font-size: 1.1rem; color: #FFFFFF; }
     .anatomy__item p { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
 
-    /* --- Ficha técnica (o que recebes) --- */
+    /* --- Ficha técnica: datasheet de engenharia (blueprint) --- */
+    .sheet-section { position: relative; }
+    .sheet-section::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background-image:
+            linear-gradient(rgba(110,193,228,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(110,193,228,0.04) 1px, transparent 1px);
+        background-size: 56px 56px;
+    }
+    .sheet-section > .container { position: relative; z-index: 1; }
     .sheet-grid { display: grid; gap: var(--sp-4); }
     @media (min-width: 860px) { .sheet-grid { grid-template-columns: repeat(3, 1fr); } }
-    .sheet-col { border-radius: var(--r-lg); padding: var(--sp-8); border: 1px solid var(--line); background: var(--surface); }
-    .sheet-col--cyan { background: linear-gradient(170deg, #EAF7F8, #FFFFFF 70%); border-color: rgba(12,124,143,0.2); }
-    .sheet-col--blue { background: linear-gradient(170deg, #EBF2FB, #FFFFFF 70%); border-color: rgba(79,168,232,0.3); }
-    .sheet-col--violet { background: linear-gradient(170deg, #F1EBFE, #FFFFFF 70%); border-color: rgba(139,92,246,0.25); }
-    .sheet-col h3 { font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: var(--sp-5); }
-    .sheet-col--cyan h3 { color: var(--accent-strong); }
-    .sheet-col--blue h3 { color: #2D6BB4; }
-    .sheet-col--violet h3 { color: var(--violet-ink); }
-    .sheet-col ul { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); }
-    .sheet-col li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; color: var(--ink-2); }
-    .sheet-col li svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 4px; color: var(--success); }
+    .sheet-col {
+        position: relative;
+        border-radius: var(--r-sm);
+        padding: var(--sp-6) var(--sp-6) var(--sp-5);
+        border: 1px solid var(--line);
+        background: rgba(7,44,61,0.32);
+    }
+    /* cantos técnicos ┐└ */
+    .sheet-col::before, .sheet-col::after {
+        content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+    }
+    .sheet-col::before { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+    .sheet-col::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+    .sheet-col h3 {
+        font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600;
+        letter-spacing: 0.2em; text-transform: uppercase;
+        color: var(--accent);
+        padding-bottom: var(--sp-3); margin-bottom: var(--sp-2);
+        border-bottom: 1px dashed rgba(110,193,228,0.25);
+    }
+    .sheet-col h3::before { content: '// '; opacity: 0.6; }
+    .sheet-col ul { list-style: none; display: flex; flex-direction: column; }
+    .sheet-col li {
+        display: flex; gap: 10px; align-items: flex-start;
+        font-size: 0.95rem; color: var(--ink-2);
+        padding-block: 11px;
+        border-bottom: 1px dotted rgba(110,193,228,0.14);
+    }
+    .sheet-col li:last-child { border-bottom: 0; }
+    .sheet-col li svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 4px; color: var(--accent); }
+    /* carimbo de contrato na coluna de engenharia */
+    .sheet-col--stamp { overflow: hidden; }
+    .sheet-col--stamp .stamp {
+        position: absolute; right: -34px; bottom: 26px;
+        transform: rotate(-14deg);
+        font-family: var(--font-mono); font-size: 0.62rem; font-weight: 600;
+        letter-spacing: 0.22em; text-transform: uppercase;
+        color: rgba(110,193,228,0.5);
+        border: 1.5px solid rgba(110,193,228,0.35);
+        border-radius: 4px; padding: 6px 34px;
+        pointer-events: none;
+    }
+    /* legenda de desenho técnico (title block) */
+    .sheet-titleblock {
+        margin-top: var(--sp-4);
+        display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2) var(--sp-6);
+        border: 1px solid var(--line); border-radius: var(--r-sm);
+        padding: 10px 16px;
+        font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--muted);
+    }
+    .sheet-titleblock b { color: var(--accent); font-weight: 600; }
 
-    /* --- Comparador antes/depois (slider) --- */
+    /* --- Comparador: arrastar para acender a luz --- */
     .compare {
         position: relative; border-radius: var(--r-xl); overflow: hidden;
-        border: 1px solid var(--line); box-shadow: var(--sh-3);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh-3), 0 0 90px -24px rgba(110,193,228,0.2);
         max-width: 980px; margin-inline: auto;
     }
     .compare__panel { padding: clamp(28px, 4vw, 56px); min-height: 380px; }
-    .compare__panel--before { background: #1A222B; color: #B8C2CA; }
+    .compare__panel--before { background: #10161d; color: #93A1AC; }
     .compare__panel--after {
         position: absolute; inset: 0;
-        background: linear-gradient(160deg, #F2FBFB, #FFFFFF);
+        background: linear-gradient(160deg, #F7FCFD, #FFFFFF);
+        color: #3D4D59;
         clip-path: inset(0 0 0 var(--cut, 50%));
     }
     .compare h3 { font-size: 1.4rem; margin-bottom: var(--sp-5); }
-    .compare__panel--before h3 { color: #fff; }
+    .compare__panel--before h3 { color: #E4E9ED; }
+    .compare__panel--after h3 { color: #0D1B24; }
     .compare__metrics { display: flex; flex-direction: column; gap: var(--sp-3); max-width: 420px; }
     .compare__metrics.right { margin-left: auto; text-align: right; align-items: flex-end; }
     .cmetric { display: flex; gap: 12px; align-items: baseline; font-size: 1rem; }
     .cmetric b { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: -0.02em; }
     .compare__panel--before .cmetric b { color: #FF7A6E; }
-    .compare__panel--after .cmetric b { color: var(--accent-strong); }
+    .compare__panel--after .cmetric b { color: #095E6E; }
     .compare__handle {
         position: absolute; top: 0; bottom: 0; left: var(--cut, 50%); width: 3px;
         background: var(--accent); z-index: 3; pointer-events: none;
         transform: translateX(-50%);
+        box-shadow: 0 0 24px rgba(110,193,228,0.55);
     }
     .compare__handle::after {
         content: '⟷'; position: absolute; top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         width: 46px; height: 46px; border-radius: 50%;
-        background: var(--accent); color: #fff;
+        background: var(--accent); color: #09121c;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.1rem; box-shadow: var(--sh-2);
     }
@@ -207,35 +384,63 @@
     }
     .compare__tag {
         position: absolute; top: 18px; z-index: 2;
-        font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+        font-family: var(--font-mono);
+        font-size: 0.66rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
         padding: 6px 12px; border-radius: var(--r-full);
     }
-    .compare__tag--before { left: 18px; background: rgba(255,255,255,0.12); color: #fff; }
-    .compare__tag--after { right: 18px; background: var(--accent-tint); color: var(--accent-strong); z-index: 2; }
+    .compare__tag--before { left: 18px; background: rgba(255,255,255,0.1); color: #C7D5DE; }
+    .compare__tag--after { right: 18px; background: rgba(9,118,151,0.12); color: #095E6E; }
 
-    /* --- CTA final cyan (distinto do ink da home) --- */
-    .wp-cta {
-        background:
-            radial-gradient(60% 80% at 80% 20%, rgba(0,246,236,0.16), transparent 60%),
-            linear-gradient(165deg, #0B4E5C 0%, #0D1B24 80%);
-        border-radius: var(--r-xl);
-        padding: clamp(40px, 6vw, 80px);
-        text-align: center; color: #fff;
-        position: relative; overflow: hidden;
-    }
-    .wp-cta > * { position: relative; z-index: 1; }
-    .wp-cta p { color: #A9C6CC; }
-
-    /* Métricas meta-prova (mantidas) */
+    /* --- Meta-prova: instrumentos ao vivo --- */
     .metric-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); margin-top: var(--sp-8); }
     @media (max-width: 720px) { .metric-tiles { grid-template-columns: 1fr; } }
     .metric-tile {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.12); border-radius: var(--r-lg);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(110,193,228,0.18); border-radius: var(--r-lg);
         padding: var(--sp-8) var(--sp-6); text-align: center;
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     }
-    .metric-tile .stat__value { display:block; font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; letter-spacing: -0.03em; margin-bottom: var(--sp-2); }
+    .metric-tile .stat__value {
+        display: block; font-family: var(--font-display); font-weight: 800;
+        font-size: 2.6rem; letter-spacing: -0.03em; margin-bottom: var(--sp-2);
+        font-variant-numeric: tabular-nums;
+    }
+    .metric-tile .stat__label { color: #A9BAC4; }
+    .live-caption {
+        display: block; text-align: center; margin-top: var(--sp-6);
+        font-family: var(--font-mono); font-size: 0.68rem;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--muted);
+    }
+    .live-caption .live-dot {
+        display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+        background: var(--success); margin-right: 8px; vertical-align: 1px;
+        box-shadow: 0 0 10px rgba(110,231,160,0.9);
+        animation: live-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes live-pulse { 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) { .live-caption .live-dot { animation: none; } }
+
+    /* --- CTA final: a saída para a luz (única superfície clara) --- */
+    .wp-cta {
+        background:
+            radial-gradient(70% 90% at 80% -10%, rgba(110,193,228,0.25), transparent 60%),
+            linear-gradient(170deg, #FFFFFF 0%, #E9F4F9 100%);
+        border-radius: var(--r-xl);
+        padding: clamp(40px, 6vw, 80px);
+        text-align: center; color: #0D1B24;
+        position: relative; overflow: hidden;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.25), 0 30px 90px -20px rgba(110,193,228,0.3);
+    }
+    .wp-cta > * { position: relative; z-index: 1; }
+    .wp-cta h2 { color: #0D1B24; }
+    .wp-cta p { color: #3D4D59; }
+    .wp-cta .eyebrow { color: #095E6E; }
+    .wp-cta .eyebrow::before { background: #097697; }
+    .wp-cta .btn--primary { background: #0D1B24; color: #FFFFFF; --btn-edge: #02080D; --btn-glow: rgba(13,27,36,0.4); }
+    .wp-cta .btn--primary:hover { background: #162833; }
+    .wp-cta .btn--ghost { border-color: rgba(13,27,36,0.25); color: #0D1B24; }
+    .wp-cta .btn--ghost:hover { border-color: #0D1B24; color: #0D1B24; }
     </style>
 
     <!-- schema.org -->
@@ -318,7 +523,7 @@
 
     <main id="main-content">
 
-        <!-- ===== HERO DE CATÁLOGO ===== -->
+        <!-- ===== HERO: A ENTRADA DO SHOWROOM ===== -->
         <section class="wp-hero" aria-label="Websites Premium">
             <div class="container">
                 <div class="wp-hero__grid">
@@ -338,8 +543,8 @@
                         </div>
                         <div class="wp-float wp-float--score">
                             <svg class="ring" viewBox="0 0 46 46">
-                                <circle cx="23" cy="23" r="19" fill="none" stroke="#E3F4F6" stroke-width="5"/>
-                                <circle cx="23" cy="23" r="19" fill="none" stroke="#0C7C8F" stroke-width="5" stroke-linecap="round" stroke-dasharray="117 120" transform="rotate(-90 23 23)"/>
+                                <circle cx="23" cy="23" r="19" fill="none" stroke="rgba(110,193,228,0.18)" stroke-width="5"/>
+                                <circle cx="23" cy="23" r="19" fill="none" stroke="#6EC1E4" stroke-width="5" stroke-linecap="round" stroke-dasharray="117 120" transform="rotate(-90 23 23)"/>
                                 <text x="23" y="27" text-anchor="middle">98</text>
                             </svg>
                             <span>Performance<small>Lighthouse · mobile</small></span>
@@ -401,8 +606,8 @@
             </div>
         </section>
 
-        <!-- ===== FICHA TÉCNICA ===== -->
-        <section class="section section--alt" aria-label="O que recebes">
+        <!-- ===== FICHA TÉCNICA (datasheet de engenharia) ===== -->
+        <section class="section section--alt sheet-section" aria-label="O que recebes">
             <div class="container">
                 <div class="section-head fx-rise">
                     <p class="eyebrow" data-i18n="wp.sheet.eyebrow">Ficha técnica</p>
@@ -410,7 +615,7 @@
                     <p class="section-head__sub" data-i18n="wp.sheet.sub">Sem letras pequenas: isto é o que está dentro de um Website Premium da BRANCT.</p>
                 </div>
                 <div class="sheet-grid reveal-stagger">
-                    <div class="sheet-col sheet-col--cyan">
+                    <div class="sheet-col">
                         <h3 data-i18n="wp.sheet.c1.title">Design & Conteúdo</h3>
                         <ul>
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c1.i1">Protótipo navegável aprovado por ti antes do código</span></li>
@@ -419,7 +624,7 @@
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c1.i4">Até 4 idiomas com copy adaptado, não traduzido</span></li>
                         </ul>
                     </div>
-                    <div class="sheet-col sheet-col--blue">
+                    <div class="sheet-col sheet-col--stamp">
                         <h3 data-i18n="wp.sheet.c2.title">Engenharia</h3>
                         <ul>
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i1">Lighthouse 95+ garantido em contrato</span></li>
@@ -427,8 +632,9 @@
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i3">Tracking Meta/Google com consentimento RGPD</span></li>
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c2.i4">Formulários ligados ao teu CRM (ou ao Branct CRM)</span></li>
                         </ul>
+                        <span class="stamp" aria-hidden="true">Garantido em contrato</span>
                     </div>
-                    <div class="sheet-col sheet-col--violet">
+                    <div class="sheet-col">
                         <h3 data-i18n="wp.sheet.c3.title">Pós-lançamento</h3>
                         <ul>
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span data-i18n="wp.sheet.c3.i1">Garantia de correções incluída</span></li>
@@ -438,10 +644,15 @@
                         </ul>
                     </div>
                 </div>
+                <div class="sheet-titleblock fx-rise" aria-hidden="true">
+                    <span><b>BRANCT.TECH</b> · Engenharia Web</span>
+                    <span>Ficha <b>WP-01</b> · Rev. 2026-07</span>
+                    <span>Escala <b>1:1</b> — sem letras pequenas</span>
+                </div>
             </div>
         </section>
 
-        <!-- ===== ANTES / DEPOIS (comparador) ===== -->
+        <!-- ===== ANTES / DEPOIS: arrasta para acender a luz ===== -->
         <section class="section" aria-label="Antes e depois">
             <div class="container">
                 <div class="section-head section-head--center fx-rise">
@@ -461,7 +672,7 @@
                     </div>
                     <div class="compare__panel compare__panel--after">
                         <div class="compare__metrics right">
-                            <h3 style="color:var(--ink)" data-i18n="wp.compare.afterTitle">Rápido, encontrável, mensurável.</h3>
+                            <h3 data-i18n="wp.compare.afterTitle">Rápido, encontrável, mensurável.</h3>
                             <div class="cmetric"><b>1,8s</b> <span data-i18n="wp.compare.a1">a carregar em 4G real</span></div>
                             <div class="cmetric"><b>95+</b> <span data-i18n="wp.compare.a2">de Lighthouse, garantido em contrato</span></div>
                             <div class="cmetric"><b>100%</b> <span data-i18n="wp.compare.a3">dos leads com origem identificada</span></div>
@@ -473,7 +684,7 @@
             </div>
         </section>
 
-        <!-- ===== META-PROVA (dark + aurora) ===== -->
+        <!-- ===== META-PROVA (instrumentos ao vivo) ===== -->
         <section class="section section--ink" aria-label="A prova">
             <div class="aurora" aria-hidden="true"></div>
             <div class="container">
@@ -482,20 +693,21 @@
                     <h2 style="margin-top:12px" data-i18n="wp.meta.title" data-i18n-html>Este site que estás a ver? <span class="text-gradient">É a nossa proposta.</span></h2>
                     <p class="section-head__sub" data-i18n="wp.meta.sub">Não te pedimos que acredites em promessas. O site da BRANCT é construído exatamente com a engenharia que vendemos — mede tu mesmo.</p>
                 </div>
-                <div class="metric-tiles reveal-stagger">
+                <div class="metric-tiles reveal-stagger" id="live-metrics">
                     <div class="metric-tile">
-                        <span class="stat__value text-gradient">&lt; 2s</span>
-                        <span class="stat__label" style="color:#A9BAC4" data-i18n="wp.meta.m1">a carregar em 4G — sem Three.js, sem peso morto</span>
+                        <span class="stat__value text-gradient" data-live="load">&lt; 2s</span>
+                        <span class="stat__label">até esta página estar completa — medido agora, neste teu browser</span>
                     </div>
                     <div class="metric-tile">
-                        <span class="stat__value text-gradient">~30 KB</span>
-                        <span class="stat__label" style="color:#A9BAC4" data-i18n="wp.meta.m2">de JavaScript — uma fração da média dos sites</span>
+                        <span class="stat__value text-gradient" data-live="js">~30 KB</span>
+                        <span class="stat__label">de JavaScript transferido — a média da web ultrapassa 500 KB</span>
                     </div>
                     <div class="metric-tile">
-                        <span class="stat__value text-gradient">4 idiomas</span>
-                        <span class="stat__label" style="color:#A9BAC4" data-i18n="wp.meta.m3">PT · EN · IT · HR — troca no canto superior direito</span>
+                        <span class="stat__value text-gradient" data-live="total">~200 KB</span>
+                        <span class="stat__label">a página inteira — menos do que uma foto do teu telemóvel</span>
                     </div>
                 </div>
+                <span class="live-caption" id="live-caption" hidden><span class="live-dot" aria-hidden="true"></span>Performance API · medido ao vivo <span data-live="time"></span> · sem truques</span>
                 <p style="color:#8DA0AC; text-align:center; margin-top:var(--sp-8)" class="fx-rise" data-i18n="wp.meta.kicker">Se é assim que construímos o nosso site, imagina o que fazemos pelo teu.</p>
             </div>
         </section>
@@ -535,17 +747,16 @@
             </div>
         </section>
 
-        <!-- ===== CTA FINAL (cyan, próprio da página) ===== -->
+        <!-- ===== CTA FINAL: a saída para a luz ===== -->
         <section class="section" aria-label="Pedir proposta" style="padding-top:0">
             <div class="container">
                 <div class="wp-cta reveal">
-                    <div class="aurora" aria-hidden="true"></div>
-                    <p class="eyebrow" style="justify-content:center; color:var(--accent-vivid)" data-i18n="wp.cta.eyebrow">Proposta em 48h</p>
+                    <p class="eyebrow" style="justify-content:center" data-i18n="wp.cta.eyebrow">Proposta em 48h</p>
                     <h2 style="margin-top:14px" data-i18n="wp.cta.title" data-i18n-html>O teu próximo cliente está agora num site. <span class="text-gradient">Que seja no teu.</span></h2>
                     <p style="max-width:520px; margin:16px auto 32px" data-i18n="wp.cta.sub">Envia o teu objetivo e prazo. Devolvemos um diagnóstico claro, um plano e um valor fechado — em 48 horas.</p>
                     <div class="hero__cta-row" style="justify-content:center">
-                        <a href="contactos.html" class="btn btn--lg" style="background:#fff; color:var(--ink)" data-i18n="wp.cta.primary">Pedir proposta</a>
-                        <a href="https://wa.me/351935183488" target="_blank" rel="noopener noreferrer" class="btn btn--ghost btn--lg" style="border-color:rgba(255,255,255,0.35); color:#fff" data-i18n="wp.cta.whatsapp">Falar no WhatsApp</a>
+                        <a href="contactos.html" class="btn btn--primary btn--lg" data-i18n="wp.cta.primary">Pedir proposta</a>
+                        <a href="https://wa.me/351935183488" target="_blank" rel="noopener noreferrer" class="btn btn--ghost btn--lg" data-i18n="wp.cta.whatsapp">Falar no WhatsApp</a>
                     </div>
                 </div>
             </div>
@@ -609,9 +820,12 @@
 
     <script src="src/js/branct.js?v=20260618" defer></script>
     <script>
-    // Interações exclusivas desta página (anatomia + comparador) — ~20 linhas
+    // Interações exclusivas desta página: anatomia (montagem + camada ativa),
+    // comparador e métricas ao vivo via Performance API. Vanilla, ~90 linhas.
     (function () {
-        // Anatomia: legenda controla a camada ativa
+        'use strict';
+
+        /* --- Anatomia: legenda controla a camada ativa --- */
         var items = document.querySelectorAll('.anatomy__item');
         var layers = document.querySelectorAll('.layer');
         function activate(n) {
@@ -625,13 +839,108 @@
         });
         activate('1');
 
-        // Comparador antes/depois
+        /* --- Anatomia: as camadas montam-se quando a secção entra em cena --- */
+        var stack = document.querySelector('.layer-stack');
+        if (stack && 'IntersectionObserver' in window) {
+            var buildIO = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        stack.classList.add('is-built');
+                        buildIO.disconnect();
+                    }
+                });
+            }, { threshold: 0.35 });
+            buildIO.observe(stack);
+        } else if (stack) {
+            stack.classList.add('is-built');
+        }
+
+        /* --- Comparador antes/depois --- */
         var compare = document.getElementById('compare');
         if (compare) {
             var range = compare.querySelector('input[type="range"]');
             range.addEventListener('input', function () {
                 compare.style.setProperty('--cut', range.value + '%');
             });
+        }
+
+        /* --- Métricas ao vivo (Performance API) ---
+           Mede o load real DESTE pageview e escreve nos tiles.
+           Se a API não existir, ficam os valores estáticos do HTML. --- */
+        function fmtKB(bytes) { return Math.max(1, Math.round(bytes / 1024)).toLocaleString('pt-PT') + ' KB'; }
+        function fmtS(ms) {
+            return (ms / 1000).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s';
+        }
+
+        function measure() {
+            if (!('performance' in window) || !performance.getEntriesByType) return null;
+            var nav = performance.getEntriesByType('navigation')[0];
+            if (!nav || !nav.loadEventEnd) return null;
+            var resources = performance.getEntriesByType('resource');
+            var size = function (r) { return r.transferSize || r.encodedBodySize || 0; };
+            var js = 0, total = nav.transferSize || 0;
+            resources.forEach(function (r) {
+                total += size(r);
+                if (r.initiatorType === 'script' || /\.js(\?|$)/.test(r.name)) js += size(r);
+            });
+            return { load: nav.loadEventEnd, js: js, total: total };
+        }
+
+        function paintMetrics() {
+            var m = measure();
+            if (!m) return;
+            var els = {
+                load: document.querySelector('[data-live="load"]'),
+                js: document.querySelector('[data-live="js"]'),
+                total: document.querySelector('[data-live="total"]'),
+                time: document.querySelector('[data-live="time"]')
+            };
+            var noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            // Conta-subidas quando os tiles entram no viewport
+            function countUp(el, target, fmt) {
+                if (noMotion || !('requestAnimationFrame' in window)) { el.textContent = fmt(target); return; }
+                var t0 = null, DUR = 900;
+                function step(ts) {
+                    if (!t0) t0 = ts;
+                    var p = Math.min((ts - t0) / DUR, 1);
+                    var eased = 1 - Math.pow(1 - p, 3);
+                    el.textContent = fmt(target * eased);
+                    if (p < 1) requestAnimationFrame(step);
+                }
+                requestAnimationFrame(step);
+            }
+
+            function reveal() {
+                if (els.load) countUp(els.load, m.load, fmtS);
+                if (els.js) countUp(els.js, m.js, fmtKB);
+                if (els.total) countUp(els.total, m.total, fmtKB);
+                if (els.time) {
+                    var d = new Date();
+                    var pad = function (n) { return String(n).padStart(2, '0'); };
+                    els.time.textContent = 'às ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+                }
+                var caption = document.getElementById('live-caption');
+                if (caption) caption.hidden = false;
+            }
+
+            var tiles = document.getElementById('live-metrics');
+            if (tiles && 'IntersectionObserver' in window) {
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) { reveal(); io.disconnect(); }
+                    });
+                }, { threshold: 0.3 });
+                io.observe(tiles);
+            } else {
+                reveal();
+            }
+        }
+
+        if (document.readyState === 'complete') {
+            paintMetrics();
+        } else {
+            window.addEventListener('load', function () { setTimeout(paintMetrics, 0); });
         }
     })();
     </script>
