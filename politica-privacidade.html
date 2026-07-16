@@ -15,14 +15,16 @@
 
 <style>
 :root {
-    --bg: #09121c;
-    --bg-elev: #0e1a26;
-    --line: rgba(255,255,255,0.08);
-    --line-strong: rgba(110,193,228,0.25);
-    --accent: #6ec1e4;
-    --text: #efeeee;
-    --muted: #9aa6b2;
+    /* Paleta Premium Light 2026 — conteúdo legal intacto, só a pele mudou */
+    --bg: #FAFAF9;
+    --bg-elev: #FFFFFF;
+    --line: #E8E6E1;
+    --line-strong: rgba(12,124,143,0.3);
+    --accent: #0C7C8F;
+    --text: #0D1B24;
+    --muted: #5C6B76;
     --radius: 14px;
+    color-scheme: light;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -41,7 +43,7 @@ a:hover { color: var(--text); }
 
 .header {
     position: sticky; top: 0; z-index: 50;
-    background: rgba(9,18,28,0.78);
+    background: rgba(250,250,249,0.85);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--line);
 }
@@ -122,7 +124,7 @@ ul li, ol li { margin-bottom: 6px; }
 
 .placeholder {
     display: inline-block;
-    background: rgba(110,193,228,0.10);
+    background: rgba(12,124,143,0.08);
     border: 1px dashed var(--line-strong);
     border-radius: 4px;
     padding: 0 6px;
