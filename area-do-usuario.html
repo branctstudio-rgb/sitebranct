@@ -1,85 +1,139 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-    <meta name="facebook-domain-verification" content="xesigh89y5u9bpq7aa0t44be00d63v" />
     <meta charset="UTF-8">
+    <meta name="facebook-domain-verification" content="xesigh89y5u9bpq7aa0t44be00d63v" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRANCT.Tech | Área do Usuário</title>
-    <meta name="description" content="Aceda à sua área de cliente para gestão de projetos e suporte.">
-    <link rel="stylesheet" href="src/css/main.css">
+
+    <!-- SEO -->
+    <title>Área de Cliente | Entra no Branct CRM — BRANCT</title>
+    <meta name="description" content="A tua área de cliente vive no Branct CRM: leads, conversas e dashboards em app.branct.com. Ainda não tens conta? Testa grátis 7 dias.">
+    <link rel="canonical" href="https://branct.com/area-do-usuario.html">
+    <meta name="robots" content="noindex, follow">
+
+    <link rel="icon" href="src/img/favicon.ico" sizes="any">
+    <link rel="icon" href="src/img/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="src/img/apple-touch-icon.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="src/css/branct.css?v=20260618">
+    <style>
+    .au-wrap { min-height: 60vh; display: flex; align-items: center; }
+    .au-card { max-width: 640px; margin-inline: auto; text-align: center; padding: clamp(40px, 6vw, 72px) !important; }
+    .au-card .logo { font-size: 1.6rem; }
+    .au-card h1 { font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem); margin-top: var(--sp-6); }
+    .au-card .sub { color: #A9BAC4; margin-top: var(--sp-4); }
+    .au-note { margin-top: var(--sp-6); font-size: var(--fs-small); color: #8DA0AC; }
+    .au-note a { color: var(--accent-vivid); text-decoration: underline; text-underline-offset: 3px; }
+    </style>
 </head>
 <body>
-    <header class="header glass-panel">
-        <div class="container header__container">
-            <a href="index.html" class="logo">BRANCT<span class="tech">.Tech</span></a>
-            <nav class="nav-desktop">
+    <a class="skip-link" href="#main-content" data-i18n="a11y.skipToContent">Saltar para o conteúdo</a>
+
+    <!-- Header (partilhado) -->
+    <header class="header">
+        <div class="container header__inner">
+            <a href="index.html" class="logo">BRANCT<span>.Tech</span></a>
+            <nav class="nav-desktop" aria-label="Principal">
                 <ul class="nav-list">
-                    <li><a href="index.html" data-i18n="nav.home">InÃ­cio</a></li>
                     <li class="nav-item--dropdown">
-                        <button class="nav-link" aria-haspopup="true" aria-expanded="false" aria-controls="services-submenu" data-i18n="nav.services">ServiÃ§os</button>
+                        <button class="nav-link" aria-haspopup="true" aria-expanded="false" aria-controls="services-submenu" data-i18n="nav.services">Serviços</button>
                         <ul class="services-submenu" id="services-submenu">
                             <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
                             <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
-                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & GestÃ£o</a></li>
-                            <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">AutomaÃ§Ã£o & IA</a></li>
+                            <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
+                            <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
                         </ul>
                     </li>
+                    <li><a href="crm-gestao.html">Branct CRM</a></li>
                     <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
                     <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
-                    <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Ãrea do UsuÃ¡rio</a></li>
-                    <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+                    <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
                 </ul>
             </nav>
             <div class="header__actions">
                 <div class="lang-selector">
-                    <button class="lang-btn" aria-label="Select Language">
+                    <button class="lang-btn" aria-label="Idioma" aria-haspopup="listbox">
                         <span id="current-lang">PT</span>
-                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <ul class="lang-dropdown">
-                        <li data-lang="pt">PT</li>
-                        <li data-lang="en">EN</li>
-                        <li data-lang="it">IT</li>
-                        <li data-lang="hr">HR</li>
+                    <ul class="lang-dropdown" role="listbox" aria-label="Idioma">
+                        <li data-lang="pt">PT</li><li data-lang="en">EN</li><li data-lang="it">IT</li><li data-lang="hr">HR</li>
                     </ul>
                 </div>
-                <a href="contactos.html" class="btn btn--primary" data-i18n="nav.cta">Pedir Proposta</a>
-                <button class="mobile-toggle" aria-label="Menu"><span></span><span></span></button>
+                <a href="contactos.html" class="btn btn--primary btn--sm" data-i18n="nav.cta">Pedir proposta</a>
+                <button class="mobile-toggle" aria-label="Menu" aria-controls="mobile-drawer"><span></span><span></span></button>
             </div>
         </div>
     </header>
 
-    <div class="mobile-drawer glass-panel">
-        <nav>
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <div class="mobile-drawer" id="mobile-drawer" role="dialog" aria-label="Menu" aria-modal="true">
+        <nav aria-label="Mobile">
             <ul class="mobile-nav-list">
-                <li><a href="index.html" data-i18n="nav.home">InÃ­cio</a></li>
+                <li><a href="index.html" data-i18n="nav.home">Início</a></li>
                 <li class="nav-item--accordion">
-                    <button class="nav-link" aria-expanded="false" aria-controls="mobile-submenu" data-i18n="nav.services">ServiÃ§os</button>
+                    <button class="nav-link" aria-expanded="false" aria-controls="mobile-submenu" data-i18n="nav.services">Serviços</button>
                     <ul class="mobile-submenu" id="mobile-submenu">
                         <li><a href="website-premium.html" data-i18n="servicesMenu.website">Website Premium</a></li>
                         <li><a href="landing-page.html" data-i18n="servicesMenu.landing">Landing Pages</a></li>
-                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">CRM & GestÃ£o</a></li>
-                        <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">AutomaÃ§Ã£o & IA</a></li>
+                        <li><a href="crm-gestao.html" data-i18n="servicesMenu.crm">Branct CRM</a></li>
+                        <li><a href="automacao-ia.html" data-i18n="servicesMenu.automation">Automação & IA</a></li>
                     </ul>
                 </li>
                 <li><a href="processo.html" data-i18n="nav.process">Processo</a></li>
                 <li><a href="contactos.html" data-i18n="nav.contacts">Contactos</a></li>
-                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Ãrea do UsuÃ¡rio</a></li>
+                <li><a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" data-i18n="nav.userArea">Área de Cliente</a></li>
                 <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
             </ul>
-            <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir Proposta</a>
         </nav>
+        <a href="contactos.html" class="btn btn--primary mobile-drawer-cta" data-i18n="nav.cta">Pedir proposta</a>
     </div>
-    <main class="page-main">
-        <section class="hero-simple section">
-            <h1 data-i18n="pageTitles.userArea">Área do Usuário</h1>
-            <p data-i18n="pageSubtitles.userArea">Aceda aos seus projetos.</p>
+
+    <main id="main-content">
+        <section class="section au-wrap" aria-label="Área de cliente">
+            <div class="container">
+                <div class="card card--ink au-card reveal">
+                    <div class="aurora" aria-hidden="true"></div>
+                    <span class="logo">BRANCT<span style="color:var(--accent-vivid)">.crm</span></span>
+                    <h1 data-i18n="au.title">A tua área de cliente vive no Branct CRM.</h1>
+                    <p class="sub" data-i18n="au.sub">Leads, conversas com IA, pipeline e dashboards — tudo em app.branct.com, no browser ou no telemóvel.</p>
+                    <div class="hero__cta-row" style="justify-content:center; margin-top: var(--sp-8)">
+                        <a href="https://app.branct.com/" target="_blank" rel="noopener noreferrer" class="btn btn--accent btn--lg" data-i18n="au.cta">Entrar em app.branct.com →</a>
+                    </div>
+                    <p class="au-note" data-i18n="au.note" data-i18n-html>Ainda não tens conta? <a href="crm-gestao.html">Testa grátis 7 dias — sem cartão.</a></p>
+                </div>
+            </div>
         </section>
     </main>
-    <footer class="footer"><div class="container"><p>&copy; 2026 BRANCT.Tech</p></div></footer>
-    <script type="module" src="src/js/main.js"></script>
+
+    <!-- Footer (partilhado) -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__meta" style="margin-top:0; padding-top:0; border-top:0">
+                <span>&copy; 2026 BRANCT.Tech · Guimarães, Portugal</span>
+                <span><a href="mailto:contacto@branct.com">contacto@branct.com</a> · <a href="tel:+351935183488">935 183 488</a></span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Consent banner -->
+    <aside class="consent" id="consent-banner" role="dialog" aria-live="polite" aria-label="Consentimento de cookies" hidden>
+        <div class="consent__inner">
+            <div class="consent__text">
+                <strong data-i18n="home.consent.title">Privacidade primeiro.</strong>
+                <p data-i18n="home.consent.desc" data-i18n-html>Usamos cookies essenciais e cookies de marketing (Meta) para medir campanhas. Aceitas ou recusas — a escolha fica guardada. Vê a <a href="politica-privacidade.html#cookies">Política de Privacidade</a>.</p>
+            </div>
+            <div class="consent__actions">
+                <button type="button" class="btn btn--ghost" id="consent-reject" data-i18n="home.consent.reject">Recusar</button>
+                <button type="button" class="btn btn--primary" id="consent-accept" data-i18n="home.consent.accept">Aceitar</button>
+            </div>
+        </div>
+    </aside>
+
+    <script src="src/js/branct.js?v=20260618" defer></script>
 </body>
 </html>
