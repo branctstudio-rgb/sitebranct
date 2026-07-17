@@ -128,6 +128,9 @@
                 window.__brancrT = translations; // acesso para forms (mensagens)
                 var cur = document.getElementById('current-lang');
                 if (cur) cur.textContent = lang.toUpperCase();
+                // Nome acessível tem de conter o texto visível (label-content-name-mismatch)
+                var langBtn = document.querySelector('.lang-btn');
+                if (langBtn) langBtn.setAttribute('aria-label', 'Idioma: ' + lang.toUpperCase());
                 document.documentElement.lang = (lang === 'pt') ? 'pt-PT' : lang;
                 try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
                 applyTranslations();
