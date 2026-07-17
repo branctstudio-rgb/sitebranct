@@ -1,0 +1,8 @@
+# BRANCT.Tech — regras de servidor (Hostinger/Apache)
+
+# Canonical: /index.html responde 301 para a raiz.
+# Só dispara em pedidos EXPLÍCITOS a /index.html (THE_REQUEST),
+# por isso o DirectoryIndex interno da raiz não entra em loop.
+RewriteEngine On
+RewriteCond %{THE_REQUEST} ^[A-Z]+\ /index\.html[?\s]
+RewriteRule ^index\.html$ / [R=301,L]
