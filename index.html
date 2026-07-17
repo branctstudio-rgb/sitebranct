@@ -23,11 +23,10 @@
     <link rel="apple-touch-icon" href="src/img/apple-touch-icon.png">
 
     <!-- Fonts: variáveis, subset latin, swap -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+    <link rel="preload" href="src/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="src/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 
-    <link rel="stylesheet" href="src/css/branct.css?v=20260717">
+    <link rel="stylesheet" href="src/css/branct.css?v=20260717b">
     <style>
     /* Estilos específicos da home (mantidos pequenos e junto da página) */
     .hero-visual { position: relative; }
@@ -274,9 +273,12 @@
                 <div>
                     <div class="frame fx-zoom">
                         <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
-                        <img src="src/img/crm-dashboard.jpg"
-                             alt="Pipeline de vendas no Branct CRM"
-                             width="1704" height="928" loading="lazy" decoding="async">
+                        <picture>
+                            <source type="image/webp" srcset="src/img/crm-dashboard-860.webp 860w, src/img/crm-dashboard.webp 1704w" sizes="(min-width: 940px) 560px, 92vw">
+                            <img src="src/img/crm-dashboard.jpg"
+                                 alt="Pipeline de vendas no Branct CRM"
+                                 width="1704" height="928" loading="lazy" decoding="async">
+                        </picture>
                     </div>
                 </div>
             </div>

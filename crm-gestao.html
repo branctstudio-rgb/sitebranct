@@ -19,12 +19,17 @@
 
 <link rel="icon" href="src/img/favicon.ico" sizes="any">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<link rel="preload" href="src/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="src/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 
 <style>
+/* ===== Fontes self-hosted (mesmos woff2 do resto do site) ===== */
+@font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 600 800; font-display: swap; src: url('src/fonts/bricolage-grotesque-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 600 800; font-display: swap; src: url('src/fonts/bricolage-grotesque-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('src/fonts/manrope-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('src/fonts/manrope-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 /* ===== TOKENS — Premium Light 2026 (subset standalone desta landing) ===== */
 :root {
     --bg:           #FAFAF9;
@@ -571,10 +576,13 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
                 <div class="frame frame--glow frame--persp">
                     <div class="frame__bar" aria-hidden="true"><span></span><span></span><span></span></div>
                     <div class="frame__media">
-                        <img src="src/img/crm-dashboard.jpg"
-                             alt="Dashboard do Branct CRM com pipeline de vendas, leads recentes, métricas de conversão e origem dos leads."
-                             width="1704" height="928"
-                             loading="eager" decoding="async" fetchpriority="high">
+                        <picture>
+                            <source type="image/webp" srcset="src/img/crm-dashboard-860.webp 860w, src/img/crm-dashboard.webp 1704w" sizes="(min-width: 920px) 860px, 92vw">
+                            <img src="src/img/crm-dashboard.jpg"
+                                 alt="Dashboard do Branct CRM com pipeline de vendas, leads recentes, métricas de conversão e origem dos leads."
+                                 width="1704" height="928"
+                                 loading="eager" decoding="async" fetchpriority="high">
+                        </picture>
                         <!-- Screenshot 2026-07-16: conta demo sem dados reais — blur de privacidade removido.
                              Se voltares a usar um screenshot com dados de clientes, repõe os .mock__redact. -->
                     </div>
