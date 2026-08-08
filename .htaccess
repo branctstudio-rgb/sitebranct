@@ -7,9 +7,20 @@ RewriteEngine On
 RewriteCond %{THE_REQUEST} ^[A-Z]+\ /index\.html[?\s]
 RewriteRule ^index\.html$ / [R=301,L]
 
+# MIME corretos (a Hostinger serve .webm como text/plain sem isto,
+# o que também impede as regras de cache por tipo de o apanharem)
+AddType video/webm .webm
+AddType font/woff2 .woff2
+
 # Cache de assets estáticos. HTML fica sempre fresco; CSS/JS levam
 # cache-busting ?v= nos includes; i18n JSON curto (traduções mudam
 # sem mudar de URL).
+# FilesMatch com Cache-Control é independente do MIME — apanha tudo.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|woff2|svg|png|jpe?g|webp|ico|mp4|webm)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType text/html "access plus 0 seconds"

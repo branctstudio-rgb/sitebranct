@@ -14,6 +14,14 @@ jobs:
       - name: Checkout do codigo
         uses: actions/checkout@v4
 
+      # O repo fica legivel; so a copia enviada por FTP e minificada.
+      # Se a minificacao falhar, o deploy segue com os ficheiros originais.
+      - name: Minificar CSS/JS ativos
+        run: |
+          npx --yes esbuild src/css/branct.css --minify --allow-overwrite --outfile=src/css/branct.css || echo "minify branct.css falhou - segue sem minificar"
+          npx --yes esbuild src/js/branct.js --minify --allow-overwrite --outfile=src/js/branct.js || echo "minify branct.js falhou - segue sem minificar"
+          npx --yes esbuild src/js/trial.js --minify --allow-overwrite --outfile=src/js/trial.js || echo "minify trial.js falhou - segue sem minificar"
+
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
