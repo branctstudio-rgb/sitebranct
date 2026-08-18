@@ -25,3 +25,11 @@ Após o parecer `CHANGES_REQUIRED` no comentário #5332433500, `node tests/audit
 ## GREEN 4
 
 Critério: capturas regeneradas após scroll/estabilização, inspeção visual real desktop/tablet/mobile, gate de pixels sem falhas, conjunto manifesto/diretório exato, 4/4 testes, matriz DOM 60/60 e workflow durável por paths relevantes e base dinâmica do PR. O output final do CI do PR é a autoridade remota; este documento é evidência de processo, não substituto do teste.
+
+## RED 5 — controlo negativo
+
+No head `65ab496ef63957cd2e2626ece5cc248b1c009779`, a captura antiga `home-390x844.jpg` mediu 43,1% uniform/64,4% low-detail e foi incorretamente aceite pelo limiar simples `uniform > 45%`. Após preservá-la como fixture, o gate falhou explicitamente com `negative control was accepted`.
+
+## GREEN 5
+
+O classificador composto usa uniform e low-detail, rejeita as 11 páginas inteiras antigas, aceita somente as duas capturas viewport antigas e exige permanentemente que as 13 imagens atuais sejam aceites e o controlo SHA-fixado seja rejeitado.

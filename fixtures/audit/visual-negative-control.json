@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "file": "invalid-home-390x844.jpg",
+  "width": 416,
+  "height": 7620,
+  "sha256": "bfb14f5c285a9721238c3c2653c3dc0d081cb357d138caafc2292ce95c8b6eff",
+  "sourceCommit": "b0d1426971b0ab0159abd22fe1b42b837f0d7c3a",
+  "expected": "reject",
+  "reason": "incomplete capture with repeated hero and large empty bands"
+}

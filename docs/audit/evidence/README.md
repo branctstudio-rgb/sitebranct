@@ -12,6 +12,8 @@ As 13 capturas JPEG em `baseline/` foram geradas da worktree local na base audit
 
 As 13 imagens não são regeneradas pelo comando `--check`. Foram produzidas por `node tests/audit/collect-browser-baseline.mjs --capture docs/audit/evidence/baseline`, que percorre cada página, espera fontes/assets e neutraliza estados de reveal somente no contexto da captura. `node tests/audit/check-visual-evidence.mjs` decodifica os pixels e rejeita bandas verticais praticamente uniformes; o contrato também exige que o diretório e o manifesto tenham exatamente o mesmo conjunto único de ficheiros.
 
+O mesmo gate precisa aceitar as 13 imagens atuais e rejeitar `fixtures/audit/invalid-home-390x844.jpg`, controlo negativo preservado da ronda anterior. A tabela integral das 13 imagens antigas e o critério composto estão em `legacy-classifier.md`.
+
 - Home: 1440×900, 1024×768, 768×1024, 390×844 e 360×800.
 - CRM: desktop, tablet e mobile.
 - Website Premium: desktop, tablet e mobile.

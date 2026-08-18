@@ -13,6 +13,7 @@ const resultsPath = new URL("../../fixtures/audit/baseline-results.json", import
 const manifestPath = new URL("../../fixtures/audit/evidence-manifest.json", import.meta.url);
 const redGreenPath = new URL("../../docs/audit/evidence/red-green.md", import.meta.url);
 const collectorPath = new URL("./collect-browser-baseline.mjs", import.meta.url);
+const negativeControlPath = new URL("../../fixtures/audit/visual-negative-control.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
 
@@ -79,8 +80,8 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
 });
 
 test("route matrix and visual evidence are complete and tamper-evident", async () => {
-  const [contract, results, manifest] = await Promise.all([
-    readJson(contractPath), readJson(resultsPath), readJson(manifestPath),
+  const [contract, results, manifest, negativeControl] = await Promise.all([
+    readJson(contractPath), readJson(resultsPath), readJson(manifestPath), readJson(negativeControlPath),
   ]);
   assert.equal(results.entries.length, contract.routes.length * contract.requiredViewports.length);
   for (const route of contract.routes) {
@@ -98,6 +99,10 @@ test("route matrix and visual evidence are complete and tamper-evident", async (
     assert.equal(createHash("sha256").update(bytes).digest("hex"), item.sha256);
     assert.deepEqual(jpegDimensions(bytes), { width: item.width, height: item.height });
   }
+  const negativeBytes = await readFile(new URL(`../../fixtures/audit/${negativeControl.file}`, import.meta.url));
+  assert.equal(negativeControl.expected, "reject");
+  assert.equal(createHash("sha256").update(negativeBytes).digest("hex"), negativeControl.sha256);
+  assert.deepEqual(jpegDimensions(negativeBytes), { width: negativeControl.width, height: negativeControl.height });
 });
 
 test("the audit handoff and CI preserve the offline boundary", async () => {
