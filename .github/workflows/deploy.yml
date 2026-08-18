@@ -18,7 +18,17 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "*.html"
+      - ".htaccess"
+      - "robots.txt"
+      - "sitemap.xml"
+      - "src/css/**"
+      - "src/js/**"
+      - "src/fonts/**"
+      - "src/i18n/**"
+      - "src/img/**"
       - ".github/workflows/deploy.yml"
+      - "deploy/publish-manifest.json"
       - "scripts/deploy/**"
       - "tests/deploy/**"
       - "docs/deploy-protection/**"

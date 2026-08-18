@@ -8,7 +8,8 @@ import { buildPayload, EXPECTED_POLICY, readPushPaths } from "../../scripts/depl
 
 const root = path.resolve(new URL("../..", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const workflow = await readFile(path.join(root, ".github/workflows/deploy.yml"), "utf8");
-const expected = JSON.parse(await readFile(new URL("./expected-payload.json", import.meta.url), "utf8"));
+const manifestPath = path.join(root, "deploy/publish-manifest.json");
+const expected = JSON.parse(await readFile(manifestPath, "utf8")).files;
 
 function matches(pattern, candidate) {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("**", "\0").replaceAll("*", "[^/]*").replaceAll("\0", ".*");
@@ -19,6 +20,24 @@ function automaticDeploy(paths) {
   return paths.some((candidate) => EXPECTED_POLICY.reduce((included, rule) => rule.startsWith("!")
     ? (matches(rule.slice(1), candidate) ? false : included)
     : (matches(rule, candidate) ? true : included), false));
+}
+
+function pullRequestPaths(yaml) {
+  const lines = yaml.replace(/\r\n/g, "\n").split("\n");
+  const pullRequest = lines.indexOf("  pull_request:");
+  const paths = lines.findIndex((line, index) => index > pullRequest && line === "    paths:");
+  const values = [];
+  for (let index = paths + 1; index < lines.length; index += 1) {
+    const match = lines[index].match(/^      - ["'](.+)["']$/);
+    if (!match) break;
+    values.push(match[1]);
+  }
+  return values;
+}
+
+function pullRequestVerification(changed) {
+  const rules = pullRequestPaths(workflow);
+  return changed.some((candidate) => rules.some((rule) => matches(rule, candidate)));
 }
 
 async function treeFiles(directory, prefix = "") {
@@ -57,7 +76,7 @@ test("uma definição canónica governa gatilho e construtor", () => {
   assert.doesNotMatch(workflow, /uses:\s+actions\/(?:checkout|setup-node)@v\d/);
 });
 
-test("payload real é exatamente a lista independente esperada", async () => {
+test("staging real é exatamente o manifesto operacional", async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), "branct-payload-"));
   try {
     const actual = await buildPayload({ source: root, output: temp + "-out" });
@@ -89,7 +108,7 @@ test("PR #2 projetada e caminhos internos ficam fora do payload", async () => {
 test("falha fechada para ausências, duplicações e travessia", async () => {
   const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
   await withTempRepo(async ({ source, output }) => {
-    await assert.rejects(buildPayload({ source, output, candidates: tracked.filter((item) => item !== "index.html") }), /required publish file missing/);
+    await assert.rejects(buildPayload({ source, output, candidates: tracked.filter((item) => item !== "index.html") }), /publish manifest mismatch/);
   });
   await withTempRepo(async ({ source, output }) => {
     await assert.rejects(buildPayload({ source, output, candidates: [...tracked, "index.html"] }), /duplicate path entry/);
@@ -122,4 +141,62 @@ test("testes e documentação não contêm expressões de credenciais", async ()
   for (const file of [new URL(import.meta.url), new URL("../../docs/deploy-protection/scope-matrix.md", import.meta.url)]) {
     assert.equal((await readFile(file, "utf8")).includes(expression), false);
   }
+});
+
+test("ficheiro permitido novo exige atualização do manifesto", async () => {
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  await withTempRepo(async ({ source, output }) => {
+    await writeFile(path.join(source, "novo.html"), "<!doctype html>");
+    await assert.rejects(buildPayload({ source, output, candidates: [...tracked, "novo.html"] }), /manifest/i);
+  });
+});
+
+test("remoção de ficheiro publicado exige atualização do manifesto", async () => {
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  await withTempRepo(async ({ source, output }) => {
+    await rm(path.join(source, "src/css/main.css"));
+    await assert.rejects(buildPayload({ source, output, candidates: tracked.filter((entry) => entry !== "src/css/main.css") }), /manifest/i);
+  });
+});
+
+test("toda alteração viva isolada dispara verificação da PR", () => {
+  const live = ["index.html", ".htaccess", "robots.txt", "sitemap.xml", "src/css/branct.css", "src/js/branct.js", "src/fonts/manrope-latin.woff2", "src/i18n/pt.json", "src/img/icon.svg", "src/img/video.mp4"];
+  for (const candidate of live) assert.equal(pullRequestVerification([candidate]), true, candidate);
+  assert.equal(pullRequestVerification(["deploy/publish-manifest.json"]), true, "operational manifest");
+});
+
+test("manifesto não pode autorizar caminho proibido nem duplicado", async () => {
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  await withTempRepo(async ({ source, output }) => {
+    const manifestFile = path.join(source, "deploy/publish-manifest.json");
+    const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+    manifest.files.push("tests/deploy/deploy-scope.test.mjs");
+    manifest.files.sort();
+    await writeFile(manifestFile, JSON.stringify(manifest));
+    await assert.rejects(buildPayload({ source, output, candidates: tracked }), /forbidden by policy/);
+  });
+  await withTempRepo(async ({ source, output }) => {
+    const manifestFile = path.join(source, "deploy/publish-manifest.json");
+    const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+    manifest.files.push(manifest.files[0]);
+    manifest.files.sort();
+    await writeFile(manifestFile, JSON.stringify(manifest));
+    await assert.rejects(buildPayload({ source, output, candidates: tracked }), /duplicate path/);
+  });
+});
+
+test("manifesto ausente, ilegível ou com schema incorreto interrompe", async () => {
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  await withTempRepo(async ({ source, output }) => {
+    await rm(path.join(source, "deploy/publish-manifest.json"));
+    await assert.rejects(buildPayload({ source, output, candidates: tracked }), /manifest unreadable/);
+  });
+  await withTempRepo(async ({ source, output }) => {
+    await writeFile(path.join(source, "deploy/publish-manifest.json"), "not-json");
+    await assert.rejects(buildPayload({ source, output, candidates: tracked }), /manifest unreadable/);
+  });
+  await withTempRepo(async ({ source, output }) => {
+    await writeFile(path.join(source, "deploy/publish-manifest.json"), JSON.stringify({ schemaVersion: 2, files: [] }));
+    await assert.rejects(buildPayload({ source, output, candidates: tracked }), /schema invalid/);
+  });
 });

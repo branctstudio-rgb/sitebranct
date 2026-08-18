@@ -9,10 +9,7 @@ export const EXPECTED_POLICY = Object.freeze([
   "src/img/**", "!src/img/video.mp4",
 ]);
 
-export const REQUIRED_FILES = Object.freeze([
-  ".htaccess", "index.html", "robots.txt", "sitemap.xml",
-  "src/css/branct.css", "src/js/branct.js", "src/js/trial.js",
-]);
+export const MANIFEST_PATH = "deploy/publish-manifest.json";
 
 export function readPushPaths(yaml) {
   const lines = yaml.replace(/\r\n/g, "\n").split("\n");
@@ -50,6 +47,32 @@ function normalizeCandidate(candidate) {
   return normalized;
 }
 
+export async function readPublishManifest(rootReal, rules) {
+  let raw;
+  try {
+    raw = await readFile(path.join(rootReal, MANIFEST_PATH), "utf8");
+  } catch (error) {
+    throw new Error(`publish manifest unreadable: ${error.code ?? error.message}`);
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(raw);
+  } catch {
+    throw new Error("publish manifest unreadable: invalid JSON");
+  }
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)
+      || manifest.schemaVersion !== 1 || !Array.isArray(manifest.files)
+      || Object.keys(manifest).sort().join(",") !== "files,schemaVersion") {
+    throw new Error("publish manifest schema invalid");
+  }
+  const files = manifest.files.map(normalizeCandidate);
+  const folded = files.map((entry) => entry.toLowerCase());
+  if (new Set(folded).size !== folded.length) throw new Error("publish manifest contains duplicate path");
+  if (JSON.stringify(files) !== JSON.stringify([...files].sort())) throw new Error("publish manifest paths must be sorted");
+  for (const entry of files) if (!isPublished(rules, entry)) throw new Error(`publish manifest path forbidden by policy: ${entry}`);
+  return files;
+}
+
 async function assertRegularInside(rootReal, relative) {
   let cursor = rootReal;
   for (const segment of relative.split("/")) {
@@ -70,6 +93,7 @@ export async function buildPayload({ source, output, candidates }) {
   if (outputAbsolute === rootReal || outputAbsolute.startsWith(`${rootReal}${path.sep}`)) throw new Error("output must be outside repository root");
   const workflow = await readFile(path.join(rootReal, ".github/workflows/deploy.yml"), "utf8");
   const rules = readPushPaths(workflow);
+  const manifest = await readPublishManifest(rootReal, rules);
   const entries = candidates ?? execFileSync("git", ["-C", rootReal, "ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
   const normalized = entries.map(normalizeCandidate);
   const folded = normalized.map((entry) => entry.toLowerCase());
@@ -77,7 +101,11 @@ export async function buildPayload({ source, output, candidates }) {
   const resolvedFiles = new Map();
   for (const entry of normalized) resolvedFiles.set(entry, await assertRegularInside(rootReal, entry));
   const selected = normalized.filter((entry) => isPublished(rules, entry)).sort();
-  for (const required of REQUIRED_FILES) if (!selected.includes(required)) throw new Error(`required publish file missing: ${required}`);
+  const extra = selected.filter((entry) => !manifest.includes(entry));
+  const missing = manifest.filter((entry) => !selected.includes(entry));
+  if (extra.length || missing.length) {
+    throw new Error(`publish manifest mismatch; extra=[${extra.join(",")}]; missing=[${missing.join(",")}]`);
+  }
   await mkdir(outputAbsolute, { recursive: false });
   for (const relative of selected) {
     const sourceFile = resolvedFiles.get(relative);
