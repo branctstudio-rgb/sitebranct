@@ -4,15 +4,58 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "*.html"
+      - ".htaccess"
+      - "robots.txt"
+      - "sitemap.xml"
+      - "src/css/**"
+      - "src/js/**"
+      - "src/fonts/**"
+      - "src/i18n/**"
+      - "src/img/**"
+      - "!src/img/video.mp4"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "*.html"
+      - ".htaccess"
+      - "robots.txt"
+      - "sitemap.xml"
+      - "src/css/**"
+      - "src/js/**"
+      - "src/fonts/**"
+      - "src/i18n/**"
+      - "src/img/**"
+      - ".github/workflows/deploy.yml"
+      - "deploy/publish-manifest.json"
+      - "scripts/deploy/**"
+      - "tests/deploy/**"
+      - "docs/deploy-protection/**"
 
 jobs:
+  verify-scope:
+    name: Verificar escopo do deploy
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Preparar Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Executar matriz offline
+        run: node --test tests/deploy/deploy-scope.test.mjs
+
   deploy:
     name: Deploy via FTP
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       # O repo fica legivel; so a copia enviada por FTP e minificada.
       # Se a minificacao falhar, o deploy segue com os ficheiros originais.
@@ -21,6 +64,9 @@ jobs:
           npx --yes esbuild src/css/branct.css --minify --allow-overwrite --outfile=src/css/branct.css || echo "minify branct.css falhou - segue sem minificar"
           npx --yes esbuild src/js/branct.js --minify --allow-overwrite --outfile=src/js/branct.js || echo "minify branct.js falhou - segue sem minificar"
           npx --yes esbuild src/js/trial.js --minify --allow-overwrite --outfile=src/js/trial.js || echo "minify trial.js falhou - segue sem minificar"
+
+      - name: Construir payload fechado
+        run: node scripts/deploy/build-publish-payload.mjs --source . --output "${RUNNER_TEMP}/branct-publish"
 
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
@@ -64,7 +110,7 @@ jobs:
               --exclude ^GEMINI-FIXES-APPLIED\.md$ \
               --exclude ^MELHORIAS-SUGERIDAS\.md$ \
               --exclude ^MOCKUP-IMPLEMENTATION\.md$ \
-              ./ /domains/branct.com/public_html/;
+              "${RUNNER_TEMP}/branct-publish/" /domains/branct.com/public_html/;
             quit
           "
 
