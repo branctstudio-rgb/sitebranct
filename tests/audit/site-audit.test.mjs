@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
@@ -69,7 +69,8 @@ test("the offline audit contract is complete and production-safe", async () => {
 
 test("the audited diff cannot mutate live pages or deployment", async () => {
   const contract = await readJson(contractPath);
-  const changed = execFileSync("git", ["diff", "--name-only", contract.baseSha], { encoding: "utf8" })
+  const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
+  const changed = execFileSync("git", ["diff", "--name-only", diffBase], { encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
   const allowed = /^(docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/audit-offline\.yml$)/;
   assert.ok(changed.length > 0);
@@ -88,6 +89,9 @@ test("route matrix and visual evidence are complete and tamper-evident", async (
     }
   }
   assert.equal(manifest.files.length, 13);
+  const actualFiles = (await readdir(new URL("../../docs/audit/evidence/baseline/", import.meta.url)))
+    .filter((name) => name !== ".gitkeep").sort();
+  assert.deepEqual(actualFiles, manifest.files.map((item) => item.file).sort(), "manifest must list the exact unique evidence set");
   for (const item of manifest.files) {
     const url = new URL(`../../docs/audit/evidence/baseline/${item.file}`, import.meta.url);
     const bytes = await readFile(url);
@@ -111,7 +115,9 @@ test("the audit handoff and CI preserve the offline boundary", async () => {
   assert.match(roadmap, /A BRANCT/);
   assert.match(risks, /rollback/i);
   assert.match(workflow, /node --test tests\/audit/);
-  assert.doesNotMatch(workflow, /paths:/);
+  assert.match(workflow, /paths:/);
+  assert.match(workflow, /AUDIT_DIFF_BASE/);
+  assert.doesNotMatch(workflow, /github\.head_ref|agent\/phase-1-offline-audit/);
   assert.match(workflow, /34e114876b0b11c390a56381ad16ebd13914f8d5/);
   assert.match(workflow, /49933ea5288caeca8642d1e84afbd3f7d6820020/);
   assert.doesNotMatch(workflow, /FTP_PASSWORD|lftp/i);
@@ -120,4 +126,5 @@ test("the audit handoff and CI preserve the offline boundary", async () => {
   assert.match(collector, /Emulation\.setDeviceMetricsOverride/);
   assert.match(collector, /targetsUnder44/);
   assert.match(workflow, /collect-browser-baseline\.mjs/);
+  assert.match(workflow, /check-visual-evidence\.mjs/);
 });

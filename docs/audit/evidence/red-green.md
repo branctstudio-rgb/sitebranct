@@ -16,4 +16,12 @@ Em 2026-08-18, o teste reforçado falhou 2/4 casos com `ENOENT` para `fixtures/a
 
 ## GREEN
 
-Critério: 4/4 testes passam após validar o diff contra a base, a matriz de 12 rotas × 3 viewports, a existência/dimensão/hash das 13 imagens e o workflow fixado por SHA. O output final do CI do PR é a autoridade remota; este documento é evidência de processo, não substituto do teste.
+Critério inicial: 4/4 testes passam após validar o diff, a matriz de 12 rotas × 5 viewports, a existência/dimensão/hash das 13 imagens e o workflow fixado por SHA.
+
+## RED 4 — validade visual e workflow durável
+
+Após o parecer `CHANGES_REQUIRED` no comentário #5332433500, `node tests/audit/check-visual-evidence.mjs` rejeitou 11/13 capturas: entre 43,1% e 57,5% das bandas eram uniformes nos artefactos afetados. Em paralelo, `node --test tests/audit/site-audit.test.mjs` falhou porque o workflow continha `github.head_ref == 'agent/phase-1-offline-audit'` e não executava o novo gate de pixels.
+
+## GREEN 4
+
+Critério: capturas regeneradas após scroll/estabilização, inspeção visual real desktop/tablet/mobile, gate de pixels sem falhas, conjunto manifesto/diretório exato, 4/4 testes, matriz DOM 60/60 e workflow durável por paths relevantes e base dinâmica do PR. O output final do CI do PR é a autoridade remota; este documento é evidência de processo, não substituto do teste.
