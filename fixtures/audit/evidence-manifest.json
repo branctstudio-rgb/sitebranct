@@ -1,0 +1,14 @@
+{"schemaVersion":1,"format":"JPEG (extensions corrected after adversarial review)","files":[
+{"file":"crm-gestao-desktop.jpg","width":1424,"height":5608,"sha256":"ad57513e86b3707ff90970b78b6ac08dd74b6781ea0e111079a3ecfeac8d221f"},
+{"file":"crm-gestao-mobile.jpg","width":374,"height":6126,"sha256":"18937139aaa82abdca75568d4008efdb60dc682ad2a12628091fbf8ca2360a8e"},
+{"file":"crm-gestao-tablet.jpg","width":752,"height":5145,"sha256":"da23d1bc822bb4a6fbdaf57bb6d81fac4c387ea718f26329d5be742522ab9e7c"},
+{"file":"home-1024x768.jpg","width":1008,"height":5549,"sha256":"1368d1d0e86667c8393d97c7abe374f37e69e764a9f89afa801052f37cdd34ff"},
+{"file":"home-1440x900-viewport.jpg","width":1425,"height":891,"sha256":"b501fa3cae58add8f18e1a931f69af18c041872b7d57c2d4f9e6bc1ece765555"},
+{"file":"home-1440x900.jpg","width":1424,"height":5743,"sha256":"22c9765b788526ff7008e17156a8905ec456048fd2537db61b2bc6ba720618ea"},
+{"file":"home-360x800.jpg","width":414,"height":7789,"sha256":"8833c37da2cc2fa64d46a49206597e99a0252c4f05e00a6a80defb5d45f4e554"},
+{"file":"home-390x844-viewport.jpg","width":375,"height":812,"sha256":"5da0bd6d2d9eefd4778deeea9f8ef20766326c962e520581abe9965a450e20bd"},
+{"file":"home-390x844.jpg","width":416,"height":7620,"sha256":"bfb14f5c285a9721238c3c2653c3dc0d081cb357d138caafc2292ce95c8b6eff"},
+{"file":"home-768x1024.jpg","width":752,"height":5975,"sha256":"7298bab6bee99919123839c5b45f504859edce9a0b66b904e76942d3e3c983f9"},
+{"file":"website-premium-desktop.jpg","width":1424,"height":6198,"sha256":"abc982a582e31c0fc47eb41db1c3483b3214eeeea4f2b884dfc9b22dfb55a7cb"},
+{"file":"website-premium-mobile.jpg","width":416,"height":8409,"sha256":"a47a7bf21587250183dc359a7813b6783bec4ddee45a1ecf200c77c46907278c"},
+{"file":"website-premium-tablet.jpg","width":752,"height":6538,"sha256":"d28a07ca535fa9b2b97649ad7c60c81ab1fc99e35788c5f68123b212c1f5b614"}]}

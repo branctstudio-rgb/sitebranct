@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "repository": "branctstudio-rgb/sitebranct",
+  "baseSha": "da8800cd7669f66a82cbf9cd2e4f22fa99d59320",
+  "parallelBranch": {
+    "name": "redesign-light-2026",
+    "observedSha": "310a4de3ff15a4abc57ea31f668c2deee48443bb",
+    "mutable": false
+  },
+  "productionMutationAllowed": false,
+  "liveIntegrationsAllowed": false,
+  "mergeAllowed": false,
+  "deployWorkflowMutable": false,
+  "dataPolicy": "synthetic-or-public-read-only",
+  "requiredViewports": [
+    "1440x900",
+    "1024x768",
+    "768x1024",
+    "390x844",
+    "360x800"
+  ],
+  "routes": [
+    "index.html",
+    "crm-gestao.html",
+    "website-premium.html",
+    "landing-page.html",
+    "automacao-ia.html",
+    "processo.html",
+    "contactos.html",
+    "politica-privacidade.html",
+    "area-do-usuario.html",
+    "blog.html",
+    "servicos.html",
+    "styleguide.html"
+  ],
+  "auditDomains": [
+    "architecture",
+    "code",
+    "content",
+    "design",
+    "seo",
+    "accessibility",
+    "performance",
+    "motion",
+    "responsive",
+    "technical-debt"
+  ]
+}
