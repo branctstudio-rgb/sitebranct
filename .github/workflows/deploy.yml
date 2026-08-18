@@ -19,6 +19,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/deploy.yml"
+      - "scripts/deploy/**"
       - "tests/deploy/**"
       - "docs/deploy-protection/**"
 
@@ -53,6 +54,9 @@ jobs:
           npx --yes esbuild src/css/branct.css --minify --allow-overwrite --outfile=src/css/branct.css || echo "minify branct.css falhou - segue sem minificar"
           npx --yes esbuild src/js/branct.js --minify --allow-overwrite --outfile=src/js/branct.js || echo "minify branct.js falhou - segue sem minificar"
           npx --yes esbuild src/js/trial.js --minify --allow-overwrite --outfile=src/js/trial.js || echo "minify trial.js falhou - segue sem minificar"
+
+      - name: Construir payload fechado
+        run: node scripts/deploy/build-publish-payload.mjs --source . --output "${RUNNER_TEMP}/branct-publish"
 
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
@@ -96,7 +100,7 @@ jobs:
               --exclude ^GEMINI-FIXES-APPLIED\.md$ \
               --exclude ^MELHORIAS-SUGERIDAS\.md$ \
               --exclude ^MOCKUP-IMPLEMENTATION\.md$ \
-              ./ /domains/branct.com/public_html/;
+              "${RUNNER_TEMP}/branct-publish/" /domains/branct.com/public_html/;
             quit
           "
 

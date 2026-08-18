@@ -10,7 +10,7 @@ Branch: `agent/deploy-scope-guard`
 
 O workflow anterior tinha `push.branches: [main]` sem filtro de caminhos. Portanto, qualquer merge/push na `main` — inclusive somente documentação, testes, fixtures ou workflow de auditoria — iniciava o job que contém FTP.
 
-O `lftp mirror` atual publica, a partir da árvore versionada na base, os HTML raiz, `.htaccess`, `robots.txt`, `sitemap.xml`, CSS, JavaScript, fontes, traduções e media em `src/img/`. O próprio mirror exclui `src/img/video.mp4`, documentação, GitHub workflows, dependências, Supabase, modelos e fontes 3D. Nenhum comando FTP foi executado para obter esta conclusão; ela resulta da leitura integral do workflow e da enumeração da árvore Git.
+No head bloqueado `94450a00c8a2a73fe587f2cb1de954a8acc75196`, o `lftp mirror` ainda usava a raiz `./`. A reprodução offline mostrou quatro fugas no payload efetivo: `tests/deploy/deploy-scope.test.mjs`, o futuro `tests/audit/site-audit.test.mjs`, o futuro `fixtures/audit/baseline-results.json` e `unknown/private.txt`. Nenhum comando FTP foi executado; o RED foi calculado a partir da árvore Git e das exclusões reais do comando.
 
 ## Lista positiva automática
 
@@ -24,7 +24,7 @@ O `lftp mirror` atual publica, a partir da árvore versionada na base, os HTML r
 - `src/i18n/**`
 - `src/img/**`, mantendo a exclusão já existente de `src/img/video.mp4`
 
-Alterar o próprio workflow não pertence à lista de push e não publica automaticamente. `workflow_dispatch` permite execução manual deliberada somente a partir da `main`. Em pull requests que alterem esta proteção, somente o job offline `verify-scope` pode executar; o job `deploy` rejeita eventos `pull_request` por condição explícita.
+Esta lista em `push.paths` é a definição canónica. Antes de instalar ou invocar `lftp`, `scripts/deploy/build-publish-payload.mjs` lê essa mesma definição, valida-a contra a política fechada e copia somente ficheiros Git autorizados para `${RUNNER_TEMP}/branct-publish`. O mirror usa exclusivamente essa pasta temporária, nunca a raiz do repositório. Alterar o próprio workflow não pertence à lista de push e não publica automaticamente. `workflow_dispatch` permite execução manual deliberada somente a partir da `main`. Em pull requests, somente `verify-scope` executa; o job `deploy` rejeita o evento.
 
 ## Tabela de verdade executável
 
@@ -45,20 +45,22 @@ Alterar o próprio workflow não pertence à lista de push e não publica automa
 | `src/img/video.mp4` | não |
 | `workflow_dispatch` autorizado na `main` | permitido |
 
-A matriz vive em `tests/deploy/deploy-scope.test.mjs` e também enumera todos os ficheiros vivos atuais para detetar omissões futuras.
+A matriz vive em `tests/deploy/deploy-scope.test.mjs`. `expected-payload.json` mantém uma lista explícita e independente dos 56 ficheiros publicados atuais. O teste enumera a árvore produzida e exige igualdade exata, sem reutilizar o classificador como oráculo. Há negativos permanentes para PR #2, testes, fixtures, documentação, workflows, dependências, diretórios desconhecidos, ficheiros obrigatórios ausentes, duplicações, travessia e symlinks.
 
 ## RED→GREEN
 
-RED: 4/5 testes falharam na base. O caso “somente documentação” devolveu `true`; não existiam `workflow_dispatch`, separação PR/deploy ou Actions pinadas.
+RED inicial da missão: 4/5 testes falharam na base. O caso “somente documentação” devolveu `true`; não existiam `workflow_dispatch`, separação PR/deploy ou Actions pinadas.
 
-GREEN: o filtro positivo, o despacho manual, as condições de jobs e os SHAs imutáveis satisfazem 5/5 testes. O bloco protegido desde o comentário “O repo fica legível” até ao fim mantém SHA-256 `7c4c0839fe38865b61aa4cef463788f163d3e8f8adefdbe59b4e2d4b4e0264ea`, cobrindo minificação, instalação, variáveis, destino e comando mirror.
+RED desta correção: 6/7 testes passaram e o negativo do payload falhou com quatro entradas indevidas: teste atual, teste e fixture projetados da PR #2 e diretório desconhecido.
+
+GREEN: 8/8 testes passam. O pacote contém exatamente os 56 ficheiros listados no contrato independente, e zero ficheiros de `tests/`, `fixtures/`, `docs/`, `.github/`, dependências ou diretórios desconhecidos. O destino FTP, nomes dos secrets, opções de sincronização e `--delete` permanecem no workflow; somente a origem do mirror mudou de `./` para o staging fechado.
 
 ## Riscos e rollback
 
-- Um novo tipo de caminho vivo exigirá atualização explícita da lista positiva. O teste cobre toda a árvore viva atual, não ficheiros futuros ainda inexistentes.
-- O payload do mirror continua com as exclusões originais por exigência de não alterar comandos. Esta missão controla o gatilho; não redesenha a política de conteúdo do mirror.
+- Um novo tipo de caminho vivo exigirá atualização deliberada da política canónica, do construtor e do contrato independente. Por desenho, a omissão falha fechada.
+- A lista explícita dos 56 ficheiros é um snapshot da árvore atual. Adicionar ou remover um asset vivo exige atualizar esse contrato no mesmo PR.
 - `workflow_dispatch` é uma capacidade manual sensível, limitada pela condição do job à `main`, e deve ser usada somente por operador autorizado.
-- Rollback: reverter exclusivamente o commit desta missão. Isso restaura o gatilho genérico anterior; portanto, o rollback deve ocorrer apenas com consciência de que merges documentais voltariam a poder iniciar FTP.
+- Rollback: reverter exclusivamente o commit corretivo para o head anterior da PR. Isso reabre o payload da raiz e não deve ser fundido; a alternativa segura é desativar o workflow até corrigir.
 
 ## Gate
 

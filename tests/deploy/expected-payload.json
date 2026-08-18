@@ -1,0 +1,8 @@
+[
+  ".htaccess", "area-do-usuario.html", "automacao-ia.html", "blog.html", "contactos.html", "crm-gestao.html", "index.html", "landing-page.html", "politica-privacidade.html", "processo.html", "robots.txt", "servicos.html", "sitemap.xml",
+  "src/css/branct.css", "src/css/main.css",
+  "src/fonts/bricolage-grotesque-latin-ext.woff2", "src/fonts/bricolage-grotesque-latin.woff2", "src/fonts/font-faces.css", "src/fonts/manrope-latin-ext.woff2", "src/fonts/manrope-latin.woff2",
+  "src/i18n/en.json", "src/i18n/hr.json", "src/i18n/it.json", "src/i18n/pt.json",
+  "src/img/3.jpg", "src/img/56.jpg", "src/img/albinosantos.jpg", "src/img/apple-touch-icon.png", "src/img/automacao.jpg", "src/img/branding.jpg", "src/img/case-albino.webp", "src/img/case-kb.webp", "src/img/case-neoprag.webp", "src/img/case-vertexway.webp", "src/img/crm-dashboard-860.webp", "src/img/crm-dashboard.jpg", "src/img/crm-dashboard.webp", "src/img/crm-demo-poster.jpg", "src/img/crm-demo-poster.webp", "src/img/crm-demo.mp4", "src/img/crm-demo.webm", "src/img/crm.jpg", "src/img/favicon.ico", "src/img/icon.svg", "src/img/kb.jpg", "src/img/neoprag.jpg", "src/img/notebook.png", "src/img/vertexway.jpg", "src/img/website-940.webp", "src/img/website.jpg",
+  "src/js/branct.js", "src/js/main.js", "src/js/three-scene.js", "src/js/trial.js", "styleguide.html", "website-premium.html"
+]

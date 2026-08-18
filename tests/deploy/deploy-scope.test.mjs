@@ -1,87 +1,125 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { cp, lstat, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
+import { buildPayload, EXPECTED_POLICY, readPushPaths } from "../../scripts/deploy/build-publish-payload.mjs";
 
-const workflowUrl = new URL("../../.github/workflows/deploy.yml", import.meta.url);
-const workflow = await readFile(workflowUrl, "utf8");
+const root = path.resolve(new URL("../..", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
+const workflow = await readFile(path.join(root, ".github/workflows/deploy.yml"), "utf8");
+const expected = JSON.parse(await readFile(new URL("./expected-payload.json", import.meta.url), "utf8"));
 
-function pushPaths(yaml) {
-  const lines = yaml.replace(/\r\n/g, "\n").split("\n");
-  const push = lines.findIndex((line) => line === "  push:");
-  if (push < 0) return [];
-  const paths = lines.findIndex((line, index) => index > push && line === "    paths:");
-  if (paths < 0) return null;
-  const values = [];
-  for (let index = paths + 1; index < lines.length; index += 1) {
-    const match = lines[index].match(/^      - ["']?(.+?)["']?$/);
-    if (!match) break;
-    values.push(match[1]);
-  }
-  return values;
-}
-
-function matches(pattern, path) {
+function matches(pattern, candidate) {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("**", "\0").replaceAll("*", "[^/]*").replaceAll("\0", ".*");
-  return new RegExp(`^${escaped}$`).test(path);
+  return new RegExp(`^${escaped}$`).test(candidate);
 }
 
 function automaticDeploy(paths) {
-  const filters = pushPaths(workflow);
-  if (filters === null) return true;
-  return paths.some((path) => filters.reduce((included, filter) => filter.startsWith("!") ? (matches(filter.slice(1), path) ? false : included) : (matches(filter, path) ? true : included), false));
+  return paths.some((candidate) => EXPECTED_POLICY.reduce((included, rule) => rule.startsWith("!")
+    ? (matches(rule.slice(1), candidate) ? false : included)
+    : (matches(rule, candidate) ? true : included), false));
 }
 
-const truthTable = [
-  ["somente documentação", ["docs/audit/report.md"], false],
-  ["somente testes", ["tests/audit/site-audit.test.mjs"], false],
-  ["somente evidências", ["fixtures/audit/baseline-results.json"], false],
-  ["HTML", ["index.html"], true],
-  ["CSS", ["src/css/branct.css"], true],
-  ["JavaScript", ["src/js/branct.js"], true],
-  ["imagem", ["src/img/crm-dashboard.webp"], true],
-  ["fonte", ["src/fonts/manrope-latin.woff2"], true],
-  ["i18n", ["src/i18n/pt.json"], true],
-  ["documentação + vivo", ["docs/audit/report.md", "website-premium.html"], true],
-  ["workflow de auditoria", [".github/workflows/audit-offline.yml"], false],
-  ["workflow de deploy", [".github/workflows/deploy.yml"], false],
-  ["asset fonte excluído", ["src/img/video.mp4"], false],
-];
+async function treeFiles(directory, prefix = "") {
+  const result = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) result.push(...await treeFiles(path.join(directory, entry.name), relative));
+    else result.push(relative);
+  }
+  return result.sort();
+}
 
-test("push automático segue a tabela de verdade positiva", () => {
-  for (const [name, paths, expected] of truthTable) {
-    assert.equal(automaticDeploy(paths), expected, name);
+async function withTempRepo(action) {
+  const temp = await mkdtemp(path.join(os.tmpdir(), "branct-deploy-test-"));
+  const source = path.join(temp, "repo");
+  const output = path.join(temp, "payload");
+  await cp(root, source, { recursive: true, filter: (item) => path.basename(item) !== ".git" });
+  try { await action({ source, output }); } finally { await rm(temp, { recursive: true, force: true }); }
+}
+
+test("gatilho automático segue a tabela de verdade", () => {
+  const cases = [
+    [["docs/audit/report.md"], false], [["tests/audit/test.mjs"], false], [["fixtures/audit/a.json"], false],
+    [["index.html"], true], [["src/css/branct.css"], true], [["src/js/branct.js"], true],
+    [["src/img/icon.svg"], true], [["src/fonts/manrope-latin.woff2"], true], [["unknown/file.bin"], false],
+    [["docs/audit/report.md", "website-premium.html"], true], [[".github/workflows/audit-offline.yml"], false],
+    [[".github/workflows/deploy.yml"], false], [["src/img/video.mp4"], false],
+  ];
+  for (const [paths, result] of cases) assert.equal(automaticDeploy(paths), result, paths.join(", "));
+});
+
+test("uma definição canónica governa gatilho e construtor", () => {
+  assert.deepEqual(readPushPaths(workflow), EXPECTED_POLICY);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/);
+  assert.doesNotMatch(workflow, /uses:\s+actions\/(?:checkout|setup-node)@v\d/);
+});
+
+test("payload real é exatamente a lista independente esperada", async () => {
+  const temp = await mkdtemp(path.join(os.tmpdir(), "branct-payload-"));
+  try {
+    const actual = await buildPayload({ source: root, output: temp + "-out" });
+    assert.deepEqual(actual, expected);
+    assert.deepEqual(await treeFiles(temp + "-out"), expected);
+    assert.equal((await lstat(temp + "-out")).isDirectory(), true);
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+    await rm(temp + "-out", { recursive: true, force: true });
   }
 });
 
-test("deploy manual controlado permanece disponível", () => {
-  assert.equal(/^  workflow_dispatch:\s*$/m.test(workflow), true, "workflow_dispatch must exist");
-  assert.equal(/github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/.test(workflow), true, "manual deploy must be restricted to main");
+test("PR #2 projetada e caminhos internos ficam fora do payload", async () => {
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  const additions = ["tests/audit/site-audit.test.mjs", "fixtures/audit/baseline-results.json", "fixtures/audit/invalid-home-390x844.jpg", "docs/audit/report.md", ".github/workflows/audit-offline.yml", "node_modules/pkg/index.js", "unknown/private.txt"];
+  await withTempRepo(async ({ source, output }) => {
+    for (const relative of additions) {
+      const target = path.join(source, relative);
+      await writeFile(target, "offline", { recursive: false }).catch(async () => {
+        await import("node:fs/promises").then(({ mkdir }) => mkdir(path.dirname(target), { recursive: true }));
+        await writeFile(target, "offline");
+      });
+    }
+    const actual = await buildPayload({ source, output, candidates: [...tracked, ...additions] });
+    assert.deepEqual(actual, expected);
+  });
 });
 
-test("payload FTP permanece byte-equivalente e Actions ficam pinadas", () => {
-  const marker = "      # O repo";
-  const protectedPayload = workflow.slice(workflow.indexOf(marker)).replace(/\r\n/g, "\n");
-  assert.equal(createHash("sha256").update(protectedPayload).digest("hex"), "7c4c0839fe38865b61aa4cef463788f163d3e8f8adefdbe59b4e2d4b4e0264ea");
-  assert.equal(/uses:\s+actions\/(checkout|setup-node)@v\d/.test(workflow), false, "Actions must use immutable SHAs");
+test("falha fechada para ausências, duplicações e travessia", async () => {
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  await withTempRepo(async ({ source, output }) => {
+    await assert.rejects(buildPayload({ source, output, candidates: tracked.filter((item) => item !== "index.html") }), /required publish file missing/);
+  });
+  await withTempRepo(async ({ source, output }) => {
+    await assert.rejects(buildPayload({ source, output, candidates: [...tracked, "index.html"] }), /duplicate path entry/);
+  });
+  await withTempRepo(async ({ source, output }) => {
+    await assert.rejects(buildPayload({ source, output, candidates: [...tracked, "../escape.html"] }), /escapes repository/);
+  });
 });
 
-test("workflow separa verificação de PR do job que pode publicar", () => {
-  assert.equal(/^  pull_request:\s*$/m.test(workflow), true, "pull_request verification trigger must exist");
-  assert.equal(/github\.event_name == 'pull_request'/.test(workflow), true, "verification job must be PR-only");
-  assert.equal(/github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch'/.test(workflow), true, "deploy job must reject pull_request events");
+test("falha fechada para qualquer symlink rastreado", async () => {
+  if (process.platform === "win32") return;
+  const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
+  await withTempRepo(async ({ source, output }) => {
+    const link = path.join(source, "unknown-link.txt");
+    await symlink(path.join(source, "robots.txt"), link);
+    await assert.rejects(buildPayload({ source, output, candidates: [...tracked, "unknown-link.txt"] }), /symlink refused/);
+  });
 });
 
-test("lista positiva cobre todos os ficheiros vivos atuais", () => {
-  const tracked = execFileSync("git", ["ls-files"], { encoding: "utf8" }).trim().split(/\r?\n/);
-  const live = tracked.filter((path) => /^(?:[^/]+\.html|\.htaccess|robots\.txt|sitemap\.xml|src\/(?:css|js|fonts|i18n)\/|src\/img\/(?!video\.mp4$))/.test(path));
-  assert.ok(live.length > 20);
-  for (const path of live) assert.equal(automaticDeploy([path]), true, `live path omitted: ${path}`);
+test("mirror usa apenas staging e preserva sincronização", () => {
+  assert.match(workflow, /mirror --reverse --delete --verbose --parallel=5/);
+  assert.match(workflow, /"\$\{RUNNER_TEMP\}\/branct-publish\/" \/domains\/branct\.com\/public_html\//);
+  assert.doesNotMatch(workflow, /\s\.\/ \/domains\/branct\.com\/public_html\//);
+  assert.match(workflow, /github\.event_name == 'pull_request'/);
+  assert.match(workflow, /github\.event_name == 'push' \|\|/);
 });
 
-test("artefactos offline não contêm expressões de secrets", async () => {
-  const secretExpression = ["$", "{{", " secrets."].join("");
-  const files = [new URL(import.meta.url), new URL("../../docs/deploy-protection/scope-matrix.md", import.meta.url)];
-  for (const file of files) assert.equal((await readFile(file, "utf8")).includes(secretExpression), false);
+test("testes e documentação não contêm expressões de credenciais", async () => {
+  const expression = ["$", "{{", " secrets."].join("");
+  for (const file of [new URL(import.meta.url), new URL("../../docs/deploy-protection/scope-matrix.md", import.meta.url)]) {
+    assert.equal((await readFile(file, "utf8")).includes(expression), false);
+  }
 });
