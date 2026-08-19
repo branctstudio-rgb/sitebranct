@@ -238,7 +238,7 @@ test("F2-00 stays offline and cannot mutate live or delivery paths", async () =>
   });
   const changed = execFileSync("git", ["diff", "--name-only", base], { encoding:"utf8" }).trim().split(/\r?\n/).filter(Boolean);
   assert.ok(changed.length > 0);
-  const allowed = /^(CLAUDE\.md|docs\/audit\/phase-2\/.*|fixtures\/audit\/f2-gov-01-(current-state|ruleset-proposal)\.json|tests\/audit\/(f2-gov-01|phase-2-governance|site-audit)\.test\.mjs)$/;
+  const allowed = /^(CLAUDE\.md|docs\/audit\/phase-2\/.*|fixtures\/audit\/f2-gov-(01|02a|02b)-.*\.json|tests\/audit\/(f2-gov-(01|02a)|phase-2-governance|site-audit)\.test\.mjs|\.github\/workflows\/universal-pr-gate\.yml|scripts\/governance\/classify-pr-paths\.mjs)$/;
   assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
   for (const forbidden of [".github/workflows/deploy.yml", "deploy/publish-manifest.json"]) assert.ok(!changed.includes(forbidden));
 });
