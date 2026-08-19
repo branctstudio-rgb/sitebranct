@@ -48,6 +48,10 @@ O Conselho deve escolher entre proteção técnica real da `main` (Via A, se con
 - Chromium não substitui Firefox/WebKit; ambos continuam `NOT_VERIFIED`.
 - A baseline demonstra defeitos reais que só a F2-01, se futuramente autorizada, poderá corrigir.
 
+## Correção F2-00 F1 — motion
+
+A escala documental de motion foi unificada com a árvore viva: `duration-fast=150ms`, `duration-standard=250ms` e `duration-emphasis=450ms`, todos `current`. `duration-instant` foi removido da escala e não é apresentado como implementado. O contrato offline extrai o bloco delimitado da constituição, compara nomes/valores/estados com o JSON e mantém negativos para divergência, ausência, extra não classificado e target-only falsamente apresentado como current.
+
 ## Rollback
 
 Antes do merge, fechar a PR e preservar a branch. Depois de eventual merge humano, usar `git revert -m 1 <merge_sha>` e reexecutar contratos offline, proteção de deploy e auditoria. O rollback não autoriza FTP nem mudanças em produção.

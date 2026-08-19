@@ -16,6 +16,33 @@ const contrast = (a, b) => {
   const values = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (values[0] + 0.05) / (values[1] + 0.05);
 };
+const canonicalMotionBlock = (constitution) => {
+  const match = constitution.match(/<!-- MOTION_TOKENS_CANONICAL_START -->([\s\S]*?)<!-- MOTION_TOKENS_CANONICAL_END -->/);
+  assert.ok(match, "motion canonical block missing");
+  const entries = new Map();
+  for (const rawLine of match[1].trim().split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const parsed = line.match(/^(duration-[a-z-]+):\s*(\d+ms)\s*\|\s*status:\s*(current|target-only)$/);
+    assert.ok(parsed, `invalid motion canonical line: ${line}`);
+    assert.ok(!entries.has(parsed[1]), `duplicate motion token: ${parsed[1]}`);
+    entries.set(parsed[1], { value: parsed[2], status: parsed[3] });
+  }
+  return entries;
+};
+const validateMotionContract = (contract, constitution) => {
+  const documented = canonicalMotionBlock(constitution);
+  const expected = new Map(Object.entries(contract.tokens.motion).filter(([name]) => name.startsWith("duration-")));
+  const statuses = contract.tokenGovernance.motionTokenStatus ?? {};
+  for (const name of expected.keys()) assert.ok(documented.has(name), `motion token missing from constitution: ${name}`);
+  for (const [name, entry] of documented) {
+    assert.ok(expected.has(name), `motion token extra and unclassified: ${name}`);
+    assert.equal(entry.value, expected.get(name), `motion token ${name} value mismatch: JSON ${expected.get(name)}, constitution ${entry.value}`);
+    const expectedStatus = statuses[name] ?? "current";
+    assert.equal(entry.status, expectedStatus, `motion token ${name} status mismatch: JSON ${expectedStatus}, constitution ${entry.status}`);
+  }
+  return documented;
+};
 
 test("operational memory separates evidence from future intent", async () => {
   const memory = await read("CLAUDE.md");
@@ -68,6 +95,27 @@ test("visual constitution exposes complete and non-contradictory tokens", async 
   for (const term of ["sem aparência de template", "imagens reais", "z-index", "prefers-reduced-motion", "3D", "orçamento de movimento"]) {
     assert.match(constitution, new RegExp(term, "i"), term);
   }
+  validateMotionContract(contract, constitution);
+});
+
+test("motion JSON and constitution fail closed on structural drift", async () => {
+  const [contract, constitution] = await Promise.all([
+    readJson("docs/audit/phase-2/f2-00-contract.json"),
+    read("docs/audit/phase-2/visual-constitution.md"),
+  ]);
+  const expectFailure = (mutatedContract, mutatedConstitution, message) => assert.throws(
+    () => validateMotionContract(mutatedContract, mutatedConstitution),
+    (error) => error.message.includes(message),
+  );
+  expectFailure(contract, constitution.replace("duration-standard: 250ms", "duration-standard: 240ms"), "duration-standard value mismatch");
+  expectFailure(contract, constitution.replace("duration-emphasis: 450ms", "duration-emphasis: 420ms"), "duration-emphasis value mismatch");
+  expectFailure(contract, constitution.replace(/^duration-standard:.*\r?\n/m, ""), "motion token missing from constitution: duration-standard");
+  expectFailure(contract, constitution.replace("<!-- MOTION_TOKENS_CANONICAL_END -->", "duration-instant: 80ms | status: current\n<!-- MOTION_TOKENS_CANONICAL_END -->"), "motion token extra and unclassified: duration-instant");
+  const targetContract = structuredClone(contract);
+  targetContract.tokens.motion["duration-instant"] = "80ms";
+  targetContract.tokenGovernance.motionTokenStatus = { ...targetContract.tokenGovernance.motionTokenStatus, "duration-instant":"target-only" };
+  const falselyCurrent = constitution.replace("<!-- MOTION_TOKENS_CANONICAL_END -->", "duration-instant: 80ms | status: current\n<!-- MOTION_TOKENS_CANONICAL_END -->");
+  expectFailure(targetContract, falselyCurrent, "duration-instant status mismatch: JSON target-only, constitution current");
 });
 
 test("essential components define variants, states and safeguards", async () => {

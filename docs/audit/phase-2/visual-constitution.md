@@ -98,7 +98,13 @@ A escala fechada é: base 0, raised 10, sticky header 100, drawer backdrop 200, 
 
 Motion explica relação, mudança de estado ou prioridade. O orçamento por viewport permite uma animação de ênfase simultânea; feedback de controlo pode coexistir se não competir.
 
-- Durações: 80 ms instant, 160 ms fast, 240 ms standard, 420 ms emphasis. Nada de entrada editorial acima de 600 ms.
+<!-- MOTION_TOKENS_CANONICAL_START -->
+duration-fast: 150ms | status: current
+duration-standard: 250ms | status: current
+duration-emphasis: 450ms | status: current
+<!-- MOTION_TOKENS_CANONICAL_END -->
+
+Esta é a escala fechada atual, vinculada a `--dur-fast`, `--dur` e `--dur-slow`. Não existe token `duration-instant`; novas durações exigem contrato, estado e missão futura autorizada. Nada de entrada editorial acima de 600 ms.
 - Easings: standard para mudanças locais, enter para revelar, exit para remover. Evitar bounce em tarefas sérias.
 - Preferir `transform` e `opacity`; não animar propriedades de layout por defeito.
 - Scroll motion não controla leitura, não prende scroll e não esconde conteúdo sem JavaScript.

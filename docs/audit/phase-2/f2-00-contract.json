@@ -132,6 +132,11 @@
       "navigation-wide-min": "literal 940px media query",
       "compact-min": "literal 720px media query"
     },
+    "motionTokenStatus": {
+      "duration-fast": "current",
+      "duration-standard": "current",
+      "duration-emphasis": "current"
+    },
     "targetOnly": ["semantic warning pair", "disabled action pairs", "audit viewport aliases", "typographic leading/tracking roles"]
   },
   "accessibility": {
