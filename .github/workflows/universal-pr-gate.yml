@@ -51,6 +51,9 @@ jobs:
       - name: Validate universal gate contract
         run: node --test tests/audit/f2-gov-02a.test.mjs
 
+      - name: Validate gate correction contract
+        run: node --test tests/audit/f2-gov-02c.test.mjs
+
       - name: Validate governance contracts
         run: node --test tests/audit/phase-2-governance.test.mjs tests/audit/f2-gov-01.test.mjs
 
@@ -62,11 +65,11 @@ jobs:
         run: node --test tests/audit/site-audit.test.mjs
 
       - name: Reproduce browser baseline
-        if: steps.classify.outputs.run_browser == 'true'
+        if: always() && steps.classify.outputs.run_browser == 'true'
         run: node tests/audit/collect-browser-baseline.mjs --check fixtures/audit/baseline-results.json
 
       - name: Reject empty visual evidence
-        if: steps.classify.outputs.run_visual == 'true'
+        if: always() && steps.classify.outputs.run_visual == 'true'
         run: node tests/audit/check-visual-evidence.mjs
 
       - name: Gate terminal result

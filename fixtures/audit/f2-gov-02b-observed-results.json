@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "baseSha": "c169aa4cb727a50f9b304f3119305ffe6e630a71",
+  "verdict": "CHANGES_REQUIRED_NOT_ACTIVATABLE",
+  "scenarios": [
+    { "id": "documentation-pr", "pr": 16, "run": 32280148501, "category": "documentation", "expected": "SUCCESS", "observed": "FAILURE", "reason": "historical F2-00 allowlist" },
+    { "id": "tests-pr", "pr": 17, "run": 32280152068, "category": "tests", "expected": "SUCCESS", "observed": "FAILURE", "reason": "historical F2-00 allowlist" },
+    { "id": "live-page-pr", "pr": 18, "run": 32280154314, "category": "html", "expected": "FAILURE", "observed": "FAILURE", "reason": "masked before live verification" },
+    { "id": "asset-pr", "pr": 19, "run": 32280157648, "category": "images", "expected": "FAILURE", "observed": "FAILURE", "reason": "masked before live verification" },
+    { "id": "workflow-pr", "pr": 20, "run": 32280574153, "category": "workflow", "expected": "SUCCESS", "observed": "FAILURE", "reason": "historical F2-00 allowlist" },
+    { "id": "unknown-path-pr", "pr": 21, "run": 32280164068, "category": "unknown", "expected": "FAILURE", "observed": "FAILURE", "reason": "unknown path rejected by classifier" },
+    { "id": "deliberately-invalid-pr", "pr": 22, "run": 32280167732, "category": "fixtures", "expected": "FAILURE", "observed": "FAILURE", "reason": "unexpected check identity rejected" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "status": "CONTRACT_ONLY_DO_NOT_RUN_REAL_REHEARSALS",
+  "scenarios": [
+    { "id": "documentation-pr", "category": "documentation", "expected": "SUCCESS", "requiredSteps": ["classify", "gate-contract", "governance-contracts", "deploy-protection", "audit-contract"] },
+    { "id": "tests-pr", "category": "tests", "expected": "SUCCESS", "requiredSteps": ["classify", "gate-contract", "governance-contracts", "deploy-protection", "audit-contract"] },
+    { "id": "live-page-pr", "category": "html", "expected": "FAILURE", "requiredSteps": ["classify", "gate-contract", "governance-contracts", "deploy-protection", "browser-baseline", "visual-evidence"], "forbiddenFailure": "historical F2-00 allowlist" },
+    { "id": "asset-pr", "category": "images", "expected": "FAILURE", "requiredSteps": ["classify", "gate-contract", "governance-contracts", "deploy-protection", "browser-baseline", "visual-evidence"], "forbiddenFailure": "historical F2-00 allowlist" },
+    { "id": "workflow-pr", "category": "workflow", "expected": "SUCCESS", "requiredSteps": ["classify", "gate-contract", "governance-contracts", "deploy-protection"] },
+    { "id": "unknown-path-pr", "category": "unknown", "expected": "FAILURE", "requiredFailure": "unknown path rejected by classifier" },
+    { "id": "deliberately-invalid-pr", "category": "fixtures", "expected": "FAILURE", "requiredFailure": "unexpected check identity rejected" },
+    { "id": "protected-gate-change", "category": "protected-gate", "expected": "FAILURE", "requiredCheck": "Gate Integrity Sentinel" }
+  ],
+  "realPullRequestsAuthorized": false,
+  "technicalProtectionActivationAuthorized": false
+}

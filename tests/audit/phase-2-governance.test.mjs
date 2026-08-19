@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const root = new URL("../../", import.meta.url);
-const base = process.env.F2_DIFF_BASE ?? "59b060a871a0f55824c896caae6cb64188781f98";
 const read = (path) => readFile(new URL(path, root), "utf8");
 const readJson = async (path) => JSON.parse(await read(path));
 const luminance = (hex) => {
@@ -236,9 +234,10 @@ test("F2-00 stays offline and cannot mutate live or delivery paths", async () =>
     workflowDispatch:false, ftp:false, secrets:false, production:false,
     integrations:false, phase2Implementation:false, merge:false,
   });
-  const changed = execFileSync("git", ["diff", "--name-only", base], { encoding:"utf8" }).trim().split(/\r?\n/).filter(Boolean);
-  assert.ok(changed.length > 0);
-  const allowed = /^(CLAUDE\.md|docs\/audit\/phase-2\/.*|fixtures\/audit\/f2-gov-(01|02a|02b)-.*\.json|tests\/audit\/(f2-gov-(01|02a)|phase-2-governance|site-audit)\.test\.mjs|\.github\/workflows\/universal-pr-gate\.yml|scripts\/governance\/classify-pr-paths\.mjs)$/;
-  assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
-  for (const forbidden of [".github/workflows/deploy.yml", "deploy/publish-manifest.json"]) assert.ok(!changed.includes(forbidden));
+  assert.equal(contract.delivery.baseSha, "59b060a871a0f55824c896caae6cb64188781f98");
+  assert.equal(contract.delivery.headSha, "c0f2abcfdbf028e90a5041501b1def21aa5608ca");
+  assert.equal(contract.delivery.files.length, 10);
+  const historicalAllowed = /^(CLAUDE\.md|docs\/audit\/phase-2\/|tests\/audit\/)/;
+  assert.deepEqual(contract.delivery.files.filter((path) => !historicalAllowed.test(path)), []);
+  for (const forbidden of [".github/workflows/deploy.yml", "deploy/publish-manifest.json"]) assert.ok(!contract.delivery.files.includes(forbidden));
 });

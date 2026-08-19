@@ -1,0 +1,84 @@
+name: Gate Integrity Sentinel
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-integrity-sentinel-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate-integrity-sentinel:
+    name: Gate Integrity Sentinel
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect public PR file metadata from the base workflow
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const https = require("node:https");
+
+          (async () => {
+
+          const repository = process.env.REPOSITORY;
+          const pullNumber = process.env.PR_NUMBER;
+          if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? "")) throw new Error("invalid repository metadata");
+          if (!/^[1-9][0-9]*$/.test(pullNumber ?? "")) throw new Error("invalid pull request metadata");
+
+          const requestPage = (page) => new Promise((resolve, reject) => {
+            const request = https.get({
+              hostname: "api.github.com",
+              path: `/repos/${repository}/pulls/${pullNumber}/files?per_page=100&page=${page}`,
+              headers: { Accept: "application/vnd.github+json", "User-Agent": "branct-gate-integrity-sentinel" },
+            }, (response) => {
+              let body = "";
+              response.setEncoding("utf8");
+              response.on("data", (chunk) => { body += chunk; });
+              response.on("end", () => {
+                if (response.statusCode !== 200) return reject(new Error(`public metadata request failed: HTTP ${response.statusCode}`));
+                try { resolve(JSON.parse(body)); } catch { reject(new Error("public metadata response is not valid JSON")); }
+              });
+            });
+            request.setTimeout(15000, () => request.destroy(new Error("public metadata request timed out")));
+            request.on("error", reject);
+          });
+
+          const protectedPaths = new Set([
+            ".github/workflows/universal-pr-gate.yml",
+            ".github/workflows/gate-integrity-sentinel.yml",
+            "scripts/governance/classify-pr-paths.mjs",
+          ]);
+
+          const files = [];
+          for (let page = 1; ; page += 1) {
+            if (page > 30) throw new Error("PR file list exceeds the fail-closed API limit");
+            const batch = await requestPage(page);
+            if (!Array.isArray(batch)) throw new Error("public metadata response must be an array");
+            for (const item of batch) {
+              if (!item || typeof item.filename !== "string" || typeof item.status !== "string") throw new Error("malformed PR file metadata");
+              files.push(item.filename);
+              if (item.status === "renamed") {
+                if (typeof item.previous_filename !== "string") throw new Error("malformed rename metadata");
+                files.push(item.previous_filename);
+              }
+            }
+            if (batch.length < 100) break;
+          }
+          if (files.length === 0) throw new Error("PR file list is empty");
+          const protectedChanges = [...new Set(files.filter((path) => protectedPaths.has(path)))].sort();
+          if (protectedChanges.length) throw new Error(`protected gate component changed: ${protectedChanges.join(", ")}`);
+          console.log(`Gate Integrity Sentinel: PASS (${files.length} public file records inspected)`);
+          })().catch((error) => {
+            console.error(`Gate Integrity Sentinel: FAILURE — ${error.message}`);
+            process.exitCode = 1;
+          });
+          NODE
