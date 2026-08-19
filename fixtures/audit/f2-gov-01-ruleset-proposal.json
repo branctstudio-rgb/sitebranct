@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "repository": "branctstudio-rgb/sitebranct",
+  "measurementBase": "dce434dd3fe863a724ce8ea879d29093473dde4c",
+  "measuredAtUtc": "2026-08-19T15:03:31Z",
+  "status": "PROPOSAL_NOT_ACTIVE",
+  "target": {
+    "branch": "main",
+    "mechanism": "branch_protection",
+    "reason": "A personal-account public repository cannot use organization teams as a branch-protection bypass list; classic branch protection with administrators included is the measured compatible mechanism."
+  },
+  "rules": {
+    "requirePullRequest": true,
+    "requiredApprovingReviewCount": 1,
+    "dismissStaleApprovals": true,
+    "requireLastPushApproval": true,
+    "requireConversationResolution": true,
+    "blockDirectPush": true,
+    "blockForcePush": true,
+    "blockDeletion": true,
+    "includeAdministrators": true,
+    "requireLinearHistory": false,
+    "requireStatusChecksOnLatestHead": true
+  },
+  "checks": {
+    "inventory": [
+      {
+        "name": "contract",
+        "workflow": "Offline audit contract",
+        "observedSha": "c0f2abcfdbf028e90a5041501b1def21aa5608ca",
+        "runsOnEveryPullRequest": false,
+        "pathScope": "docs/audit/**, fixtures/audit/**, tests/audit/**, audit workflow"
+      },
+      {
+        "name": "Verificar escopo do deploy",
+        "workflow": "Deploy para Hostinger (FTP)",
+        "observedSha": "949524e131c45478d3c531ec103d74fae73b1537",
+        "runsOnEveryPullRequest": false,
+        "pathScope": "published paths and deploy-protection paths"
+      }
+    ],
+    "requiredNow": [],
+    "deferred": [
+      {
+        "name": "contract",
+        "reason": "Path filtering means the check does not exist on a live-only pull request."
+      },
+      {
+        "name": "Verificar escopo do deploy",
+        "reason": "Path filtering means the check does not exist on a documentation-only pull request."
+      }
+    ],
+    "policy": "No current check may become required until a disposable-branch trial proves it is emitted for both documentation-only and live-file pull requests on their latest head SHA."
+  },
+  "bypass": {
+    "agentsAllowed": false,
+    "broadAdministrativeBypass": false,
+    "branchProtectionAppliesToAdministrators": true,
+    "breakGlassActor": "repository owner branctstudio-rgb",
+    "ownerCanAlterOrRemoveRule": true,
+    "residualRisk": "The personal-account owner has administrative power to edit or remove repository rules; Via A cannot protect against a malicious or compromised owner account."
+  },
+  "repositoryProcedure": {
+    "authorizedMergeMethods": ["merge_commit"],
+    "squashAuthorized": false,
+    "rebaseAuthorized": false,
+    "autoMergeAuthorized": false,
+    "preserveBranchAfterMerge": true,
+    "approvalBoundToHeadAndBase": true
+  },
+  "activation": {
+    "activationAuthorized": false,
+    "blockedPendingUniversalCheck": true,
+    "blockedPendingDisposableBranchTrial": true,
+    "blockedPendingHumanDecision": true,
+    "nextDecision": ["authorize prerequisite CI design", "retain Via B temporarily", "revise package"]
+  },
+  "classicBranchProtectionApiPayload": {
+    "required_status_checks": null,
+    "enforce_admins": true,
+    "required_pull_request_reviews": {
+      "dismiss_stale_reviews": true,
+      "require_code_owner_reviews": false,
+      "required_approving_review_count": 1,
+      "require_last_push_approval": true
+    },
+    "restrictions": null,
+    "required_conversation_resolution": true,
+    "required_linear_history": false,
+    "allow_force_pushes": false,
+    "allow_deletions": false,
+    "block_creations": false,
+    "lock_branch": false,
+    "allow_fork_syncing": false
+  },
+  "antiLockout": {
+    "trialBranchPattern": "gov-trial/main-protection-*",
+    "createTrialBranchAuthorized": false,
+    "trialScenarios": [
+      "documentation-only pull request",
+      "live-file pull request",
+      "new commit after approval",
+      "unresolved material conversation",
+      "direct push attempt",
+      "force-push attempt",
+      "branch deletion attempt",
+      "GitHub Actions outage"
+    ],
+    "successEvidence": [
+      "check names and app source on latest head SHA",
+      "blocked and allowed operations with timestamps",
+      "review invalidation after a new commit",
+      "conversation-resolution enforcement",
+      "rollback rehearsal"
+    ],
+    "actionsOutagePolicy": "Do not bypass automatically. Freeze merges; the human owner may invoke break-glass only for a documented critical incident.",
+    "restorationOwner": "Rafael or explicitly delegated human repository owner",
+    "restorationDeadline": "within 60 minutes after break-glass use"
+  },
+  "rollback": {
+    "trigger": "lockout, unexpected missing check, incompatible merge behavior, or false-positive enforcement",
+    "steps": [
+      "Human owner records the incident, exact rule snapshot, head/base and reason.",
+      "Human owner restores the last exported protection payload or disables only the blocking field.",
+      "Re-run documentation-only and live-file trial PRs before restoring enforcement."
+    ],
+    "requiredEvidence": ["before/after rule payload", "actor", "UTC timestamps", "affected PR/SHA", "restoration test results"]
+  }
+}
