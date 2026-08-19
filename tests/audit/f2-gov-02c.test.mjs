@@ -76,6 +76,14 @@ function assertSentinelAllows(source, paths) {
   return true;
 }
 
+function replaceExactLine(source, line, replacement = "") {
+  const escaped = line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(^|\\r?\\n)${escaped}(?=\\r?\\n|$)`);
+  const mutated = source.replace(pattern, (_, prefix) => `${prefix}${replacement}`);
+  assert.notEqual(mutated, source, `mutation target missing: ${line.trim()}`);
+  return mutated;
+}
+
 function validateHistoricalIsolation(source) {
   assert.doesNotMatch(source, /execFileSync\("git", \["diff", "--name-only", base\]/, "historical allowlist still evaluates every current PR diff");
   return true;
@@ -206,18 +214,33 @@ test("sentinel contract rejects neutralization and privilege expansion", async (
     ["PR head executed", (s) => s + '\n# ${{ github.event.pull_request.head.sha }}', "sentinel must not checkout"],
     ["secret added", (s) => s + '\n# ${{ secrets.DEPLOY_TOKEN }}', "sentinel must not checkout"],
     ["write permission", (s) => s.replace("contents: read", "contents: write"), "sentinel permissions must be contents read only"],
-    ["universal workflow unprotected", (s) => s.replace('            ".github/workflows/universal-pr-gate.yml",\n', ""), "protected gate path missing"],
-    ["sentinel unprotected", (s) => s.replace('            ".github/workflows/gate-integrity-sentinel.yml",\n', ""), "protected gate path missing"],
-    ["classifier unprotected", (s) => s.replace('            "scripts/governance/classify-pr-paths.mjs",\n', ""), "protected gate path missing"],
-    ["executed test unprotected", (s) => s.replace('            "tests/deploy/deploy-scope.test.mjs",\n', ""), "protected gate path missing"],
-    ["browser verifier unprotected", (s) => s.replace('            "tests/audit/collect-browser-baseline.mjs",\n', ""), "protected gate path missing"],
-    ["authority manifest unprotected", (s) => s.replace('            "deploy/publish-manifest.json",\n', ""), "protected gate path missing"],
+    ["universal workflow unprotected", (s) => replaceExactLine(s, '            ".github/workflows/universal-pr-gate.yml",'), "protected gate path missing"],
+    ["sentinel unprotected", (s) => replaceExactLine(s, '            ".github/workflows/gate-integrity-sentinel.yml",'), "protected gate path missing"],
+    ["classifier unprotected", (s) => replaceExactLine(s, '            "scripts/governance/classify-pr-paths.mjs",'), "protected gate path missing"],
+    ["executed test unprotected", (s) => replaceExactLine(s, '            "tests/deploy/deploy-scope.test.mjs",'), "protected gate path missing"],
+    ["browser verifier unprotected", (s) => replaceExactLine(s, '            "tests/audit/collect-browser-baseline.mjs",'), "protected gate path missing"],
+    ["authority manifest unprotected", (s) => replaceExactLine(s, '            "deploy/publish-manifest.json",'), "protected gate path missing"],
     ["GitHub token added", (s) => s + '\n# ${{ github.token }}', "sentinel must not checkout"],
     ["environment token added", (s) => s + '\n# GITHUB_TOKEN=x', "sentinel must not checkout"],
   ];
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
     assert.throws(() => validateSentinel(mutate(source)), (error) => error.message.includes(expected));
   });
+});
+
+test("exact-line mutations are portable across EOL representations", () => {
+  const target = '            "protected/path.mjs",';
+  for (const [label, source] of [
+    ["LF final", `before\n${target}\nafter\n`],
+    ["CRLF final", `before\r\n${target}\r\nafter\r\n`],
+    ["mixed", `before\r\n${target}\nafter\r\n`],
+    ["LF no final", `before\n${target}\nafter`],
+  ]) {
+    const mutated = replaceExactLine(source, target);
+    assert.notEqual(mutated, source, `${label}: mutation must change text`);
+    assert.equal(mutated.includes(target), false, `${label}: target must be removed`);
+  }
+  assert.throws(() => replaceExactLine("before\nafter", target), /mutation target missing/);
 });
 
 test("current classifier remains sole authority for common and protected workflow paths", async () => {
