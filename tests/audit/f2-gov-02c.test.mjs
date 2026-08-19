@@ -35,6 +35,32 @@ function protectedGatePaths(source) {
   return [...block[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 }
 
+function sentinelProgram(source) {
+  const match = source.match(/node <<'NODE'\r?\n([\s\S]*?)\r?\n\s+NODE/);
+  assert.ok(match, "sentinel inline Node program missing");
+  return match[1].split(/\r?\n/).map((line) => line.replace(/^ {10}/, "")).join("\n");
+}
+
+function runSentinelAgainstPages(source, pages, changedFiles) {
+  const harness = `
+const Module = require("node:module");
+const { EventEmitter } = require("node:events");
+const pages = JSON.parse(process.env.TEST_PAGES);
+const originalLoad = Module._load;
+Module._load = (request, parent, isMain) => request === "node:https" ? ({ get(options, callback) {
+  const page = Number(new URL("https://api.github.com" + options.path).searchParams.get("page"));
+  const spec = pages[page - 1] ?? { items: [], link: "" };
+  const response = new EventEmitter(); response.statusCode = 200; response.headers = { link: spec.link }; response.setEncoding = () => {};
+  process.nextTick(() => { callback(response); response.emit("data", JSON.stringify(spec.items)); response.emit("end"); });
+  return { setTimeout() {}, on() {}, destroy() {} };
+} }) : originalLoad(request, parent, isMain);
+`;
+  return spawnSync(process.execPath, ["-e", harness + sentinelProgram(source)], {
+    encoding: "utf8",
+    env: { ...process.env, REPOSITORY: "branctstudio-rgb/sitebranct", PR_NUMBER: "24", CHANGED_FILES: String(changedFiles), TEST_PAGES: JSON.stringify(pages) },
+  });
+}
+
 const trustClasses = {
   workflows: [".github/workflows/universal-pr-gate.yml", ".github/workflows/audit-offline.yml", ".github/workflows/deploy.yml"],
   executors: ["scripts/governance/classify-pr-paths.mjs", "scripts/deploy/build-publish-payload.mjs"],
@@ -151,18 +177,21 @@ test("protected changes fail for modification, deletion, empty replacement and b
 
 test("sentinel inline program is valid Node syntax", async () => {
   const source = await read(sentinelPath);
-  const program = source.match(/node <<'NODE'\r?\n([\s\S]*?)\r?\n\s+NODE/);
-  assert.ok(program, "sentinel inline Node program missing");
-  const dedented = program[1].split(/\r?\n/).map((line) => line.replace(/^ {10}/, "")).join("\n");
-  const checked = spawnSync(process.execPath, ["--check"], { input: dedented, encoding: "utf8" });
+  const checked = spawnSync(process.execPath, ["--check"], { input: sentinelProgram(source), encoding: "utf8" });
   assert.equal(checked.status, 0, `sentinel inline Node syntax invalid: ${checked.stderr}`);
 });
 
 test("sentinel rejects incomplete or contradictory API pagination", async () => {
   const source = await read(sentinelPath);
-  assert.match(source, /response\.headers\.link/, "API Link metadata must be inspected");
-  assert.match(source, /incomplete pagination metadata/, "full page without next-link must fail closed");
-  assert.match(source, /contradictory pagination metadata/, "short page with next-link must fail closed");
+  const records = Array.from({ length: 100 }, (_, index) => ({ filename: `docs/item-${index}.md`, status: "modified" }));
+  const truncated = runSentinelAgainstPages(source, [{ items: records, link: "" }], 101);
+  assert.notEqual(truncated.status, 0, "full page without Link must not hide a second page");
+  assert.match(truncated.stderr, /file count does not match pull request metadata/);
+  const malformed = runSentinelAgainstPages(source, [{ items: records, link: "not-a-link" }], 100);
+  assert.notEqual(malformed.status, 0);
+  assert.match(malformed.stderr, /incomplete pagination metadata/);
+  const complete = runSentinelAgainstPages(source, [{ items: records, link: "" }], 100);
+  assert.equal(complete.status, 0, complete.stderr);
 });
 
 test("sentinel contract rejects neutralization and privilege expansion", async (t) => {
