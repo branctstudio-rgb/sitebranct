@@ -308,6 +308,22 @@
     "examples": ["CRM and WhatsApp 24/7", "API/webhook integrations", "EU hosting and GDPR assurances"],
     "rule": "F2-01 may not edit narrative; a separate human-authorized compliance mission must verify, qualify or remove claims before they are treated as product truth."
   },
+  "delivery": {
+    "baseSha": "59b060a871a0f55824c896caae6cb64188781f98",
+    "headSha": "c0f2abcfdbf028e90a5041501b1def21aa5608ca",
+    "files": [
+      "CLAUDE.md",
+      "docs/audit/phase-2/component-catalog.md",
+      "docs/audit/phase-2/f2-00-contract.json",
+      "docs/audit/phase-2/f2-00-handoff.md",
+      "docs/audit/phase-2/f2-01-implementation-plan.md",
+      "docs/audit/phase-2/f2-01-specification.md",
+      "docs/audit/phase-2/governance-decision.md",
+      "docs/audit/phase-2/visual-constitution.md",
+      "tests/audit/phase-2-governance.test.mjs",
+      "tests/audit/site-audit.test.mjs"
+    ]
+  },
   "permissions": {
     "livePages": false,
     "liveAssets": false,
