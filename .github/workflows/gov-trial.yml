@@ -1,6 +1,8 @@
 name: F2-GOV-02B Rehearsal Fixture
 
-on: []
+on:
+  push:
+    branches: ["__f2-gov-02b-never__"]
 
 permissions: {}
 
