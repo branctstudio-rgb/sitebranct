@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "workflowName": "Universal PR Gate Candidate",
-  "checkName": "Universal PR Gate",
+  "checkName": "Unexpected Rehearsal Check",
   "scenarios": [
     { "id": "documentation", "changes": [{ "status": "M", "path": "docs/audit/phase-2/governance/f2-gov-01-handoff.md" }], "expected": { "checkEmitted": true, "accepted": true, "categories": ["documentation"], "suites": ["audit-contract", "deploy-protection", "gate-contract", "governance-contracts"], "deploy": false, "unknownPaths": [] } },
     { "id": "tests", "changes": [{ "status": "M", "path": "tests/audit/site-audit.test.mjs" }], "expected": { "checkEmitted": true, "accepted": true, "categories": ["tests"], "suites": ["audit-contract", "deploy-protection", "gate-contract", "governance-contracts"], "deploy": false, "unknownPaths": [] } },
