@@ -22,11 +22,8 @@ function validateSentinel(source) {
   assert.match(source, /api\.github\.com/, "sentinel must inspect public PR metadata");
   assert.match(source, /per_page=100/, "sentinel pagination missing");
   assert.match(source, /page > 30/, "sentinel must fail closed at the API file limit");
-  for (const path of [
-    ".github/workflows/universal-pr-gate.yml",
-    ".github/workflows/gate-integrity-sentinel.yml",
-    "scripts/governance/classify-pr-paths.mjs",
-  ]) assert.ok(source.includes(`\"${path}\"`), `protected gate path missing: ${path}`);
+  for (const path of [...new Set([sentinelPath, ...Object.values(trustClasses).flat()])])
+    assert.ok(source.includes(`\"${path}\"`), `protected gate path missing: ${path}`);
   assert.match(source, /protected gate component changed/, "protected change failure missing");
   return true;
 }
@@ -37,6 +34,14 @@ function protectedGatePaths(source) {
   assert.ok(block, "protected gate set missing");
   return [...block[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 }
+
+const trustClasses = {
+  workflows: [".github/workflows/universal-pr-gate.yml", ".github/workflows/audit-offline.yml", ".github/workflows/deploy.yml"],
+  executors: ["scripts/governance/classify-pr-paths.mjs", "scripts/deploy/build-publish-payload.mjs"],
+  tests: ["tests/audit/f2-gov-02a.test.mjs", "tests/audit/f2-gov-02c.test.mjs", "tests/audit/phase-2-governance.test.mjs", "tests/audit/f2-gov-01.test.mjs", "tests/deploy/deploy-scope.test.mjs", "tests/audit/site-audit.test.mjs"],
+  browserVisual: ["tests/audit/collect-browser-baseline.mjs", "tests/audit/check-visual-evidence.mjs"],
+  authorities: ["deploy/publish-manifest.json", "fixtures/audit/site-contract.json", "fixtures/audit/baseline-results.json", "fixtures/audit/evidence-manifest.json", "docs/audit/phase-2/f2-00-contract.json"],
+};
 
 function assertSentinelAllows(source, paths) {
   const protectedPaths = new Set(protectedGatePaths(source));
@@ -111,6 +116,39 @@ test("base-only sentinel protects gate components without executing PR content",
   assert.equal(validateSentinel(await read(sentinelPath)), true);
 });
 
+test("sentinel blocks transitively executed gate authorities", async () => {
+  const sentinel = await read(sentinelPath);
+  for (const mutation of [
+    ["M", "tests/deploy/deploy-scope.test.mjs"],
+    ["D", "tests/audit/phase-2-governance.test.mjs"],
+    ["R100", "tests/audit/f2-gov-01.test.mjs", "tests/audit/f2-gov-01-empty.test.mjs"],
+  ]) {
+    const paths = mutation.slice(1);
+    assert.throws(() => assertSentinelAllows(sentinel, paths), /protected gate component changed/);
+  }
+});
+
+test("closed trust set covers every decision class and remains self-protected", async () => {
+  const sentinel = await read(sentinelPath);
+  const protectedPaths = protectedGatePaths(sentinel);
+  assert.equal(new Set(protectedPaths).size, protectedPaths.length, "duplicate protected trust path");
+  for (const [className, paths] of Object.entries(trustClasses)) {
+    for (const path of paths) assert.ok(protectedPaths.includes(path), `${className} trust path missing: ${path}`);
+  }
+  assert.ok(protectedPaths.includes(sentinelPath), "trust-set definition must protect itself");
+});
+
+test("protected changes fail for modification, deletion, empty replacement and both rename names", async () => {
+  const sentinel = await read(sentinelPath);
+  const protectedPath = "tests/deploy/deploy-scope.test.mjs";
+  for (const paths of [[protectedPath], [protectedPath], [protectedPath], [protectedPath, "tests/deploy/empty.test.mjs"], ["tests/deploy/old.test.mjs", protectedPath]]) {
+    assert.throws(() => assertSentinelAllows(sentinel, paths), (error) => error.message.includes(protectedPath));
+  }
+  for (const allowed of ["docs/legitimate-note.md", "index.html", ".github/workflows/common.yml"]) {
+    assert.equal(assertSentinelAllows(sentinel, [allowed]), true, `${allowed} must remain a common change`);
+  }
+});
+
 test("sentinel inline program is valid Node syntax", async () => {
   const source = await read(sentinelPath);
   const program = source.match(/node <<'NODE'\r?\n([\s\S]*?)\r?\n\s+NODE/);
@@ -118,6 +156,13 @@ test("sentinel inline program is valid Node syntax", async () => {
   const dedented = program[1].split(/\r?\n/).map((line) => line.replace(/^ {10}/, "")).join("\n");
   const checked = spawnSync(process.execPath, ["--check"], { input: dedented, encoding: "utf8" });
   assert.equal(checked.status, 0, `sentinel inline Node syntax invalid: ${checked.stderr}`);
+});
+
+test("sentinel rejects incomplete or contradictory API pagination", async () => {
+  const source = await read(sentinelPath);
+  assert.match(source, /response\.headers\.link/, "API Link metadata must be inspected");
+  assert.match(source, /incomplete pagination metadata/, "full page without next-link must fail closed");
+  assert.match(source, /contradictory pagination metadata/, "short page with next-link must fail closed");
 });
 
 test("sentinel contract rejects neutralization and privilege expansion", async (t) => {
@@ -135,6 +180,11 @@ test("sentinel contract rejects neutralization and privilege expansion", async (
     ["universal workflow unprotected", (s) => s.replace('            ".github/workflows/universal-pr-gate.yml",\n', ""), "protected gate path missing"],
     ["sentinel unprotected", (s) => s.replace('            ".github/workflows/gate-integrity-sentinel.yml",\n', ""), "protected gate path missing"],
     ["classifier unprotected", (s) => s.replace('            "scripts/governance/classify-pr-paths.mjs",\n', ""), "protected gate path missing"],
+    ["executed test unprotected", (s) => s.replace('            "tests/deploy/deploy-scope.test.mjs",\n', ""), "protected gate path missing"],
+    ["browser verifier unprotected", (s) => s.replace('            "tests/audit/collect-browser-baseline.mjs",\n', ""), "protected gate path missing"],
+    ["authority manifest unprotected", (s) => s.replace('            "deploy/publish-manifest.json",\n', ""), "protected gate path missing"],
+    ["GitHub token added", (s) => s + '\n# ${{ github.token }}', "sentinel must not checkout"],
+    ["environment token added", (s) => s + '\n# GITHUB_TOKEN=x', "sentinel must not checkout"],
   ];
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
     assert.throws(() => validateSentinel(mutate(source)), (error) => error.message.includes(expected));

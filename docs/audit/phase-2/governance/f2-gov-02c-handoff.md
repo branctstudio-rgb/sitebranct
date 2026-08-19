@@ -6,31 +6,21 @@ Pacote corretivo offline. Não ativa branch protection, rulesets ou required che
 
 ## Separação de autoridades
 
-1. O contrato F2-00 conserva o inventário fechado da sua entrega em `f2-00-contract.json`. Ele valida aqueles dez ficheiros históricos e não lê o diff da PR corrente.
-2. `classify-pr-paths.mjs` é a autoridade única para categorizar caminhos atuais. Caminhos conhecidos selecionam suítes; desconhecidos falham fechado.
-3. Os contratos de governança validam integridade documental e decisões, sem autorizar ou proibir novos caminhos do repositório.
-4. A sentinela protege exclusivamente os componentes que poderiam neutralizar o gate: workflow universal, classificador e a própria sentinela.
+1. F2-00 valida somente o inventário histórico fechado da sua entrega.
+2. `classify-pr-paths.mjs` é a autoridade para categorizar caminhos atuais; desconhecidos falham fechado.
+3. Browser e visual usam `always()` com a classificação, portanto não são mascarados por falhas anteriores.
+4. A sentinela protege o conjunto fechado derivado da árvore transitiva de verificadores, executores, contratos, manifestos, fixtures e evidências capazes de decidir PASS/FAIL. O inventário e o procedimento de evolução estão em `gate-trust-surface.md`.
 
 ## Sentinela base-only
 
-`Gate Integrity Sentinel` usa `pull_request_target`, portanto a definição executada vem da base. Não faz checkout, não usa Actions, não lê `secrets.*` ou `github.token`, não executa código da PR e não possui permissão de escrita. Um Node inline consulta anonimamente apenas a API pública de ficheiros da PR, pagina até ao limite fail-closed de 3.000 registos e compara nomes/renames com o conjunto protegido.
+`Gate Integrity Sentinel` usa `pull_request_target`. Não faz checkout, não usa Actions, não lê secrets ou tokens, não executa código da PR e tem apenas `contents: read`. Consulta anonimamente a API pública de ficheiros, considera nome atual e anterior de rename e falha fechado para metadados/JSON/HTTP/paginação inválidos ou 3.000 ou mais registos.
 
-Qualquer alteração a um componente protegido falha com `protected gate component changed`. Um workflow comum continua sob o classificador universal normal. A sentinela não é substituto de revisão humana nem de CODEOWNERS; a Via B permanece obrigatória.
+Alteração, remoção, rename ou substituição de qualquer membro protegido falha com `protected gate component changed`. Páginas e assets vivos são sujeitos verificáveis, não autoridades protegidas. Documentação e workflows comuns continuam sob o classificador normal.
 
-## Verificações live
+## Evolução e limites
 
-Browser e evidência visual usam `always()` combinado com a saída do classificador. Assim, continuam a executar mesmo quando deploy-protection falha antes. A decisão terminal preserva a falha original.
+Não existe bypass automático: evoluir um membro exige PR dedicada da sentinela, revisão humana vinculada ao SHA, integração dessa nova base e missão posterior para o componente. Via B permanece obrigatória.
 
-## Resultados contratados para futura repetição
-
-- Documentação, testes e workflow comum: SUCCESS.
-- Página e asset novos: FAILURE após deploy-protection, browser e visual; nunca pela allowlist F2-00.
-- Desconhecido: FAILURE no classificador.
-- Fixture inválida: FAILURE pela adulteração específica.
-- Componente protegido: FAILURE na sentinela.
-
-## Limites e risco residual
-
-A API pública pode sofrer indisponibilidade ou rate limit; a sentinela falha fechado. PRs com 3.000 ou mais registos falham fechado. A primeira integração da própria sentinela não consegue produzir um run `pull_request_target` a partir da PR, pois o workflow ainda não existe na main; os negativos offline cobrem essa transição, e um ensaio real posterior continua necessário antes de ativar required checks.
+A primeira integração da sentinela não produz run `pull_request_target` nesta própria PR porque ainda não existe na main. O pacote continua NÃO ATIVÁVEL como required check até integração, observação base-only numa PR posterior, repetição dos cenários reais e autorização humana separada.
 
 Zero FTP, deploy, secrets, produção ou integrações. Rollback de eventual merge: `git revert -m 1 <merge_sha>`.
