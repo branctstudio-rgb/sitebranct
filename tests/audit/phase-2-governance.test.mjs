@@ -17,10 +17,17 @@ const contrast = (a, b) => {
   return (values[0] + 0.05) / (values[1] + 0.05);
 };
 const canonicalMotionBlock = (constitution) => {
-  const match = constitution.match(/<!-- MOTION_TOKENS_CANONICAL_START -->([\s\S]*?)<!-- MOTION_TOKENS_CANONICAL_END -->/);
-  assert.ok(match, "motion canonical block missing");
+  const startMarker = "<!-- MOTION_TOKENS_CANONICAL_START -->";
+  const endMarker = "<!-- MOTION_TOKENS_CANONICAL_END -->";
+  const startCount = constitution.split(startMarker).length - 1;
+  const endCount = constitution.split(endMarker).length - 1;
+  assert.equal(startCount, 1, `motion START marker count: expected 1, got ${startCount}`);
+  assert.equal(endCount, 1, `motion END marker count: expected 1, got ${endCount}`);
+  const start = constitution.indexOf(startMarker);
+  const end = constitution.indexOf(endMarker);
+  assert.ok(start < end, "motion canonical marker order invalid: END precedes START");
   const entries = new Map();
-  for (const rawLine of match[1].trim().split(/\r?\n/)) {
+  for (const rawLine of constitution.slice(start + startMarker.length, end).trim().split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
     const parsed = line.match(/^(duration-[a-z-]+):\s*(\d+ms)\s*\|\s*status:\s*(current|target-only)$/);
@@ -33,12 +40,18 @@ const canonicalMotionBlock = (constitution) => {
 const validateMotionContract = (contract, constitution) => {
   const documented = canonicalMotionBlock(constitution);
   const expected = new Map(Object.entries(contract.tokens.motion).filter(([name]) => name.startsWith("duration-")));
-  const statuses = contract.tokenGovernance.motionTokenStatus ?? {};
+  const statuses = contract.tokenGovernance.motionTokenStatus;
+  assert.ok(statuses && typeof statuses === "object" && !Array.isArray(statuses), "motionTokenStatus object missing");
+  for (const name of expected.keys()) assert.ok(Object.hasOwn(statuses, name), `motion token status missing: ${name}`);
+  for (const [name, status] of Object.entries(statuses)) {
+    assert.ok(expected.has(name), `motion status orphan: ${name}`);
+    assert.ok(["current", "target-only"].includes(status), `motion token ${name} invalid status: ${status}`);
+  }
   for (const name of expected.keys()) assert.ok(documented.has(name), `motion token missing from constitution: ${name}`);
   for (const [name, entry] of documented) {
     assert.ok(expected.has(name), `motion token extra and unclassified: ${name}`);
     assert.equal(entry.value, expected.get(name), `motion token ${name} value mismatch: JSON ${expected.get(name)}, constitution ${entry.value}`);
-    const expectedStatus = statuses[name] ?? "current";
+    const expectedStatus = statuses[name];
     assert.equal(entry.status, expectedStatus, `motion token ${name} status mismatch: JSON ${expectedStatus}, constitution ${entry.status}`);
   }
   return documented;
@@ -116,6 +129,45 @@ test("motion JSON and constitution fail closed on structural drift", async () =>
   targetContract.tokenGovernance.motionTokenStatus = { ...targetContract.tokenGovernance.motionTokenStatus, "duration-instant":"target-only" };
   const falselyCurrent = constitution.replace("<!-- MOTION_TOKENS_CANONICAL_END -->", "duration-instant: 80ms | status: current\n<!-- MOTION_TOKENS_CANONICAL_END -->");
   expectFailure(targetContract, falselyCurrent, "duration-instant status mismatch: JSON target-only, constitution current");
+});
+
+test("motion guardian rejects status-set and canonical-block bypasses", async (t) => {
+  const [contract, constitution] = await Promise.all([
+    readJson("docs/audit/phase-2/f2-00-contract.json"),
+    read("docs/audit/phase-2/visual-constitution.md"),
+  ]);
+  const cases = [
+    ["status removed", () => {
+      const mutated = structuredClone(contract);
+      delete mutated.tokenGovernance.motionTokenStatus["duration-standard"];
+      return [mutated, constitution, "motion token status missing: duration-standard"];
+    }],
+    ["orphan status", () => {
+      const mutated = structuredClone(contract);
+      mutated.tokenGovernance.motionTokenStatus["duration-instant"] = "target-only";
+      return [mutated, constitution, "motion status orphan: duration-instant"];
+    }],
+    ["canonical block duplicated", () => [contract, `${constitution}\n${constitution.match(/<!-- MOTION_TOKENS_CANONICAL_START -->[\s\S]*?<!-- MOTION_TOKENS_CANONICAL_END -->/)[0]}`, "motion START marker count: expected 1, got 2"]],
+    ["START marker duplicated", () => [contract, constitution.replace("<!-- MOTION_TOKENS_CANONICAL_START -->", "<!-- MOTION_TOKENS_CANONICAL_START -->\n<!-- MOTION_TOKENS_CANONICAL_START -->"), "motion START marker count: expected 1, got 2"]],
+    ["END marker duplicated", () => [contract, constitution.replace("<!-- MOTION_TOKENS_CANONICAL_END -->", "<!-- MOTION_TOKENS_CANONICAL_END -->\n<!-- MOTION_TOKENS_CANONICAL_END -->"), "motion END marker count: expected 1, got 2"]],
+    ["token duplicated inside block", () => [contract, constitution.replace("duration-standard: 250ms | status: current", "duration-standard: 250ms | status: current\nduration-standard: 250ms | status: current"), "duplicate motion token: duration-standard"]],
+    ["START marker missing", () => [contract, constitution.replace("<!-- MOTION_TOKENS_CANONICAL_START -->", ""), "motion START marker count: expected 1, got 0"]],
+    ["END marker missing", () => [contract, constitution.replace("<!-- MOTION_TOKENS_CANONICAL_END -->", ""), "motion END marker count: expected 1, got 0"]],
+    ["END before START", () => [contract, constitution
+      .replace("<!-- MOTION_TOKENS_CANONICAL_START -->", "<!-- MOTION_MARKER_PLACEHOLDER -->")
+      .replace("<!-- MOTION_TOKENS_CANONICAL_END -->", "<!-- MOTION_TOKENS_CANONICAL_START -->")
+      .replace("<!-- MOTION_MARKER_PLACEHOLDER -->", "<!-- MOTION_TOKENS_CANONICAL_END -->"), "motion canonical marker order invalid: END precedes START"]],
+    ["invalid canonical line", () => [contract, constitution.replace("duration-standard: 250ms | status: current", "duration-standard = 250ms"), "invalid motion canonical line: duration-standard = 250ms"]],
+    ["status outside enum", () => {
+      const mutated = structuredClone(contract);
+      mutated.tokenGovernance.motionTokenStatus["duration-standard"] = "implemented";
+      return [mutated, constitution, "motion token duration-standard invalid status: implemented"];
+    }],
+  ];
+  for (const [label, arrange] of cases) await t.test(label, () => {
+    const [mutatedContract, mutatedConstitution, expected] = arrange();
+    assert.throws(() => validateMotionContract(mutatedContract, mutatedConstitution), (error) => error.message.includes(expected));
+  });
 });
 
 test("essential components define variants, states and safeguards", async () => {

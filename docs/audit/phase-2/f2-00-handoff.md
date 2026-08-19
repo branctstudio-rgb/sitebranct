@@ -52,6 +52,10 @@ O Conselho deve escolher entre proteção técnica real da `main` (Via A, se con
 
 A escala documental de motion foi unificada com a árvore viva: `duration-fast=150ms`, `duration-standard=250ms` e `duration-emphasis=450ms`, todos `current`. `duration-instant` foi removido da escala e não é apresentado como implementado. O contrato offline extrai o bloco delimitado da constituição, compara nomes/valores/estados com o JSON e mantém negativos para divergência, ausência, extra não classificado e target-only falsamente apresentado como current.
 
+## Correção F2-00 F2 — guardião fail-closed
+
+O guardião exige igualdade exata entre os `duration-*` de `tokens.motion`, as chaves de `motionTokenStatus` e o bloco canónico. Não existe default de status. START e END aparecem exatamente uma vez e na ordem correta. Negativos isolados cobrem status ausente/órfão/inválido, marcadores ausentes ou duplicados, END antes de START, segundo bloco, linha inválida e token duplicado, preservando os cinco negativos F1.
+
 ## Rollback
 
 Antes do merge, fechar a PR e preservar a branch. Depois de eventual merge humano, usar `git revert -m 1 <merge_sha>` e reexecutar contratos offline, proteção de deploy e auditoria. O rollback não autoriza FTP nem mudanças em produção.
