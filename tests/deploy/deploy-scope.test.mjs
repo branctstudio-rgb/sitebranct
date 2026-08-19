@@ -92,6 +92,7 @@ test("staging real é exatamente o manifesto operacional", async () => {
 test("PR #2 projetada e caminhos internos ficam fora do payload", async () => {
   const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split(/\r?\n/);
   const additions = ["tests/audit/site-audit.test.mjs", "fixtures/audit/baseline-results.json", "fixtures/audit/invalid-home-390x844.jpg", "docs/audit/report.md", ".github/workflows/audit-offline.yml", "node_modules/pkg/index.js", "unknown/private.txt"];
+  const projected = [...new Set([...tracked, ...additions])];
   await withTempRepo(async ({ source, output }) => {
     for (const relative of additions) {
       const target = path.join(source, relative);
@@ -100,8 +101,11 @@ test("PR #2 projetada e caminhos internos ficam fora do payload", async () => {
         await writeFile(target, "offline");
       });
     }
-    const actual = await buildPayload({ source, output, candidates: [...tracked, ...additions] });
+    const actual = await buildPayload({ source, output, candidates: projected });
     assert.deepEqual(actual, expected);
+    for (const prefix of ["tests/", "fixtures/", "docs/", ".github/", "node_modules/", "unknown/"]) {
+      assert.equal(actual.some((entry) => entry.startsWith(prefix)), false, `${prefix} must stay outside the payload`);
+    }
   });
 });
 
