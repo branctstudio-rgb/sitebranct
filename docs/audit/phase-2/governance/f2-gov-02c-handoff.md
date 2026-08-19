@@ -31,6 +31,6 @@ Browser e evidência visual usam `always()` combinado com a saída do classifica
 
 ## Limites e risco residual
 
-A API pública pode sofrer indisponibilidade ou rate limit; a sentinela falha fechado. PRs com mais de 3.000 registos falham fechado. A primeira integração da própria sentinela não consegue produzir um run `pull_request_target` a partir da PR, pois o workflow ainda não existe na main; os negativos offline cobrem essa transição, e um ensaio real posterior continua necessário antes de ativar required checks.
+A API pública pode sofrer indisponibilidade ou rate limit; a sentinela falha fechado. PRs com 3.000 ou mais registos falham fechado. A primeira integração da própria sentinela não consegue produzir um run `pull_request_target` a partir da PR, pois o workflow ainda não existe na main; os negativos offline cobrem essa transição, e um ensaio real posterior continua necessário antes de ativar required checks.
 
 Zero FTP, deploy, secrets, produção ou integrações. Rollback de eventual merge: `git revert -m 1 <merge_sha>`.
