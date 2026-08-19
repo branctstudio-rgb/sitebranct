@@ -32,7 +32,21 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
   const publishManifest = await readJson("deploy/publish-manifest.json");
   const { classifyRecords, parseNameStatusZ } = await import("../../scripts/governance/classify-pr-paths.mjs");
 
-  const validateWorkflow = (source) => {
+  const normalizeWorkflowEol = (source) => {
+    assert.equal(typeof source, "string", "malformed workflow content: expected text");
+    assert.doesNotMatch(source, /\0/, "malformed workflow content: NUL byte forbidden");
+    return source.replace(/\r\n|\r/g, "\n");
+  };
+
+  const addPullRequestPathFilter = (source) => {
+    const normalized = normalizeWorkflowEol(source);
+    const marker = /^  pull_request:\s*$/gm;
+    assert.equal([...normalized.matchAll(marker)].length, 1, "pull_request trigger must be unique before mutation");
+    return normalized.replace(/^  pull_request:\s*$/m, "  pull_request:\n    paths:\n      - docs/**");
+  };
+
+  const validateWorkflow = (input) => {
+    const source = normalizeWorkflowEol(input);
     assert.match(source, /^name: Universal PR Gate Candidate$/m, "stable workflow name missing");
     assert.match(source, /^\s+pull_request:\s*$/m, "pull_request trigger missing");
     assert.match(source, /^\s+merge_group:\s*$/m, "merge_group trigger missing");
@@ -71,6 +85,29 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
   };
 
   test("candidate workflow emits one stable universal check without production reach", () => validateWorkflow(workflow));
+
+  test("workflow validation is EOL-portable without weakening semantic negatives", async (t) => {
+    const lf = normalizeWorkflowEol(workflow);
+    const lines = lf.split("\n");
+    const variants = [
+      ["LF with final newline", lf.endsWith("\n") ? lf : `${lf}\n`],
+      ["LF without final newline", lf.replace(/\n$/, "")],
+      ["CRLF with final newline", `${lf.replace(/\n$/, "").replace(/\n/g, "\r\n")}\r\n`],
+      ["CRLF without final newline", lf.replace(/\n$/, "").replace(/\n/g, "\r\n")],
+      ["mixed LF and CRLF", lines.map((line, index) => `${line}${index === lines.length - 1 ? "" : index % 2 ? "\r\n" : "\n"}`).join("")],
+    ];
+    for (const [label, source] of variants) await t.test(label, () => {
+      assert.equal(validateWorkflow(source), true, `${label}: equivalent workflow rejected`);
+      assert.throws(
+        () => validateWorkflow(addPullRequestPathFilter(source)),
+        (error) => error.message.includes("path filter forbidden"),
+        `${label}: semantic path-filter tamper was not rejected`,
+      );
+    });
+    await t.test("malformed content remains rejected", () => {
+      assert.throws(() => validateWorkflow(`${lf}\0`), /malformed workflow content: NUL byte forbidden/);
+    });
+  });
 
   test("path matrix is deterministic and fail-closed", async (t) => {
     assert.equal(matrix.schemaVersion, 1);
@@ -113,7 +150,7 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     const cases = [
       ["workflow renamed", (s) => s.replace("name: Universal PR Gate Candidate", "name: Renamed"), "stable workflow name missing"],
       ["PR trigger removed", (s) => s.replace(/^  pull_request:.*\r?\n/m, ""), "pull_request trigger missing"],
-      ["path filter added", (s) => s.replace("  pull_request:\n", "  pull_request:\n    paths:\n      - docs/**\n"), "path filter forbidden"],
+      ["path filter added", addPullRequestPathFilter, "path filter forbidden"],
       ["job condition added", (s) => s.replace("    name: Universal PR Gate", "    name: Universal PR Gate\n    if: github.event_name == 'pull_request'"), "job-level condition forbidden"],
       ["write permission added", (s) => s.replace("contents: read", "contents: write"), "permissions must be contents read only"],
       ["secret added", (s) => s + "\n# ${{ secrets.FTP_PASSWORD }}", "secret, deploy or external mutation primitive forbidden"],
