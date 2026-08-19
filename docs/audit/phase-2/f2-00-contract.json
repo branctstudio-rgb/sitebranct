@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "statusModel": ["CURRENT_VERIFIED", "APPROVED_DECISION", "FUTURE_PROPOSAL", "NOT_VERIFIED", "NON_EXISTENT"],
+  "viewports": ["1440x900", "1024x768", "768x1024", "390x844", "360x800"],
+  "tokens": {
+    "typography": {
+      "font-display": "'Bricolage Grotesque', system-ui, sans-serif",
+      "font-body": "'Manrope', system-ui, sans-serif",
+      "weight-regular": "400",
+      "weight-medium": "500",
+      "weight-semibold": "600",
+      "weight-bold": "700",
+      "size-display": "clamp(2.6rem, 1.7rem + 4.5vw, 5.2rem)",
+      "size-h1": "clamp(2.2rem, 1.7rem + 2.5vw, 3.4rem)",
+      "size-h2": "clamp(1.7rem, 1.4rem + 1.6vw, 2.5rem)",
+      "size-h3": "clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem)",
+      "size-body": "1rem",
+      "size-label": "0.75rem",
+      "leading-display": "0.96",
+      "leading-heading": "1.1",
+      "leading-body": "1.6",
+      "tracking-display": "-0.04em",
+      "tracking-label": "0.08em"
+    },
+    "colorRoles": {
+      "canvas": "#FAFAF9",
+      "surface": "#FFFFFF",
+      "surface-subtle": "#F4F3F0",
+      "ink": "#0D1B24",
+      "ink-secondary": "#3D4D59",
+      "ink-muted": "#5C6B76",
+      "on-dark": "#FFFFFF",
+      "hairline": "#E8E6E1",
+      "agency-action": "#0D1B24",
+      "agency-action-hover": "#02080D",
+      "agency-action-disabled": "#AEB5B9",
+      "on-agency-action": "#FFFFFF",
+      "on-action-disabled": "#0D1B24",
+      "crm-action": "#0C7C8F",
+      "crm-action-hover": "#095E6E",
+      "crm-action-disabled": "#9FC8CF",
+      "on-crm-action": "#FFFFFF",
+      "ai-context": "#6D28D9",
+      "ai-context-surface": "#F1EBFE",
+      "success": "#126B34",
+      "success-surface": "#E8F6EC",
+      "warning": "#8A5A00",
+      "warning-surface": "#FFF3D6",
+      "danger": "#B91C1C",
+      "danger-surface": "#FBEAEA",
+      "focus-ring": "#005FCC"
+    },
+    "spacing": {
+      "space-1": "0.25rem",
+      "space-2": "0.5rem",
+      "space-3": "0.75rem",
+      "space-4": "1rem",
+      "space-6": "1.5rem",
+      "space-8": "2rem",
+      "space-12": "3rem",
+      "space-16": "4rem",
+      "space-24": "6rem",
+      "section-fluid": "clamp(4.5rem, 10vw, 9rem)"
+    },
+    "containers": {
+      "content-reading": "44rem",
+      "content-standard": "72rem",
+      "content-wide": "90rem",
+      "gutter": "clamp(1rem, 4vw, 4rem)",
+      "grid-columns": "12 desktop / 8 tablet / 4 mobile"
+    },
+    "breakpoints": {
+      "compact-min": "720px",
+      "navigation-wide-min": "940px",
+      "audit-desktop": "1440px",
+      "audit-tablet-landscape": "1024px",
+      "audit-tablet-portrait": "768px",
+      "audit-mobile-wide": "390px",
+      "audit-mobile-narrow": "360px"
+    },
+    "radii": {
+      "radius-sm": "0.5rem",
+      "radius-md": "0.75rem",
+      "radius-lg": "1.125rem",
+      "radius-xl": "1.625rem",
+      "radius-pill": "999px"
+    },
+    "borders": {
+      "border-hairline": "1px solid color-mix(in srgb, var(--hairline) 88%, transparent)",
+      "border-strong": "1px solid color-mix(in srgb, var(--ink) 24%, transparent)",
+      "focus-width": "3px",
+      "focus-offset": "3px"
+    },
+    "shadows": {
+      "shadow-rest": "0 1px 2px rgb(13 27 36 / 0.05), 0 12px 32px rgb(13 27 36 / 0.07)",
+      "shadow-raised": "0 2px 4px rgb(13 27 36 / 0.06), 0 24px 64px rgb(13 27 36 / 0.12)",
+      "shadow-focus": "0 0 0 3px rgb(0 95 204 / 0.35)"
+    },
+    "layers": {
+      "base": "0",
+      "raised": "10",
+      "sticky-header": "100",
+      "drawer-backdrop": "200",
+      "drawer": "210",
+      "popover": "300",
+      "toast": "400",
+      "critical-modal": "500"
+    },
+    "motion": {
+      "duration-fast": "150ms",
+      "duration-standard": "250ms",
+      "duration-emphasis": "450ms",
+      "easing-standard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "easing-enter": "cubic-bezier(0.16, 1, 0.3, 1)",
+      "easing-exit": "cubic-bezier(0.4, 0, 1, 1)",
+      "concurrent-emphasis-limit": "1"
+    }
+  },
+  "tokenGovernance": {
+    "status": "CURRENT_BASELINE_AND_BINDING_TARGET",
+    "source": "src/css/branct.css @layer tokens at main 59b060a871a0f55824c896caae6cb64188781f98",
+    "mappingRule": "Values matching the current tree are adopted; additions are target-only until implemented and must never be reported as current CSS.",
+    "currentAliases": {
+      "hairline": "--line",
+      "radius-sm": "--r-sm",
+      "radius-md": "--r-md",
+      "radius-lg": "--r-lg",
+      "radius-xl": "--r-xl",
+      "duration-fast": "--dur-fast",
+      "duration-standard": "--dur",
+      "duration-emphasis": "--dur-slow",
+      "navigation-wide-min": "literal 940px media query",
+      "compact-min": "literal 720px media query"
+    },
+    "motionTokenStatus": {
+      "duration-fast": "current",
+      "duration-standard": "current",
+      "duration-emphasis": "current"
+    },
+    "targetOnly": ["semantic warning pair", "disabled action pairs", "audit viewport aliases", "typographic leading/tracking roles"]
+  },
+  "accessibility": {
+    "minimum": "WCAG 2.1 AA",
+    "target": "WCAG 2.2 AA",
+    "minimumTarget": "44x44 CSS px",
+    "textContrast": "4.5:1 normal text; 3:1 large text",
+    "uiContrast": "3:1 component boundaries and focus indicators"
+  },
+  "motion": {
+    "reducedMotionEquivalentContent": true,
+    "continuousDecorativeMotionAllowed": false,
+    "layoutAnimatingPropertiesAllowed": false,
+    "threeDDefaultAllowed": false
+  },
+  "components": [
+    {
+      "id": "header-navigation",
+      "name": "Header e navegação",
+      "variants": ["institutional", "product", "transparent-over-media", "language-listbox", "services-disclosure"],
+      "states": ["rest", "scrolled", "focus-visible", "current", "disabled"],
+      "accessibility": ["landmark nav with accessible name", "current page uses aria-current=page", "skip link precedes navigation"],
+      "responsive": ["full navigation at supported wide breakpoint", "actions collapse without horizontal overflow"],
+      "antiTemplate": ["navigation density follows page purpose", "no generic mega-menu without information architecture"]
+    },
+    {
+      "id": "mobile-menu",
+      "name": "Menu mobile",
+      "variants": ["drawer", "full-screen only when content depth requires it"],
+      "states": ["closed", "opening", "open", "closing", "focus-visible", "blocked"],
+      "accessibility": ["aria-expanded and aria-controls synchronized", "Escape closes", "focus returns to trigger", "focus order remains logical"],
+      "responsive": ["no content clipping at 360px", "body scroll locks only while overlay is open"],
+      "antiTemplate": ["no decorative full-screen takeover by default", "primary contact remains discoverable"]
+    },
+    {
+      "id": "buttons-ctas",
+      "name": "Botões e CTAs",
+      "variants": ["agency-primary", "crm-primary", "secondary", "tertiary", "icon-only"],
+      "states": ["rest", "hover", "active", "focus-visible", "loading", "disabled", "success"],
+      "accessibility": ["minimum 44x44 CSS px", "icon-only has accessible name", "loading preserves label context"],
+      "responsive": ["full-width only when hierarchy benefits", "labels never truncate essential action"],
+      "antiTemplate": ["one dominant CTA per decision region", "color encodes product intent rather than decoration"]
+    },
+    {
+      "id": "cards",
+      "name": "Cards",
+      "variants": ["editorial", "service", "product", "case-study", "metric"],
+      "states": ["rest", "hover", "focus-visible", "selected", "disabled", "blocked"],
+      "accessibility": ["heading order remains semantic", "whole-card links avoid nested interactive controls"],
+      "responsive": ["content dictates height", "grids reflow without equal-height coercion"],
+      "antiTemplate": ["not every section becomes a card grid", "composition and evidence vary by narrative"]
+    },
+    {
+      "id": "forms",
+      "name": "Formulários",
+      "variants": ["contact", "lead", "search", "settings-demo"],
+      "states": ["rest", "focus-visible", "valid", "error", "loading", "success", "disabled", "blocked"],
+      "accessibility": ["persistent labels", "errors associated with fields", "summary receives focus after failed submit"],
+      "responsive": ["single column on narrow viewports", "input purpose and keyboard type declared"],
+      "antiTemplate": ["collect only necessary data", "no invented integration or live submission in demos"]
+    },
+    {
+      "id": "media-frames",
+      "name": "Frames de imagem e vídeo",
+      "variants": ["editorial-image", "product-screen", "video", "comparison", "case-preview", "lazy-video", "optional-effect"],
+      "states": ["loading", "loaded", "error", "playing", "paused", "blocked"],
+      "accessibility": ["meaningful alt or explicit decorative role", "captions/transcript for informative video", "controls keyboard operable"],
+      "responsive": ["intrinsic aspect ratio reserved", "art direction cannot crop essential UI"],
+      "antiTemplate": ["real approved imagery preferred", "no stock image used as proof of work"]
+    },
+    {
+      "id": "pricing-offers",
+      "name": "Preços e ofertas",
+      "variants": ["single-offer", "comparison", "subscription", "bespoke"],
+      "states": ["available", "recommended", "beta", "future", "unavailable", "blocked"],
+      "accessibility": ["features readable without color", "price period and currency explicit"],
+      "responsive": ["comparison reflows to labelled groups", "no horizontal scroll required for decisions"],
+      "antiTemplate": ["recommended status requires approved commercial rationale", "future offers never receive purchase CTA"]
+    },
+    {
+      "id": "tabs-accordions",
+      "name": "Tabs e accordions",
+      "variants": ["tabs", "accordion", "disclosure"],
+      "states": ["collapsed", "expanded", "selected", "focus-visible", "disabled"],
+      "accessibility": ["ARIA pattern matches interaction", "arrow keys for tabs", "headings remain navigable"],
+      "responsive": ["tabs may become accordion only with equivalent semantics", "labels remain visible"],
+      "antiTemplate": ["content is not hidden merely to shorten pages", "default state follows user task"]
+    },
+    {
+      "id": "badges-status",
+      "name": "Badges e estados",
+      "variants": ["available", "beta", "future", "demo", "restricted", "error"],
+      "states": ["static", "interactive", "focus-visible", "disabled"],
+      "accessibility": ["text states meaning", "color is never sole signal"],
+      "responsive": ["wraps without obscuring title", "never overlays essential content"],
+      "antiTemplate": ["status must come from approved product truth", "no novelty labels"]
+    },
+    {
+      "id": "footer",
+      "name": "Footer",
+      "variants": ["institutional", "product", "minimal-legal"],
+      "states": ["rest", "link-hover", "focus-visible", "restricted-link"],
+      "accessibility": ["contentinfo landmark", "descriptive link names", "legal and contact paths remain reachable"],
+      "responsive": ["groups stack by priority", "no orphan headings"],
+      "antiTemplate": ["links reflect actual information architecture", "no empty social or product columns"]
+    },
+    {
+      "id": "loading-empty-error-success-blocked",
+      "name": "Feedback loading, vazio, erro, sucesso e bloqueio",
+      "variants": ["inline", "section", "page", "toast", "consent-gate"],
+      "states": ["loading", "empty", "error", "success", "blocked", "focus-visible", "disabled"],
+      "accessibility": ["live region politeness matches urgency", "recovery action is keyboard reachable", "loading never traps focus"],
+      "responsive": ["message and recovery action remain visible at 360px", "skeleton preserves final geometry"],
+      "antiTemplate": ["message explains real state and next action", "no fake progress or false success"]
+    }
+  ],
+  "governance": {
+    "mainTechnicallyProtected": false,
+    "evidence": "GitHub API returned Branch not protected (HTTP 404) on 2026-08-19",
+    "decision": "PENDING_HUMAN_DECISION",
+    "routes": ["A_TECHNICAL_PROTECTION", "B_COMPENSATING_PROCESS"],
+    "compensatingControls": [
+      "draft PR",
+      "isolated branch and worktree",
+      "no direct push to main",
+      "green CI on exact head",
+      "independent review",
+      "human approval bound to head and base",
+      "approval invalidated when head or base changes",
+      "normal merge only",
+      "preserve branch",
+      "post-merge confirmation",
+      "documented rollback",
+      "deploy protection retained",
+      "production blocked by default"
+    ]
+  },
+  "nextMission": {
+    "id": "F2-01",
+    "executionAuthorized": false,
+    "baseline": {
+      "routes": 12,
+      "viewports": 5,
+      "overflowRoutes": 9,
+      "viewportWidth": 390,
+      "observedWidth": 417,
+      "mobileTargetsUnder44": { "min": 3, "max": 28 }
+    },
+    "acceptanceCriteria": [
+      "zero horizontal overflow on 12 routes",
+      "interactive targets at least 44x44 CSS px",
+      "keyboard-operable header and mobile menu",
+      "visible focus",
+      "aria-expanded synchronized",
+      "Escape closes menu",
+      "focus returns to trigger",
+      "body scroll lock when required",
+      "no hidden content",
+      "no narrative changes",
+      "no new console errors",
+      "reduced motion support",
+      "before and after reproducible evidence"
+    ],
+    "browserStatus": { "chromium": "REQUIRED", "firefox": "NOT_VERIFIED", "webkit": "NOT_VERIFIED" }
+  },
+  "complianceDebt": {
+    "status": "OPEN_NOT_VERIFIED",
+    "liveClaimFiles": ["website-premium.html", "automacao-ia.html"],
+    "examples": ["CRM and WhatsApp 24/7", "API/webhook integrations", "EU hosting and GDPR assurances"],
+    "rule": "F2-01 may not edit narrative; a separate human-authorized compliance mission must verify, qualify or remove claims before they are treated as product truth."
+  },
+  "permissions": {
+    "livePages": false,
+    "liveAssets": false,
+    "deployWorkflow": false,
+    "publishManifest": false,
+    "workflowDispatch": false,
+    "ftp": false,
+    "secrets": false,
+    "production": false,
+    "integrations": false,
+    "phase2Implementation": false,
+    "merge": false
+  }
+}

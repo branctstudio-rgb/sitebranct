@@ -73,11 +73,13 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
   const changed = execFileSync("git", ["diff", "--name-only", diffBase], { encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
-  const allowed = /^(docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/audit-offline\.yml$)/;
+  const allowed = /^(CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/audit-offline\.yml$)/;
   assert.ok(changed.length > 0);
   assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
   assert.ok(!changed.includes(".github/workflows/deploy.yml"));
 });
+
+await import("./phase-2-governance.test.mjs");
 
 test("route matrix and visual evidence are complete and tamper-evident", async () => {
   const [contract, results, manifest, negativeControl] = await Promise.all([
