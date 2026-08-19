@@ -1,0 +1,31 @@
+name: Offline audit contract
+
+on:
+  pull_request:
+    paths:
+      - "docs/audit/**"
+      - "fixtures/audit/**"
+      - "tests/audit/**"
+      - ".github/workflows/audit-offline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    env:
+      AUDIT_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Validate offline audit contract
+        run: node --test tests/audit/site-audit.test.mjs
+      - name: Reproduce browser baseline
+        run: node tests/audit/collect-browser-baseline.mjs --check fixtures/audit/baseline-results.json
+      - name: Reject empty visual evidence
+        run: node tests/audit/check-visual-evidence.mjs
