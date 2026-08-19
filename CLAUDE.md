@@ -4,9 +4,46 @@ Contexto e histórico do projeto. Este ficheiro é lido automaticamente em cada 
 
 ---
 
+## Estado atual comprovado
+
+- A fonte canónica é `branctstudio-rgb/sitebranct`. A Fase 1 offline foi integrada em `main` no merge `59b060a871a0f55824c896caae6cb64188781f98`.
+- A árvore contém 12 rotas HTML estáticas. Dez carregam `src/css/branct.css`; `crm-gestao.html` e `politica-privacidade.html` mantêm apresentação standalone. Nenhuma das 12 rotas carrega `src/css/main.css`, `src/js/main.js`, Three.js ou GSAP.
+- A baseline integrada cobre 12 rotas × 5 viewports. Em 390 px, 9 rotas apresentaram overflow horizontal, com largura máxima medida de 417 px; por rota mobile, existem entre 3 e 28 alvos interativos abaixo de 44 px.
+- `robots.txt`, `sitemap.xml` e JSON-LD em 8 rotas estão presentes. Presença não equivale a validação semântica completa nem a desempenho aprovado.
+- O deploy automático usa uma política positiva e um manifesto operacional de 56 ficheiros. Alterações exclusivamente em documentação, fixtures e testes offline não fazem parte do payload. A `main` não possui proteção técnica de branch comprovada.
+- `package.json`, `src/css/main.css`, `src/js/main.js`, `src/js/three-scene.js`, `src/3d/`, `src/models/` e referências históricas de integrações continuam rastreados. A presença desses artefactos não prova uso em runtime.
+
+## Decisões aprovadas
+
+- A Fase 1 é uma auditoria e arquitetura offline; não constitui aprovação de redesign, deploy ou integração.
+- A proteção de deploy por política positiva e manifesto exato deve permanecer ativa.
+- Mudanças futuras devem usar branch e worktree isoladas, PR em draft, CI no head exato, revisão independente, aprovação humana vinculada a head e base, merge normal e rollback documentado enquanto não existir proteção técnica da `main`.
+- A F2-00 define constituição, contratos e governança; não implementa componentes nem altera páginas vivas.
+
+## Propostas futuras
+
+- A F2-01 propõe corrigir header mobile, overflow e touch targets sob critérios mensuráveis, mas permanece não autorizada nesta fase.
+- A BRANCT como diretora digital, Chat IA, área do cliente, PWA/app, produtos por nicho, CRM integrado e automações são direções de produto, não capacidades atuais deste repositório.
+- Tokens e componentes em `docs/audit/phase-2/` são contratos para implementações futuras, não prova de implementação.
+
+## NOT_VERIFIED
+
+- Funcionamento real de formulários, webhooks n8n, Supabase, CRM externo, Meta Pixel, consentimento, redirecionamentos, analytics e qualquer integração viva.
+- Compatibilidade Firefox e WebKit. A evidência automatizada integrada usa Chromium; outros motores devem ser executados antes de qualquer afirmação de compatibilidade.
+- Estado de produção, conteúdo remoto, credenciais e serviços externos, que permanecem fora do escopo offline.
+
+## Funcionalidades inexistentes
+
+- Não existe neste repositório uma A BRANCT operacional, Chat IA funcional, widget vivo, área de cliente autenticada, pagamentos, aplicação PWA instalada ou integração comprovada com Memória Central.
+- Não existe autorização implícita para FTP, `workflow_dispatch`, produção, uso de secrets ou conexão a dados reais.
+
+Nenhum agente pode tratar planos, protótipos ou documentação futura como funcionalidade existente.
+
+As secções históricas abaixo preservam decisões e contexto, mas qualquer afirmação temporal nelas deve ser confrontada com o “Estado atual comprovado” antes de orientar trabalho.
+
 ## O que é
 
-Site institucional da **BRANCT.Tech** — agência digital em Guimarães (PT). HTML estático servido como ficheiros, sem build step. Captura de leads via Supabase (Edge Functions + Postgres). Produto CRM separado vive em `app.branct.com` (outro repositório, outro dev).
+Site institucional da **BRANCT.Tech** — agência digital em Guimarães (PT). HTML estático servido como ficheiros, sem build step. Referências históricas a captura de leads e ao CRM externo existem, mas o seu funcionamento é `NOT_VERIFIED` nesta auditoria offline.
 
 Idioma do site: **pt-PT** (com i18n PT/EN/IT/HR via `data-i18n` keys e ficheiros em [src/i18n/](src/i18n/)).
 
@@ -14,12 +51,11 @@ Idioma do site: **pt-PT** (com i18n PT/EN/IT/HR via `data-i18n` keys e ficheiros
 
 ## Tech stack
 
-- HTML estático, sem build step. **Em migração para o design system "Premium Light 2026"** (branch `redesign-light-2026`, ver [AUDIT.md](AUDIT.md)):
-  - Páginas migradas usam [src/css/branct.css](src/css/branct.css) + [src/js/branct.js](src/js/branct.js) — light, zero GSAP/Three.js. Migradas até agora: `index.html`, `crm-gestao.html` (standalone), `styleguide.html`.
-  - Páginas antigas continuam em [src/css/main.css](src/css/main.css) + [src/js/main.js](src/js/main.js) (dark, GSAP, Three.js) até migrarem na Fase 3.
-- Supabase: Edge Functions (Deno) + Postgres (RLS ativa) — atualmente órfãs (ver Pontos abertos)
-- Leads dos forms da agência → webhook n8n `https://n8n.branct.com/webhook/site-lead`
-- Meta Pixel (id `1595310191130205`) — **sempre gated por consent banner RGPD**
+- HTML estático, sem build step. O estado light atual foi medido na `main`; a branch histórica `redesign-light-2026` não é fonte canónica:
+  - Dez rotas usam [src/css/branct.css](src/css/branct.css); `crm-gestao.html` e `politica-privacidade.html` são standalone. Nenhuma rota carrega GSAP/Three.js.
+  - A árvore mantém [src/css/main.css](src/css/main.css) e [src/js/main.js](src/js/main.js) como artefactos históricos; a inspeção atual não encontrou nenhuma das 12 rotas a carregá-los.
+- Supabase: ficheiros de Edge Functions e migrations estão rastreados; estado, RLS e uso real são `NOT_VERIFIED`.
+- Existem referências no código a webhook n8n e Meta Pixel; chamadas, consentimento e comportamento vivo são `NOT_VERIFIED`.
 - `package.json` declara `express` e `three`, mas o site é servido estaticamente; saem quando a migração terminar.
 
 ---
@@ -28,7 +64,7 @@ Idioma do site: **pt-PT** (com i18n PT/EN/IT/HR via `data-i18n` keys e ficheiros
 
 ```
 sitebranct/
-├── index.html                  # Home — hero 3D + scroll horizontal de serviços
+├── index.html                  # Home institucional atual
 ├── crm-gestao.html             # Landing standalone do trial do CRM (CSS inline próprio)
 ├── website-premium.html        # Página de serviço
 ├── landing-page.html           # Página de serviço
@@ -36,10 +72,10 @@ sitebranct/
 ├── processo.html               # Como trabalhamos
 ├── contactos.html              # Formulário de contacto
 ├── politica-privacidade.html   # RGPD
-├── area-do-usuario.html        # Stub (atualmente redireciona o utilizador para app.branct.com)
-├── blog.html, servicos.html    # Stubs
+├── area-do-usuario.html        # Rota demonstrativa; integração/autenticação inexistentes
+├── blog.html, servicos.html    # Rotas existentes; não classificadas como stubs pela evidência atual
 ├── src/
-│   ├── css/main.css            # Single source of truth para tudo EXCETO crm-gestao.html
+│   ├── css/main.css            # Artefacto histórico, não carregado pelas 12 rotas
 │   ├── js/
 │   │   ├── main.js             # Boot do site (header, mobile drawer, scroll-trigger, i18n, theme)
 │   │   ├── three-scene.js      # WebGL hero
@@ -65,7 +101,7 @@ sitebranct/
 - Acento interativo: teal `#0C7C8F` (hover `#095E6E`); `#00F6EC` vivo é SÓ decorativo; roxo `#8B5CF6`/`#6D28D9` exclusivo de contexto de produto (badges Beta)
 - **CTAs com significado de funil**: botão ink = agência (proposta); botão teal = trial do CRM
 - Tipografia: **Bricolage Grotesque** (display, variável) + **Manrope** (texto)
-- Páginas antigas (main.css) mantêm a paleta dark `#09121c`/`#6ec1e4` até migrarem
+- `main.css` conserva tokens dark históricos, mas nenhuma rota auditada o carrega atualmente.
 
 ### Meta Pixel — divisão de funil (regra de ouro)
 - Carregado em `crm-gestao.html` mas `fbq('init')` + `fbq('track', 'PageView')` **só após** o utilizador clicar "Aceitar" no banner de consent
@@ -82,7 +118,7 @@ sitebranct/
 
 ---
 
-## Fluxo do trial (estado atual — 2026-05-13)
+## Fluxo do trial (registo histórico de 2026-05-13 — NOT_VERIFIED)
 
 ```
 Anúncio → landing /crm-gestao.html
