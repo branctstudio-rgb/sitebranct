@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "repository": "branctstudio-rgb/sitebranct",
+  "measurementBase": "dce434dd3fe863a724ce8ea879d29093473dde4c",
+  "measuredAtUtc": "2026-08-19T15:03:31Z",
+  "repositoryFacts": {
+    "visibility": "public",
+    "ownerType": "User",
+    "authenticatedPermission": "admin",
+    "accountPlan": "NOT_VERIFIED"
+  },
+  "protection": {
+    "active": false,
+    "mechanism": "none",
+    "requirePullRequest": false,
+    "directPushBlocked": false,
+    "forcePushBlocked": false,
+    "deletionBlocked": false,
+    "requiredStatusChecks": [],
+    "dismissStaleApprovals": false,
+    "requireConversationResolution": false,
+    "bypassRestricted": false
+  },
+  "rulesets": [],
+  "observedChecks": [
+    {
+      "name": "contract",
+      "workflow": "Offline audit contract",
+      "observedSha": "c0f2abcfdbf028e90a5041501b1def21aa5608ca",
+      "runsOnEveryPullRequest": false
+    },
+    {
+      "name": "Verificar escopo do deploy",
+      "workflow": "Deploy para Hostinger (FTP)",
+      "observedSha": "949524e131c45478d3c531ec103d74fae73b1537",
+      "runsOnEveryPullRequest": false
+    }
+  ],
+  "mergeMethods": {
+    "mergeCommit": true,
+    "squash": true,
+    "rebase": true,
+    "autoMerge": false,
+    "deleteBranchOnMerge": false
+  }
+}

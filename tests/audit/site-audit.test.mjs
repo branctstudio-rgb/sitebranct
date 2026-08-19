@@ -80,6 +80,7 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
 });
 
 await import("./phase-2-governance.test.mjs");
+await import("./f2-gov-01.test.mjs");
 
 test("route matrix and visual evidence are complete and tamper-evident", async () => {
   const [contract, results, manifest, negativeControl] = await Promise.all([
