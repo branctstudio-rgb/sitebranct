@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "CONTRACT_ONLY_NOT_AUTHORIZED",
+  "baseRequired": "universal gate integrated in main",
+  "createRealPullRequestsAuthorized": false,
+  "activateProtectionAuthorized": false,
+  "scenarios": [
+    { "id": "documentation-pr", "fixturePath": "docs/audit/gov-trial-document.md", "expectedCheck": "Universal PR Gate", "expectedConclusion": "SUCCESS", "cleanup": "close without merge and delete the disposable branch after evidence capture" },
+    { "id": "tests-pr", "fixturePath": "tests/audit/gov-trial.test.mjs", "expectedCheck": "Universal PR Gate", "expectedConclusion": "SUCCESS", "cleanup": "close without merge and delete the disposable branch after evidence capture" },
+    { "id": "live-page-pr", "fixturePath": "gov-trial.html", "expectedCheck": "Universal PR Gate", "expectedConclusion": "FAILURE", "cleanup": "close without merge and delete the disposable branch; no live fixture reaches main" },
+    { "id": "asset-pr", "fixturePath": "src/img/gov-trial.svg", "expectedCheck": "Universal PR Gate", "expectedConclusion": "FAILURE", "cleanup": "close without merge and delete the disposable branch; no asset reaches main" },
+    { "id": "workflow-pr", "fixturePath": ".github/workflows/gov-trial.yml", "expectedCheck": "Universal PR Gate", "expectedConclusion": "SUCCESS", "cleanup": "close without merge and delete the disposable branch" },
+    { "id": "unknown-path-pr", "fixturePath": "unknown/gov-trial.bin", "expectedCheck": "Universal PR Gate", "expectedConclusion": "FAILURE", "cleanup": "close without merge and delete the disposable branch" },
+    { "id": "deliberately-invalid-pr", "fixturePath": "fixtures/audit/f2-gov-02a-path-matrix.json", "mutation": "set checkName to an unexpected value", "expectedCheck": "Universal PR Gate", "expectedConclusion": "FAILURE", "cleanup": "close without merge and delete the disposable branch; retain only redacted run evidence" }
+  ],
+  "successCriteria": [
+    "the identical check name appears on every latest PR head",
+    "success and failure conclusions match this contract",
+    "no deploy workflow, deployment, secret access or production mutation occurs",
+    "all disposable branches and pull requests are inventoried and removed or closed",
+    "required checks remain empty until a separate activation authorization"
+  ]
+}

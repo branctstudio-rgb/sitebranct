@@ -1,0 +1,81 @@
+name: Universal PR Gate Candidate
+
+on:
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: universal-pr-gate-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  universal-pr-gate:
+    name: Universal PR Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+      AUDIT_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          ref: ${{ env.HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Prepare Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Classify changed paths fail closed
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$BASE_SHA"
+          test -n "$HEAD_SHA"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${HEAD_SHA}^{commit}"
+          git diff --name-status -z "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-paths.z"
+          node scripts/governance/classify-pr-paths.mjs \
+            --input "$RUNNER_TEMP/changed-paths.z" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Validate universal gate contract
+        run: node --test tests/audit/f2-gov-02a.test.mjs
+
+      - name: Validate governance contracts
+        run: node --test tests/audit/phase-2-governance.test.mjs tests/audit/f2-gov-01.test.mjs
+
+      - name: Validate deploy protection and exact payload
+        run: node --test tests/deploy/deploy-scope.test.mjs
+
+      - name: Validate integrated audit contract
+        if: steps.classify.outputs.run_audit == 'true'
+        run: node --test tests/audit/site-audit.test.mjs
+
+      - name: Reproduce browser baseline
+        if: steps.classify.outputs.run_browser == 'true'
+        run: node tests/audit/collect-browser-baseline.mjs --check fixtures/audit/baseline-results.json
+
+      - name: Reject empty visual evidence
+        if: steps.classify.outputs.run_visual == 'true'
+        run: node tests/audit/check-visual-evidence.mjs
+
+      - name: Gate terminal result
+        if: always()
+        shell: bash
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "Universal PR Gate: SUCCESS"
+          else
+            echo "Universal PR Gate: FAILURE"
+            exit 1
+          fi
