@@ -6,4 +6,8 @@ on:
 
 permissions: {}
 
-jobs: {}
+jobs:
+  inert-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "F2-GOV-02B inert fixture"
