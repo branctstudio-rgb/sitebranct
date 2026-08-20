@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+// F2-GOV-02E protected-component rehearsal only; do not merge.
 import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
