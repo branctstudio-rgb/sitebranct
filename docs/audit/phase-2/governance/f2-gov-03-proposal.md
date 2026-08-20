@@ -8,6 +8,8 @@ A medição está vinculada a `main@3fd31e615a8914aaa1b1d7bcb0a093222eb678ce`. N
 
 A proposta usa proteção clássica de branch porque o endpoint correspondente foi medido e o payload pode vincular cada check ao GitHub Actions pelo `app_id`. A aplicação futura deve seguir a documentação oficial da [Branch protection API](https://docs.github.com/en/rest/branches/branch-protection) e as [regras de branches protegidas](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches), sempre numa missão separada.
 
+A compatibilidade do pedido foi corrigida offline após os dois HTTP 422 da Issue #40, medidos em `main@32e63a416793a2ba0ca917d71ec652cc6bc22deb`. Para o repositório pertencente a uma conta pessoal, o pedido usa a API `2022-11-28`, envia `required_status_checks` somente com `strict` e `checks`, e omite `dismissal_restrictions` e `bypass_pull_request_allowances`. A omissão não concede bypass: significa que nenhuma coleção de utilizadores, equipas ou aplicações é enviada. `restrictions: null` permanece como campo de topo exigido pelo endpoint.
+
 ## Decisão recomendada, ainda pendente
 
 - Exigir PR e os checks exatos `Gate Integrity Sentinel` e `Universal PR Gate`, ambos provenientes de `github-actions` (`app_id: 15368`) e concluídos com sucesso no head mais recente.
@@ -82,10 +84,21 @@ O bloco seguinte é uma projeção estrutural do manifesto operacional. O teste 
       "finalMethodsRequireCouncilDecision": true,
       "preserveBranch": true
     },
+    "apiCompatibility": {
+      "ownerType": "User",
+      "apiVersion": "2022-11-28",
+      "measuredAtBase": "32e63a416793a2ba0ca917d71ec652cc6bc22deb",
+      "evidenceIssue": 40,
+      "incompatibleRequestFields": [
+        "required_status_checks.contexts with app-bound checks",
+        "required_pull_request_reviews.dismissal_restrictions",
+        "required_pull_request_reviews.bypass_pull_request_allowances"
+      ],
+      "omissionSemantics": "No user, team, app or bypass allowance is granted; omitted organization-only fields are absent permissions."
+    },
     "apiPayload": {
       "required_status_checks": {
         "strict": true,
-        "contexts": [],
         "checks": [
           {
             "context": "Gate Integrity Sentinel",
@@ -99,12 +112,10 @@ O bloco seguinte é uma projeção estrutural do manifesto operacional. O teste 
       },
       "enforce_admins": true,
       "required_pull_request_reviews": {
-        "dismissal_restrictions": {},
         "dismiss_stale_reviews": true,
         "require_code_owner_reviews": false,
         "required_approving_review_count": 1,
-        "require_last_push_approval": true,
-        "bypass_pull_request_allowances": {}
+        "require_last_push_approval": true
       },
       "restrictions": null,
       "required_conversation_resolution": true,
@@ -145,4 +156,4 @@ O bloco seguinte é uma projeção estrutural do manifesto operacional. O teste 
 
 ## Limite vinculativo
 
-O payload acima é candidato, não instrução de execução. Qualquer mudança da base, dos checks, da fonte do app, das decisões humanas ou da capacidade da conta invalida a evidência e exige nova medição, novo CI e nova aprovação.
+O payload acima é candidato, não instrução de execução. Qualquer mudança da base, do tipo de proprietário, da versão da API, dos checks, da fonte do app, das decisões humanas ou da capacidade da conta invalida a evidência e exige nova medição, novo CI e nova aprovação. O próximo passo possível é um novo ensaio descartável com autorização própria; esta correção não o executa.

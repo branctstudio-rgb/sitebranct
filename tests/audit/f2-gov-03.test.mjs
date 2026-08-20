@@ -37,6 +37,63 @@ test("proposal is exact, offline, merge-commit compatible and not active", async
   assert.equal(proposal.activation.authorized, false);
 });
 
+test("personal-account payload uses the app-bound schema without organization restrictions", async () => {
+  const [{ validatePersonalAccountPayload, validatePersonalAccountReadback }, proposal] = await Promise.all([loadValidator(), readJson(proposalPath)]);
+  const payload = proposal.target.apiPayload;
+  assert.equal(validatePersonalAccountPayload(payload), true);
+  assert.deepEqual(Object.keys(payload.required_status_checks).sort(), ["checks", "strict"]);
+  assert.equal("contexts" in payload.required_status_checks, false);
+  assert.equal("dismissal_restrictions" in payload.required_pull_request_reviews, false);
+  assert.equal("bypass_pull_request_allowances" in payload.required_pull_request_reviews, false);
+  assert.equal(payload.restrictions, null);
+  const readback = {
+    required_status_checks: structuredClone(payload.required_status_checks),
+    enforce_admins:{ enabled:true },
+    required_pull_request_reviews:structuredClone(payload.required_pull_request_reviews),
+    restrictions:null,
+    required_conversation_resolution:{ enabled:true },
+    allow_force_pushes:{ enabled:false },
+    allow_deletions:{ enabled:false },
+  };
+  assert.equal(validatePersonalAccountReadback(readback), true);
+});
+
+test("personal-account payload rejects incompatible schema and security regressions", async (t) => {
+  const { validatePersonalAccountPayload } = await loadValidator();
+  const proposal = await readJson(proposalPath);
+  const cases = [
+    ["contexts beside app-bound checks", (p) => { p.required_status_checks.contexts = []; }, "app-bound status checks must contain only strict and checks"],
+    ["contexts without checks", (p) => { p.required_status_checks = { strict:true, contexts:[] }; }, "app-bound status checks must contain only strict and checks"],
+    ["app id absent", (p) => { delete p.required_status_checks.checks[0].app_id; }, "API payload required checks mismatch"],
+    ["app id altered", (p) => { p.required_status_checks.checks[0].app_id = 42; }, "API payload required checks mismatch"],
+    ["app id invalid", (p) => { p.required_status_checks.checks[0].app_id = "15368"; }, "API payload required checks mismatch"],
+    ["check extra", (p) => { p.required_status_checks.checks.push({ context:"Extra", app_id:15368 }); }, "API payload required checks mismatch"],
+    ["check absent", (p) => { p.required_status_checks.checks.pop(); }, "API payload required checks mismatch"],
+    ["check duplicated", (p) => { p.required_status_checks.checks.push(structuredClone(p.required_status_checks.checks[0])); }, "API payload required checks mismatch"],
+    ["check renamed", (p) => { p.required_status_checks.checks[0].context += " Candidate"; }, "API payload required checks mismatch"],
+    ["dismissal restrictions empty", (p) => { p.required_pull_request_reviews.dismissal_restrictions = {}; }, "organization-only field forbidden"],
+    ["dismissal restrictions populated", (p) => { p.required_pull_request_reviews.dismissal_restrictions = { users:["actor"] }; }, "organization-only field forbidden"],
+    ["bypass allowances empty", (p) => { p.required_pull_request_reviews.bypass_pull_request_allowances = {}; }, "organization-only field forbidden"],
+    ["bypass allowances populated", (p) => { p.required_pull_request_reviews.bypass_pull_request_allowances = { apps:["app"] }; }, "organization-only field forbidden"],
+    ["top-level dismissal restrictions", (p) => { p.dismissal_restrictions = {}; }, "organization-only field forbidden"],
+    ["top-level bypass allowances", (p) => { p.bypass_pull_request_allowances = {}; }, "organization-only field forbidden"],
+    ["users collection", (p) => { p.users = []; }, "organization-only collection forbidden"],
+    ["teams collection", (p) => { p.teams = []; }, "organization-only collection forbidden"],
+    ["apps collection", (p) => { p.apps = []; }, "organization-only collection forbidden"],
+    ["organization restrictions object", (p) => { p.restrictions = { users:[], teams:[], apps:[] }; }, "organization-only collection forbidden"],
+    ["administrator exemption", (p) => { p.enforce_admins = false; }, "administrators must remain protected"],
+    ["approval reduction", (p) => { p.required_pull_request_reviews.required_approving_review_count = 0; }, "approval requirement cannot be reduced"],
+    ["stale reviews retained", (p) => { p.required_pull_request_reviews.dismiss_stale_reviews = false; }, "stale approvals must be dismissed"],
+    ["force push allowed", (p) => { p.allow_force_pushes = true; }, "force pushes must remain blocked"],
+    ["deletion allowed", (p) => { p.allow_deletions = true; }, "branch deletion must remain blocked"],
+  ];
+  for (const [label, mutate, expected] of cases) await t.test(label, () => {
+    const payload = structuredClone(proposal.target.apiPayload);
+    mutate(payload);
+    assert.throws(() => validatePersonalAccountPayload(payload), (error) => error.message.includes(expected));
+  });
+});
+
 test("document, fixture and proposed API payload remain structurally identical", async () => {
   const [{ canonicalProposalView, extractDocumentContract }, proposal, document] = await Promise.all([
     loadValidator(), readJson(proposalPath), read(documentPath),
@@ -87,10 +144,10 @@ test("proposal negatives fail closed for security, lockout and provenance regres
     ["permanent bypass", (p) => { p.target.bypass.permanent = true; }, "permanent bypass forbidden"],
     ["agent bypass", (p) => { p.target.bypass.agentsAllowed = true; }, "agents cannot bypass protection"],
     ["break-glass implicit", (p) => { p.target.bypass.breakGlassRequiresSeparateHumanDecision = false; }, "break-glass requires a separate human decision"],
-    ["API review bypass", (p) => { p.target.apiPayload.required_pull_request_reviews.bypass_pull_request_allowances = { users:["attacker"] }; }, "API payload review bypass must be empty"],
+    ["API review bypass", (p) => { p.target.apiPayload.required_pull_request_reviews.bypass_pull_request_allowances = { users:["attacker"] }; }, "organization-only field forbidden"],
     ["admin silently exempt", (p) => { p.target.rules.includeAdministrators = false; }, "administrator decision cannot be silently exempt"],
     ["force push allowed", (p) => { p.target.apiPayload.allow_force_pushes = true; }, "force pushes must remain blocked"],
-    ["deletion allowed", (p) => { p.target.apiPayload.allow_deletions = true; }, "main deletion must remain blocked"],
+    ["deletion allowed", (p) => { p.target.apiPayload.allow_deletions = true; }, "branch deletion must remain blocked"],
     ["linear history enabled", (p) => { p.target.apiPayload.required_linear_history = true; }, "normal merge requires non-linear history"],
     ["normal merge removed", (p) => { p.target.mergePolicy.recommendedMethods = ["squash"]; }, "normal merge must remain compatible"],
     ["lockout trial absent", (p) => { p.activation.stageOneDisposableTrial.required = false; }, "disposable pre-activation trial required"],

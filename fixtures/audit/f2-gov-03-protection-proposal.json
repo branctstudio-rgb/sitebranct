@@ -57,10 +57,21 @@
       "finalMethodsRequireCouncilDecision": true,
       "preserveBranch": true
     },
+    "apiCompatibility": {
+      "ownerType": "User",
+      "apiVersion": "2022-11-28",
+      "measuredAtBase": "32e63a416793a2ba0ca917d71ec652cc6bc22deb",
+      "evidenceIssue": 40,
+      "incompatibleRequestFields": [
+        "required_status_checks.contexts with app-bound checks",
+        "required_pull_request_reviews.dismissal_restrictions",
+        "required_pull_request_reviews.bypass_pull_request_allowances"
+      ],
+      "omissionSemantics": "No user, team, app or bypass allowance is granted; omitted organization-only fields are absent permissions."
+    },
     "apiPayload": {
       "required_status_checks": {
         "strict": true,
-        "contexts": [],
         "checks": [
           { "context": "Gate Integrity Sentinel", "app_id": 15368 },
           { "context": "Universal PR Gate", "app_id": 15368 }
@@ -68,12 +79,10 @@
       },
       "enforce_admins": true,
       "required_pull_request_reviews": {
-        "dismissal_restrictions": {},
         "dismiss_stale_reviews": true,
         "require_code_owner_reviews": false,
         "required_approving_review_count": 1,
-        "require_last_push_approval": true,
-        "bypass_pull_request_allowances": {}
+        "require_last_push_approval": true
       },
       "restrictions": null,
       "required_conversation_resolution": true,

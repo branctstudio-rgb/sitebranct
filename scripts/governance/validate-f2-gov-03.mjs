@@ -4,6 +4,8 @@ import { pathToFileURL } from "node:url";
 import { readFile } from "node:fs/promises";
 
 const EXPECTED_BASE = "3fd31e615a8914aaa1b1d7bcb0a093222eb678ce";
+const EXPECTED_COMPATIBILITY_BASE = "32e63a416793a2ba0ca917d71ec652cc6bc22deb";
+const EXPECTED_API_VERSION = "2022-11-28";
 const EXPECTED_CHECKS = [
   { name:"Gate Integrity Sentinel", workflow:"Gate Integrity Sentinel", event:"pull_request_target", appId:15368, appSlug:"github-actions" },
   { name:"Universal PR Gate", workflow:"Universal PR Gate Candidate", event:"pull_request", appId:15368, appSlug:"github-actions" },
@@ -18,6 +20,84 @@ const EXPECTED_HASHES = {
 const equal = (actual, expected, message) => assert.deepEqual(actual, expected, message);
 const ok = (value, message) => assert.ok(value, message);
 const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+const EXPECTED_API_CHECKS = EXPECTED_CHECKS.map(({ name, appId }) => ({ context:name, app_id:appId }));
+const PERSONAL_REVIEW_KEYS = [
+  "dismiss_stale_reviews",
+  "require_code_owner_reviews",
+  "require_last_push_approval",
+  "required_approving_review_count",
+];
+const PERSONAL_PAYLOAD_KEYS = [
+  "allow_deletions",
+  "allow_force_pushes",
+  "allow_fork_syncing",
+  "block_creations",
+  "enforce_admins",
+  "lock_branch",
+  "required_conversation_resolution",
+  "required_linear_history",
+  "required_pull_request_reviews",
+  "required_status_checks",
+  "restrictions",
+];
+
+function rejectOrganizationCollections(value, location = "apiPayload") {
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value)) {
+    ok(key !== "dismissal_restrictions", `organization-only field forbidden: ${location}.${key}`);
+    ok(key !== "bypass_pull_request_allowances", `organization-only field forbidden: ${location}.${key}`);
+    ok(!["users", "teams", "apps"].includes(key), `organization-only collection forbidden: ${location}.${key}`);
+    rejectOrganizationCollections(child, `${location}.${key}`);
+  }
+}
+
+export function validatePersonalAccountPayload(payload) {
+  ok(payload && typeof payload === "object" && !Array.isArray(payload), "personal-account payload must be an object");
+  rejectOrganizationCollections(payload);
+  equal(Object.keys(payload).sort(), PERSONAL_PAYLOAD_KEYS, "personal-account payload contains unknown or missing top-level fields");
+  const checks = payload.required_status_checks;
+  equal(Object.keys(checks ?? {}).sort(), ["checks", "strict"], "app-bound status checks must contain only strict and checks");
+  equal(checks.strict, true, "latest base requirement missing");
+  equal(checks.checks, EXPECTED_API_CHECKS, "API payload required checks mismatch");
+  for (const check of checks.checks) {
+    ok(Number.isInteger(check.app_id) && check.app_id === 15368, `required check app_id invalid: ${check.context ?? "unknown"}`);
+  }
+  equal(payload.enforce_admins, true, "administrators must remain protected");
+  const reviews = payload.required_pull_request_reviews;
+  equal(Object.keys(reviews ?? {}).sort(), PERSONAL_REVIEW_KEYS, "personal-account review payload contains unsupported restrictions or bypass");
+  equal(reviews.required_approving_review_count, 1, "approval requirement cannot be reduced");
+  equal(reviews.dismiss_stale_reviews, true, "stale approvals must be dismissed");
+  equal(reviews.require_last_push_approval, true, "last-push approval must remain required");
+  equal(reviews.require_code_owner_reviews, false, "code-owner review policy changed");
+  equal(payload.restrictions, null, "top-level push restrictions must remain null for a personal repository");
+  equal(payload.required_conversation_resolution, true, "conversation resolution must remain required");
+  equal(payload.required_linear_history, false, "normal merge requires non-linear history");
+  equal(payload.allow_force_pushes, false, "force pushes must remain blocked");
+  equal(payload.allow_deletions, false, "branch deletion must remain blocked");
+  equal(payload.block_creations, false, "branch creation policy changed");
+  equal(payload.lock_branch, false, "branch lock policy changed");
+  equal(payload.allow_fork_syncing, false, "fork sync policy changed");
+  return true;
+}
+
+export function validatePersonalAccountReadback(readback) {
+  ok(readback && typeof readback === "object" && !Array.isArray(readback), "personal-account readback must be an object");
+  rejectOrganizationCollections(readback, "readback");
+  equal(readback.required_status_checks?.strict, true, "readback strict checks mismatch");
+  equal(readback.required_status_checks?.checks, EXPECTED_API_CHECKS, "readback required checks mismatch");
+  equal(readback.enforce_admins?.enabled, true, "readback administrators are not protected");
+  const reviews = readback.required_pull_request_reviews;
+  ok(!Object.hasOwn(reviews ?? {}, "dismissal_restrictions"), "readback contains organization dismissal restrictions");
+  ok(!Object.hasOwn(reviews ?? {}, "bypass_pull_request_allowances"), "readback contains review bypass allowances");
+  equal(reviews?.required_approving_review_count, 1, "readback approval requirement mismatch");
+  equal(reviews?.dismiss_stale_reviews, true, "readback stale approval policy mismatch");
+  equal(reviews?.require_last_push_approval, true, "readback last-push policy mismatch");
+  equal(readback.restrictions, null, "readback top-level restrictions must be null");
+  equal(readback.required_conversation_resolution?.enabled, true, "readback conversation policy mismatch");
+  equal(readback.allow_force_pushes?.enabled, false, "readback force-push policy mismatch");
+  equal(readback.allow_deletions?.enabled, false, "readback deletion policy mismatch");
+  return true;
+}
 
 export function canonicalProposalView(proposal) {
   return {
@@ -32,6 +112,7 @@ export function canonicalProposalView(proposal) {
       rules:proposal.target.rules,
       bypass:proposal.target.bypass,
       mergePolicy:proposal.target.mergePolicy,
+      apiCompatibility:proposal.target.apiCompatibility,
       apiPayload:proposal.target.apiPayload,
     },
     gateEvolution:{
@@ -121,14 +202,23 @@ export function validateProposal(proposal) {
   equal(proposal.target.bypass.agentsAllowed, false, "agents cannot bypass protection");
   equal(proposal.target.bypass.breakGlassRequiresSeparateHumanDecision, true, "break-glass requires a separate human decision");
   const payload = proposal.target.apiPayload;
-  equal(payload.required_status_checks?.strict, true, "latest base requirement missing");
-  equal(payload.required_status_checks?.contexts, [], "legacy check contexts forbidden");
-  equal(payload.required_status_checks?.checks, EXPECTED_CHECKS.map(({ name, appId }) => ({ context:name, app_id:appId })), "API payload required checks mismatch");
+  equal(proposal.target.apiCompatibility, {
+    ownerType:"User",
+    apiVersion:EXPECTED_API_VERSION,
+    measuredAtBase:EXPECTED_COMPATIBILITY_BASE,
+    evidenceIssue:40,
+    incompatibleRequestFields:[
+      "required_status_checks.contexts with app-bound checks",
+      "required_pull_request_reviews.dismissal_restrictions",
+      "required_pull_request_reviews.bypass_pull_request_allowances",
+    ],
+    omissionSemantics:"No user, team, app or bypass allowance is granted; omitted organization-only fields are absent permissions.",
+  }, "personal-account API compatibility contract mismatch");
+  validatePersonalAccountPayload(payload);
   equal(payload.enforce_admins, rules.includeAdministrators, "API payload administrator mismatch");
   equal(payload.required_pull_request_reviews?.required_approving_review_count, rules.recommendedApprovals, "API payload approval count mismatch");
   equal(payload.required_pull_request_reviews?.dismiss_stale_reviews, true, "API payload stale approval mismatch");
   equal(payload.required_pull_request_reviews?.require_last_push_approval, true, "API payload last-push approval mismatch");
-  equal(payload.required_pull_request_reviews?.bypass_pull_request_allowances, {}, "API payload review bypass must be empty");
   equal(payload.required_conversation_resolution, true, "API payload conversation resolution mismatch");
   equal(payload.required_linear_history, false, "normal merge requires non-linear history");
   equal(payload.allow_force_pushes, false, "force pushes must remain blocked");
