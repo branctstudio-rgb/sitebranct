@@ -151,4 +151,16 @@ test("protected gate changes require a bounded human ceremony", async () => {
     () => validateGateEvolutionRequest(valid, { ...approvalContext, decision:"PENDING" }),
     (error) => error.message.includes("external human decision must be APPROVED"),
   );
+  for (const [actor, expected] of [
+    ["", "named human approval actor required"],
+    ["COUNCIL_DECISION_REQUIRED", "human approval actor cannot be a placeholder"],
+    ["TBD", "human approval actor cannot be a placeholder"],
+  ]) {
+    const request = structuredClone(valid);
+    request.humanApproval.actor = actor;
+    assert.throws(
+      () => validateGateEvolutionRequest(request, { ...approvalContext, actor }),
+      (error) => error.message.includes(expected),
+    );
+  }
 });

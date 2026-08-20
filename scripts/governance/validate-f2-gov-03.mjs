@@ -75,6 +75,8 @@ export function validateRequiredCheckObservation(observation) {
 export function validateGateEvolutionRequest(request, approvalContext) {
   ok(approvalContext && typeof approvalContext === "object", "external approval context required");
   equal(approvalContext.decision, "APPROVED", "external human decision must be APPROVED");
+  ok(typeof approvalContext.actor === "string" && approvalContext.actor.trim().length >= 2, "named human approval actor required");
+  ok(!/^(COUNCIL_DECISION_REQUIRED|PENDING|TBD|UNKNOWN|SYSTEM|AGENT)$/i.test(approvalContext.actor.trim()), "human approval actor cannot be a placeholder");
   ok(Array.isArray(request?.protectedPathsChanged) && request.protectedPathsChanged.length > 0, "protected path inventory required");
   ok(/^F2-GATE-CHANGE-[A-Z0-9-]+$/.test(request.ceremonyId ?? ""), "ceremony identifier required");
   ok(/^[0-9a-f]{40}$/.test(request.humanApproval?.headSha ?? "") && /^[0-9a-f]{40}$/.test(request.humanApproval?.baseSha ?? ""), "human approval must bind head and base");
