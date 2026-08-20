@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "repository": "branctstudio-rgb/sitebranct",
+  "status": "PROPOSAL_NOT_APPLIED",
+  "measurement": {
+    "measuredAtUtc": "2026-08-20T06:30:00Z",
+    "baseSha": "3fd31e615a8914aaa1b1d7bcb0a093222eb678ce",
+    "protectionActive": false,
+    "rulesets": [],
+    "requiredChecks": [],
+    "authenticatedPermission": "admin",
+    "mergeMethods": {
+      "mergeCommit": true,
+      "squash": true,
+      "rebase": true,
+      "updateBranch": false
+    },
+    "evidence": {
+      "baseOnlyObservation": { "pr": 28, "sentinelRun": 32302695527, "result": "SUCCESS" },
+      "eightScenarioTrial": { "prs": [30, 31, 32, 33, 34, 35, 36, 37], "result": "8_OF_8_MATCHED_EXPECTED_CAUSE" },
+      "deploymentsAcrossTrialHeads": 0,
+      "workflowDispatchAcrossTrialHeads": 0
+    }
+  },
+  "target": {
+    "branch": "main",
+    "mechanism": "classic_branch_protection",
+    "requiredChecks": [
+      { "name": "Gate Integrity Sentinel", "workflow": "Gate Integrity Sentinel", "event": "pull_request_target", "appId": 15368, "appSlug": "github-actions" },
+      { "name": "Universal PR Gate", "workflow": "Universal PR Gate Candidate", "event": "pull_request", "appId": 15368, "appSlug": "github-actions" }
+    ],
+    "rules": {
+      "requirePullRequest": true,
+      "recommendedApprovals": 1,
+      "dismissStaleApprovals": true,
+      "requireLastPushApproval": true,
+      "requireConversationResolution": true,
+      "blockDirectPush": true,
+      "blockForcePush": true,
+      "blockDeletion": true,
+      "includeAdministrators": true,
+      "requireLinearHistory": false,
+      "checksMustStartOnLatestHead": true,
+      "acceptedRequiredCheckConclusion": "success_only_by_activation_verifier"
+    },
+    "bypass": {
+      "broad": false,
+      "permanent": false,
+      "createdByThisProposal": false,
+      "agentsAllowed": false,
+      "breakGlassRequiresSeparateHumanDecision": true
+    },
+    "mergePolicy": {
+      "recommendedMethods": ["merge_commit"],
+      "squashCurrentRepositoryCapability": true,
+      "rebaseCurrentRepositoryCapability": true,
+      "finalMethodsRequireCouncilDecision": true,
+      "preserveBranch": true
+    },
+    "apiPayload": {
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [],
+        "checks": [
+          { "context": "Gate Integrity Sentinel", "app_id": 15368 },
+          { "context": "Universal PR Gate", "app_id": 15368 }
+        ]
+      },
+      "enforce_admins": true,
+      "required_pull_request_reviews": {
+        "dismissal_restrictions": {},
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": false,
+        "required_approving_review_count": 1,
+        "require_last_push_approval": true,
+        "bypass_pull_request_allowances": {}
+      },
+      "restrictions": null,
+      "required_conversation_resolution": true,
+      "required_linear_history": false,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "lock_branch": false,
+      "allow_fork_syncing": false
+    }
+  },
+  "gateEvolution": {
+    "required": true,
+    "recommendedOption": "temporary-sentinel-requirement-ceremony",
+    "options": [
+      {
+        "id": "temporary-sentinel-requirement-ceremony",
+        "availability": "IMPLEMENTABLE_AFTER_SEPARATE_AUTHORIZATION",
+        "steps": [
+          "Bind human approval to the exact proposal head and current main base.",
+          "Export and hash the active protection payload.",
+          "Remove only Gate Integrity Sentinel from required checks; retain Universal PR Gate, PR reviews and all other rules.",
+          "Merge one dedicated protected-component PR by normal merge under Via B evidence and independent review.",
+          "Restore Gate Integrity Sentinel within 60 minutes from the new main definition.",
+          "Run base-only observation plus benign, invalid and protected-component disposable trials.",
+          "Compare the restored payload byte-for-byte with the approved target except for explicitly approved check evolution."
+        ],
+        "failClosed": "Any missing approval, snapshot, retained Universal check, restoration or post-restore trial freezes the change."
+      },
+      {
+        "id": "restricted-actor-time-boxed-bypass",
+        "availability": "NOT_VERIFIED_REQUIRES_CAPABILITY_AND_IDENTITY_DECISION",
+        "steps": [
+          "Verify the account and selected mechanism can bind bypass to one named human actor or team without exempting agents or all administrators.",
+          "Create a time-boxed bypass only after separate Council authorization tied to head, base and ceremony identifier.",
+          "Use it for one dedicated gate-change PR, revoke immediately, export the resulting rule and repeat post-restore trials."
+        ],
+        "failClosed": "If actor binding, auditability, automatic expiry or revocation cannot be proved, this option is unavailable."
+      }
+    ]
+  },
+  "activation": {
+    "authorized": false,
+    "stageOneDisposableTrial": {
+      "required": true,
+      "target": "disposable branch only",
+      "scenarios": ["documentation", "tests", "live page", "asset", "common workflow", "unknown path", "invalid identity", "protected component"],
+      "success": "Both candidate checks start on each latest head; conclusions and causes match the F2-GOV-02E contract; no external effects occur."
+    },
+    "stageTwoMainObservation": {
+      "required": true,
+      "target": "main after separate activation authorization",
+      "scenarios": ["benign documentation PR", "new commit invalidates approval", "unresolved conversation blocks", "direct push blocked", "normal merge succeeds", "protected component freezes without ceremony"],
+      "success": "Exact checks from github-actions app 15368 complete on the latest head, rules enforce as approved and rollback remains immediately available."
+    },
+    "removeTemporarilyCriteria": [
+      "A documented critical security or availability incident exists and waiting for normal checks creates greater verified harm.",
+      "The exact blocking rule and affected head/base are identified; an Actions outage alone freezes merges unless the incident is critical.",
+      "A named human authorized by a separate Council decision approves the smallest field-level suspension.",
+      "The complete before-state payload is exported and hashed before mutation.",
+      "No broad, permanent, agent or silent administrator bypass is introduced.",
+      "A restoration deadline of at most 60 minutes and a named restoration owner are recorded.",
+      "After restoration, the benign, invalid and protected-component trials pass by their contracted causes before normal merging resumes."
+    ]
+  },
+  "rollback": {
+    "trigger": "lockout, missing or stale check, unexpected app source, merge incompatibility, false positive, unbounded ceremony or failed post-activation observation",
+    "steps": [
+      "Freeze merges and record incident, actor, UTC time, head, base and observed checks.",
+      "Export the current rule before changing it and compare it with the approved payload.",
+      "Restore the immediately preceding payload; because current state has no rule, first activation rollback removes only the newly created protection.",
+      "Repeat the disposable documentation, invalid and protected-component trials before any reactivation."
+    ],
+    "evidence": ["before and after payloads with hashes", "actor and approval record", "UTC timestamps and affected SHA", "trial run IDs and conclusions"]
+  },
+  "pendingCouncilDecisions": [
+    "administrators-subject-to-rules",
+    "approver-identities",
+    "break-glass-actor",
+    "gate-evolution-authorization",
+    "merge-methods",
+    "one-or-two-approvals",
+    "required-check-identities"
+  ]
+}
