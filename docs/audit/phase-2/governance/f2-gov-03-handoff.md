@@ -12,6 +12,8 @@ Veredicto do pacote: **PROPOSTA_APTA_PARA_DECISAO**, sujeito a CI e revisão def
 - RED inicial: a base não continha o contrato F2-GOV-03. GREEN inicial: 33/33.
 - Revisão defensiva inicial: `CHANGES_REQUIRED` por allowances de bypass não validadas, critérios/rollback autocertificados e cerimónia sem contexto externo.
 - Correção: payload sem allowances, flags anti-bypass, opções/critérios/rollback exatos e cerimónia vinculada a decisão `APPROVED`, ator, identificador, head e base externos.
+- F2-GOV-03-F1 RED: o contrato anterior aceitou e produziu `contexts + checks`, `dismissal_restrictions: {}` e `bypass_pull_request_allowances: {}`; o endpoint real respondeu HTTP 422 nas duas formas tentadas na Issue #40.
+- F2-GOV-03-F1 GREEN: esquema de conta pessoal com apenas `strict + checks`, campos organizacionais omitidos, `restrictions: null`, versão `2022-11-28` explícita e negativos permanentes contra qualquer coleção/bypass incompatível.
 
 ## Decisão pendente
 
@@ -19,6 +21,6 @@ O Conselho ainda decide uma ou duas aprovações, identidades dos aprovadores, i
 
 ## Limites e risco residual
 
-Via B continua obrigatória. A proposta não foi ensaiada como regra ativa, o bypass de ator restrito está `NOT_VERIFIED` e uma indisponibilidade do Actions pode congelar merges. A aplicação futura exige branch descartável, observação na `main`, snapshot/rollback e aprovação humana separada. Zero FTP, deploy, secrets ou produção são autorizados.
+Via B continua obrigatória. A proposta corrigida não foi aplicada: o ensaio anterior parou antes de criar proteção. O bypass de ator restrito está `NOT_VERIFIED` e uma indisponibilidade do Actions pode congelar merges. A aplicação futura exige novo ensaio descartável autorizado, observação na `main`, snapshot/rollback e aprovação humana separada. Zero FTP, deploy, secrets ou produção são autorizados.
 
 Rollback futuro: restaurar o payload anterior sob congelamento de merges e repetir os ensaios. Rollback desta PR documental: `git revert -m 1 <merge_sha>` após eventual merge autorizado, preservando história.
