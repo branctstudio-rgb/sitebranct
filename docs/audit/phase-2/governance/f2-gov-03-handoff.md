@@ -9,6 +9,9 @@ Veredicto do pacote: **PROPOSTA_APTA_PARA_DECISAO**, sujeito a CI e revisão def
 - Evidência: observação base-only e ensaio real 8/8 pela conclusão e causa contratadas.
 - Candidato: proteção clássica com `Gate Integrity Sentinel` e `Universal PR Gate`, vinculados ao GitHub Actions.
 - Controlo: fixture operacional, projeção documental idêntica e negativos fail-closed.
+- RED inicial: a base não continha o contrato F2-GOV-03. GREEN inicial: 33/33.
+- Revisão defensiva inicial: `CHANGES_REQUIRED` por allowances de bypass não validadas, critérios/rollback autocertificados e cerimónia sem contexto externo.
+- Correção: payload sem allowances, flags anti-bypass, opções/critérios/rollback exatos e cerimónia vinculada a decisão `APPROVED`, ator, identificador, head e base externos.
 
 ## Decisão pendente
 

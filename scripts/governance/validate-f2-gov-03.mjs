@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { readFile } from "node:fs/promises";
 
@@ -7,9 +8,16 @@ const EXPECTED_CHECKS = [
   { name:"Gate Integrity Sentinel", workflow:"Gate Integrity Sentinel", event:"pull_request_target", appId:15368, appSlug:"github-actions" },
   { name:"Universal PR Gate", workflow:"Universal PR Gate Candidate", event:"pull_request", appId:15368, appSlug:"github-actions" },
 ];
+const EXPECTED_HASHES = {
+  gateEvolutionOptions:"a72ddf204532051b0fcf8b8eb28e02c232f7701c803656deefc97475bd6afae7",
+  removalCriteria:"8761d51ab949c8840736a72f2c6968617b78e5220aa33643b30816d210c187bc",
+  rollbackSteps:"60a3a16be92a5c3a58049f8597e028c1bddcab4e4adf7df0e0ea7cb18f199e04",
+  rollbackEvidence:"6288d7f66baba78116b0bd2a23715b3e63a648360d50af37f4180338f19bfcd7",
+};
 
 const equal = (actual, expected, message) => assert.deepEqual(actual, expected, message);
 const ok = (value, message) => assert.ok(value, message);
+const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
 export function canonicalProposalView(proposal) {
   return {
@@ -64,13 +72,19 @@ export function validateRequiredCheckObservation(observation) {
   return true;
 }
 
-export function validateGateEvolutionRequest(request) {
+export function validateGateEvolutionRequest(request, approvalContext) {
+  ok(approvalContext && typeof approvalContext === "object", "external approval context required");
+  equal(approvalContext.decision, "APPROVED", "external human decision must be APPROVED");
   ok(Array.isArray(request?.protectedPathsChanged) && request.protectedPathsChanged.length > 0, "protected path inventory required");
   ok(/^F2-GATE-CHANGE-[A-Z0-9-]+$/.test(request.ceremonyId ?? ""), "ceremony identifier required");
   ok(/^[0-9a-f]{40}$/.test(request.humanApproval?.headSha ?? "") && /^[0-9a-f]{40}$/.test(request.humanApproval?.baseSha ?? ""), "human approval must bind head and base");
+  equal(request.ceremonyId, approvalContext.ceremonyId, "ceremony identifier does not match external approval");
+  equal(request.humanApproval?.actor, approvalContext.actor, "human approval actor mismatch");
+  equal(request.humanApproval?.headSha, approvalContext.headSha, "human approval head mismatch");
+  equal(request.humanApproval?.baseSha, approvalContext.baseSha, "human approval base mismatch");
   equal(request.snapshotRecorded, true, "pre-change protection snapshot required");
   equal(request.temporaryChange, ["remove Gate Integrity Sentinel only from required checks"], "ceremony may suspend only the Sentinel requirement");
-  ok(request.retainedChecks?.includes("Universal PR Gate"), "Universal PR Gate must remain required during ceremony");
+  equal(request.retainedChecks, ["Universal PR Gate"], "retained check set mismatch");
   ok(Number.isInteger(request.restorationDeadlineMinutes) && request.restorationDeadlineMinutes > 0 && request.restorationDeadlineMinutes <= 60, "restoration deadline must be bounded to 60 minutes");
   equal(request.postRestoreTrialsRequired, true, "post-restoration trials required");
   return true;
@@ -102,6 +116,8 @@ export function validateProposal(proposal) {
   equal(proposal.target.bypass.broad, false, "broad bypass forbidden");
   equal(proposal.target.bypass.permanent, false, "permanent bypass forbidden");
   equal(proposal.target.bypass.createdByThisProposal, false, "proposal cannot create bypass");
+  equal(proposal.target.bypass.agentsAllowed, false, "agents cannot bypass protection");
+  equal(proposal.target.bypass.breakGlassRequiresSeparateHumanDecision, true, "break-glass requires a separate human decision");
   const payload = proposal.target.apiPayload;
   equal(payload.required_status_checks?.strict, true, "latest base requirement missing");
   equal(payload.required_status_checks?.contexts, [], "legacy check contexts forbidden");
@@ -110,6 +126,7 @@ export function validateProposal(proposal) {
   equal(payload.required_pull_request_reviews?.required_approving_review_count, rules.recommendedApprovals, "API payload approval count mismatch");
   equal(payload.required_pull_request_reviews?.dismiss_stale_reviews, true, "API payload stale approval mismatch");
   equal(payload.required_pull_request_reviews?.require_last_push_approval, true, "API payload last-push approval mismatch");
+  equal(payload.required_pull_request_reviews?.bypass_pull_request_allowances, {}, "API payload review bypass must be empty");
   equal(payload.required_conversation_resolution, true, "API payload conversation resolution mismatch");
   equal(payload.required_linear_history, false, "normal merge requires non-linear history");
   equal(payload.allow_force_pushes, false, "force pushes must remain blocked");
@@ -117,11 +134,14 @@ export function validateProposal(proposal) {
   equal(proposal.gateEvolution.required, true, "protected gate evolution requires ceremony");
   ok(proposal.gateEvolution.options?.length >= 2, "at least two gate evolution options required");
   equal(proposal.gateEvolution.recommendedOption, "temporary-sentinel-requirement-ceremony", "recommended gate evolution option mismatch");
+  equal(hash(proposal.gateEvolution.options), EXPECTED_HASHES.gateEvolutionOptions, "gate evolution options mismatch");
   equal(proposal.activation.authorized, false, "activation not authorized");
   equal(proposal.activation.stageOneDisposableTrial?.required, true, "disposable pre-activation trial required");
   equal(proposal.activation.stageTwoMainObservation?.required, true, "post-activation observation required");
-  ok(proposal.activation.removeTemporarilyCriteria?.length >= 5, "temporary removal criteria incomplete");
+  equal(hash(proposal.activation.removeTemporarilyCriteria), EXPECTED_HASHES.removalCriteria, "temporary removal criteria mismatch");
   ok(proposal.rollback?.steps?.length >= 4 && proposal.rollback?.evidence?.length >= 4, "rollback contract missing");
+  equal(hash(proposal.rollback.steps), EXPECTED_HASHES.rollbackSteps, "rollback steps mismatch");
+  equal(hash(proposal.rollback.evidence), EXPECTED_HASHES.rollbackEvidence, "rollback evidence mismatch");
   equal([...proposal.pendingCouncilDecisions].sort(), [
     "administrators-subject-to-rules",
     "approver-identities",
