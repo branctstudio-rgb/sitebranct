@@ -1,0 +1,13 @@
+name: F2-GOV-02E Rehearsal Fixture
+
+on:
+  push:
+    branches: ["__f2-gov-02e-never__"]
+
+permissions: {}
+
+jobs:
+  inert-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "F2-GOV-02E inert fixture"
