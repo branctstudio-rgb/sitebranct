@@ -33,8 +33,15 @@ const SCENARIOS = [
   ["protected-component", "FAILURE_SENTINEL"],
 ];
 const ACTIVATION_ORDER = [
-  "seal-before-state", "reconfirm-gates", "apply-protection", "restrict-merge-methods",
-  "independent-readback", "post-activation-pr", "prove-post-activation", "close-trial", "council-via-a-decision",
+  { id:"seal-before-state", action:"Export main protection with HTTP status, repository merge-method settings, rulesets, required checks, main SHA and hashes to an immutable evidence record." },
+  { id:"reconfirm-gates", action:"Confirm both workflow definitions and exact check identities on the unchanged main SHA; abort on drift." },
+  { id:"apply-protection", action:"PUT the validated branchProtection object only after separately authorized human approval." },
+  { id:"restrict-merge-methods", action:"PATCH repository methods to merge=true, squash=false, rebase=false." },
+  { id:"independent-readback", action:"GET protection and repository settings independently and compare field by field with this package." },
+  { id:"post-activation-pr", action:"Open one disposable documentation PR from the sealed main SHA; never merge it." },
+  { id:"prove-post-activation", action:"Prove checks, review block, external approval, stale dismissal after a new commit, final approval and merge eligibility without merging." },
+  { id:"close-trial", action:"Close the disposable PR without merge and preserve its branches/evidence according to the authorized mission." },
+  { id:"council-via-a-decision", action:"Only a new human decision may declare Via A active and retire Via B after all evidence passes." },
 ];
 const ROLLBACK_STEPS = [
   "Freeze merges and record named actor, UTC time, incident, head and base.",
@@ -153,11 +160,24 @@ export function validateActivationPackage(p) {
   }, "this package cannot authorize activation");
   equal(p.activation.commandsExecuted, false, "activation commands must remain unexecuted");
   equal(p.activation.apiVersion, "2022-11-28", "API version mismatch");
-  equal(p.activation.order.map(({ id }) => id), ACTIVATION_ORDER, "activation order mismatch");
-  for (const step of p.activation.order) ok(typeof step.action === "string" && step.action.length >= 40, `activation action incomplete: ${step.id}`);
+  equal(p.activation.order, ACTIVATION_ORDER, "activation order mismatch");
   equal(p.activation.commands, COMMANDS, "activation commands mismatch");
   validatePersonalAccountReadback(p.activation.expectedReadback.branchProtection);
-  equal(p.activation.expectedReadback.branchProtection.required_linear_history?.enabled, false, "readback linear-history mismatch");
+  equal(p.activation.expectedReadback.branchProtection, {
+    required_status_checks:{ strict:true, checks:[
+      { context:"Gate Integrity Sentinel", app_id:15368 },
+      { context:"Universal PR Gate", app_id:15368 },
+    ] },
+    enforce_admins:{ enabled:true },
+    required_pull_request_reviews:{
+      required_approving_review_count:1, dismiss_stale_reviews:true,
+      require_code_owner_reviews:false, require_last_push_approval:true,
+    },
+    restrictions:null,
+    required_conversation_resolution:{ enabled:true }, required_linear_history:{ enabled:false },
+    allow_force_pushes:{ enabled:false }, allow_deletions:{ enabled:false },
+    block_creations:{ enabled:false }, lock_branch:{ enabled:false }, allow_fork_syncing:{ enabled:false },
+  }, "readback branch-protection projection mismatch");
   equal(p.activation.expectedReadback.repositoryMergeMethods, {
     allow_merge_commit:true, allow_squash_merge:false, allow_rebase_merge:false,
   }, "readback merge-method mismatch");

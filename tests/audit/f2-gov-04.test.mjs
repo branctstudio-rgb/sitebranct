@@ -112,6 +112,12 @@ test("security and rollback regressions fail for their contracted cause", async 
     ["scenario suites falsified", (p) => { p.simulation.scenarios[0].requiredSuites=["fake"]; }, "scenario suites mismatch"],
     ["readback protection weakened", (p) => { p.activation.expectedReadback.branchProtection.enforce_admins.enabled=false; }, "readback administrators"],
     ["readback merge methods weakened", (p) => { p.activation.expectedReadback.repositoryMergeMethods.allow_squash_merge=true; }, "readback merge-method"],
+    ["readback code-owner changed", (p) => { p.activation.expectedReadback.branchProtection.required_pull_request_reviews.require_code_owner_reviews=true; }, "readback branch-protection projection"],
+    ["readback lock enabled", (p) => { p.activation.expectedReadback.branchProtection.lock_branch.enabled=true; }, "readback branch-protection projection"],
+    ["readback creation blocked", (p) => { p.activation.expectedReadback.branchProtection.block_creations.enabled=true; }, "readback branch-protection projection"],
+    ["readback fork syncing enabled", (p) => { p.activation.expectedReadback.branchProtection.allow_fork_syncing.enabled=true; }, "readback branch-protection projection"],
+    ["readback contexts introduced", (p) => { p.activation.expectedReadback.branchProtection.required_status_checks.contexts=["unbound"]; }, "readback branch-protection projection"],
+    ["readback action replaced", (p) => { p.activation.order.find(({id}) => id === "independent-readback").action="x".repeat(40); }, "activation order"],
   ];
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
     const candidate = structuredClone(original);
