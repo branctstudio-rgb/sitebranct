@@ -1,3 +1,32 @@
+# Estado vigente e snapshot da decisão de governança da Fase 2
+
+O conteúdo original deste documento está preservado abaixo como snapshot histórico da F2-00. O estado vigente é definido por `docs/audit/phase-2/governance/f2-gov-05-current-governance.md`.
+
+<!-- CURRENT_GOVERNANCE_START -->
+```json
+{
+  "status": "CURRENT_OPERATIONAL_GOVERNANCE",
+  "effectiveMainSha": "066b85f5c7471b15acba236353c2734098a2cd8a",
+  "current": {
+    "viaA": "PRIMARY_ACTIVE",
+    "viaB": "CONTINGENCY_BREAK_GLASS_ROLLBACK",
+    "viaBRequired": false,
+    "mainProtected": true,
+    "requiredChecks": [
+      { "context": "Gate Integrity Sentinel", "appId": 15368 },
+      { "context": "Universal PR Gate", "appId": 15368 }
+    ],
+    "mergeMethods": { "merge": true, "squash": false, "rebase": false }
+  },
+  "productionAuthorized": false,
+  "f201Started": false
+}
+```
+<!-- CURRENT_GOVERNANCE_END -->
+
+Vigente: Via A é a proteção principal ativa; Via B é somente contingência, break-glass humano e rollback, sem obrigatoriedade operacional permanente.
+
+<!-- HISTORICAL_GOVERNANCE_SNAPSHOT_START -->
 # Decisão de governança da Fase 2
 
 Status: **PENDING_HUMAN_DECISION**. Este pacote apresenta duas vias; o Conselho não escolhe automaticamente nenhuma delas nesta missão.
@@ -70,3 +99,4 @@ Sem escolha, o estado permanece `PENDING_HUMAN_DECISION` e a Via B continua send
 ## Rollback da governança documental
 
 Fechar a PR F2-00 sem merge. Se integrada, reverter apenas o merge documental. Uma futura Via A terá rollback próprio de configuração; esta missão não toca configurações GitHub.
+<!-- HISTORICAL_GOVERNANCE_SNAPSHOT_END -->

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "status": "CURRENT_OPERATIONAL_GOVERNANCE",
+  "repository": "branctstudio-rgb/sitebranct",
+  "effectiveMainSha": "066b85f5c7471b15acba236353c2734098a2cd8a",
+  "evidence": {
+    "closureIssue": 45,
+    "activationTrialPr": 47,
+    "authorizationComment": 5367099909,
+    "sentinelRun": 32460975260,
+    "universalRun": 32460977218,
+    "offlineAuditRun": 32460977337
+  },
+  "current": {
+    "viaA": "PRIMARY_ACTIVE",
+    "viaB": "CONTINGENCY_BREAK_GLASS_ROLLBACK",
+    "viaBRequired": false,
+    "mainProtected": true,
+    "requiredChecks": [
+      { "context": "Gate Integrity Sentinel", "appId": 15368 },
+      { "context": "Universal PR Gate", "appId": 15368 }
+    ],
+    "mergeMethods": { "merge": true, "squash": false, "rebase": false }
+  },
+  "historyPolicy": {
+    "preserveSnapshots": true,
+    "historicalClaimsCannotOverrideCurrent": true
+  },
+  "productionAuthorized": false,
+  "f201Started": false
+}
