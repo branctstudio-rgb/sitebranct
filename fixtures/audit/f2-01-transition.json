@@ -8,7 +8,7 @@
   "historicalPhase1": {
     "status": "HISTORICAL_FROZEN",
     "path": "fixtures/audit/baseline-results.json",
-    "sha256": "0e08686d71335353b2def2a9467251f1975c533b63442b35984e7ff82962f8e3"
+    "sha256": "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae"
   },
   "f201": {
     "responsiveTest": {
@@ -18,7 +18,7 @@
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results.json",
-      "sha256": "745d9245473bd0ca9e3c4907e00d08f0d7208698f4197f8c6516d59177d61f05",
+      "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab",
       "observationCount": 72,
       "menuExerciseCount": 41,
       "greenSummary": {
