@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "status": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
+  "repository": "branctstudio-rgb/sitebranct",
+  "baseSha": "a47abb9a43248320dfef8449b6a65e187913fd24",
+  "productionAuthorized": false,
+  "liveChangesAllowedInThisGovernancePr": false,
+  "historicalPhase1": {
+    "status": "HISTORICAL_FROZEN",
+    "path": "fixtures/audit/baseline-results.json",
+    "sha256": "0e08686d71335353b2def2a9467251f1975c533b63442b35984e7ff82962f8e3"
+  },
+  "f201": {
+    "responsiveTest": {
+      "path": "tests/audit/f2-01-responsive.test.mjs",
+      "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
+      "copiedSha256": "5f42d010e089af54d8af86d48f3b73d7d21d6e4af9738f1b2cabc065fe607881"
+    },
+    "targetBaseline": {
+      "path": "fixtures/audit/f2-01-baseline-results.json",
+      "sha256": "745d9245473bd0ca9e3c4907e00d08f0d7208698f4197f8c6516d59177d61f05",
+      "observationCount": 72,
+      "menuExerciseCount": 41,
+      "greenSummary": {
+        "overflowCount": 0,
+        "mobileOrTabletSmallTargetCount": 0,
+        "menuFailureCount": 0,
+        "reducedMotionMaxDurationMs": 1
+      }
+    },
+    "expectedDevelopmentRed": {
+      "testName": "F2-01 matrix has zero overflow and no undersized non-inline targets",
+      "requiredEvidence": ["observations", "menuResults", "reducedMotion"],
+      "minimumOverflowCount": 1,
+      "minimumSmallTargetObservationCount": 1
+    }
+  },
+  "stateMachine": {
+    "allowed": ["F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"],
+    "forbiddenRegressions": ["F2_01_HISTORICAL", "UNKNOWN", "MISSING"],
+    "integratedRequires": ["responsive test green", "target baseline matches report", "live diff evidence"]
+  }
+}

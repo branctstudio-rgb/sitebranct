@@ -1,6 +1,6 @@
 # F2-01 — especificação verificável
 
-Estado: `FUTURE_PROPOSAL`. A F2-01 não está autorizada e este documento não autoriza execução, edição de páginas ou deploy.
+Estado: `F2_01_AUTORIZADA_EM_DESENVOLVIMENTO`, ainda não integrada. Esta autorização admite somente desenvolvimento e validação em PR; não autoriza merge, deploy ou produção.
 
 ## Problema comprovado
 

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { createHash as createHashSync } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
@@ -14,6 +17,7 @@ const manifestPath = new URL("../../fixtures/audit/evidence-manifest.json", impo
 const redGreenPath = new URL("../../docs/audit/evidence/red-green.md", import.meta.url);
 const collectorPath = new URL("./collect-browser-baseline.mjs", import.meta.url);
 const negativeControlPath = new URL("../../fixtures/audit/visual-negative-control.json", import.meta.url);
+const f201TransitionPath = new URL("../../fixtures/audit/f2-01-transition.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
 
@@ -66,6 +70,31 @@ test("the offline audit contract is complete and production-safe", async () => {
       assert.match(html, /<link\s+rel=["']canonical["']/i, `${route} must have a canonical`);
     }
   }
+});
+
+test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", async () => {
+  const transition = await readJson(f201TransitionPath);
+  assert.equal(transition.schemaVersion, 1);
+  assert.equal(transition.status, "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+  assert.equal(transition.historicalPhase1.path, "fixtures/audit/baseline-results.json");
+  assert.equal(createHashSync("sha256").update(await readFile(new URL("../../fixtures/audit/baseline-results.json", import.meta.url))).digest("hex"), transition.historicalPhase1.sha256);
+  assert.equal(createHashSync("sha256").update(await readFile(new URL(`../../${transition.f201.responsiveTest.path}`, import.meta.url))).digest("hex"), transition.f201.responsiveTest.copiedSha256);
+  assert.equal(createHashSync("sha256").update(await readFile(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url))).digest("hex"), transition.f201.targetBaseline.sha256);
+  const reportDir = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-"));
+  const reportPath = join(reportDir, "report.json");
+  let failure;
+  const childEnvironment = { ...process.env, F2_01_REPORT_PATH:reportPath };
+  delete childEnvironment.NODE_TEST_CONTEXT;
+  try { execFileSync("node", ["--test", transition.f201.responsiveTest.path], { encoding:"utf8", env:childEnvironment }); }
+  catch (error) { failure = error; }
+  try {
+    assert.ok(failure, "development state must prove the specific F2-01 RED");
+    const output = `${failure.stdout ?? ""}\n${failure.stderr ?? ""}`;
+    assert.match(output, /timeout waiting for settled drawer open/, "generic test failures cannot count as expected RED");
+    const report = JSON.parse(await readFile(reportPath, "utf8"));
+    assert.ok(Array.isArray(report.observations) && report.observations.length >= 1, "RED report must be readable and non-empty");
+    assert.ok(report.observations.filter((entry) => entry.overflow).length >= transition.f201.expectedDevelopmentRed.minimumOverflowCount, "RED must prove horizontal overflow");
+  } finally { await rm(reportDir, { recursive:true, force:true }); }
 });
 
 test("the audited diff cannot mutate live pages or deployment", async () => {
