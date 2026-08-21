@@ -28,6 +28,12 @@ Documentação e testes legítimos continuam classificados e verificáveis. Pág
 
 A evolução de um componente protegido exige cerimónia humana: decisão nomeada vinculada a head/base, snapshot/hash anterior, remoção temporária apenas da exigência da Sentinel, Universal Gate e todas as outras regras retidas, prazo máximo de 60 minutos, restauração e ensaios pós-restauro. Não existe break-glass automático, permanente ou disponível a agentes. Falha em qualquer evidência congela o procedimento e mantém Via B.
 
+O simulador não aceita esta cerimónia por autodeclaração: exige contexto externo `APPROVED`, ator humano nomeado não-placeholder, `ceremonyId` e head/base de 40 caracteres idênticos nos dois lados, inventário protegido, snapshot, alteração temporária exata, Universal retido e prazo limitado.
+
+## Evidência e readback fechados
+
+Os identificadores, heads, reviewer, estado stale, respostas HTTP e runs do ensaio #44 são valores canónicos exatos, não texto ilustrativo. A simulação exige a lista exata de suítes para cada cenário. Após futura ativação, o GET independente deve ser validado estruturalmente: proteção da conta pessoal, checks/app IDs, administradores, revisão/stale/last-push, conversas, histórico não linear, force-push/deleção e `restrictions: null`; o GET do repositório deve devolver merge `true`, squash `false` e rebase `false`. Divergência interrompe o procedimento e inicia rollback.
+
 ## Rollback
 
 O estado selado atual não possui proteção e permite os três métodos. Em lockout, a API administrativa continua fora do caminho de merge: congelar merges, registrar ator/incidente/UTC/head/base, exportar o estado ativo, remover somente a proteção recém-aplicada, exigir DELETE 204 + GET 404, restaurar `merge=true/squash=true/rebase=true`, reconfirmar SHA/rulesets/deployments e manter Via B. Qualquer estado inicial diferente invalida estes comandos e exige um novo pacote.

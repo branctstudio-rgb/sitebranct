@@ -1,10 +1,28 @@
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { readFile } from "node:fs/promises";
-import { validatePersonalAccountPayload } from "./validate-f2-gov-03.mjs";
+import { validateGateEvolutionRequest, validatePersonalAccountPayload, validatePersonalAccountReadback } from "./validate-f2-gov-03.mjs";
 
 const BASE = "5f0af6759ee221869b3fa35fd124a6dd9aa1328b";
 const CHECKS = ["Gate Integrity Sentinel", "Universal PR Gate"];
+const REHEARSAL = {
+  issue:43, pr:44, targetBranch:"rehearsal/f2-gov-03-f2-target",
+  firstHead:"0a679d2b85a9f6afc615c9a21aed12a0bf834a5b",
+  staleProbeHead:"2ff7508ca55698638c566880e64bb5c3c4078021",
+  putStatus:200, deleteStatus:204, postDeleteGetStatus:404,
+  reviewer:"felipemartinsal-boop", reviewedHead:"0a679d2b85a9f6afc615c9a21aed12a0bf834a5b",
+  reviewStateAfterNewCommit:"DISMISSED",
+  firstRuns:[32412367414,32412367305,32412367570],
+  staleProbeRuns:[32449572713,32449573964,32449574007],
+  merged:false, result:"ATIVAVEL",
+};
+const SCENARIO_SUITES = {
+  documentation:["gate-contract","governance-contracts","deploy-protection","audit-contract"],
+  tests:["gate-contract","governance-contracts","deploy-protection","audit-contract"],
+  page:["browser-baseline","visual-evidence"], asset:["browser-baseline","visual-evidence"],
+  unknown:["fail-closed"], "invalid-fixture":["governance-contracts"],
+  "protected-component":["Gate Integrity Sentinel"],
+};
 const SCENARIOS = [
   ["documentation", "SUCCESS_AFTER_REVIEW"],
   ["tests", "SUCCESS_AFTER_REVIEW"],
@@ -69,7 +87,7 @@ export function extractDocumentPackage(markdown) {
   return JSON.parse(match[1]);
 }
 
-export function simulateMergeDecision(state) {
+export function simulateMergeDecision(state, approvalContext) {
   ok(state && typeof state === "object", "merge state missing");
   ok(["success", "failure", "pending", "missing"].includes(state.universal), "universal check state invalid");
   ok(["success", "failure", "pending", "missing"].includes(state.sentinel), "sentinel check state invalid");
@@ -79,12 +97,7 @@ export function simulateMergeDecision(state) {
   ok(typeof state.admin === "boolean", "actor class invalid");
   let sentinelRequired = true;
   if (state.breakGlass !== undefined) {
-    equal(state.breakGlass, {
-      namedHumanDecision:true,
-      exactHeadAndBase:true,
-      sentinelTemporarilyNotRequired:true,
-      universalRetained:true,
-    }, "break-glass ceremony invalid");
+    validateGateEvolutionRequest(state.breakGlass, approvalContext);
     sentinelRequired = false;
   }
   const blockers = [];
@@ -110,12 +123,10 @@ export function validateActivationPackage(p) {
     productionDeploymentsAtBase:0,
   }, "sealed current state mismatch");
   equal(p.evidence.schemaCorrection, { pr:42, mergeSha:BASE, result:"APPROVED_AND_INTEGRATED" }, "schema correction evidence mismatch");
-  equal(p.evidence.realDisposableRehearsal.result, "ATIVAVEL", "real rehearsal is not ATIVAVEL");
-  equal(p.evidence.realDisposableRehearsal.putStatus, 200, "real PUT evidence mismatch");
-  equal(p.evidence.realDisposableRehearsal.deleteStatus, 204, "real rollback evidence mismatch");
-  equal(p.evidence.realDisposableRehearsal.postDeleteGetStatus, 404, "real rollback GET evidence mismatch");
-  equal(p.evidence.realDisposableRehearsal.merged, false, "disposable rehearsal must remain unmerged");
-  equal(p.evidence.universalEightScenarioTrial.result, "8_OF_8_MATCHED_EXPECTED_CAUSE", "universal trial evidence mismatch");
+  equal(p.evidence.realDisposableRehearsal, REHEARSAL, "real rehearsal evidence mismatch");
+  equal(p.evidence.universalEightScenarioTrial, {
+    prs:[30,31,32,33,34,35,36,37], result:"8_OF_8_MATCHED_EXPECTED_CAUSE",
+  }, "universal trial evidence mismatch");
 
   validatePersonalAccountPayload(p.target.branchProtection);
   equal(p.target.repositoryMergeMethods.allow_merge_commit, true, "normal merge must remain enabled");
@@ -127,7 +138,7 @@ export function validateActivationPackage(p) {
   equal(p.simulation.administrators, "SUBJECT_TO_IDENTICAL_RULES_NO_BYPASS", "administrator bypass detected");
   equal(p.simulation.staleApproval, "DISMISSED_AFTER_NEW_COMMIT", "stale approval contract mismatch");
   equal(p.simulation.scenarios.map(({ id, terminal }) => [id, terminal]), SCENARIOS, "simulation scenarios mismatch");
-  for (const scenario of p.simulation.scenarios) ok(Array.isArray(scenario.requiredSuites) && scenario.requiredSuites.length > 0, `scenario suites missing: ${scenario.id}`);
+  for (const scenario of p.simulation.scenarios) equal(scenario.requiredSuites, SCENARIO_SUITES[scenario.id], `scenario suites mismatch: ${scenario.id}`);
 
   equal(p.governance.viaBRequiredUntilPostActivationApproval, true, "Via B cannot be removed before post-activation approval");
   equal(p.governance.viaARemainsInactive, true, "Via A cannot be claimed active by this package");
@@ -145,6 +156,11 @@ export function validateActivationPackage(p) {
   equal(p.activation.order.map(({ id }) => id), ACTIVATION_ORDER, "activation order mismatch");
   for (const step of p.activation.order) ok(typeof step.action === "string" && step.action.length >= 40, `activation action incomplete: ${step.id}`);
   equal(p.activation.commands, COMMANDS, "activation commands mismatch");
+  validatePersonalAccountReadback(p.activation.expectedReadback.branchProtection);
+  equal(p.activation.expectedReadback.branchProtection.required_linear_history?.enabled, false, "readback linear-history mismatch");
+  equal(p.activation.expectedReadback.repositoryMergeMethods, {
+    allow_merge_commit:true, allow_squash_merge:false, allow_rebase_merge:false,
+  }, "readback merge-method mismatch");
 
   equal(p.rollback.commandsExecuted, false, "rollback commands must remain unexecuted");
   equal(p.rollback.restoresSealedProtection, true, "rollback must restore sealed protection");

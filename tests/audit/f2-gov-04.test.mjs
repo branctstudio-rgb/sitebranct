@@ -106,6 +106,12 @@ test("security and rollback regressions fail for their contracted cause", async 
     ["linear history enabled", (p) => { p.target.branchProtection.required_linear_history=true; }, "non-linear"],
     ["rollback incomplete", (p) => { p.rollback.steps.pop(); }, "rollback steps"],
     ["Via B removed early", (p) => { p.governance.viaBRequiredUntilPostActivationApproval=false; }, "Via B"],
+    ["rehearsal reviewer erased", (p) => { p.evidence.realDisposableRehearsal.reviewer=""; }, "real rehearsal evidence"],
+    ["rehearsal runs erased", (p) => { p.evidence.realDisposableRehearsal.firstRuns=[]; }, "real rehearsal evidence"],
+    ["stale review falsified", (p) => { p.evidence.realDisposableRehearsal.reviewStateAfterNewCommit="APPROVED"; }, "real rehearsal evidence"],
+    ["scenario suites falsified", (p) => { p.simulation.scenarios[0].requiredSuites=["fake"]; }, "scenario suites mismatch"],
+    ["readback protection weakened", (p) => { p.activation.expectedReadback.branchProtection.enforce_admins.enabled=false; }, "readback administrators"],
+    ["readback merge methods weakened", (p) => { p.activation.expectedReadback.repositoryMergeMethods.allow_squash_merge=true; }, "readback merge-method"],
   ];
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
     const candidate = structuredClone(original);
@@ -131,11 +137,23 @@ test("activation and rollback commands are exact but explicitly inert", async ()
 test("merge simulation is fail-closed yet permits a bounded gate repair", async () => {
   const { simulateMergeDecision } = await loadValidator();
   const common = { universal:"success", sentinel:"success", approvals:1, approvalOnLatestHead:true, conversationsResolved:true, admin:true };
+  const approvalContext = { decision:"APPROVED", actor:"Rafael", ceremonyId:"F2-GATE-CHANGE-REPAIR-1", headSha:"a".repeat(40), baseSha:expectedBase };
+  const breakGlass = {
+    protectedPathsChanged:[".github/workflows/gate-integrity-sentinel.yml"],
+    ceremonyId:approvalContext.ceremonyId,
+    humanApproval:{ actor:approvalContext.actor, headSha:approvalContext.headSha, baseSha:approvalContext.baseSha },
+    snapshotRecorded:true,
+    temporaryChange:["remove Gate Integrity Sentinel only from required checks"],
+    retainedChecks:["Universal PR Gate"],
+    restorationDeadlineMinutes:60,
+    postRestoreTrialsRequired:true,
+  };
   assert.deepEqual(simulateMergeDecision(common), { eligible:true, blockers:[] });
   assert.deepEqual(simulateMergeDecision({ ...common, approvalOnLatestHead:false }), { eligible:false, blockers:["latest-head-approval"] });
   assert.deepEqual(simulateMergeDecision({ ...common, universal:"failure" }), { eligible:false, blockers:["Universal PR Gate"] });
   assert.deepEqual(simulateMergeDecision({ ...common, sentinel:"failure" }), { eligible:false, blockers:["Gate Integrity Sentinel"] });
-  assert.deepEqual(simulateMergeDecision({ ...common, sentinel:"failure", breakGlass:{ namedHumanDecision:true, exactHeadAndBase:true, sentinelTemporarilyNotRequired:true, universalRetained:true } }), { eligible:true, blockers:[] });
-  assert.throws(() => simulateMergeDecision({ ...common, sentinel:"failure", breakGlass:{ namedHumanDecision:false, exactHeadAndBase:true, sentinelTemporarilyNotRequired:true, universalRetained:true } }), /break-glass ceremony invalid/);
-  assert.throws(() => simulateMergeDecision({ ...common, sentinel:"failure", breakGlass:{ namedHumanDecision:true, exactHeadAndBase:true, sentinelTemporarilyNotRequired:true, universalRetained:false } }), /break-glass ceremony invalid/);
+  assert.deepEqual(simulateMergeDecision({ ...common, sentinel:"failure", breakGlass }, approvalContext), { eligible:true, blockers:[] });
+  assert.throws(() => simulateMergeDecision({ ...common, sentinel:"failure", breakGlass }), /external approval context required/);
+  assert.throws(() => simulateMergeDecision({ ...common, sentinel:"failure", breakGlass }, { ...approvalContext, decision:"PENDING" }), /must be APPROVED/);
+  assert.throws(() => simulateMergeDecision({ ...common, sentinel:"failure", breakGlass:{ ...breakGlass, humanApproval:{ ...breakGlass.humanApproval, headSha:"b".repeat(40) } } }, approvalContext), /human approval head mismatch/);
 });

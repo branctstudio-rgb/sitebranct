@@ -11,6 +11,6 @@ Pacote exclusivamente offline na Issue #45. Base: `5f0af6759ee221869b3fa35fd124a
 
 ## Evidência e limites
 
-O contrato simula caminhos legítimos e falhas por causa própria e vincula o round-trip real da PR #44. A proteção contra direct push/force-push/deleção é fechada no payload e round-trip; tentativas destrutivas na main não são autorizadas. Indisponibilidade do Actions congela merges. Evolução da trust surface exige a cerimónia humana limitada documentada; nenhum bypass automático foi criado.
+O contrato simula caminhos legítimos e falhas por causa própria e vincula exatamente reviewer, heads, runs, HTTP e stale dismissal do round-trip real da PR #44. O readback futuro possui schema campo a campo para proteção e métodos de merge. Break-glass exige contexto humano externo aprovado e vinculado a ator, cerimónia, head e base; sem esse contexto o simulador falha fechado. A proteção contra direct push/force-push/deleção é fechada no payload e round-trip; tentativas destrutivas na main não são autorizadas. Indisponibilidade do Actions congela merges. Evolução da trust surface exige a cerimónia humana limitada documentada; nenhum bypass automático foi criado.
 
 Rollback desta PR após eventual merge: `git revert -m 1 <merge_sha>`. Rollback futuro da configuração restaura exatamente o snapshot selado e mantém Via B. Zero FTP, workflow_dispatch, deployment, secret, produção ou F2-01.
