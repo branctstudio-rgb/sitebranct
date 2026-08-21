@@ -35,15 +35,31 @@ const read = (path) => readFileSync(new URL(path, ROOT), "utf8");
 const normalizeEol = (value) => value.replace(/\r\n?/g, "\n");
 const hash = (value) => createHash("sha256").update(normalizeEol(value)).digest("hex");
 
-function extractExactlyOne(source, start, end, label) {
-  const starts = source.split(start).length - 1;
-  const ends = source.split(end).length - 1;
+function locateExactlyOne(source, start, end, label) {
+  const normalized = normalizeEol(source);
+  const starts = normalized.split(start).length - 1;
+  const ends = normalized.split(end).length - 1;
   assert.equal(starts, 1, `${label}: expected exactly one START marker`);
   assert.equal(ends, 1, `${label}: expected exactly one END marker`);
-  const startIndex = source.indexOf(start);
-  const endIndex = source.indexOf(end);
+  const startIndex = normalized.indexOf(start);
+  const endIndex = normalized.indexOf(end);
   assert.ok(endIndex > startIndex, `${label}: END marker must follow START marker`);
-  return source.slice(startIndex + start.length, endIndex).replace(/^\r?\n|\r?\n$/g, "");
+  for (const [marker, index, type] of [[start, startIndex, "START"], [end, endIndex, "END"]]) {
+    assert.ok(index === 0 || normalized[index - 1] === "\n", `${label}: ${type} marker must begin on its own line`);
+    const after = index + marker.length;
+    assert.ok(after === normalized.length || normalized[after] === "\n", `${label}: ${type} marker must end on its own line`);
+  }
+  return {
+    source: normalized,
+    startIndex,
+    endIndex,
+    afterEnd: endIndex + end.length,
+    content: normalized.slice(startIndex + start.length, endIndex).replace(/^\n|\n$/g, ""),
+  };
+}
+
+function extractExactlyOne(source, start, end, label) {
+  return locateExactlyOne(source, start, end, label).content;
 }
 
 function parseJsonBlock(source, label) {
@@ -62,12 +78,15 @@ function assertCurrentRecord(value, label) {
 }
 
 function assertNoHistoricalClaimOutsideSnapshot(source, label) {
-  const historical = extractExactlyOne(source, HISTORY_START, HISTORY_END, `${label} history`);
-  const outside = source.replace(`${HISTORY_START}\n${historical}\n${HISTORY_END}`, "");
+  const history = locateExactlyOne(source, HISTORY_START, HISTORY_END, `${label} history`);
+  const current = locateExactlyOne(source, CURRENT_START, CURRENT_END, `${label} current`);
+  const disjoint = current.afterEnd <= history.startIndex || history.afterEnd <= current.startIndex;
+  assert.equal(disjoint, true, `${label}: current and historical blocks must not overlap`);
+  const outside = `${history.source.slice(0, history.startIndex)}${history.source.slice(history.afterEnd)}`;
   for (const stale of ["PENDING_HUMAN_DECISION", "Via B continua obrigatória", "NÃO ATIVÁVEL"]) {
     assert.equal(outside.includes(stale), false, `${label}: stale current claim outside historical snapshot: ${stale}`);
   }
-  return historical;
+  return history.content;
 }
 
 test("canonical current-governance fixture and document agree exactly", () => {
@@ -96,6 +115,31 @@ test("superseded documents expose current status while preserving historical byt
   }
 });
 
+test("historical classification is portable across EOL representations", async (t) => {
+  const lf = normalizeEol(read(GOVERNANCE_DECISION)).replace(/\n$/, "");
+  const lines = lf.split("\n");
+  let mixedIndex = 0;
+  const mixed = lf.replace(/\n/g, (match, offset, source) => {
+    if (source[offset - 1] === "\n" || source[offset + 1] === "\n") return "\r\n";
+    return ["\n", "\r\n", "\r"][mixedIndex++ % 3];
+  });
+  const variants = new Map([
+    ["LF with final newline", `${lf}\n`],
+    ["LF without final newline", lf],
+    ["CRLF with final newline", `${lines.join("\r\n")}\r\n`],
+    ["CRLF without final newline", lines.join("\r\n")],
+    ["CR with final newline", `${lines.join("\r")}\r`],
+    ["CR without final newline", lines.join("\r")],
+    ["mixed EOL", mixed],
+  ]);
+  for (const [label, source] of variants) {
+    await t.test(label, () => {
+      const historical = assertNoHistoricalClaimOutsideSnapshot(source, label);
+      assert.equal(hash(historical), expectedHistoricalHashes[GOVERNANCE_DECISION], `${label}: historical snapshot changed`);
+    });
+  }
+});
+
 test("current governance is fail-closed against stale or permissive mutations", () => {
   const source = read(CURRENT_RECORD);
   const fixture = JSON.parse(read(FIXTURE));
@@ -116,10 +160,23 @@ test("current governance is fail-closed against stale or permissive mutations", 
 
 test("markers and historical classification fail closed", () => {
   const source = read(GOVERNANCE_DECISION);
+  const inverted = source
+    .replace(HISTORY_START, "HISTORY_START_PLACEHOLDER")
+    .replace(HISTORY_END, HISTORY_START)
+    .replace("HISTORY_START_PLACEHOLDER", HISTORY_END);
+  const overlap = source
+    .replace(HISTORY_START, "")
+    .replace(CURRENT_END, `${HISTORY_START}\n${CURRENT_END}`);
   const mutations = [
     ["current START removed", source.replace(CURRENT_START, "")],
     ["current START duplicated", source.replace(CURRENT_START, `${CURRENT_START}\n${CURRENT_START}`)],
+    ["history START removed", source.replace(HISTORY_START, "")],
+    ["history START duplicated", source.replace(HISTORY_START, `${HISTORY_START}\n${HISTORY_START}`)],
     ["history END removed", source.replace(HISTORY_END, "")],
+    ["history END duplicated", source.replace(HISTORY_END, `${HISTORY_END}\n${HISTORY_END}`)],
+    ["history markers inverted", inverted],
+    ["current and history overlap", overlap],
+    ["history marker malformed", source.replace(HISTORY_START, "<!-- HISTORICAL_GOVERNANCE_SNAPSHOT_START --")],
     ["stale claim escaped history", `PENDING_HUMAN_DECISION\n${source}`],
   ];
   for (const [label, mutated] of mutations) {
@@ -127,6 +184,6 @@ test("markers and historical classification fail closed", () => {
     assert.throws(() => {
       parseJsonBlock(mutated, label);
       assertNoHistoricalClaimOutsideSnapshot(mutated, label);
-    }, { message: /expected exactly one|stale current claim/ });
+    }, { message: /expected exactly one|must follow|must not overlap|must (begin|end) on its own line|stale current claim/ });
   }
 });
