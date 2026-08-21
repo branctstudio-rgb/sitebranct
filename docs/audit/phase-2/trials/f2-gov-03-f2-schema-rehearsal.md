@@ -6,3 +6,5 @@ Synthetic, non-production change used only to observe the corrected personal-acc
 - Target: `rehearsal/f2-gov-03-f2-target`
 - Expected: universal checks run; merge remains blocked until every temporary rule is satisfied.
 - Prohibited: merge, deployment, FTP, secrets and production.
+
+Second benign commit: stale-review dismissal probe; no production behavior changes.
