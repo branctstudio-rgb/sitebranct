@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "repository": "branctstudio-rgb/sitebranct",
+  "issue": 45,
+  "status": "ACTIVATION_PACKAGE_NOT_APPLIED",
+  "baseSha": "5f0af6759ee221869b3fa35fd124a6dd9aa1328b",
+  "currentState": {
+    "mainProtected": false,
+    "rulesets": [],
+    "requiredChecks": [],
+    "protectedBranches": [],
+    "repositoryMergeMethods": {
+      "allow_merge_commit": true,
+      "allow_squash_merge": true,
+      "allow_rebase_merge": true
+    },
+    "productionDeploymentsAtBase": 0
+  },
+  "evidence": {
+    "schemaCorrection": {
+      "pr": 42,
+      "mergeSha": "5f0af6759ee221869b3fa35fd124a6dd9aa1328b",
+      "result": "APPROVED_AND_INTEGRATED"
+    },
+    "realDisposableRehearsal": {
+      "issue": 43,
+      "pr": 44,
+      "targetBranch": "rehearsal/f2-gov-03-f2-target",
+      "firstHead": "0a679d2b85a9f6afc615c9a21aed12a0bf834a5b",
+      "staleProbeHead": "2ff7508ca55698638c566880e64bb5c3c4078021",
+      "putStatus": 200,
+      "deleteStatus": 204,
+      "postDeleteGetStatus": 404,
+      "reviewer": "felipemartinsal-boop",
+      "reviewedHead": "0a679d2b85a9f6afc615c9a21aed12a0bf834a5b",
+      "reviewStateAfterNewCommit": "DISMISSED",
+      "firstRuns": [32412367414, 32412367305, 32412367570],
+      "staleProbeRuns": [32449572713, 32449573964, 32449574007],
+      "merged": false,
+      "result": "ATIVAVEL"
+    },
+    "universalEightScenarioTrial": {
+      "prs": [30, 31, 32, 33, 34, 35, 36, 37],
+      "result": "8_OF_8_MATCHED_EXPECTED_CAUSE"
+    }
+  },
+  "target": {
+    "branchProtection": {
+      "required_status_checks": {
+        "strict": true,
+        "checks": [
+          { "context": "Gate Integrity Sentinel", "app_id": 15368 },
+          { "context": "Universal PR Gate", "app_id": 15368 }
+        ]
+      },
+      "enforce_admins": true,
+      "required_pull_request_reviews": {
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": false,
+        "required_approving_review_count": 1,
+        "require_last_push_approval": true
+      },
+      "restrictions": null,
+      "required_conversation_resolution": true,
+      "required_linear_history": false,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "lock_branch": false,
+      "allow_fork_syncing": false
+    },
+    "repositoryMergeMethods": {
+      "allow_merge_commit": true,
+      "allow_squash_merge": false,
+      "allow_rebase_merge": false
+    }
+  },
+  "simulation": {
+    "checksBornOnEveryPullRequest": ["Gate Integrity Sentinel", "Universal PR Gate"],
+    "administrators": "SUBJECT_TO_IDENTICAL_RULES_NO_BYPASS",
+    "staleApproval": "DISMISSED_AFTER_NEW_COMMIT",
+    "scenarios": [
+      { "id": "documentation", "terminal": "SUCCESS_AFTER_REVIEW", "requiredSuites": ["gate-contract", "governance-contracts", "deploy-protection", "audit-contract"] },
+      { "id": "tests", "terminal": "SUCCESS_AFTER_REVIEW", "requiredSuites": ["gate-contract", "governance-contracts", "deploy-protection", "audit-contract"] },
+      { "id": "page", "terminal": "FAILURE_VISUAL_POLICY", "requiredSuites": ["browser-baseline", "visual-evidence"] },
+      { "id": "asset", "terminal": "FAILURE_VISUAL_POLICY", "requiredSuites": ["browser-baseline", "visual-evidence"] },
+      { "id": "unknown", "terminal": "FAILURE_UNKNOWN_PATH", "requiredSuites": ["fail-closed"] },
+      { "id": "invalid-fixture", "terminal": "FAILURE_CONTRACT", "requiredSuites": ["governance-contracts"] },
+      { "id": "protected-component", "terminal": "FAILURE_SENTINEL", "requiredSuites": ["Gate Integrity Sentinel"] }
+    ]
+  },
+  "governance": {
+    "viaBRequiredUntilPostActivationApproval": true,
+    "viaARemainsInactive": true,
+    "noPermanentBypass": true,
+    "breakGlass": {
+      "automatic": false,
+      "requiresNamedHumanDecision": true,
+      "requiresExactHeadAndBase": true,
+      "retainsUniversalGate": true,
+      "temporarySentinelRemovalOnly": true,
+      "restorationDeadlineMinutes": 60,
+      "requiresBeforeAfterHashes": true,
+      "requiresPostRestoreTrials": true
+    }
+  },
+  "authorization": {
+    "applyProtection": false,
+    "changeMergeMethods": false,
+    "openPostActivationTrial": false,
+    "humanApprovalMustBindExactHeadAndBase": true
+  },
+  "activation": {
+    "commandsExecuted": false,
+    "apiVersion": "2022-11-28",
+    "order": [
+      { "id": "seal-before-state", "action": "Export main protection with HTTP status, repository merge-method settings, rulesets, required checks, main SHA and hashes to an immutable evidence record." },
+      { "id": "reconfirm-gates", "action": "Confirm both workflow definitions and exact check identities on the unchanged main SHA; abort on drift." },
+      { "id": "apply-protection", "action": "PUT the validated branchProtection object only after separately authorized human approval." },
+      { "id": "restrict-merge-methods", "action": "PATCH repository methods to merge=true, squash=false, rebase=false." },
+      { "id": "independent-readback", "action": "GET protection and repository settings independently and compare field by field with this package." },
+      { "id": "post-activation-pr", "action": "Open one disposable documentation PR from the sealed main SHA; never merge it." },
+      { "id": "prove-post-activation", "action": "Prove checks, review block, external approval, stale dismissal after a new commit, final approval and merge eligibility without merging." },
+      { "id": "close-trial", "action": "Close the disposable PR without merge and preserve its branches/evidence according to the authorized mission." },
+      { "id": "council-via-a-decision", "action": "Only a new human decision may declare Via A active and retire Via B after all evidence passes." }
+    ],
+    "commands": {
+      "applyProtection": "gh api --method PUT -H \"X-GitHub-Api-Version: 2022-11-28\" repos/branctstudio-rgb/sitebranct/branches/main/protection --input <VALIDATED_BRANCH_PROTECTION_JSON>",
+      "restrictMergeMethods": "gh api --method PATCH -H \"X-GitHub-Api-Version: 2022-11-28\" repos/branctstudio-rgb/sitebranct -F allow_merge_commit=true -F allow_squash_merge=false -F allow_rebase_merge=false",
+      "readProtection": "gh api -H \"X-GitHub-Api-Version: 2022-11-28\" repos/branctstudio-rgb/sitebranct/branches/main/protection",
+      "readRepository": "gh api -H \"X-GitHub-Api-Version: 2022-11-28\" repos/branctstudio-rgb/sitebranct"
+    },
+    "expectedReadback": {
+      "branchProtection": {
+        "required_status_checks": { "strict": true, "checks": [
+          { "context": "Gate Integrity Sentinel", "app_id": 15368 },
+          { "context": "Universal PR Gate", "app_id": 15368 }
+        ] },
+        "enforce_admins": { "enabled": true },
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 1,
+          "dismiss_stale_reviews": true,
+          "require_code_owner_reviews": false,
+          "require_last_push_approval": true
+        },
+        "restrictions": null,
+        "required_conversation_resolution": { "enabled": true },
+        "required_linear_history": { "enabled": false },
+        "allow_force_pushes": { "enabled": false },
+        "allow_deletions": { "enabled": false },
+        "block_creations": { "enabled": false },
+        "lock_branch": { "enabled": false },
+        "allow_fork_syncing": { "enabled": false }
+      },
+      "repositoryMergeMethods": {
+        "allow_merge_commit": true,
+        "allow_squash_merge": false,
+        "allow_rebase_merge": false
+      }
+    }
+  },
+  "rollback": {
+    "commandsExecuted": false,
+    "restoresSealedProtection": true,
+    "restoresSealedMergeMethods": true,
+    "availableDuringMergeLockout": true,
+    "trigger": "Any API mismatch, missing/stale check, wrong app source, review bypass, unexpected merge method, failed post-activation scenario or inability to restore the sentinel.",
+    "steps": [
+      "Freeze merges and record named actor, UTC time, incident, head and base.",
+      "Export and hash the active protection and repository merge settings before rollback.",
+      "Because the sealed state is unprotected, DELETE only main branch protection and require HTTP 204 followed by GET HTTP 404.",
+      "Restore merge methods exactly to merge=true, squash=true, rebase=true from the sealed state.",
+      "Confirm main SHA did not change, rulesets remain absent and deployments remain zero.",
+      "Keep Via B mandatory and require a new Council decision before any reactivation."
+    ],
+    "commands": {
+      "restoreProtection": "gh api --method DELETE -H \"X-GitHub-Api-Version: 2022-11-28\" repos/branctstudio-rgb/sitebranct/branches/main/protection",
+      "restoreMergeMethods": "gh api --method PATCH -H \"X-GitHub-Api-Version: 2022-11-28\" repos/branctstudio-rgb/sitebranct -F allow_merge_commit=true -F allow_squash_merge=true -F allow_rebase_merge=true"
+    },
+    "evidence": ["sealed before-state JSON and SHA-256", "active-state JSON and SHA-256", "actor and human decision", "HTTP statuses and UTC timestamps", "post-rollback GET and repository settings", "post-activation/rollback trial run IDs"]
+  },
+  "authorizationText": "Pessoa: <NAMED_HUMAN>. Decisão: autorizo aplicar o pacote F2-GOV-04 exclusivamente no head <EXACT_PR_HEAD> e base 5f0af6759ee221869b3fa35fd124a6dd9aa1328b, após reconfirmar ausência de drift. Autorizo somente o PUT exato de branch protection na main e o PATCH merge=true/squash=false/rebase=false descritos no pacote. Via B permanece até o ensaio pós-ativação e nova decisão humana. Qualquer mudança de head, base, checks, app_id, payload ou métodos invalida esta autorização."
+}
