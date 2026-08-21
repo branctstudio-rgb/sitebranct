@@ -8,6 +8,7 @@ const GOVERNANCE_DECISION = "docs/audit/phase-2/governance-decision.md";
 const TRUST_SURFACE = "docs/audit/phase-2/governance/gate-trust-surface.md";
 const CURRENT_RECORD = "docs/audit/phase-2/governance/f2-gov-05-current-governance.md";
 const FIXTURE = "fixtures/audit/f2-gov-05-current-governance.json";
+const OPERATIONAL_MEMORY = "CLAUDE.md";
 const CURRENT_START = "<!-- CURRENT_GOVERNANCE_START -->";
 const CURRENT_END = "<!-- CURRENT_GOVERNANCE_END -->";
 const HISTORY_START = "<!-- HISTORICAL_GOVERNANCE_SNAPSHOT_START -->";
@@ -74,6 +75,15 @@ test("canonical current-governance fixture and document agree exactly", () => {
   const document = parseJsonBlock(read(CURRENT_RECORD), CURRENT_RECORD);
   assert.deepEqual(document, fixture, "canonical document JSON must equal fixture");
   assertCurrentRecord(fixture, FIXTURE);
+});
+
+test("operational memory reports the active technical protection", () => {
+  const memory = read(OPERATIONAL_MEMORY);
+  assert.match(memory, /A `main` possui proteção técnica ativa/);
+  assert.match(memory, /Via A é a proteção principal ativa/);
+  assert.match(memory, /Via B permanece somente como contingência, break-glass humano e rollback/);
+  assert.doesNotMatch(memory, /A `main` não possui proteção técnica de branch comprovada/);
+  assert.doesNotMatch(memory, /enquanto não existir proteção técnica da `main`/);
 });
 
 test("superseded documents expose current status while preserving historical bytes", () => {

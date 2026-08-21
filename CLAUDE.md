@@ -10,14 +10,14 @@ Contexto e histórico do projeto. Este ficheiro é lido automaticamente em cada 
 - A árvore contém 12 rotas HTML estáticas. Dez carregam `src/css/branct.css`; `crm-gestao.html` e `politica-privacidade.html` mantêm apresentação standalone. Nenhuma das 12 rotas carrega `src/css/main.css`, `src/js/main.js`, Three.js ou GSAP.
 - A baseline integrada cobre 12 rotas × 5 viewports. Em 390 px, 9 rotas apresentaram overflow horizontal, com largura máxima medida de 417 px; por rota mobile, existem entre 3 e 28 alvos interativos abaixo de 44 px.
 - `robots.txt`, `sitemap.xml` e JSON-LD em 8 rotas estão presentes. Presença não equivale a validação semântica completa nem a desempenho aprovado.
-- O deploy automático usa uma política positiva e um manifesto operacional de 56 ficheiros. Alterações exclusivamente em documentação, fixtures e testes offline não fazem parte do payload. A `main` não possui proteção técnica de branch comprovada.
+- O deploy automático usa uma política positiva e um manifesto operacional de 56 ficheiros. Alterações exclusivamente em documentação, fixtures e testes offline não fazem parte do payload. A `main` possui proteção técnica ativa com os checks estritos `Gate Integrity Sentinel` e `Universal PR Gate`, ambos vinculados ao `app_id 15368`.
 - `package.json`, `src/css/main.css`, `src/js/main.js`, `src/js/three-scene.js`, `src/3d/`, `src/models/` e referências históricas de integrações continuam rastreados. A presença desses artefactos não prova uso em runtime.
 
 ## Decisões aprovadas
 
 - A Fase 1 é uma auditoria e arquitetura offline; não constitui aprovação de redesign, deploy ou integração.
 - A proteção de deploy por política positiva e manifesto exato deve permanecer ativa.
-- Mudanças futuras devem usar branch e worktree isoladas, PR em draft, CI no head exato, revisão independente, aprovação humana vinculada a head e base, merge normal e rollback documentado enquanto não existir proteção técnica da `main`.
+- Via A é a proteção principal ativa. Via B permanece somente como contingência, break-glass humano e rollback; não é obrigatória no fluxo normal. Mudanças futuras continuam sujeitas à proteção técnica, CI no head exato, revisão e aprovação humana exigidas, merge normal e rollback documentado.
 - A F2-00 define constituição, contratos e governança; não implementa componentes nem altera páginas vivas.
 
 ## Propostas futuras
