@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
-import { createHash as createHashSync } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -20,6 +19,8 @@ const negativeControlPath = new URL("../../fixtures/audit/visual-negative-contro
 const f201TransitionPath = new URL("../../fixtures/audit/f2-01-transition.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
+const canonicalGitHash = (path) => createHash("sha256").update(execFileSync("git", ["show", `HEAD:${path}`])).digest("hex");
+const hashBytes = (value) => createHash("sha256").update(value).digest("hex");
 
 function jpegDimensions(buffer) {
   assert.equal(buffer.subarray(0, 2).toString("hex"), "ffd8", "evidence must be JPEG");
@@ -77,9 +78,9 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
   assert.equal(transition.schemaVersion, 1);
   assert.equal(transition.status, "F2_01_AUTHORIZED_IN_DEVELOPMENT");
   assert.equal(transition.historicalPhase1.path, "fixtures/audit/baseline-results.json");
-  assert.equal(createHashSync("sha256").update(await readFile(new URL("../../fixtures/audit/baseline-results.json", import.meta.url))).digest("hex"), transition.historicalPhase1.sha256);
-  assert.equal(createHashSync("sha256").update(await readFile(new URL(`../../${transition.f201.responsiveTest.path}`, import.meta.url))).digest("hex"), transition.f201.responsiveTest.copiedSha256);
-  assert.equal(createHashSync("sha256").update(await readFile(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url))).digest("hex"), transition.f201.targetBaseline.sha256);
+  assert.equal(canonicalGitHash(transition.historicalPhase1.path), transition.historicalPhase1.sha256);
+  assert.equal(canonicalGitHash(transition.f201.responsiveTest.path), transition.f201.responsiveTest.copiedSha256);
+  assert.equal(canonicalGitHash(transition.f201.targetBaseline.path), transition.f201.targetBaseline.sha256);
   const reportDir = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-"));
   const reportPath = join(reportDir, "report.json");
   let failure;
@@ -95,6 +96,27 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
     assert.ok(Array.isArray(report.observations) && report.observations.length >= 1, "RED report must be readable and non-empty");
     assert.ok(report.observations.filter((entry) => entry.overflow).length >= transition.f201.expectedDevelopmentRed.minimumOverflowCount, "RED must prove horizontal overflow");
   } finally { await rm(reportDir, { recursive:true, force:true }); }
+});
+
+test("F2-GOV-06 canonical Git hashes ignore checkout EOL but reject semantic byte changes", () => {
+  const path = "fixtures/audit/baseline-results.json";
+  const blob = execFileSync("git", ["show", `HEAD:${path}`]);
+  const expected = canonicalGitHash(path);
+  assert.equal(hashBytes(blob), expected, "canonical Git blob must be the hash authority");
+  const lf = blob.toString("utf8").replace(/\r\n/g, "\n");
+  const crlf = lf.replace(/\n/g, "\r\n");
+  assert.equal(canonicalGitHash(path), expected, "LF and CRLF checkouts must resolve the same Git blob");
+  for (const [label, mutated] of [
+    ["content altered", lf.replace("\"schemaVersion\": 1", "\"schemaVersion\": 2")],
+    ["line removed", lf.replace(/^  \"source\":.*\n/m, "")],
+    ["lines reordered", lf.replace(/(  \"schemaVersion\": 1,\n)(  \"source\":.*\n)/, "$2$1")],
+    ["space altered", lf.replace("\"schemaVersion\": 1", "\"schemaVersion\":  1")],
+  ]) {
+    assert.notEqual(mutated, lf, `${label}: mutation must change bytes`);
+    assert.notEqual(hashBytes(Buffer.from(mutated)), expected, `${label}: canonical hash must reject semantic byte change`);
+  }
+  assert.notEqual(hashBytes(Buffer.from(crlf)), expected, "checkout CRLF bytes are not substituted for the canonical Git blob");
+  assert.throws(() => canonicalGitHash("fixtures/audit/absent-baseline.json"), /fatal|not a valid object name|exists/, "missing blob must fail closed");
 });
 
 test("the audited diff cannot mutate live pages or deployment", async () => {
