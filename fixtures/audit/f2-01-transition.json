@@ -27,20 +27,21 @@
         "390x844": [390, 844],
         "412x915": [412, 915],
         "768x1024": [768, 1024],
+        "1024x768": [1024, 768],
         "1440x900": [1440, 900]
       }
     },
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "gitBlobOid": "ebdd7eb5c1df94b9ab920e48b04205b8b753ded0",
-      "copiedSha256": "d1da3f881fa63a3161d81a4612266ee1f0ae0a38cccf9e4d6c8be160028cd9bb"
+      "gitBlobOid": "078aab284f8608d6ddaf8b6f3d50b55b27cb4b92",
+      "copiedSha256": "42e4a52fc25d61acef44abcb2712f56e82451382292315ba8b4c28913e3b2206"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results.json",
       "gitBlobOid": "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8",
       "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab",
-      "observationCount": 72,
+      "observationCount": 84,
       "menuExerciseCount": 41,
       "greenSummary": {
         "overflowCount": 0,
@@ -51,6 +52,12 @@
     },
     "expectedDevelopmentRed": {
       "testName": "F2-01 matrix has zero overflow and no undersized non-inline targets",
+      "semanticVector": {
+        "F2-01 matrix has zero overflow and no undersized non-inline targets": "FAIL",
+        "F2-01 mobile menu is modal, bounded and closes through every contracted path": "FAIL",
+        "F2-01 mobile navigation honors reduced motion": "PASS",
+        "F2-01 responsive report validator rejects every contracted regression": "PASS"
+      },
       "requiredEvidence": ["observations", "menuResults", "reducedMotion"],
       "minimumOverflowCount": 1,
       "minimumSmallTargetObservationCount": 1,

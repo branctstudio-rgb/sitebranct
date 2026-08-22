@@ -14,6 +14,7 @@ const viewports = {
   "390x844": [390, 844],
   "412x915": [412, 915],
   "768x1024": [768, 1024],
+  "1024x768": [1024, 768],
   "1440x900": [1440, 900],
 };
 const reportPath = process.env.F2_01_REPORT_PATH;
@@ -80,6 +81,8 @@ const pending = new Map();
 const lifecycleEvents = [];
 const lifecycleWaiters = new Set();
 let consoleIssues = [];
+const actionResults = [];
+const infrastructureErrors = [];
 ws.onmessage = ({ data }) => {
   const message = JSON.parse(data);
   if (message.method === "Runtime.exceptionThrown") consoleIssues.push("exception");
@@ -145,6 +148,23 @@ const waitFor = async (expression, context, timeout = 3000) => {
   }
   return false;
 };
+class ActionTimeout extends Error {}
+const boundedAction = async ({ phase, route, viewport, timeout = 3000 }, operation) => {
+  let timer;
+  try {
+    const result = await Promise.race([
+      operation(),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new ActionTimeout(`timeout during ${phase} (${route} ${viewport})`)), timeout); }),
+    ]);
+    actionResults.push({ route, viewport, phase, status: "COMPLETED" });
+    return result;
+  } catch (error) {
+    actionResults.push({ route, viewport, phase, status: error instanceof ActionTimeout ? "TIMEOUT" : "ERROR", message: error.message });
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const metricsExpression = `(()=>{
   const root=document.documentElement;
@@ -180,7 +200,7 @@ try {
     for (const route of site.routes) {
       await navigate(route, viewport);
       const metrics = await evaluate(metricsExpression);
-      observations.push({ route, viewport, ...metrics, consoleIssues: [...consoleIssues] });
+      observations.push({ route, viewport, conclusion: "CONCLUSIVE", ...metrics, consoleIssues: [...consoleIssues] });
 
       if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-closed`)) {
         const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 86, fromSurface: true }, sessionId);
@@ -189,34 +209,60 @@ try {
       }
 
       if ((width <= 412 || width === 768 && route === "index.html") && metrics.toggle && route !== "styleguide.html") {
+        await boundedAction({ phase: "before-open", route, viewport }, async () => {
+          const ready = await evaluate(`(()=>{const toggle=document.querySelector('.mobile-toggle'),drawer=document.querySelector('.mobile-drawer');return{toggle:!!toggle,drawer:!!drawer,closed:!!drawer&&!drawer.classList.contains('is-open')}})()`);
+          assert.deepEqual(ready, { toggle: true, drawer: true, closed: true }, `drawer precondition failed ${route} ${viewport}`);
+        });
         const focusReached = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle');t?.focus();return document.activeElement===t})()`);
         const focusStyle = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle'),s=t&&getComputedStyle(t);return t?{visible:t.matches(':focus-visible'),style:s.outlineStyle,width:parseFloat(s.outlineWidth)||0}:null})()`);
-        await evaluate(`document.querySelector('.mobile-toggle').click()`);
-        const drawerSettled = await waitFor(`(()=>{const d=document.querySelector('.mobile-drawer');if(!d?.classList.contains('is-open'))return false;const r=d.getBoundingClientRect();return r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5})()`, `settled drawer open ${route} ${viewport}`, 500);
-        const open = await evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`);
-        open.drawerSettled = drawerSettled;
+        await boundedAction({ phase: "open", route, viewport }, async () => {
+          await evaluate(`document.querySelector('.mobile-toggle').click()`);
+          if (!await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer open ${route} ${viewport}`, 3000)) throw new ActionTimeout(`timeout during open (${route} ${viewport})`);
+        });
+        const open = await boundedAction({ phase: "after-open", route, viewport }, () => evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`));
         if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-open`)) {
           const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 86, fromSurface: true }, sessionId);
           await writeFile(join(captureDirectory, `home-${viewport}-open.jpg`), Buffer.from(shot.data, "base64"));
           captured.add(`${viewport}-open`);
         }
-        await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
-        await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
-        const escapeSettled = await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer close ${route} ${viewport}`);
+        await boundedAction({ phase: "escape-close", route, viewport }, async () => {
+          await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
+          await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
+          if (!await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer close ${route} ${viewport}`)) throw new ActionTimeout(`timeout during escape-close (${route} ${viewport})`);
+        });
         const closed = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle'),d=document.querySelector('.mobile-drawer');return{expanded:t.getAttribute('aria-expanded'),focusReturned:document.activeElement===t,backgroundRestored:!document.querySelector('main')?.inert,closed:!d.classList.contains('is-open')}})()`);
-        closed.escapeSettled = escapeSettled;
         let closeButtonClosed = true;
         let outsideClosed = true;
         if (route === "index.html") {
-          await evaluate(`document.querySelector('.mobile-toggle').click()`);
-          await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer reopen for close button ${viewport}`);
-          const closeButtonInvoked = await evaluate(`(()=>{const button=document.querySelector('.drawer-close,[data-drawer-close]');if(!button)return false;button.click();return true})()`);
-          if (closeButtonInvoked) await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button ${viewport}`);
+          await boundedAction({ phase: "close-button-open", route, viewport }, async () => {
+            await evaluate(`document.querySelector('.mobile-toggle').click()`);
+            if (!await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer reopen for close button ${viewport}`)) throw new ActionTimeout(`timeout during close-button-open (${route} ${viewport})`);
+          });
+          const closeButtonInvoked = await boundedAction({ phase: "close-button-close", route, viewport }, async () => {
+            const invoked = await evaluate(`(()=>{const button=document.querySelector('.drawer-close,[data-drawer-close]');if(!button)return false;button.click();return true})()`);
+            if (!invoked) {
+              await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
+              await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
+            }
+            if (invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button ${viewport}`)) throw new ActionTimeout(`timeout during close-button-close (${route} ${viewport})`);
+            if (!invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button recovery ${viewport}`)) throw new ActionTimeout(`timeout during close-button-close (${route} ${viewport})`);
+            return invoked;
+          });
           closeButtonClosed = closeButtonInvoked && await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
-          await evaluate(`document.querySelector('.mobile-toggle').click()`);
-          await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer reopen for outside click ${viewport}`);
-          const overlayInvoked = await evaluate(`(()=>{const overlay=document.querySelector('.drawer-overlay');if(!overlay)return false;overlay.click();return true})()`);
-          if (overlayInvoked) await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside click ${viewport}`);
+          await boundedAction({ phase: "outside-open", route, viewport }, async () => {
+            await evaluate(`document.querySelector('.mobile-toggle').click()`);
+            if (!await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer reopen for outside click ${viewport}`)) throw new ActionTimeout(`timeout during outside-open (${route} ${viewport})`);
+          });
+          const overlayInvoked = await boundedAction({ phase: "outside-close", route, viewport }, async () => {
+            const invoked = await evaluate(`(()=>{const overlay=document.querySelector('.drawer-overlay');if(!overlay)return false;overlay.click();return true})()`);
+            if (!invoked) {
+              await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
+              await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
+            }
+            if (invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside click ${viewport}`)) throw new ActionTimeout(`timeout during outside-close (${route} ${viewport})`);
+            if (!invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside recovery ${viewport}`)) throw new ActionTimeout(`timeout during outside-close (${route} ${viewport})`);
+            return invoked;
+          });
           outsideClosed = overlayInvoked && await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
         }
         menuResults.push({ route, viewport, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed });
@@ -228,6 +274,8 @@ try {
   await navigate("index.html", "390x844 reduced motion");
   reducedMotion = await evaluate(`(()=>{const values=[...document.querySelectorAll('.mobile-drawer,.drawer-overlay')].flatMap(element=>getComputedStyle(element).transitionDuration.split(',').map(value=>parseFloat(value)*(value.trim().endsWith('ms')?1:1000)));return{matches:matchMedia('(prefers-reduced-motion: reduce)').matches,durationsMs:values}})()`);
   collectionComplete = true;
+} catch (error) {
+  infrastructureErrors.push(error.message);
 } finally {
   globalThis.__f201Report = { schemaVersion: 1, source: "a47abb9a43248320dfef8449b6a65e187913fd24", browser: await send("Browser.getVersion"), viewports, observations, menuResults, reducedMotion };
   ws.close();
@@ -285,8 +333,8 @@ semanticTest("F2-01 responsive report validator rejects every contracted regress
 
 after(async () => {
   if (!reportPath) return;
-  assert.equal(collectionComplete, true, "report cannot be finalized before complete collection");
-  const report = { ...globalThis.__f201Report, execution: { complete: true, infrastructureErrors: [], semanticTests: semanticResults } };
+  const complete = collectionComplete && infrastructureErrors.length === 0 && actionResults.every(({ status }) => status === "COMPLETED");
+  const report = { ...globalThis.__f201Report, execution: { complete, infrastructureErrors, actions: actionResults, semanticTests: semanticResults } };
   await mkdir(normalize(join(reportPath, "..")), { recursive: true });
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 });
