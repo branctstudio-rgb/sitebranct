@@ -31,11 +31,20 @@
         "1440x900": [1440, 900]
       }
     },
+    "menuEvidenceMatrix": {
+      "path": "fixtures/audit/f2-01-menu-evidence-matrix.json",
+      "canonicalization": "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases}]) with fixed key order",
+      "identityAlgorithm": "sha256(JSON.stringify({route,viewport,actionPhases}))",
+      "digestAlgorithm": "sha256",
+      "sha256": "c28a1840d4ad85ebfe609082e9c33ba21de2c1c5b72776d37fa142c5aae0701e",
+      "evidenceCount": 41,
+      "actionCount": 184
+    },
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "gitBlobOid": "078aab284f8608d6ddaf8b6f3d50b55b27cb4b92",
-      "copiedSha256": "42e4a52fc25d61acef44abcb2712f56e82451382292315ba8b4c28913e3b2206"
+      "gitBlobOid": "eed466e5191c8b84938fdc83e27683bbb6b194e2",
+      "copiedSha256": "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results.json",

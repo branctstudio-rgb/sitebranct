@@ -1,0 +1,482 @@
+{
+  "schemaVersion": 1,
+  "canonicalization": "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases}]) with fixed key order",
+  "identityAlgorithm": "sha256(JSON.stringify({route,viewport,actionPhases}))",
+  "digestAlgorithm": "sha256",
+  "evidenceCount": 41,
+  "actionCount": 184,
+  "sha256": "c28a1840d4ad85ebfe609082e9c33ba21de2c1c5b72776d37fa142c5aae0701e",
+  "entries": [
+    {
+      "evidenceId": "menu-be0ab29683a77414fbb1e8ecbed046a95e07bafc0a5f9a829227f410c0b1ddb9",
+      "route": "index.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-dd82878f4cf540df867b64c694405cd2ba28a53a0dce0d7c0a3793561990615d",
+      "route": "crm-gestao.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-9944e9e5cca65b9be1b59fe217fa44acaf4fbc1d7507d2fdfc73902178496f41",
+      "route": "website-premium.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-81e65dcbca8eba362b66ee6f12e7d522ad5abcfa8b21c37ed89718dc6cb2243d",
+      "route": "landing-page.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-8a70a55fbc5333efd60f0133ccf23f5be99f1c4cb150a46513629d4e84d7a3e5",
+      "route": "automacao-ia.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-0cd1237cf5e9534171de6f941a51d23177649878cd45dce18b9c9a9e2716eaa9",
+      "route": "processo.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-860b19215f6206bef3e18d892ce1b30c62be2ad28a1eebee8b563b47b9f8730d",
+      "route": "contactos.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-40f400379f8d418fb1380fa32318ce6a6e590940fc52ebcb1dffb23f7f6a5448",
+      "route": "area-do-usuario.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-cd8e361a31386762db8a293bf73f575489be75c74b643df6c01cb4655346ed34",
+      "route": "blog.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-a763c85330b511245dd4287cdf57a2c0eb9a3a0cfc00135a18dd93c9c8676bd4",
+      "route": "servicos.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-4aef93046fea91f3c60ff05f9ac11cf24cbaef0558ca876a3b563a794a65b57b",
+      "route": "index.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-f39105b511237803515cfe62a31791e6384deb6aa248e30953f9dbb124ebcf3a",
+      "route": "crm-gestao.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-8af7feb8c43de31511e8252bef9e25cc849b608c57e4f7b4ea7f96f2dcd99b08",
+      "route": "website-premium.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-e53eec7b667f36370dbcb53bd9f1242b8d30297513a57a56330984ce5385c1c5",
+      "route": "landing-page.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-a86c9df008e7c8cfa4eb86559f00759e18decc921ac1b2ffc4a304c34eeca69a",
+      "route": "automacao-ia.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-b2e012a21089a776be74789ef0a485dae1e9d24801834aa447475f33b7b886e4",
+      "route": "processo.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-0ae8711ef920774d9ea165e141c921da9abf12a86b2f567273a5bae8696e7da3",
+      "route": "contactos.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-e44bd9e3172da604103b9f1561cd5cfb1d2cfc821869801876dbda70089d6175",
+      "route": "area-do-usuario.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-ad710382b612a05a93899f916801c871c683fa0ae788b57c5c1e26f67691785e",
+      "route": "blog.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-9807f94173005d12b1dcaacdfac6c01c4208c2a29f9f55bf5f45085a7f43e9f0",
+      "route": "servicos.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-d9d992c272b4c54db76c49c4ecbc308d907af7cb9515f6508f54a63840e8b40d",
+      "route": "index.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-1d68714c8ccd2782a9fdd20d61f2e2486d1a41d102cb6f88eedfe166fa6120a3",
+      "route": "crm-gestao.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-add1b6ff10fc3dd3be753b12f3670187ecac9602cf8e1d21a1fd1b120298b5af",
+      "route": "website-premium.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-fdef542e38ac92d0c589218fc317609980c48fae0a76b693772ce78df23c1da5",
+      "route": "landing-page.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-62d70d88c1346c45d85c351ae23dfa9a61c9cfddafae25b21eb540ae91bad854",
+      "route": "automacao-ia.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-df841bfec52353fd740ca236fb5f9edcb87ea4f148b392f40fc6cf2b0a365ef8",
+      "route": "processo.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-8b08c78d4f0ad5857d1b02c6d4d27c6b4f3c367e6e1d0591c48e2dedc46350e3",
+      "route": "contactos.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-87cb2ef1ffe36ba7a99be8f0126a974aec4ee48af987159635b471ecb9086013",
+      "route": "area-do-usuario.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-b086e9625787b14a63d32c82c14c9cae608d9070689c745ee6c8f6d75e1f698a",
+      "route": "blog.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-459cf756a618c48d3b44fe75733438f7222780292a0e7015a202ee4eecb49a3d",
+      "route": "servicos.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-7488982ed99b3b8a4c258c4a1da2b7efe8bcb771558d928fec9f71a60bd32205",
+      "route": "index.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-1a063d87fd7018f9218fcf79097da79ac9b118ab867054beaa7c7a96bda9ad2c",
+      "route": "crm-gestao.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-40ee0e45ac5a8d65483549a5c5591e62d43bc21a318f51e53d920ac12d8039d5",
+      "route": "website-premium.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-8c155e1915acf857e1ccdff4d8e43a063203d4e947575508dd9dc0ddb9556fbb",
+      "route": "landing-page.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-f67f5a5b8afeba3f4435bf036c68fd869eb3e959e25a35b8330c090cc94701d0",
+      "route": "automacao-ia.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-467865379d29807060b6010803bafbb9f843f3c3be14302cc4f500c0f3e08d9c",
+      "route": "processo.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-af03e7cf2f1b040f17b2dd328d9cbc0486eb5a667c487723da4c0d1b4fa71a72",
+      "route": "contactos.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-ce7749ae16f5668726638000b29aef9f5ed44681f8ec2dacc7fa24bed638590d",
+      "route": "area-do-usuario.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-3ee515ef9252d0aa2e03601baf87df70eeef5cf65e3ace2ff54d02c90fee9df0",
+      "route": "blog.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-567dc4d7273f793dafbea0bd4ddadb72c67a49cc6a9b9de8debc434206a7decc",
+      "route": "servicos.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ]
+    },
+    {
+      "evidenceId": "menu-708eaa8dc264b7f8c5fd1332a381e27f4809b0b5fc5fe4ee823111c3f9e79e22",
+      "route": "index.html",
+      "viewport": "768x1024",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ]
+    }
+  ]
+}

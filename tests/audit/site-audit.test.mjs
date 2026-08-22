@@ -26,8 +26,17 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
-  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "078aab284f8608d6ddaf8b6f3d50b55b27cb4b92", sha256: "42e4a52fc25d61acef44abcb2712f56e82451382292315ba8b4c28913e3b2206" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "eed466e5191c8b84938fdc83e27683bbb6b194e2", sha256: "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb" }),
   targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results.json", gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
+  menuEvidenceMatrix: Object.freeze({
+    path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
+    canonicalization: "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases}]) with fixed key order",
+    identityAlgorithm: "sha256(JSON.stringify({route,viewport,actionPhases}))",
+    digestAlgorithm: "sha256",
+    sha256: "c28a1840d4ad85ebfe609082e9c33ba21de2c1c5b72776d37fa142c5aae0701e",
+    evidenceCount: 41,
+    actionCount: 184,
+  }),
 });
 const canonicalF201Viewports = Object.freeze({
   "320x568": [320, 568],
@@ -45,6 +54,51 @@ const canonicalDevelopmentRedVector = Object.freeze({
   "F2-01 responsive report validator rejects every contracted regression": "PASS",
 });
 const contractedActionPhases = (route) => ["before-open", "open", "after-open", "escape-close", ...(route === "index.html" ? ["close-button-open", "close-button-close", "outside-open", "outside-close"] : [])];
+
+const canonicalEvidenceTuple = ({ route, viewport, actionPhases }) => ({ route, viewport, actionPhases });
+const canonicalEvidenceId = (entry) => `menu-${hashBytes(JSON.stringify(canonicalEvidenceTuple(entry)))}`;
+const canonicalMenuMatrixBytes = (entries) => Buffer.from(JSON.stringify(entries.map(({ evidenceId, route, viewport, actionPhases }) => ({ evidenceId, route, viewport, actionPhases }))));
+
+function validateCanonicalMenuEvidenceMatrixText(reference, text) {
+  assert.equal(typeof text, "string", "canonical menu evidence matrix bytes are absent or unreadable");
+  let matrix;
+  try { matrix = JSON.parse(text); }
+  catch { assert.fail("canonical menu evidence matrix bytes are malformed"); }
+  assert.deepEqual(Object.keys(matrix).sort(), ["actionCount", "canonicalization", "digestAlgorithm", "entries", "evidenceCount", "identityAlgorithm", "schemaVersion", "sha256"].sort(), "canonical menu evidence matrix schema is divergent");
+  assert.equal(matrix.schemaVersion, 1, "canonical menu evidence matrix schema version is divergent");
+  assert.equal(matrix.canonicalization, reference.canonicalization, "canonical menu evidence matrix canonicalization is divergent");
+  assert.equal(matrix.identityAlgorithm, reference.identityAlgorithm, "canonical menu evidence matrix identity algorithm is divergent");
+  assert.equal(matrix.digestAlgorithm, "sha256", "canonical menu evidence matrix digest algorithm is divergent");
+  assert.ok(Array.isArray(matrix.entries), "canonical menu evidence matrix entries are absent");
+  assert.equal(matrix.entries.length, reference.evidenceCount, "canonical menu evidence matrix cardinality is divergent");
+  for (const entry of matrix.entries) {
+    assert.deepEqual(Object.keys(entry).sort(), ["actionPhases", "evidenceId", "route", "viewport"].sort(), "canonical menu evidence matrix entry schema is divergent");
+    assert.match(entry.route ?? "", /^[a-z0-9-]+\.html$/, `canonical menu evidence route is invalid: ${entry.route}`);
+    assert.ok(Object.hasOwn(canonicalF201Viewports, entry.viewport), `canonical menu evidence viewport is invalid: ${entry.viewport}`);
+    assert.ok(Array.isArray(entry.actionPhases) && entry.actionPhases.length > 0, `canonical menu evidence actions are absent: ${entry.route} ${entry.viewport}`);
+    assert.deepEqual(entry.actionPhases, contractedActionPhases(entry.route), `canonical menu evidence actions are divergent: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.evidenceId, canonicalEvidenceId(entry), `canonical menu evidence identity is divergent: ${entry.route} ${entry.viewport}`);
+  }
+  const tupleKeys = matrix.entries.map(({ route, viewport }) => `${route}\0${viewport}`);
+  assert.equal(new Set(tupleKeys).size, matrix.entries.length, "canonical menu evidence matrix contains duplicate tuples");
+  assert.equal(new Set(matrix.entries.map(({ evidenceId }) => evidenceId)).size, matrix.entries.length, "canonical menu evidence matrix contains duplicate identities");
+  assert.equal(matrix.actionCount, matrix.entries.reduce((count, entry) => count + entry.actionPhases.length, 0), "canonical menu evidence action cardinality is divergent");
+  assert.equal(matrix.actionCount, reference.actionCount, "canonical menu evidence action authority is divergent");
+  const digest = hashBytes(canonicalMenuMatrixBytes(matrix.entries));
+  assert.equal(matrix.sha256, digest, "canonical menu evidence matrix embedded digest is divergent");
+  assert.equal(digest, reference.sha256, "canonical menu evidence matrix digest differs from authority");
+  return matrix;
+}
+
+function readCanonicalMenuEvidenceMatrix(transition) {
+  const reference = transition?.f201?.menuEvidenceMatrix;
+  assert.ok(reference, "canonical menu evidence matrix authority is absent");
+  assert.deepEqual(reference, immutableF201Pins.menuEvidenceMatrix, "canonical menu evidence matrix authority is divergent");
+  let text;
+  try { text = readFileSync(new URL(`../../${reference.path}`, import.meta.url), "utf8"); }
+  catch { assert.fail(`canonical menu evidence matrix is absent or unreadable: ${reference.path}`); }
+  return validateCanonicalMenuEvidenceMatrixText(reference, text);
+}
 
 function readAuthoritativeGitBlob(repository, authoritySha, expected) {
   assert.match(authoritySha ?? "", shaPattern, "authority sha must be an explicit 40-character commit id");
@@ -92,35 +146,48 @@ function assertExactSemanticTestSet(execution) {
   for (const result of execution.semanticTests) assert.match(result.status, /^(PASS|FAIL)$/, `semantic test ${result.name} has invalid status`);
 }
 
-function assertCompleteDrawerActions(report) {
+function assertCompleteDrawerActions(report, matrix) {
   const actions = report.execution?.actions;
   assert.ok(Array.isArray(actions), "drawer action completion set is absent");
-  const expectedKeys = report.menuResults.flatMap(({ route, viewport }) => contractedActionPhases(route).map((phase) => `${route}\0${viewport}\0${phase}`)).sort();
+  const expectedKeys = matrix.entries.flatMap(({ route, viewport, actionPhases }) => actionPhases.map((phase) => `${route}\0${viewport}\0${phase}`)).sort();
   const actualKeys = actions.map(({ route, viewport, phase }) => `${route}\0${viewport}\0${phase}`).sort();
-  assert.deepEqual(actualKeys, expectedKeys, "drawer action completion set is missing, duplicated or unknown");
+  assert.deepEqual(actualKeys, expectedKeys, "canonical menu evidence action set is missing, duplicated, forged or associated with the wrong tuple");
   for (const action of actions) {
+    const canonical = matrix.entries.find(({ route, viewport, actionPhases }) => route === action.route && viewport === action.viewport && actionPhases.includes(action.phase));
+    assert.ok(canonical, `canonical menu evidence action is unknown: ${action.route} ${action.viewport} ${action.phase}`);
+    assert.equal(action.evidenceId, canonical.evidenceId, `canonical menu evidence action id is absent or differs from tuple: ${action.route} ${action.viewport} ${action.phase}`);
     if (action.status === "TIMEOUT") assert.fail(`drawer action timeout cannot satisfy semantic RED: ${action.route} ${action.viewport} ${action.phase}`);
     assert.equal(action.status, "COMPLETED", `drawer action ${action.status ?? "unfinished"} cannot satisfy semantic RED: ${action.route} ${action.viewport} ${action.phase}`);
   }
 }
 
-function assertCompleteReport(transition, report) {
+function assertCompleteReport(transition, report, matrix) {
   assert.ok(report && typeof report === "object" && !Array.isArray(report), "report is absent or unreadable");
+  assert.equal(Object.hasOwn(report, "expectedMenuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
+  assert.equal(Object.hasOwn(report, "menuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
   assert.equal(report.schemaVersion, 1, "report schema is absent or invalid");
   assert.equal(report.source, transition.baseSha, "report source differs from the transition base");
   assert.match(report.browser?.product ?? "", /(?:Chrome|Chromium)\//, "report browser evidence is absent or invalid");
   assert.deepEqual(report.viewports, transition.f201.matrix.viewports, "report viewport matrix is incomplete or divergent");
   for (const name of transition.f201.expectedDevelopmentRed.requiredEvidence) assert.ok(report[name] !== undefined && report[name] !== null, `required evidence absent: ${name}`);
   assert.equal(report.observations.length, transition.f201.targetBaseline.observationCount, `truncated report observation count: expected ${transition.f201.targetBaseline.observationCount}`);
-  assert.equal(report.menuResults.length, transition.f201.targetBaseline.menuExerciseCount, `menu result count incomplete: expected ${transition.f201.targetBaseline.menuExerciseCount}`);
+  assert.equal(report.menuResults.length, matrix.evidenceCount, `canonical menu evidence bijection incomplete: expected ${matrix.evidenceCount}, got ${report.menuResults.length}`);
   const expectedObservationKeys = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => `${route}\0${viewport}`)).sort();
   const actualObservationKeys = report.observations.map(({ route, viewport }) => `${route}\0${viewport}`).sort();
   assert.deepEqual(actualObservationKeys, expectedObservationKeys, "report observation matrix contains missing, duplicate or unknown entries");
   assert.ok(report.observations.every((entry) => entry.conclusion === "CONCLUSIVE"), "inconclusive observation cannot satisfy transition evidence");
-  const menuKeys = report.menuResults.map(({ route, viewport }) => `${route}\0${viewport}`);
-  assert.equal(new Set(menuKeys).size, menuKeys.length, "menu result matrix contains duplicate entries");
+  const expectedMenuIds = matrix.entries.map(({ evidenceId }) => evidenceId).sort();
+  const actualMenuIds = report.menuResults.map((entry) => {
+    const canonical = matrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
+    assert.ok(canonical, `canonical menu evidence tuple is unknown: ${entry.route} ${entry.viewport}`);
+    const derivedId = canonicalEvidenceId(canonical);
+    assert.equal(derivedId, canonical.evidenceId, `canonical menu evidence identity cannot be derived: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.evidenceId, derivedId, `canonical menu evidence declared id is absent or differs from tuple: ${entry.route} ${entry.viewport}`);
+    return derivedId;
+  }).sort();
+  assert.deepEqual(actualMenuIds, expectedMenuIds, "canonical menu evidence bijection contains a missing, extra, duplicate or wrongly associated tuple");
   assertExactSemanticTestSet(report.execution);
-  assertCompleteDrawerActions(report);
+  assertCompleteDrawerActions(report, matrix);
 }
 
 function assertProcessOutcome(outcome, expectedExitCode) {
@@ -155,12 +222,15 @@ function validateStateMachine(transition) {
   assert.deepEqual(transition.f201.matrix.viewports, canonicalF201Viewports, "viewport contract is absent, malformed or divergent");
   assert.equal(transition.f201.targetBaseline.observationCount, transition.f201.matrix.routes.length * Object.keys(canonicalF201Viewports).length, "viewport observation cardinality is divergent");
   assert.deepEqual(transition.f201.expectedDevelopmentRed.semanticVector, canonicalDevelopmentRedVector, "semantic RED vector contract is divergent");
+  const matrix = readCanonicalMenuEvidenceMatrix(transition);
+  assert.equal(transition.f201.targetBaseline.menuExerciseCount, matrix.evidenceCount, "canonical menu evidence count differs from target baseline");
+  return matrix;
 }
 
 function deriveF201State(transition, evidence) {
-  validateStateMachine(transition);
+  const matrix = validateStateMachine(transition);
   if (transition.status === "PHASE_1_HISTORICAL") return transition.status;
-  assertCompleteReport(transition, evidence.report);
+  assertCompleteReport(transition, evidence.report, matrix);
   if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
     assertProcessOutcome(evidence.processOutcome, 1);
     const actualVector = Object.fromEntries(evidence.report.execution.semanticTests.map(({ name, status }) => [name, status]));
@@ -194,6 +264,7 @@ function deriveF201State(transition, evidence) {
   assert.equal(evidence.approval.authoritySha, authoritySha, "approval head mismatch");
   const reportWithoutExecution = structuredClone(evidence.report);
   delete reportWithoutExecution.execution;
+  for (const entry of reportWithoutExecution.menuResults) delete entry.evidenceId;
   assert.deepEqual(reportWithoutExecution, evidence.targetBaseline, "baseline mismatch with integrated report");
   return transition.status;
 }
@@ -320,8 +391,7 @@ const completeExecution = (statuses) => ({
   semanticTests: semanticTestNames.map((name) => ({ name, status: statuses[name] ?? "PASS" })),
 });
 
-const requiredActionPhases = (route) => ["before-open", "open", "after-open", "escape-close", ...(route === "index.html" ? ["close-button-open", "close-button-close", "outside-open", "outside-close"] : [])];
-const completeActionsFor = (report) => report.menuResults.flatMap(({ route, viewport }) => requiredActionPhases(route).map((phase) => ({ route, viewport, phase, status: "COMPLETED" })));
+const completeActionsFor = (transition) => readCanonicalMenuEvidenceMatrix(transition).entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
 const reportForRequiredMatrix = (transition, baseline) => {
   const report = structuredClone(baseline);
   report.viewports = structuredClone(transition.f201.matrix.viewports);
@@ -335,6 +405,8 @@ const reportForRequiredMatrix = (transition, baseline) => {
 };
 const developmentReportFrom = (transition, baseline) => {
   const report = reportForRequiredMatrix(transition, baseline);
+  const matrix = readCanonicalMenuEvidenceMatrix(transition);
+  for (const entry of report.menuResults) entry.evidenceId = matrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport)?.evidenceId;
   report.observations[0].overflow = true;
   report.observations[0].scrollWidth = report.observations[0].clientWidth + 1;
   report.observations[0].smallTargets = [{ selector: ".fixture", width: 43, height: 43 }];
@@ -343,7 +415,7 @@ const developmentReportFrom = (transition, baseline) => {
     [semanticTestNames[0]]: "FAIL",
     [semanticTestNames[1]]: "FAIL",
   });
-  report.execution.actions = completeActionsFor(report);
+  report.execution.actions = completeActionsFor(transition);
   return report;
 };
 
@@ -357,13 +429,13 @@ test("F2-GOV-06 rejects incomplete execution before classifying a development RE
     ["premature exit", (value) => { value.processOutcome.exited = false; }, /prematurely/i],
     ["truncated report", (value) => { value.report.observations.pop(); }, /truncated report/i],
     ["semantic test not executed", (value) => { value.report.execution.semanticTests.pop(); }, /semantic test set/i],
-    ["incomplete menu count", (value) => { value.report.menuResults.pop(); }, /menu result count/i],
+    ["incomplete menu count", (value) => { value.report.menuResults.pop(); }, /canonical menu evidence bijection/i],
     ["duplicate observation", (value) => { value.report.observations[1] = structuredClone(value.report.observations[0]); }, /observation matrix.*duplicate/i],
     ["required evidence absent", (value) => { delete value.report.reducedMotion; }, /required evidence absent/i],
     ["completion marker false", (value) => { value.report.execution.complete = false; }, /execution incomplete/i],
     ["infrastructure error", (value) => { value.report.execution.infrastructureErrors = ["browser disconnected"]; }, /execution incomplete|infrastructure error/i],
-    ["drawer action missing", (value) => { value.report.execution.actions.pop(); }, /action completion set/i],
-    ["drawer action duplicated", (value) => { value.report.execution.actions.push(structuredClone(value.report.execution.actions[0])); }, /action completion set/i],
+    ["drawer action missing", (value) => { value.report.execution.actions.pop(); }, /canonical menu evidence action set/i],
+    ["drawer action duplicated", (value) => { value.report.execution.actions.push(structuredClone(value.report.execution.actions[0])); }, /canonical menu evidence action set/i],
     ["drawer action cancelled", (value) => { value.report.execution.actions[0].status = "CANCELLED"; }, /cancelled.*cannot satisfy semantic RED/i],
     ["drawer action error", (value) => { value.report.execution.actions[0].status = "ERROR"; }, /error.*cannot satisfy semantic RED/i],
     ["drawer action unfinished", (value) => { delete value.report.execution.actions[0].status; }, /unfinished.*cannot satisfy semantic RED/i],
@@ -372,6 +444,94 @@ test("F2-GOV-06 rejects incomplete execution before classifying a development RE
     const value = structuredClone(valid);
     mutate(value);
     assert.throws(() => deriveF201State(transition, value), expected);
+  });
+});
+
+test("F2-GOV-06 rejects a forged menu route even when matching actions are forged too", async () => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const report = developmentReportFrom(transition, baseline);
+  const originalRoute = report.menuResults[1].route;
+  const viewport = report.menuResults[1].viewport;
+  report.menuResults[1].route = "forged.html";
+  for (const action of report.execution.actions) {
+    if (action.route === originalRoute && action.viewport === viewport) action.route = "forged.html";
+  }
+  assert.throws(
+    () => deriveF201State(transition, { report, processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } }),
+    /canonical menu evidence.*forged\.html/i,
+  );
+});
+
+test("F2-GOV-06 requires an exact canonical bijection for all 41 menu evidences", async (t) => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
+  const valid = { report: developmentReportFrom(transition, baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  const rewriteActions = (report, from, to) => {
+    for (const action of report.execution.actions) {
+      if (action.route === from.route && action.viewport === from.viewport) Object.assign(action, to);
+    }
+  };
+  const cases = [
+    ["valid route swapped", (value) => {
+      const entry = value.report.menuResults[1];
+      const from = { route: entry.route, viewport: entry.viewport };
+      const to = { route: "website-premium.html", viewport: entry.viewport };
+      Object.assign(entry, to);
+      rewriteActions(value.report, from, to);
+    }],
+    ["action forged", (value) => { value.report.execution.actions[0].phase = "forged-action"; }],
+    ["valid action swapped", (value) => { value.report.execution.actions[0].phase = value.report.execution.actions[1].phase; }],
+    ["viewport swapped", (value) => {
+      const entry = value.report.menuResults[1];
+      const from = { route: entry.route, viewport: entry.viewport };
+      const to = { route: entry.route, viewport: "768x1024" };
+      Object.assign(entry, to);
+      rewriteActions(value.report, from, to);
+    }],
+    ["identity duplicated", (value) => { value.report.menuResults[1] = structuredClone(value.report.menuResults[0]); }],
+    ["evidence removed", (value) => { value.report.menuResults.pop(); }],
+    ["42nd evidence extra", (value) => { value.report.menuResults.push({ ...structuredClone(value.report.menuResults.at(-1)), route: "forged.html" }); }],
+    ["declared id absent", (value) => { delete value.report.menuResults[0].evidenceId; }],
+    ["declared id differs from tuple", (value) => { value.report.menuResults[0].evidenceId = "menu-forged-identity"; }],
+    ["valid identity results swapped", (value) => {
+      value.report.menuResults[0].evidenceId = canonicalMatrix.entries[1].evidenceId;
+      value.report.menuResults[1].evidenceId = canonicalMatrix.entries[0].evidenceId;
+    }],
+    ["action declared id absent", (value) => { delete value.report.execution.actions[0].evidenceId; }],
+    ["report redefines expected matrix", (value) => { value.report.expectedMenuEvidenceMatrix = []; }],
+  ];
+  for (const [label, mutate] of cases) await t.test(label, () => {
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => deriveF201State(transition, value), /canonical menu evidence/i);
+  });
+});
+
+test("F2-GOV-06 fails closed when the canonical menu matrix authority is absent or divergent", async (t) => {
+  const [transitionSource, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const evidence = { report: developmentReportFrom(transitionSource, baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  for (const [label, mutate] of [
+    ["authority absent", (value) => { delete value.f201.menuEvidenceMatrix; }],
+    ["authority path unreadable", (value) => { value.f201.menuEvidenceMatrix = { path: "fixtures/audit/missing-menu-matrix.json", sha256: "0".repeat(64), evidenceCount: 41, actionCount: 184 }; }],
+    ["authority digest divergent", (value) => { value.f201.menuEvidenceMatrix = { path: "fixtures/audit/f2-01-menu-evidence-matrix.json", sha256: "0".repeat(64), evidenceCount: 41, actionCount: 184 }; }],
+  ]) await t.test(label, () => {
+    const transition = structuredClone(transitionSource);
+    mutate(transition);
+    assert.throws(() => deriveF201State(transition, evidence), /canonical menu evidence matrix/i);
+  });
+});
+
+test("F2-GOV-06 rejects absent, malformed and adulterated canonical matrix bytes", async (t) => {
+  const transition = await readJson(f201TransitionPath);
+  const reference = transition.f201.menuEvidenceMatrix;
+  const source = await readJson(new URL(`../../${reference.path}`, import.meta.url));
+  for (const [label, input, expected] of [
+    ["matrix bytes absent", undefined, /absent or unreadable/i],
+    ["matrix bytes malformed", "{", /malformed/i],
+    ["matrix route adulterated", JSON.stringify({ ...source, entries: source.entries.map((entry, index) => index === 0 ? { ...entry, route: "forged.html" } : entry) }), /canonical menu evidence (identity|actions|digest)/i],
+    ["matrix embedded digest altered", JSON.stringify({ ...source, sha256: "0".repeat(64) }), /embedded digest/i],
+  ]) await t.test(label, () => {
+    assert.throws(() => validateCanonicalMenuEvidenceMatrixText(reference, input), expected);
   });
 });
 
@@ -428,7 +588,8 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     approval: { decision: "APPROVED", authoritySha, independent: true },
     browsers: { chromium: "VERIFIED", firefox: "NOT_REQUIRED", webkit: "NOT_REQUIRED" },
   };
-  evidence.report.execution.actions = completeActionsFor(evidence.report);
+  for (const entry of evidence.report.menuResults) entry.evidenceId = readCanonicalMenuEvidenceMatrix(transition).entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport)?.evidenceId;
+  evidence.report.execution.actions = completeActionsFor(transition);
   const historical = structuredClone(transitionSource);
   historical.status = "PHASE_1_HISTORICAL";
   historical.stateMachine.current = "PHASE_1_HISTORICAL";

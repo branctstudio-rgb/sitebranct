@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -17,6 +18,8 @@ const viewports = {
   "1024x768": [1024, 768],
   "1440x900": [1440, 900],
 };
+const evidenceActionPhases = (route) => ["before-open", "open", "after-open", "escape-close", ...(route === "index.html" ? ["close-button-open", "close-button-close", "outside-open", "outside-close"] : [])];
+const evidenceIdentity = (route, viewport) => `menu-${createHash("sha256").update(JSON.stringify({ route, viewport, actionPhases: evidenceActionPhases(route) })).digest("hex")}`;
 const reportPath = process.env.F2_01_REPORT_PATH;
 const captureDirectory = process.env.F2_01_CAPTURE_DIR;
 const mime = {
@@ -150,16 +153,17 @@ const waitFor = async (expression, context, timeout = 3000) => {
 };
 class ActionTimeout extends Error {}
 const boundedAction = async ({ phase, route, viewport, timeout = 3000 }, operation) => {
+  const evidenceId = evidenceIdentity(route, viewport);
   let timer;
   try {
     const result = await Promise.race([
       operation(),
       new Promise((_, reject) => { timer = setTimeout(() => reject(new ActionTimeout(`timeout during ${phase} (${route} ${viewport})`)), timeout); }),
     ]);
-    actionResults.push({ route, viewport, phase, status: "COMPLETED" });
+    actionResults.push({ evidenceId, route, viewport, phase, status: "COMPLETED" });
     return result;
   } catch (error) {
-    actionResults.push({ route, viewport, phase, status: error instanceof ActionTimeout ? "TIMEOUT" : "ERROR", message: error.message });
+    actionResults.push({ evidenceId, route, viewport, phase, status: error instanceof ActionTimeout ? "TIMEOUT" : "ERROR", message: error.message });
     throw error;
   } finally {
     clearTimeout(timer);
@@ -265,7 +269,7 @@ try {
           });
           outsideClosed = overlayInvoked && await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
         }
-        menuResults.push({ route, viewport, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed });
+        menuResults.push({ evidenceId: evidenceIdentity(route, viewport), route, viewport, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed });
       }
     }
   }
