@@ -93,6 +93,14 @@ function assertCompleteReport(transition, report) {
   assertExactSemanticTestSet(report.execution);
 }
 
+function assertProcessOutcome(outcome, expectedExitCode) {
+  assert.ok(outcome && typeof outcome === "object", "process outcome is absent");
+  assert.equal(outcome.exited, true, "process ended prematurely");
+  assert.equal(outcome.timedOut, false, "process timeout cannot satisfy transition evidence");
+  assert.equal(outcome.signal, null, `process signal cannot satisfy transition evidence: ${outcome.signal}`);
+  assert.equal(outcome.exitCode, expectedExitCode, `process error exit code: expected ${expectedExitCode}, got ${outcome.exitCode}`);
+}
+
 const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) =>
   !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
   open.expanded !== "true" || !open.drawerInside || !open.focusInside || !open.bodyLocked || !open.backgroundInert ||
@@ -121,6 +129,7 @@ function deriveF201State(transition, evidence) {
   if (transition.status === "PHASE_1_HISTORICAL") return transition.status;
   assertCompleteReport(transition, evidence.report);
   if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
+    assertProcessOutcome(evidence.processOutcome, 1);
     assert.equal(evidence.report.execution.semanticTests.find(({ name }) => name === transition.f201.expectedDevelopmentRed.testName)?.status, "FAIL", "contracted semantic RED test did not fail");
     const overflowCount = evidence.report.observations.filter((entry) => entry.overflow).length;
     const smallTargetObservationCount = evidence.report.observations.filter((entry) => entry.smallTargets?.length).length;
@@ -133,6 +142,7 @@ function deriveF201State(transition, evidence) {
     return transition.status;
   }
   const authoritySha = evidence.authoritySha;
+  assertProcessOutcome(evidence.processOutcome, 0);
   assert.match(authoritySha ?? "", shaPattern, "integrated authority sha is absent or malformed");
   assert.ok(evidence.report.execution.semanticTests.every(({ status }) => status === "PASS"), "semantic RED cannot produce integrated state");
   assert.ok(evidence.report.observations.every((entry) => !entry.overflow && (Number(entry.viewport.split("x")[0]) > 768 || !(entry.smallTargets?.length))), "integrated report is not GREEN");
@@ -232,12 +242,14 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
     const report = JSON.parse(await readFile(reportPath, "utf8"));
     if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
       assert.ok(failure, "development state must prove the specific F2-01 RED");
-      assert.equal(deriveF201State(transition, { report }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+      const processOutcome = { exited: true, timedOut: failure.killed === true, signal: failure.signal ?? null, exitCode: failure.status };
+      assert.equal(deriveF201State(transition, { report, processOutcome }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
     } else {
       assert.equal(failure, undefined, "integrated state requires the responsive suite to finish GREEN");
       const integratedEvidence = await readJson(new URL(`../../${transition.stateMachine.integratedEvidencePath}`, import.meta.url));
       const targetBaseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
-      assert.equal(deriveF201State(transition, { ...integratedEvidence, report, targetBaseline, authoritySha }), "F2_01_INTEGRATED_VERIFIED");
+      const processOutcome = { exited: true, timedOut: false, signal: null, exitCode: 0 };
+      assert.equal(deriveF201State(transition, { ...integratedEvidence, report, targetBaseline, authoritySha, processOutcome }), "F2_01_INTEGRATED_VERIFIED");
     }
   } finally { await rm(reportDir, { recursive:true, force:true }); }
 });
@@ -289,21 +301,22 @@ const developmentReportFrom = (baseline) => {
 
 test("F2-GOV-06 rejects incomplete execution before classifying a development RED", async (t) => {
   const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
-  const valid = developmentReportFrom(baseline);
-  assert.equal(deriveF201State(transition, { report: valid }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+  const valid = { report: developmentReportFrom(baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  assert.equal(deriveF201State(transition, valid), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
   const cases = [
-    ["timeout", (report) => { report.execution.complete = false; report.execution.infrastructureErrors = ["timeout"]; }, /timeout/i],
-    ["process error", (report) => { report.execution.complete = false; report.execution.infrastructureErrors = ["process error"]; }, /process error/i],
-    ["truncated report", (report) => { report.observations.pop(); }, /truncated report/i],
-    ["semantic test not executed", (report) => { report.execution.semanticTests.pop(); }, /semantic test set/i],
-    ["incomplete menu count", (report) => { report.menuResults.pop(); }, /menu result count/i],
-    ["duplicate observation", (report) => { report.observations[1] = structuredClone(report.observations[0]); }, /observation matrix.*duplicate/i],
-    ["required evidence absent", (report) => { delete report.reducedMotion; }, /required evidence absent/i],
+    ["timeout", (value) => { value.processOutcome.timedOut = true; }, /timeout/i],
+    ["process error", (value) => { value.processOutcome.exitCode = 2; }, /process error/i],
+    ["premature exit", (value) => { value.processOutcome.exited = false; }, /prematurely/i],
+    ["truncated report", (value) => { value.report.observations.pop(); }, /truncated report/i],
+    ["semantic test not executed", (value) => { value.report.execution.semanticTests.pop(); }, /semantic test set/i],
+    ["incomplete menu count", (value) => { value.report.menuResults.pop(); }, /menu result count/i],
+    ["duplicate observation", (value) => { value.report.observations[1] = structuredClone(value.report.observations[0]); }, /observation matrix.*duplicate/i],
+    ["required evidence absent", (value) => { delete value.report.reducedMotion; }, /required evidence absent/i],
   ];
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
-    const report = structuredClone(valid);
-    mutate(report);
-    assert.throws(() => deriveF201State(transition, { report }), expected);
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => deriveF201State(transition, value), expected);
   });
 });
 
@@ -316,6 +329,7 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
   const authoritySha = "1111111111111111111111111111111111111111";
   const evidence = {
     report: { ...structuredClone(baseline), execution: completeExecution({}) },
+    processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 0 },
     targetBaseline: baseline,
     authoritySha,
     liveDiff: { complete: true, authoritySha, paths: ["src/css/branct.css"] },
