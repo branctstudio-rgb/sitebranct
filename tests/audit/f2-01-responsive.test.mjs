@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { after } from "node:test";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
@@ -140,10 +140,10 @@ const navigate = async (route, viewport) => {
 const waitFor = async (expression, context, timeout = 3000) => {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    if (await evaluate(expression)) return;
+    if (await evaluate(expression)) return true;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
-  throw new Error(`timeout waiting for ${context}`);
+  return false;
 };
 
 const metricsExpression = `(()=>{
@@ -170,6 +170,7 @@ const metricsExpression = `(()=>{
 const observations = [];
 const menuResults = [];
 let reducedMotion;
+let collectionComplete = false;
 const captured = new Set();
 if (captureDirectory) await mkdir(captureDirectory, { recursive: true });
 
@@ -191,8 +192,9 @@ try {
         const focusReached = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle');t?.focus();return document.activeElement===t})()`);
         const focusStyle = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle'),s=t&&getComputedStyle(t);return t?{visible:t.matches(':focus-visible'),style:s.outlineStyle,width:parseFloat(s.outlineWidth)||0}:null})()`);
         await evaluate(`document.querySelector('.mobile-toggle').click()`);
-        await waitFor(`(()=>{const d=document.querySelector('.mobile-drawer');if(!d?.classList.contains('is-open'))return false;const r=d.getBoundingClientRect();return r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5})()`, `settled drawer open ${route} ${viewport}`);
+        const drawerSettled = await waitFor(`(()=>{const d=document.querySelector('.mobile-drawer');if(!d?.classList.contains('is-open'))return false;const r=d.getBoundingClientRect();return r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5})()`, `settled drawer open ${route} ${viewport}`, 500);
         const open = await evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`);
+        open.drawerSettled = drawerSettled;
         if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-open`)) {
           const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 86, fromSurface: true }, sessionId);
           await writeFile(join(captureDirectory, `home-${viewport}-open.jpg`), Buffer.from(shot.data, "base64"));
@@ -200,21 +202,22 @@ try {
         }
         await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
         await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
-        await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer close ${route} ${viewport}`);
+        const escapeSettled = await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer close ${route} ${viewport}`);
         const closed = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle'),d=document.querySelector('.mobile-drawer');return{expanded:t.getAttribute('aria-expanded'),focusReturned:document.activeElement===t,backgroundRestored:!document.querySelector('main')?.inert,closed:!d.classList.contains('is-open')}})()`);
+        closed.escapeSettled = escapeSettled;
         let closeButtonClosed = true;
         let outsideClosed = true;
         if (route === "index.html") {
           await evaluate(`document.querySelector('.mobile-toggle').click()`);
           await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer reopen for close button ${viewport}`);
-          await evaluate(`document.querySelector('.drawer-close,[data-drawer-close]').click()`);
-          await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button ${viewport}`);
-          closeButtonClosed = await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
+          const closeButtonInvoked = await evaluate(`(()=>{const button=document.querySelector('.drawer-close,[data-drawer-close]');if(!button)return false;button.click();return true})()`);
+          if (closeButtonInvoked) await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button ${viewport}`);
+          closeButtonClosed = closeButtonInvoked && await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
           await evaluate(`document.querySelector('.mobile-toggle').click()`);
           await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer reopen for outside click ${viewport}`);
-          await evaluate(`document.querySelector('.drawer-overlay').click()`);
-          await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside click ${viewport}`);
-          outsideClosed = await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
+          const overlayInvoked = await evaluate(`(()=>{const overlay=document.querySelector('.drawer-overlay');if(!overlay)return false;overlay.click();return true})()`);
+          if (overlayInvoked) await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside click ${viewport}`);
+          outsideClosed = overlayInvoked && await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
         }
         menuResults.push({ route, viewport, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed });
       }
@@ -224,25 +227,33 @@ try {
   await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] }, sessionId);
   await navigate("index.html", "390x844 reduced motion");
   reducedMotion = await evaluate(`(()=>{const values=[...document.querySelectorAll('.mobile-drawer,.drawer-overlay')].flatMap(element=>getComputedStyle(element).transitionDuration.split(',').map(value=>parseFloat(value)*(value.trim().endsWith('ms')?1:1000)));return{matches:matchMedia('(prefers-reduced-motion: reduce)').matches,durationsMs:values}})()`);
+  collectionComplete = true;
 } finally {
-  const report = { schemaVersion: 1, source: "a47abb9a43248320dfef8449b6a65e187913fd24", browser: await send("Browser.getVersion"), viewports, observations, menuResults, reducedMotion };
-  if (reportPath) {
-    await mkdir(normalize(join(reportPath, "..")), { recursive: true });
-    await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
-  }
+  globalThis.__f201Report = { schemaVersion: 1, source: "a47abb9a43248320dfef8449b6a65e187913fd24", browser: await send("Browser.getVersion"), viewports, observations, menuResults, reducedMotion };
   ws.close();
   browser.kill();
   server.close();
 }
 
-test("F2-01 matrix has zero overflow and no undersized non-inline targets", () => {
+const semanticResults = [];
+const semanticTest = (name, body) => test(name, async () => {
+  try {
+    await body();
+    semanticResults.push({ name, status: "PASS" });
+  } catch (error) {
+    semanticResults.push({ name, status: "FAIL" });
+    throw error;
+  }
+});
+
+semanticTest("F2-01 matrix has zero overflow and no undersized non-inline targets", () => {
   assert.equal(observations.length, site.routes.length * Object.keys(viewports).length, "every route and viewport must be observed");
   const overflow = observations.filter((item) => item.overflow || item.header && (item.header.left < -0.5 || item.header.right > item.clientWidth + 0.5));
   assert.deepEqual(overflow, [], `horizontal overflow:\n${overflow.map(({route,viewport,clientWidth,scrollWidth,overflowElements})=>JSON.stringify({route,viewport,clientWidth,scrollWidth,overflowElements})).join("\n")}`);
   const undersized = observations.filter((item) => Number(item.viewport.split("x")[0]) <= 768 && item.smallTargets.length);
   assert.deepEqual(undersized, [], `targets below 44x44:\n${undersized.map(({route,viewport,smallTargets})=>JSON.stringify({route,viewport,smallTargets})).join("\n")}`);
 });
-test("F2-01 mobile menu is modal, bounded and closes through every contracted path", () => {
+semanticTest("F2-01 mobile menu is modal, bounded and closes through every contracted path", () => {
   assert.ok(menuResults.length > 0, "at least one real mobile menu must be exercised");
   const failures = menuResults.filter(({focusReached,focusStyle,open,closed,closeButtonClosed,outsideClosed}) =>
     !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
@@ -254,13 +265,13 @@ test("F2-01 mobile menu is modal, bounded and closes through every contracted pa
   assert.deepEqual(failures, [], `mobile menu contract failures:\n${failures.map((item)=>JSON.stringify(item)).join("\n")}`);
 });
 
-test("F2-01 mobile navigation honors reduced motion", () => {
+semanticTest("F2-01 mobile navigation honors reduced motion", () => {
   assert.equal(reducedMotion?.matches, true, "browser must exercise prefers-reduced-motion: reduce");
   assert.ok(reducedMotion?.durationsMs.length > 0, "drawer and overlay transition durations must be measured");
   assert.ok(reducedMotion.durationsMs.every((duration) => duration <= 1), `reduced motion durations exceed 1ms: ${reducedMotion.durationsMs}`);
 });
 
-test("F2-01 responsive report validator rejects every contracted regression", () => {
+semanticTest("F2-01 responsive report validator rejects every contracted regression", () => {
   const validate = ({ overflow = false, drawerInside = true, target = 44, focus = true, inert = true, desktop = true }) =>
     !overflow && drawerInside && target >= 44 && focus && inert && desktop;
   assert.equal(validate({}), true);
@@ -270,4 +281,12 @@ test("F2-01 responsive report validator rejects every contracted regression", ()
   assert.equal(validate({ focus: false }), false, "lost or invisible focus must fail closed");
   assert.equal(validate({ inert: false }), false, "interactive background must fail closed");
   assert.equal(validate({ desktop: false }), false, "desktop regression must fail closed");
+});
+
+after(async () => {
+  if (!reportPath) return;
+  assert.equal(collectionComplete, true, "report cannot be finalized before complete collection");
+  const report = { ...globalThis.__f201Report, execution: { complete: true, infrastructureErrors: [], semanticTests: semanticResults } };
+  await mkdir(normalize(join(reportPath, "..")), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 });

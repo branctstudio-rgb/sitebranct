@@ -3,21 +3,42 @@
   "status": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
   "repository": "branctstudio-rgb/sitebranct",
   "baseSha": "a47abb9a43248320dfef8449b6a65e187913fd24",
+  "authority": {
+    "source": "github.event.pull_request.head.sha",
+    "localOverride": "F2_GOV_AUTHORITY_SHA",
+    "rejectSyntheticMergeHead": true
+  },
   "productionAuthorized": false,
   "liveChangesAllowedInThisGovernancePr": false,
   "historicalPhase1": {
     "status": "HISTORICAL_FROZEN",
     "path": "fixtures/audit/baseline-results.json",
+    "authoritySha": "a47abb9a43248320dfef8449b6a65e187913fd24",
+    "gitBlobOid": "2831b40a6ff7976c235f2c1d98832186979921fe",
     "sha256": "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae"
   },
   "f201": {
+    "requiredBrowsers": ["chromium"],
+    "matrix": {
+      "routes": ["index.html", "crm-gestao.html", "website-premium.html", "landing-page.html", "automacao-ia.html", "processo.html", "contactos.html", "politica-privacidade.html", "area-do-usuario.html", "blog.html", "servicos.html", "styleguide.html"],
+      "viewports": {
+        "320x568": [320, 568],
+        "360x800": [360, 800],
+        "390x844": [390, 844],
+        "412x915": [412, 915],
+        "768x1024": [768, 1024],
+        "1440x900": [1440, 900]
+      }
+    },
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "copiedSha256": "5f42d010e089af54d8af86d48f3b73d7d21d6e4af9738f1b2cabc065fe607881"
+      "gitBlobOid": "ebdd7eb5c1df94b9ab920e48b04205b8b753ded0",
+      "copiedSha256": "d1da3f881fa63a3161d81a4612266ee1f0ae0a38cccf9e4d6c8be160028cd9bb"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results.json",
+      "gitBlobOid": "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8",
       "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab",
       "observationCount": 72,
       "menuExerciseCount": 41,
@@ -32,12 +53,20 @@
       "testName": "F2-01 matrix has zero overflow and no undersized non-inline targets",
       "requiredEvidence": ["observations", "menuResults", "reducedMotion"],
       "minimumOverflowCount": 1,
-      "minimumSmallTargetObservationCount": 1
+      "minimumSmallTargetObservationCount": 1,
+      "minimumOffViewportDrawerCount": 1,
+      "minimumMenuFailureCount": 1
     }
   },
   "stateMachine": {
-    "allowed": ["F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"],
-    "forbiddenRegressions": ["F2_01_HISTORICAL", "UNKNOWN", "MISSING"],
-    "integratedRequires": ["responsive test green", "target baseline matches report", "live diff evidence"]
+    "states": ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"],
+    "current": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
+    "previous": "PHASE_1_HISTORICAL",
+    "integratedEvidencePath": "fixtures/audit/f2-01-integration-evidence.json",
+    "transitions": {
+      "PHASE_1_HISTORICAL": ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
+      "F2_01_AUTHORIZED_IN_DEVELOPMENT": ["F2_01_INTEGRATED_VERIFIED"],
+      "F2_01_INTEGRATED_VERIFIED": []
+    }
   }
 }
