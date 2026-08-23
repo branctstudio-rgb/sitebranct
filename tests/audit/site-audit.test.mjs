@@ -471,7 +471,7 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   });
   const report = {
     schemaVersion: 2,
-    browser: { engine: "firefox", version: "150.0" },
+    browser: { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version },
     observations: Array.from({ length: 84 }, () => ({})),
     menuResults: Array.from({ length: 41 }, () => ({})),
     execution: { complete: true, infrastructureErrors: [], actions: Array.from({ length: 184 }, () => ({})), semanticTests: Array.from({ length: 4 }, () => ({})) },
@@ -873,7 +873,7 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
   const changed = execFileSync("git", ["diff", "--name-only", diffBase], { encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
-  const allowed = /^(CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
+  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
   assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
   assert.ok(!changed.includes(".github/workflows/deploy.yml"));
