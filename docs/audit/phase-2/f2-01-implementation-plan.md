@@ -1,6 +1,6 @@
-# Plano de implementação F2-01 (não executado)
+# Plano de implementação F2-01
 
-Estado: `FUTURE_PROPOSAL`. Este plano não autoriza a sua própria execução. O início depende de Issue-lock, escopo renovado e gate humano.
+Estado: `F2_01_AUTORIZADA_EM_DESENVOLVIMENTO`, ainda não integrada. O plano autoriza desenvolvimento controlado em PR; merge, deploy e produção continuam dependentes de gate humano próprio.
 
 ## Fronteira entre design system e páginas
 

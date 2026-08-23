@@ -203,7 +203,7 @@ test("governance reports unprotected main and leaves the A/B decision human", as
   assert.match(governance, /Conselho[^\n]*não escolhe|decisão[^\n]*pendente/i);
 });
 
-test("F2-01 is measurable, cross-viewport and explicitly not executed", async () => {
+test("F2-01 is measurable and authorized for development without being integrated", async () => {
   const [contract, specification, plan] = await Promise.all([
     readJson("docs/audit/phase-2/f2-00-contract.json"),
     read("docs/audit/phase-2/f2-01-specification.md"),
@@ -217,7 +217,8 @@ test("F2-01 is measurable, cross-viewport and explicitly not executed", async ()
   assert.equal(contract.complianceDebt.status, "OPEN_NOT_VERIFIED");
   assert.deepEqual(contract.complianceDebt.liveClaimFiles, ["website-premium.html", "automacao-ia.html"]);
   for (const viewport of contract.viewports) assert.match(specification, new RegExp(viewport.replace("x", "[×x]")));
-  assert.match(specification, /F2-01[^\n]*não[^\n]*autorizada|não autoriza[^\n]*execução/i);
+  assert.match(specification, /AUTORIZADA_EM_DESENVOLVIMENTO/i);
+  assert.match(specification, /não integrada/i);
   assert.match(plan, /RED→GREEN/);
   assert.match(plan, /rollback/i);
   assert.match(plan, /gate humano/i);

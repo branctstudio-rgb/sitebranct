@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "status": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
+  "repository": "branctstudio-rgb/sitebranct",
+  "baseSha": "a47abb9a43248320dfef8449b6a65e187913fd24",
+  "authority": {
+    "source": "github.event.pull_request.head.sha",
+    "localOverride": "F2_GOV_AUTHORITY_SHA",
+    "rejectSyntheticMergeHead": true
+  },
+  "productionAuthorized": false,
+  "liveChangesAllowedInThisGovernancePr": false,
+  "historicalPhase1": {
+    "status": "HISTORICAL_FROZEN",
+    "path": "fixtures/audit/baseline-results.json",
+    "authoritySha": "a47abb9a43248320dfef8449b6a65e187913fd24",
+    "gitBlobOid": "2831b40a6ff7976c235f2c1d98832186979921fe",
+    "sha256": "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae"
+  },
+  "f201": {
+    "requiredBrowsers": ["chromium"],
+    "matrix": {
+      "routes": ["index.html", "crm-gestao.html", "website-premium.html", "landing-page.html", "automacao-ia.html", "processo.html", "contactos.html", "politica-privacidade.html", "area-do-usuario.html", "blog.html", "servicos.html", "styleguide.html"],
+      "viewports": {
+        "320x568": [320, 568],
+        "360x800": [360, 800],
+        "390x844": [390, 844],
+        "412x915": [412, 915],
+        "768x1024": [768, 1024],
+        "1024x768": [1024, 768],
+        "1440x900": [1440, 900]
+      }
+    },
+    "menuEvidenceMatrix": {
+      "path": "fixtures/audit/f2-01-menu-evidence-matrix.json",
+      "canonicalization": "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases,developmentSemanticStatus,developmentResult,developmentResultSha256}]) with fixed key order",
+      "identityAlgorithm": "sha256(JSON.stringify({route,viewport,actionPhases}))",
+      "resultBindingAlgorithm": "sha256(JSON.stringify({evidenceId,route,viewport,actionSequence,semanticStatus,measuredResult}))",
+      "digestAlgorithm": "sha256",
+      "sha256": "0a7ef81ed646e50fd760b04562bb7f2f31d9b60b414fd790f289ee43d8d1db72",
+      "evidenceCount": 41,
+      "actionCount": 184
+    },
+    "responsiveTest": {
+      "path": "tests/audit/f2-01-responsive.test.mjs",
+      "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
+      "gitBlobOid": "eed466e5191c8b84938fdc83e27683bbb6b194e2",
+      "copiedSha256": "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb"
+    },
+    "targetBaseline": {
+      "path": "fixtures/audit/f2-01-baseline-results.json",
+      "gitBlobOid": "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8",
+      "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab",
+      "observationCount": 84,
+      "menuExerciseCount": 41,
+      "greenSummary": {
+        "overflowCount": 0,
+        "mobileOrTabletSmallTargetCount": 0,
+        "menuFailureCount": 0,
+        "reducedMotionMaxDurationMs": 1
+      }
+    },
+    "expectedDevelopmentRed": {
+      "testName": "F2-01 matrix has zero overflow and no undersized non-inline targets",
+      "semanticVector": {
+        "F2-01 matrix has zero overflow and no undersized non-inline targets": "FAIL",
+        "F2-01 mobile menu is modal, bounded and closes through every contracted path": "FAIL",
+        "F2-01 mobile navigation honors reduced motion": "PASS",
+        "F2-01 responsive report validator rejects every contracted regression": "PASS"
+      },
+      "requiredEvidence": ["observations", "menuResults", "reducedMotion"],
+      "minimumOverflowCount": 1,
+      "minimumSmallTargetObservationCount": 1,
+      "minimumOffViewportDrawerCount": 1,
+      "minimumMenuFailureCount": 1
+    }
+  },
+  "stateMachine": {
+    "states": ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"],
+    "current": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
+    "previous": "PHASE_1_HISTORICAL",
+    "integratedEvidencePath": "fixtures/audit/f2-01-integration-evidence.json",
+    "transitions": {
+      "PHASE_1_HISTORICAL": ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
+      "F2_01_AUTHORIZED_IN_DEVELOPMENT": ["F2_01_INTEGRATED_VERIFIED"],
+      "F2_01_INTEGRATED_VERIFIED": []
+    }
+  }
+}

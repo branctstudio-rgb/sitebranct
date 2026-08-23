@@ -1,0 +1,1549 @@
+{
+  "schemaVersion": 2,
+  "canonicalization": "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases,developmentSemanticStatus,developmentResult,developmentResultSha256}]) with fixed key order",
+  "identityAlgorithm": "sha256(JSON.stringify({route,viewport,actionPhases}))",
+  "resultBindingAlgorithm": "sha256(JSON.stringify({evidenceId,route,viewport,actionSequence,semanticStatus,measuredResult}))",
+  "digestAlgorithm": "sha256",
+  "evidenceCount": 41,
+  "actionCount": 184,
+  "sha256": "0a7ef81ed646e50fd760b04562bb7f2f31d9b60b414fd790f289ee43d8d1db72",
+  "entries": [
+    {
+      "evidenceId": "menu-be0ab29683a77414fbb1e8ecbed046a95e07bafc0a5f9a829227f410c0b1ddb9",
+      "route": "index.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": false,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "21c186aa4ebc13a7dfbb6a2db7e7c29592ac85e9ef8c2e174b50a4c0b5311933"
+    },
+    {
+      "evidenceId": "menu-dd82878f4cf540df867b64c694405cd2ba28a53a0dce0d7c0a3793561990615d",
+      "route": "crm-gestao.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": false,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "9b5c2a2a36a94a956081515ad64e1151bb8eedcf48c689e95c0b87d7a81cb4e0"
+    },
+    {
+      "evidenceId": "menu-9944e9e5cca65b9be1b59fe217fa44acaf4fbc1d7507d2fdfc73902178496f41",
+      "route": "website-premium.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "3e0629f6da0197ac8d4178e41ade8bfcea0d33ee9fab4f1ae56e1926705bba63"
+    },
+    {
+      "evidenceId": "menu-81e65dcbca8eba362b66ee6f12e7d522ad5abcfa8b21c37ed89718dc6cb2243d",
+      "route": "landing-page.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "64532f6cac92cda3f77f4000726017bfbde87a0c3f693e02c1f2bbedc5df1e47"
+    },
+    {
+      "evidenceId": "menu-8a70a55fbc5333efd60f0133ccf23f5be99f1c4cb150a46513629d4e84d7a3e5",
+      "route": "automacao-ia.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "547768335f8cb8df68ec6591b321795601420a4b4a88d36459682d5ca981143e"
+    },
+    {
+      "evidenceId": "menu-0cd1237cf5e9534171de6f941a51d23177649878cd45dce18b9c9a9e2716eaa9",
+      "route": "processo.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "ea97d3591ddd26a1bed0c3fcd303078b8e44b0726fbaaf95c21813be4c78b6db"
+    },
+    {
+      "evidenceId": "menu-860b19215f6206bef3e18d892ce1b30c62be2ad28a1eebee8b563b47b9f8730d",
+      "route": "contactos.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "7153fe40b1b1e16e4ebdfe482c47c3ec65bbc461e5719f1718b0afd85c483eff"
+    },
+    {
+      "evidenceId": "menu-40f400379f8d418fb1380fa32318ce6a6e590940fc52ebcb1dffb23f7f6a5448",
+      "route": "area-do-usuario.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "653d3b9c38e0973f070c3b817ae59de5e3ada681d0c39b897d96b53cad34c84a"
+    },
+    {
+      "evidenceId": "menu-cd8e361a31386762db8a293bf73f575489be75c74b643df6c01cb4655346ed34",
+      "route": "blog.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "587db4d21e96b41286ec9aae193c5044f35a2c11688cd60b5e03594a10a7397d"
+    },
+    {
+      "evidenceId": "menu-a763c85330b511245dd4287cdf57a2c0eb9a3a0cfc00135a18dd93c9c8676bd4",
+      "route": "servicos.html",
+      "viewport": "320x568",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "29fe274cd1f6c728ce49094d6f9ccb296628206075c3bcf6bcdb09391bfeeb2a"
+    },
+    {
+      "evidenceId": "menu-4aef93046fea91f3c60ff05f9ac11cf24cbaef0558ca876a3b563a794a65b57b",
+      "route": "index.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": false,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "9c78fc256f12922e1b95e8769b402218a636f14ccb2d400042a357085d5203e2"
+    },
+    {
+      "evidenceId": "menu-f39105b511237803515cfe62a31791e6384deb6aa248e30953f9dbb124ebcf3a",
+      "route": "crm-gestao.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": false,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "a09a3b1e628575907cce2da3cd21490d5b6b3077c1ac09ee09fdbc4d15e181ad"
+    },
+    {
+      "evidenceId": "menu-8af7feb8c43de31511e8252bef9e25cc849b608c57e4f7b4ea7f96f2dcd99b08",
+      "route": "website-premium.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "73a537fcff3edbdb5612147d8ae732060efac560e2387d939caa70d54e99ec9d"
+    },
+    {
+      "evidenceId": "menu-e53eec7b667f36370dbcb53bd9f1242b8d30297513a57a56330984ce5385c1c5",
+      "route": "landing-page.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "34cda7ed20116f62dff33c7872d763f770afd11ac4d8f9dc08c9432cb4bd2413"
+    },
+    {
+      "evidenceId": "menu-a86c9df008e7c8cfa4eb86559f00759e18decc921ac1b2ffc4a304c34eeca69a",
+      "route": "automacao-ia.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "1a9e2095a45990e5c0ed175d59f2898b5695a11521f03876d5972e11aa6b33a6"
+    },
+    {
+      "evidenceId": "menu-b2e012a21089a776be74789ef0a485dae1e9d24801834aa447475f33b7b886e4",
+      "route": "processo.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "ea60c5628d17c6b3db360b73d3a1aab3c22c2b6a84f72027c88e141113ad1eb5"
+    },
+    {
+      "evidenceId": "menu-0ae8711ef920774d9ea165e141c921da9abf12a86b2f567273a5bae8696e7da3",
+      "route": "contactos.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "752ab084dc0ce56e2556dee011a0de3295dd94b7f3bce2f6c3fc53b0ec4f9bfb"
+    },
+    {
+      "evidenceId": "menu-e44bd9e3172da604103b9f1561cd5cfb1d2cfc821869801876dbda70089d6175",
+      "route": "area-do-usuario.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "263e6db3e1a38068eee09f8cb75296b643ea262d86b862018e70c2dac0506353"
+    },
+    {
+      "evidenceId": "menu-ad710382b612a05a93899f916801c871c683fa0ae788b57c5c1e26f67691785e",
+      "route": "blog.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "53b08a7feda2b206cf922fc253cf2deaa512d0dabebe8e7608769f8b5c935b72"
+    },
+    {
+      "evidenceId": "menu-9807f94173005d12b1dcaacdfac6c01c4208c2a29f9f55bf5f45085a7f43e9f0",
+      "route": "servicos.html",
+      "viewport": "360x800",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "018f739c8b09915d409403a69b1295fc3935a133baa88710d2ad99058c4cf31d"
+    },
+    {
+      "evidenceId": "menu-d9d992c272b4c54db76c49c4ecbc308d907af7cb9515f6508f54a63840e8b40d",
+      "route": "index.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": false,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "bcb51eeae2fcc449e4f317b1a1e229155054f0a5799b9d5f087b4e2a056e60e6"
+    },
+    {
+      "evidenceId": "menu-1d68714c8ccd2782a9fdd20d61f2e2486d1a41d102cb6f88eedfe166fa6120a3",
+      "route": "crm-gestao.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": false,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "42b22f003c336004994c3977034298765fd80ea7f230240b525cc7f4b4e4d4ec"
+    },
+    {
+      "evidenceId": "menu-add1b6ff10fc3dd3be753b12f3670187ecac9602cf8e1d21a1fd1b120298b5af",
+      "route": "website-premium.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "f0e5320971a2323e7712911aa359a324cc9ff0a807d3c00a52d818e130643e57"
+    },
+    {
+      "evidenceId": "menu-fdef542e38ac92d0c589218fc317609980c48fae0a76b693772ce78df23c1da5",
+      "route": "landing-page.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "53544eb67d19302b4678799edf957d8117dbc9eb6696fa0b2973dd60340e587e"
+    },
+    {
+      "evidenceId": "menu-62d70d88c1346c45d85c351ae23dfa9a61c9cfddafae25b21eb540ae91bad854",
+      "route": "automacao-ia.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "cfb61f471b3ca140923013c55227c4bdaad9454a96f1d148f69f23bd86e2497a"
+    },
+    {
+      "evidenceId": "menu-df841bfec52353fd740ca236fb5f9edcb87ea4f148b392f40fc6cf2b0a365ef8",
+      "route": "processo.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "994f64c15eaf3c7fe79952c50cd3818a31ebeea9f6a6deca9bf98917e5cda483"
+    },
+    {
+      "evidenceId": "menu-8b08c78d4f0ad5857d1b02c6d4d27c6b4f3c367e6e1d0591c48e2dedc46350e3",
+      "route": "contactos.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "3a070d313cd90c9fe4b76fd3e055d598c0cb5ff957c851f07684b2cb1641cbae"
+    },
+    {
+      "evidenceId": "menu-87cb2ef1ffe36ba7a99be8f0126a974aec4ee48af987159635b471ecb9086013",
+      "route": "area-do-usuario.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "1b1d81e74c615eb08e154ce494afdc5dbb6431fdc3ed49664ad1eb12976f71d0"
+    },
+    {
+      "evidenceId": "menu-b086e9625787b14a63d32c82c14c9cae608d9070689c745ee6c8f6d75e1f698a",
+      "route": "blog.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "fe06de0a19a961516892425528c173558ab9c44a7b1ce4bafa2dc2ef43feb872"
+    },
+    {
+      "evidenceId": "menu-459cf756a618c48d3b44fe75733438f7222780292a0e7015a202ee4eecb49a3d",
+      "route": "servicos.html",
+      "viewport": "390x844",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "0de1b6b293cdbf6abcde3c4c7df897c71f5c9bf11e1329fc711506f4b7898b9d"
+    },
+    {
+      "evidenceId": "menu-7488982ed99b3b8a4c258c4a1da2b7efe8bcb771558d928fec9f71a60bd32205",
+      "route": "index.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": false,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "fafb9c8d4dd92b742195c5c46708621768fa338c25064099d31cb53ea1757c79"
+    },
+    {
+      "evidenceId": "menu-1a063d87fd7018f9218fcf79097da79ac9b118ab867054beaa7c7a96bda9ad2c",
+      "route": "crm-gestao.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": false,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "ee95766f0925fa54feb1f74bd4737a89052eaa3affefc3f8f99b533452586e38"
+    },
+    {
+      "evidenceId": "menu-40ee0e45ac5a8d65483549a5c5591e62d43bc21a318f51e53d920ac12d8039d5",
+      "route": "website-premium.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "df24f95355e2126d7c9c853ce8c1dcb551e50d329fe246489a421fba76ea3da4"
+    },
+    {
+      "evidenceId": "menu-8c155e1915acf857e1ccdff4d8e43a063203d4e947575508dd9dc0ddb9556fbb",
+      "route": "landing-page.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "c56e8f14346641502f93abfbe561153958da84af525d70f04cc96a1d9418e658"
+    },
+    {
+      "evidenceId": "menu-f67f5a5b8afeba3f4435bf036c68fd869eb3e959e25a35b8330c090cc94701d0",
+      "route": "automacao-ia.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "126293ec17ff4cfe368ac1394e71211a21e92f785b5c2261d007db264919bd2d"
+    },
+    {
+      "evidenceId": "menu-467865379d29807060b6010803bafbb9f843f3c3be14302cc4f500c0f3e08d9c",
+      "route": "processo.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "e28c433cb4a3d35730537f2e68e8bee81834b1c65a21bd2ece24974bad503bc6"
+    },
+    {
+      "evidenceId": "menu-af03e7cf2f1b040f17b2dd328d9cbc0486eb5a667c487723da4c0d1b4fa71a72",
+      "route": "contactos.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "d4288dd5e91079b4d111b4f43c68022d628c483252584f70ca21e939ed10dc65"
+    },
+    {
+      "evidenceId": "menu-ce7749ae16f5668726638000b29aef9f5ed44681f8ec2dacc7fa24bed638590d",
+      "route": "area-do-usuario.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "1acc00234b83a942ed6ce3d809a1c9a1a92d8183326f3560ef4b7df63501bc47"
+    },
+    {
+      "evidenceId": "menu-3ee515ef9252d0aa2e03601baf87df70eeef5cf65e3ace2ff54d02c90fee9df0",
+      "route": "blog.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "d33693641bc92bc1a70d680cbe62902c233e500c54ba166faf5b0ba6bc0b2e0f"
+    },
+    {
+      "evidenceId": "menu-567dc4d7273f793dafbea0bd4ddadb72c67a49cc6a9b9de8debc434206a7decc",
+      "route": "servicos.html",
+      "viewport": "412x915",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": true,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "2b55d0fbf06757309611888cc78adf6fbae0a2bc0cd56ec26ebd21e66b123d25"
+    },
+    {
+      "evidenceId": "menu-708eaa8dc264b7f8c5fd1332a381e27f4809b0b5fc5fe4ee823111c3f9e79e22",
+      "route": "index.html",
+      "viewport": "768x1024",
+      "actionPhases": [
+        "before-open",
+        "open",
+        "after-open",
+        "escape-close",
+        "close-button-open",
+        "close-button-close",
+        "outside-open",
+        "outside-close"
+      ],
+      "developmentSemanticStatus": "FAIL",
+      "developmentResult": {
+        "focusReached": true,
+        "focusStyle": {
+          "visible": true,
+          "style": "solid",
+          "width": 2
+        },
+        "open": {
+          "expanded": "true",
+          "drawerInside": false,
+          "focusInside": true,
+          "bodyLocked": true,
+          "backgroundInert": false,
+          "closeTarget": null
+        },
+        "closed": {
+          "expanded": "false",
+          "focusReturned": true,
+          "backgroundRestored": true,
+          "closed": true
+        },
+        "closeButtonClosed": false,
+        "outsideClosed": true
+      },
+      "developmentResultSha256": "c8d1e0532e8c0473a52e1407e758343c02f242d19aa7c8cc9bf77c0288415107"
+    }
+  ]
+}

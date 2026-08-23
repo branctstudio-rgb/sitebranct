@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { mkdtemp, readFile, readdir, rm, unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, normalize } from "node:path";
 import test from "node:test";
 
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
@@ -14,8 +17,338 @@ const manifestPath = new URL("../../fixtures/audit/evidence-manifest.json", impo
 const redGreenPath = new URL("../../docs/audit/evidence/red-green.md", import.meta.url);
 const collectorPath = new URL("./collect-browser-baseline.mjs", import.meta.url);
 const negativeControlPath = new URL("../../fixtures/audit/visual-negative-control.json", import.meta.url);
+const f201TransitionPath = new URL("../../fixtures/audit/f2-01-transition.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
+const hashBytes = (value) => createHash("sha256").update(value).digest("hex");
+const shaPattern = /^[0-9a-f]{40}$/;
+const blobPattern = /^[0-9a-f]{40,64}$/;
+
+const immutableF201Pins = Object.freeze({
+  historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "eed466e5191c8b84938fdc83e27683bbb6b194e2", sha256: "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb" }),
+  targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results.json", gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
+  menuEvidenceMatrix: Object.freeze({
+    path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
+    canonicalization: "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases,developmentSemanticStatus,developmentResult,developmentResultSha256}]) with fixed key order",
+    identityAlgorithm: "sha256(JSON.stringify({route,viewport,actionPhases}))",
+    resultBindingAlgorithm: "sha256(JSON.stringify({evidenceId,route,viewport,actionSequence,semanticStatus,measuredResult}))",
+    digestAlgorithm: "sha256",
+    sha256: "0a7ef81ed646e50fd760b04562bb7f2f31d9b60b414fd790f289ee43d8d1db72",
+    evidenceCount: 41,
+    actionCount: 184,
+  }),
+});
+const canonicalF201Viewports = Object.freeze({
+  "320x568": [320, 568],
+  "360x800": [360, 800],
+  "390x844": [390, 844],
+  "412x915": [412, 915],
+  "768x1024": [768, 1024],
+  "1024x768": [1024, 768],
+  "1440x900": [1440, 900],
+});
+const canonicalDevelopmentRedVector = Object.freeze({
+  "F2-01 matrix has zero overflow and no undersized non-inline targets": "FAIL",
+  "F2-01 mobile menu is modal, bounded and closes through every contracted path": "FAIL",
+  "F2-01 mobile navigation honors reduced motion": "PASS",
+  "F2-01 responsive report validator rejects every contracted regression": "PASS",
+});
+const contractedActionPhases = (route) => ["before-open", "open", "after-open", "escape-close", ...(route === "index.html" ? ["close-button-open", "close-button-close", "outside-open", "outside-close"] : [])];
+
+const canonicalEvidenceTuple = ({ route, viewport, actionPhases }) => ({ route, viewport, actionPhases });
+const canonicalEvidenceId = (entry) => `menu-${hashBytes(JSON.stringify(canonicalEvidenceTuple(entry)))}`;
+const canonicalMenuMatrixBytes = (entries) => Buffer.from(JSON.stringify(entries.map(({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }) => ({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }))));
+const canonicalActionSequence = ({ actionPhases }) => actionPhases.map((phase, sequence) => ({ sequence, phase, status: "COMPLETED" }));
+const exactKeys = (value, keys, context) => {
+  assert.ok(value && typeof value === "object" && !Array.isArray(value), `${context} is absent or invalid`);
+  assert.deepEqual(Object.keys(value).sort(), [...keys].sort(), `${context} schema is divergent`);
+};
+const assertFiniteNumber = (value, context) => assert.ok(typeof value === "number" && Number.isFinite(value), `${context} must be a finite number`);
+const canonicalMeasuredResult = (value, context) => {
+  exactKeys(value, ["focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"], context);
+  assert.equal(typeof value.focusReached, "boolean", `${context}.focusReached must be boolean`);
+  exactKeys(value.focusStyle, ["visible", "style", "width"], `${context}.focusStyle`);
+  assert.equal(typeof value.focusStyle.visible, "boolean", `${context}.focusStyle.visible must be boolean`);
+  assert.equal(typeof value.focusStyle.style, "string", `${context}.focusStyle.style must be string`);
+  assertFiniteNumber(value.focusStyle.width, `${context}.focusStyle.width`);
+  exactKeys(value.open, ["expanded", "drawerInside", "focusInside", "bodyLocked", "backgroundInert", "closeTarget"], `${context}.open`);
+  assert.equal(typeof value.open.expanded, "string", `${context}.open.expanded must be string`);
+  for (const name of ["drawerInside", "focusInside", "bodyLocked", "backgroundInert"]) assert.equal(typeof value.open[name], "boolean", `${context}.open.${name} must be boolean`);
+  if (value.open.closeTarget !== null) {
+    exactKeys(value.open.closeTarget, ["x", "y", "name"], `${context}.open.closeTarget`);
+    assertFiniteNumber(value.open.closeTarget.x, `${context}.open.closeTarget.x`);
+    assertFiniteNumber(value.open.closeTarget.y, `${context}.open.closeTarget.y`);
+    assert.equal(typeof value.open.closeTarget.name, "string", `${context}.open.closeTarget.name must be string`);
+  }
+  exactKeys(value.closed, ["expanded", "focusReturned", "backgroundRestored", "closed"], `${context}.closed`);
+  assert.equal(typeof value.closed.expanded, "string", `${context}.closed.expanded must be string`);
+  for (const name of ["focusReturned", "backgroundRestored", "closed"]) assert.equal(typeof value.closed[name], "boolean", `${context}.closed.${name} must be boolean`);
+  assert.equal(typeof value.closeButtonClosed, "boolean", `${context}.closeButtonClosed must be boolean`);
+  assert.equal(typeof value.outsideClosed, "boolean", `${context}.outsideClosed must be boolean`);
+  return {
+    focusReached: value.focusReached,
+    focusStyle: { visible: value.focusStyle.visible, style: value.focusStyle.style, width: value.focusStyle.width },
+    open: {
+      expanded: value.open.expanded,
+      drawerInside: value.open.drawerInside,
+      focusInside: value.open.focusInside,
+      bodyLocked: value.open.bodyLocked,
+      backgroundInert: value.open.backgroundInert,
+      closeTarget: value.open.closeTarget === null ? null : { x: value.open.closeTarget.x, y: value.open.closeTarget.y, name: value.open.closeTarget.name },
+    },
+    closed: { expanded: value.closed.expanded, focusReturned: value.closed.focusReturned, backgroundRestored: value.closed.backgroundRestored, closed: value.closed.closed },
+    closeButtonClosed: value.closeButtonClosed,
+    outsideClosed: value.outsideClosed,
+  };
+};
+const measuredResultFromReport = (entry) => {
+  exactKeys(entry, ["evidenceId", "route", "viewport", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"], `canonical menu evidence result ${entry?.route ?? "unknown"} ${entry?.viewport ?? "unknown"}`);
+  return canonicalMeasuredResult({
+    focusReached: entry.focusReached,
+    focusStyle: entry.focusStyle,
+    open: entry.open,
+    closed: entry.closed,
+    closeButtonClosed: entry.closeButtonClosed,
+    outsideClosed: entry.outsideClosed,
+  }, `canonical menu evidence measured payload ${entry.route} ${entry.viewport}`);
+};
+const canonicalResultEnvelope = (entry, measuredResult, semanticStatus) => ({
+  evidenceId: entry.evidenceId,
+  route: entry.route,
+  viewport: entry.viewport,
+  actionSequence: canonicalActionSequence(entry),
+  semanticStatus,
+  measuredResult,
+});
+const canonicalResultDigest = (entry, measuredResult, semanticStatus) => hashBytes(JSON.stringify(canonicalResultEnvelope(entry, measuredResult, semanticStatus)));
+
+function validateCanonicalMenuEvidenceMatrixText(reference, text) {
+  assert.equal(typeof text, "string", "canonical menu evidence matrix bytes are absent or unreadable");
+  let matrix;
+  try { matrix = JSON.parse(text); }
+  catch { assert.fail("canonical menu evidence matrix bytes are malformed"); }
+  assert.deepEqual(Object.keys(matrix).sort(), ["actionCount", "canonicalization", "digestAlgorithm", "entries", "evidenceCount", "identityAlgorithm", "resultBindingAlgorithm", "schemaVersion", "sha256"].sort(), "canonical menu evidence matrix schema is divergent");
+  assert.equal(matrix.schemaVersion, 2, "canonical menu evidence matrix schema version is divergent");
+  assert.equal(matrix.canonicalization, reference.canonicalization, "canonical menu evidence matrix canonicalization is divergent");
+  assert.equal(matrix.identityAlgorithm, reference.identityAlgorithm, "canonical menu evidence matrix identity algorithm is divergent");
+  assert.equal(matrix.resultBindingAlgorithm, reference.resultBindingAlgorithm, "canonical menu evidence result binding algorithm is divergent");
+  assert.equal(matrix.digestAlgorithm, "sha256", "canonical menu evidence matrix digest algorithm is divergent");
+  assert.ok(Array.isArray(matrix.entries), "canonical menu evidence matrix entries are absent");
+  assert.equal(matrix.entries.length, reference.evidenceCount, "canonical menu evidence matrix cardinality is divergent");
+  for (const entry of matrix.entries) {
+    assert.deepEqual(Object.keys(entry).sort(), ["actionPhases", "developmentResult", "developmentResultSha256", "developmentSemanticStatus", "evidenceId", "route", "viewport"].sort(), "canonical menu evidence matrix entry schema is divergent");
+    assert.match(entry.route ?? "", /^[a-z0-9-]+\.html$/, `canonical menu evidence route is invalid: ${entry.route}`);
+    assert.ok(Object.hasOwn(canonicalF201Viewports, entry.viewport), `canonical menu evidence viewport is invalid: ${entry.viewport}`);
+    assert.ok(Array.isArray(entry.actionPhases) && entry.actionPhases.length > 0, `canonical menu evidence actions are absent: ${entry.route} ${entry.viewport}`);
+    assert.deepEqual(entry.actionPhases, contractedActionPhases(entry.route), `canonical menu evidence actions are divergent: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.evidenceId, canonicalEvidenceId(entry), `canonical menu evidence identity is divergent: ${entry.route} ${entry.viewport}`);
+    assert.match(entry.developmentSemanticStatus ?? "", /^(PASS|FAIL)$/, `canonical menu evidence semantic status is invalid: ${entry.route} ${entry.viewport}`);
+    const result = canonicalMeasuredResult(entry.developmentResult, `canonical menu evidence development result ${entry.route} ${entry.viewport}`);
+    const derivedSemanticStatus = menuFailure(result) ? "FAIL" : "PASS";
+    assert.equal(entry.developmentSemanticStatus, derivedSemanticStatus, `canonical menu evidence semantic status differs from measured result: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.developmentResultSha256, canonicalResultDigest(entry, result, derivedSemanticStatus), `canonical menu evidence development result digest is divergent: ${entry.route} ${entry.viewport}`);
+  }
+  const tupleKeys = matrix.entries.map(({ route, viewport }) => `${route}\0${viewport}`);
+  assert.equal(new Set(tupleKeys).size, matrix.entries.length, "canonical menu evidence matrix contains duplicate tuples");
+  assert.equal(new Set(matrix.entries.map(({ evidenceId }) => evidenceId)).size, matrix.entries.length, "canonical menu evidence matrix contains duplicate identities");
+  assert.equal(matrix.actionCount, matrix.entries.reduce((count, entry) => count + entry.actionPhases.length, 0), "canonical menu evidence action cardinality is divergent");
+  assert.equal(matrix.actionCount, reference.actionCount, "canonical menu evidence action authority is divergent");
+  const digest = hashBytes(canonicalMenuMatrixBytes(matrix.entries));
+  assert.equal(matrix.sha256, digest, "canonical menu evidence matrix embedded digest is divergent");
+  assert.equal(digest, reference.sha256, "canonical menu evidence matrix digest differs from authority");
+  return matrix;
+}
+
+function readCanonicalMenuEvidenceMatrix(transition) {
+  const reference = transition?.f201?.menuEvidenceMatrix;
+  assert.ok(reference, "canonical menu evidence matrix authority is absent");
+  assert.deepEqual(reference, immutableF201Pins.menuEvidenceMatrix, "canonical menu evidence matrix authority is divergent");
+  let text;
+  try { text = readFileSync(new URL(`../../${reference.path}`, import.meta.url), "utf8"); }
+  catch { assert.fail(`canonical menu evidence matrix is absent or unreadable: ${reference.path}`); }
+  return validateCanonicalMenuEvidenceMatrixText(reference, text);
+}
+
+function readAuthoritativeGitBlob(repository, authoritySha, expected) {
+  assert.match(authoritySha ?? "", shaPattern, "authority sha must be an explicit 40-character commit id");
+  assert.match(expected?.gitBlobOid ?? "", blobPattern, "expected Git blob oid must be immutable and explicit");
+  assert.match(expected?.sha256 ?? "", /^[0-9a-f]{64}$/, "expected sha256 must be immutable and explicit");
+  assert.match(expected?.path ?? "", /^(?![./\\])(?!.+\\)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/, "authoritative path must remain repository-relative");
+  try { execFileSync("git", ["cat-file", "-e", `${authoritySha}^{commit}`], { cwd: repository, stdio: "ignore" }); }
+  catch { assert.fail(`authority sha is not resolvable: ${authoritySha}`); }
+  let actualOid;
+  try { actualOid = execFileSync("git", ["rev-parse", `${authoritySha}:${expected.path}`], { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+  catch { assert.fail(`missing authoritative path ${expected.path} at authority sha ${authoritySha}`); }
+  assert.equal(actualOid, expected.gitBlobOid, `blob oid mismatch for ${expected.path}`);
+  const bytes = execFileSync("git", ["cat-file", "blob", expected.gitBlobOid], { cwd: repository });
+  assert.equal(hashBytes(bytes), expected.sha256, `sha256 mismatch for ${expected.path}`);
+  return bytes;
+}
+
+function resolveAuthoritySha(transition, options = {}) {
+  const explicit = Object.hasOwn(options, "explicit") ? options.explicit : process.env.F2_GOV_AUTHORITY_SHA;
+  const eventPath = Object.hasOwn(options, "eventPath") ? options.eventPath : process.env.GITHUB_EVENT_PATH;
+  let eventHead;
+  let eventBase;
+  if (eventPath) {
+    let event;
+    try { event = JSON.parse(readFileSync(eventPath, "utf8")); }
+    catch { assert.fail("authority event is absent, unreadable or malformed"); }
+    eventHead = event?.pull_request?.head?.sha;
+    eventBase = event?.pull_request?.base?.sha;
+    assert.match(eventHead ?? "", shaPattern, "authority event head sha is absent or malformed");
+    assert.equal(eventBase, transition.baseSha, "authority event base sha differs from the transition contract");
+  }
+  assert.ok(explicit || eventHead, "authority sha is absent");
+  if (explicit && eventHead) assert.equal(explicit, eventHead, "explicit authority sha differs from event head sha");
+  const authoritySha = explicit || eventHead;
+  assert.match(authoritySha, shaPattern, "authority sha is malformed");
+  return authoritySha;
+}
+
+function assertExactSemanticTestSet(execution) {
+  assert.equal(execution?.complete, true, `execution incomplete${execution?.infrastructureErrors?.length ? `: ${execution.infrastructureErrors.join(", ")}` : ""}`);
+  assert.deepEqual(execution.infrastructureErrors, [], `infrastructure error: ${(execution?.infrastructureErrors ?? []).join(", ")}`);
+  assert.ok(Array.isArray(execution.semanticTests), "semantic test set is absent");
+  const actualNames = execution.semanticTests.map(({ name }) => name);
+  assert.deepEqual(actualNames, semanticTestNames, "semantic test set is incomplete, reordered or duplicated");
+  for (const result of execution.semanticTests) assert.match(result.status, /^(PASS|FAIL)$/, `semantic test ${result.name} has invalid status`);
+}
+
+function assertCompleteDrawerActions(report, matrix) {
+  const actions = report.execution?.actions;
+  assert.ok(Array.isArray(actions), "drawer action completion set is absent");
+  const expectedActions = matrix.entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
+  assert.equal(actions.length, expectedActions.length, `canonical menu evidence action set cardinality differs: expected ${expectedActions.length}, got ${actions.length}`);
+  for (const [index, action] of actions.entries()) {
+    if (action.status === "TIMEOUT") assert.fail(`drawer action timeout cannot satisfy semantic RED: ${action.route} ${action.viewport} ${action.phase}`);
+    assert.equal(action.status, "COMPLETED", `drawer action ${action.status ?? "unfinished"} cannot satisfy semantic RED: ${action.route} ${action.viewport} ${action.phase}`);
+    exactKeys(action, ["evidenceId", "route", "viewport", "phase", "status"], `canonical menu evidence action ${index}`);
+    assert.deepEqual(action, expectedActions[index], `canonical menu evidence action sequence or identity is divergent at index ${index}`);
+  }
+}
+
+function assertCanonicalDevelopmentResultBindings(report, matrix) {
+  for (const canonical of matrix.entries) {
+    const matches = report.menuResults.filter(({ evidenceId }) => evidenceId === canonical.evidenceId);
+    assert.equal(matches.length, 1, `canonical menu evidence measured result bijection differs for ${canonical.route} ${canonical.viewport}`);
+    const measuredResult = measuredResultFromReport(matches[0]);
+    const semanticStatus = menuFailure(measuredResult) ? "FAIL" : "PASS";
+    assert.equal(semanticStatus, canonical.developmentSemanticStatus, `canonical menu evidence semantic result differs for ${canonical.route} ${canonical.viewport}`);
+    assert.equal(canonicalResultDigest(canonical, measuredResult, semanticStatus), canonical.developmentResultSha256, `canonical menu evidence measured result is transplanted or divergent for ${canonical.route} ${canonical.viewport}`);
+  }
+}
+
+function assertCompleteReport(transition, report, matrix) {
+  assert.ok(report && typeof report === "object" && !Array.isArray(report), "report is absent or unreadable");
+  assert.equal(Object.hasOwn(report, "expectedMenuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
+  assert.equal(Object.hasOwn(report, "menuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
+  assert.equal(report.schemaVersion, 1, "report schema is absent or invalid");
+  assert.equal(report.source, transition.baseSha, "report source differs from the transition base");
+  assert.match(report.browser?.product ?? "", /(?:Chrome|Chromium)\//, "report browser evidence is absent or invalid");
+  assert.deepEqual(report.viewports, transition.f201.matrix.viewports, "report viewport matrix is incomplete or divergent");
+  for (const name of transition.f201.expectedDevelopmentRed.requiredEvidence) assert.ok(report[name] !== undefined && report[name] !== null, `required evidence absent: ${name}`);
+  assert.equal(report.observations.length, transition.f201.targetBaseline.observationCount, `truncated report observation count: expected ${transition.f201.targetBaseline.observationCount}`);
+  assert.equal(report.menuResults.length, matrix.evidenceCount, `canonical menu evidence bijection incomplete: expected ${matrix.evidenceCount}, got ${report.menuResults.length}`);
+  const expectedObservationKeys = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => `${route}\0${viewport}`)).sort();
+  const actualObservationKeys = report.observations.map(({ route, viewport }) => `${route}\0${viewport}`).sort();
+  assert.deepEqual(actualObservationKeys, expectedObservationKeys, "report observation matrix contains missing, duplicate or unknown entries");
+  assert.ok(report.observations.every((entry) => entry.conclusion === "CONCLUSIVE"), "inconclusive observation cannot satisfy transition evidence");
+  const expectedMenuIds = matrix.entries.map(({ evidenceId }) => evidenceId).sort();
+  const actualMenuIds = report.menuResults.map((entry) => {
+    const canonical = matrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
+    assert.ok(canonical, `canonical menu evidence tuple is unknown: ${entry.route} ${entry.viewport}`);
+    const derivedId = canonicalEvidenceId(canonical);
+    assert.equal(derivedId, canonical.evidenceId, `canonical menu evidence identity cannot be derived: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.evidenceId, derivedId, `canonical menu evidence declared id is absent or differs from tuple: ${entry.route} ${entry.viewport}`);
+    measuredResultFromReport(entry);
+    return derivedId;
+  }).sort();
+  assert.deepEqual(actualMenuIds, expectedMenuIds, "canonical menu evidence bijection contains a missing, extra, duplicate or wrongly associated tuple");
+  assertExactSemanticTestSet(report.execution);
+  assertCompleteDrawerActions(report, matrix);
+}
+
+function assertProcessOutcome(outcome, expectedExitCode) {
+  assert.ok(outcome && typeof outcome === "object", "process outcome is absent");
+  assert.equal(outcome.exited, true, "process ended prematurely");
+  assert.equal(outcome.timedOut, false, "process timeout cannot satisfy transition evidence");
+  assert.equal(outcome.signal, null, `process signal cannot satisfy transition evidence: ${outcome.signal}`);
+  assert.equal(outcome.exitCode, expectedExitCode, `process error exit code: expected ${expectedExitCode}, got ${outcome.exitCode}`);
+}
+
+const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) =>
+  !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
+  open.expanded !== "true" || !open.drawerInside || !open.focusInside || !open.bodyLocked || !open.backgroundInert ||
+  !open.closeTarget || open.closeTarget.x < 44 || open.closeTarget.y < 44 || !open.closeTarget.name ||
+  closed.expanded !== "false" || !closed.focusReturned || !closed.backgroundRestored || !closed.closed ||
+  !closeButtonClosed || !outsideClosed;
+
+function validateStateMachine(transition) {
+  const states = ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"];
+  assert.ok(transition.status, "state absent");
+  assert.ok(states.includes(transition.status), `state unknown: ${transition.status}`);
+  assert.deepEqual(transition.stateMachine.states, states, "state set is incomplete or reordered");
+  assert.equal(transition.stateMachine.current, transition.status, "state current mismatch");
+  const expectedPrevious = { PHASE_1_HISTORICAL: null, F2_01_AUTHORIZED_IN_DEVELOPMENT: "PHASE_1_HISTORICAL", F2_01_INTEGRATED_VERIFIED: "F2_01_AUTHORIZED_IN_DEVELOPMENT" }[transition.status];
+  assert.equal(transition.stateMachine.previous, expectedPrevious, "state transition is inverted or regressed");
+  assert.deepEqual(transition.stateMachine.transitions, {
+    PHASE_1_HISTORICAL: ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
+    F2_01_AUTHORIZED_IN_DEVELOPMENT: ["F2_01_INTEGRATED_VERIFIED"],
+    F2_01_INTEGRATED_VERIFIED: [],
+  }, "state transition graph is not closed");
+  assert.ok(Array.isArray(transition.f201.requiredBrowsers) && transition.f201.requiredBrowsers.length > 0, "mandatory browser set is absent");
+  assert.deepEqual(transition.f201.matrix.viewports, canonicalF201Viewports, "viewport contract is absent, malformed or divergent");
+  assert.equal(transition.f201.targetBaseline.observationCount, transition.f201.matrix.routes.length * Object.keys(canonicalF201Viewports).length, "viewport observation cardinality is divergent");
+  assert.deepEqual(transition.f201.expectedDevelopmentRed.semanticVector, canonicalDevelopmentRedVector, "semantic RED vector contract is divergent");
+  const matrix = readCanonicalMenuEvidenceMatrix(transition);
+  assert.equal(transition.f201.targetBaseline.menuExerciseCount, matrix.evidenceCount, "canonical menu evidence count differs from target baseline");
+  return matrix;
+}
+
+function deriveF201State(transition, evidence) {
+  const matrix = validateStateMachine(transition);
+  if (transition.status === "PHASE_1_HISTORICAL") return transition.status;
+  assertCompleteReport(transition, evidence.report, matrix);
+  if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
+    assertProcessOutcome(evidence.processOutcome, 1);
+    assertCanonicalDevelopmentResultBindings(evidence.report, matrix);
+    const actualVector = Object.fromEntries(evidence.report.execution.semanticTests.map(({ name, status }) => [name, status]));
+    assert.deepEqual(actualVector, canonicalDevelopmentRedVector, "semantic RED vector differs from the exact contracted result");
+    const overflowCount = evidence.report.observations.filter((entry) => entry.overflow).length;
+    const smallTargetObservationCount = evidence.report.observations.filter((entry) => entry.smallTargets?.length).length;
+    const offViewportDrawerCount = evidence.report.menuResults.filter((entry) => entry.open && !entry.open.drawerInside).length;
+    const menuFailureCount = evidence.report.menuResults.filter(menuFailure).length;
+    assert.ok(overflowCount >= transition.f201.expectedDevelopmentRed.minimumOverflowCount, "semantic RED lacks overflow evidence");
+    assert.ok(smallTargetObservationCount >= transition.f201.expectedDevelopmentRed.minimumSmallTargetObservationCount, "semantic RED lacks undersized target evidence");
+    assert.ok(offViewportDrawerCount >= transition.f201.expectedDevelopmentRed.minimumOffViewportDrawerCount, "semantic RED lacks drawer outside viewport evidence");
+    assert.ok(menuFailureCount >= transition.f201.expectedDevelopmentRed.minimumMenuFailureCount, "semantic RED lacks menu behavior evidence");
+    return transition.status;
+  }
+  const authoritySha = evidence.authoritySha;
+  assertProcessOutcome(evidence.processOutcome, 0);
+  assert.match(authoritySha ?? "", shaPattern, "integrated authority sha is absent or malformed");
+  assert.ok(evidence.report.execution.semanticTests.every(({ status }) => status === "PASS"), "semantic RED cannot produce integrated state");
+  assert.ok(evidence.report.observations.every((entry) => !entry.overflow && (Number(entry.viewport.split("x")[0]) > 768 || !(entry.smallTargets?.length))), "integrated report is not GREEN");
+  assert.ok(evidence.report.menuResults.every((entry) => !menuFailure(entry)), "integrated menu report is not GREEN");
+  assert.equal(evidence.report.reducedMotion?.matches, true, "integrated reduced-motion evidence is absent");
+  assert.ok(evidence.report.reducedMotion.durationsMs.every((duration) => duration <= 1), "integrated reduced-motion evidence is RED");
+  for (const browser of transition.f201.requiredBrowsers) assert.equal(evidence.browsers?.[browser], "VERIFIED", `mandatory browser not verified: ${browser}`);
+  assert.ok(evidence.liveDiff, "live diff absent");
+  assert.equal(evidence.liveDiff.complete, true, "live diff incomplete");
+  assert.equal(evidence.liveDiff.authoritySha, authoritySha, "live diff head mismatch");
+  assert.ok(Array.isArray(evidence.liveDiff.paths) && evidence.liveDiff.paths.length > 0 && evidence.liveDiff.paths.every((path) => /^(?:[^/]+\.html|src\/(?:css|js)\/)/.test(path)), "live diff paths are absent or outside F2-01");
+  assert.ok(evidence.approval, "approval absent");
+  assert.equal(evidence.approval.decision, "APPROVED", "approval decision is not APPROVED");
+  assert.equal(evidence.approval.independent, true, "approval is not independent");
+  assert.equal(evidence.approval.authoritySha, authoritySha, "approval head mismatch");
+  const reportWithoutExecution = structuredClone(evidence.report);
+  delete reportWithoutExecution.execution;
+  for (const entry of reportWithoutExecution.menuResults) delete entry.evidenceId;
+  assert.deepEqual(reportWithoutExecution, evidence.targetBaseline, "baseline mismatch with integrated report");
+  return transition.status;
+}
 
 function jpegDimensions(buffer) {
   assert.equal(buffer.subarray(0, 2).toString("hex"), "ffd8", "evidence must be JPEG");
@@ -65,6 +398,398 @@ test("the offline audit contract is complete and production-safe", async () => {
       assert.match(html, /<meta\s+name=["']description["']/i, `${route} must have a description`);
       assert.match(html, /<link\s+rel=["']canonical["']/i, `${route} must have a canonical`);
     }
+  }
+});
+
+test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", async () => {
+  const transition = await readJson(f201TransitionPath);
+  const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
+  const authoritySha = resolveAuthoritySha(transition);
+  assert.equal(transition.schemaVersion, 1);
+  assert.equal(transition.status, transition.stateMachine.current);
+  assert.deepEqual(transition.historicalPhase1, { status: "HISTORICAL_FROZEN", ...immutableF201Pins.historicalPhase1 });
+  assert.deepEqual({ path: transition.f201.responsiveTest.path, gitBlobOid: transition.f201.responsiveTest.gitBlobOid, sha256: transition.f201.responsiveTest.copiedSha256 }, immutableF201Pins.responsiveTest);
+  assert.deepEqual({ path: transition.f201.targetBaseline.path, gitBlobOid: transition.f201.targetBaseline.gitBlobOid, sha256: transition.f201.targetBaseline.sha256 }, immutableF201Pins.targetBaseline);
+  readAuthoritativeGitBlob(repository, transition.historicalPhase1.authoritySha, immutableF201Pins.historicalPhase1);
+  readAuthoritativeGitBlob(repository, authoritySha, immutableF201Pins.responsiveTest);
+  readAuthoritativeGitBlob(repository, authoritySha, immutableF201Pins.targetBaseline);
+  if (transition.status === "PHASE_1_HISTORICAL") {
+    assert.equal(deriveF201State(transition, {}), "PHASE_1_HISTORICAL");
+    return;
+  }
+  const reportDir = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-"));
+  const reportPath = join(reportDir, "report.json");
+  let failure;
+  const childEnvironment = { ...process.env, F2_01_REPORT_PATH:reportPath };
+  delete childEnvironment.NODE_TEST_CONTEXT;
+  try { execFileSync("node", ["--test", transition.f201.responsiveTest.path], { encoding:"utf8", env:childEnvironment }); }
+  catch (error) { failure = error; }
+  try {
+    const report = JSON.parse(await readFile(reportPath, "utf8"));
+    if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
+      assert.ok(failure, "development state must prove the specific F2-01 RED");
+      const processOutcome = { exited: true, timedOut: failure.killed === true, signal: failure.signal ?? null, exitCode: failure.status };
+      assert.equal(deriveF201State(transition, { report, processOutcome }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+    } else {
+      assert.equal(failure, undefined, "integrated state requires the responsive suite to finish GREEN");
+      const integratedEvidence = await readJson(new URL(`../../${transition.stateMachine.integratedEvidencePath}`, import.meta.url));
+      const targetBaseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
+      const processOutcome = { exited: true, timedOut: false, signal: null, exitCode: 0 };
+      assert.equal(deriveF201State(transition, { ...integratedEvidence, report, targetBaseline, authoritySha, processOutcome }), "F2_01_INTEGRATED_VERIFIED");
+    }
+  } finally { await rm(reportDir, { recursive:true, force:true }); }
+});
+
+test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory PR identity", async () => {
+  const transition = await readJson(f201TransitionPath);
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-event-"));
+  const eventPath = join(directory, "event.json");
+  const head = "1".repeat(40);
+  try {
+    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: transition.baseSha } } }));
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: head }), head);
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "2".repeat(40) }), /differs from event head/i);
+    assert.throws(() => resolveAuthoritySha(transition, { explicit: "HEAD", eventPath: "" }), /malformed/i);
+    assert.throws(() => resolveAuthoritySha(transition, { explicit: "", eventPath: "" }), /absent/i);
+    await writeFile(eventPath, "{");
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /unreadable or malformed/i);
+    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: "2".repeat(40) } } }));
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /base sha differs/i);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+const semanticTestNames = [
+  "F2-01 matrix has zero overflow and no undersized non-inline targets",
+  "F2-01 mobile menu is modal, bounded and closes through every contracted path",
+  "F2-01 mobile navigation honors reduced motion",
+  "F2-01 responsive report validator rejects every contracted regression",
+];
+
+const completeExecution = (statuses) => ({
+  complete: true,
+  infrastructureErrors: [],
+  semanticTests: semanticTestNames.map((name) => ({ name, status: statuses[name] ?? "PASS" })),
+});
+
+const completeActionsFor = (transition) => readCanonicalMenuEvidenceMatrix(transition).entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
+const reportForRequiredMatrix = (transition, baseline) => {
+  const report = structuredClone(baseline);
+  report.viewports = structuredClone(transition.f201.matrix.viewports);
+  report.observations = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => {
+    const existing = baseline.observations.find((entry) => entry.route === route && entry.viewport === viewport);
+    if (existing) return { ...structuredClone(existing), conclusion: "CONCLUSIVE" };
+    const source = baseline.observations.find((entry) => entry.route === route && entry.viewport === "1440x900");
+    return { ...structuredClone(source), viewport, clientWidth: 1024, scrollWidth: 1024, overflow: false, smallTargets: [], conclusion: "CONCLUSIVE" };
+  }));
+  return report;
+};
+const developmentReportFrom = (transition, baseline) => {
+  const report = reportForRequiredMatrix(transition, baseline);
+  const matrix = readCanonicalMenuEvidenceMatrix(transition);
+  report.menuResults = matrix.entries.map(({ evidenceId, route, viewport, developmentResult }) => ({ evidenceId, route, viewport, ...structuredClone(developmentResult) }));
+  report.observations[0].overflow = true;
+  report.observations[0].scrollWidth = report.observations[0].clientWidth + 1;
+  report.observations[0].smallTargets = [{ selector: ".fixture", width: 43, height: 43 }];
+  report.execution = completeExecution({
+    [semanticTestNames[0]]: "FAIL",
+    [semanticTestNames[1]]: "FAIL",
+  });
+  report.execution.actions = completeActionsFor(transition);
+  return report;
+};
+
+test("F2-GOV-06 rejects incomplete execution before classifying a development RED", async (t) => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const valid = { report: developmentReportFrom(transition, baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  assert.equal(deriveF201State(transition, valid), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+  const cases = [
+    ["timeout", (value) => { value.processOutcome.timedOut = true; }, /timeout/i],
+    ["process error", (value) => { value.processOutcome.exitCode = 2; }, /process error/i],
+    ["premature exit", (value) => { value.processOutcome.exited = false; }, /prematurely/i],
+    ["truncated report", (value) => { value.report.observations.pop(); }, /truncated report/i],
+    ["semantic test not executed", (value) => { value.report.execution.semanticTests.pop(); }, /semantic test set/i],
+    ["incomplete menu count", (value) => { value.report.menuResults.pop(); }, /canonical menu evidence bijection/i],
+    ["duplicate observation", (value) => { value.report.observations[1] = structuredClone(value.report.observations[0]); }, /observation matrix.*duplicate/i],
+    ["required evidence absent", (value) => { delete value.report.reducedMotion; }, /required evidence absent/i],
+    ["completion marker false", (value) => { value.report.execution.complete = false; }, /execution incomplete/i],
+    ["infrastructure error", (value) => { value.report.execution.infrastructureErrors = ["browser disconnected"]; }, /execution incomplete|infrastructure error/i],
+    ["drawer action missing", (value) => { value.report.execution.actions.pop(); }, /canonical menu evidence action set/i],
+    ["drawer action duplicated", (value) => { value.report.execution.actions.push(structuredClone(value.report.execution.actions[0])); }, /canonical menu evidence action set/i],
+    ["drawer action cancelled", (value) => { value.report.execution.actions[0].status = "CANCELLED"; }, /cancelled.*cannot satisfy semantic RED/i],
+    ["drawer action error", (value) => { value.report.execution.actions[0].status = "ERROR"; }, /error.*cannot satisfy semantic RED/i],
+    ["drawer action unfinished", (value) => { delete value.report.execution.actions[0].status; }, /unfinished.*cannot satisfy semantic RED/i],
+  ];
+  for (const [label, mutate, expected] of cases) await t.test(label, () => {
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => deriveF201State(transition, value), expected);
+  });
+});
+
+test("F2-GOV-06 rejects a forged menu route even when matching actions are forged too", async () => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const report = developmentReportFrom(transition, baseline);
+  const originalRoute = report.menuResults[1].route;
+  const viewport = report.menuResults[1].viewport;
+  report.menuResults[1].route = "forged.html";
+  for (const action of report.execution.actions) {
+    if (action.route === originalRoute && action.viewport === viewport) action.route = "forged.html";
+  }
+  assert.throws(
+    () => deriveF201State(transition, { report, processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } }),
+    /canonical menu evidence.*forged\.html/i,
+  );
+});
+
+test("F2-GOV-06 requires an exact canonical bijection for all 41 menu evidences", async (t) => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const valid = { report: developmentReportFrom(transition, baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  const rewriteActions = (report, from, to) => {
+    for (const action of report.execution.actions) {
+      if (action.route === from.route && action.viewport === from.viewport) Object.assign(action, to);
+    }
+  };
+  const cases = [
+    ["valid route swapped", (value) => {
+      const entry = value.report.menuResults[1];
+      const from = { route: entry.route, viewport: entry.viewport };
+      const to = { route: "website-premium.html", viewport: entry.viewport };
+      Object.assign(entry, to);
+      rewriteActions(value.report, from, to);
+    }],
+    ["action forged", (value) => { value.report.execution.actions[0].phase = "forged-action"; }],
+    ["valid action swapped", (value) => { value.report.execution.actions[0].phase = value.report.execution.actions[1].phase; }],
+    ["viewport swapped", (value) => {
+      const entry = value.report.menuResults[1];
+      const from = { route: entry.route, viewport: entry.viewport };
+      const to = { route: entry.route, viewport: "768x1024" };
+      Object.assign(entry, to);
+      rewriteActions(value.report, from, to);
+    }],
+    ["identity duplicated", (value) => { value.report.menuResults[1] = structuredClone(value.report.menuResults[0]); }],
+    ["evidence removed", (value) => { value.report.menuResults.pop(); }],
+    ["42nd evidence extra", (value) => { value.report.menuResults.push({ ...structuredClone(value.report.menuResults.at(-1)), route: "forged.html" }); }],
+    ["declared id absent", (value) => { delete value.report.menuResults[0].evidenceId; }],
+    ["declared id differs from tuple", (value) => { value.report.menuResults[0].evidenceId = "menu-forged-identity"; }],
+    ["measured payload swapped between valid identities", (value) => {
+      const identityKeys = new Set(["evidenceId", "route", "viewport"]);
+      const payloads = value.report.menuResults.slice(0, 2).map((entry) => Object.fromEntries(Object.entries(entry).filter(([key]) => !identityKeys.has(key))));
+      for (const [index, entry] of value.report.menuResults.slice(0, 2).entries()) {
+        for (const key of Object.keys(entry)) if (!identityKeys.has(key)) delete entry[key];
+        Object.assign(entry, structuredClone(payloads[1 - index]));
+      }
+    }],
+    ["measured payload circularly permuted across valid identities", (value) => {
+      const identityKeys = new Set(["evidenceId", "route", "viewport"]);
+      const entries = value.report.menuResults.slice(0, 3);
+      const payloads = entries.map((entry) => Object.fromEntries(Object.entries(entry).filter(([key]) => !identityKeys.has(key))));
+      for (const [index, entry] of entries.entries()) {
+        for (const key of Object.keys(entry)) if (!identityKeys.has(key)) delete entry[key];
+        Object.assign(entry, structuredClone(payloads[(index + 1) % payloads.length]));
+      }
+    }],
+    ["measured payload copied onto another valid identity", (value) => {
+      const identityKeys = new Set(["evidenceId", "route", "viewport"]);
+      const copied = Object.fromEntries(Object.entries(value.report.menuResults[0]).filter(([key]) => !identityKeys.has(key)));
+      const target = value.report.menuResults[1];
+      for (const key of Object.keys(target)) if (!identityKeys.has(key)) delete target[key];
+      Object.assign(target, structuredClone(copied));
+    }],
+    ["report-controlled digest cannot authorize transplanted evidence", (value) => {
+      const identityKeys = new Set(["evidenceId", "route", "viewport"]);
+      const source = value.report.menuResults[0];
+      const target = value.report.menuResults[1];
+      const transplanted = Object.fromEntries(Object.entries(source).filter(([key]) => !identityKeys.has(key)));
+      for (const key of Object.keys(target)) if (!identityKeys.has(key)) delete target[key];
+      Object.assign(target, structuredClone(transplanted));
+      target.resultDigest = hashBytes(JSON.stringify(target));
+    }],
+    ["action declared id absent", (value) => { delete value.report.execution.actions[0].evidenceId; }],
+    ["report redefines expected matrix", (value) => { value.report.expectedMenuEvidenceMatrix = []; }],
+  ];
+  for (const [label, mutate] of cases) await t.test(label, () => {
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => deriveF201State(transition, value), /canonical menu evidence/i);
+  });
+});
+
+test("F2-GOV-06 fails closed when the canonical menu matrix authority is absent or divergent", async (t) => {
+  const [transitionSource, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const evidence = { report: developmentReportFrom(transitionSource, baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  for (const [label, mutate] of [
+    ["authority absent", (value) => { delete value.f201.menuEvidenceMatrix; }],
+    ["authority path unreadable", (value) => { value.f201.menuEvidenceMatrix = { path: "fixtures/audit/missing-menu-matrix.json", sha256: "0".repeat(64), evidenceCount: 41, actionCount: 184 }; }],
+    ["authority digest divergent", (value) => { value.f201.menuEvidenceMatrix = { path: "fixtures/audit/f2-01-menu-evidence-matrix.json", sha256: "0".repeat(64), evidenceCount: 41, actionCount: 184 }; }],
+  ]) await t.test(label, () => {
+    const transition = structuredClone(transitionSource);
+    mutate(transition);
+    assert.throws(() => deriveF201State(transition, evidence), /canonical menu evidence matrix/i);
+  });
+});
+
+test("F2-GOV-06 rejects absent, malformed and adulterated canonical matrix bytes", async (t) => {
+  const transition = await readJson(f201TransitionPath);
+  const reference = transition.f201.menuEvidenceMatrix;
+  const source = await readJson(new URL(`../../${reference.path}`, import.meta.url));
+  for (const [label, input, expected] of [
+    ["matrix bytes absent", undefined, /absent or unreadable/i],
+    ["matrix bytes malformed", "{", /malformed/i],
+    ["matrix route adulterated", JSON.stringify({ ...source, entries: source.entries.map((entry, index) => index === 0 ? { ...entry, route: "forged.html" } : entry) }), /canonical menu evidence (identity|actions|digest)/i],
+    ["matrix embedded digest altered", JSON.stringify({ ...source, sha256: "0".repeat(64) }), /embedded digest/i],
+  ]) await t.test(label, () => {
+    assert.throws(() => validateCanonicalMenuEvidenceMatrixText(reference, input), expected);
+  });
+});
+
+test("F2-GOV-06 never promotes an internal drawer timeout to semantic RED", async (t) => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const processOutcome = { exited: true, timedOut: false, signal: null, exitCode: 1 };
+  for (const phase of ["before-open", "open", "after-open"]) await t.test(`timeout ${phase}`, () => {
+    const report = developmentReportFrom(transition, baseline);
+    report.execution.actions.find((action) => action.route === "index.html" && action.viewport === "320x568" && action.phase === phase).status = "TIMEOUT";
+    assert.throws(() => deriveF201State(transition, { report, processOutcome }), /timeout.*cannot satisfy semantic RED/i);
+  });
+});
+
+test("F2-GOV-06 accepts only the exact contracted semantic RED vector", async (t) => {
+  const [transition, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const valid = { report: developmentReportFrom(transition, baseline), processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } };
+  const cases = [
+    ["menu PASS", (value) => { value.report.execution.semanticTests[1].status = "PASS"; }],
+    ["reduced motion FAIL", (value) => { value.report.execution.semanticTests[2].status = "FAIL"; }],
+    ["reduced motion absent", (value) => { value.report.execution.semanticTests.splice(2, 1); }],
+    ["validator FAIL", (value) => { value.report.execution.semanticTests[3].status = "FAIL"; }],
+    ["validator absent", (value) => { value.report.execution.semanticTests.pop(); }],
+    ["generic failures", (value) => { value.report.execution.semanticTests[2].status = "FAIL"; value.report.execution.semanticTests[3].status = "FAIL"; }],
+    ["all failures", (value) => { for (const result of value.report.execution.semanticTests) result.status = "FAIL"; }],
+    ["empty status", (value) => { value.report.execution.semanticTests[1].status = ""; }],
+    ["unknown status", (value) => { value.report.execution.semanticTests[1].status = "UNKNOWN"; }],
+  ];
+  for (const [label, mutate] of cases) await t.test(label, () => {
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => deriveF201State(transition, value), /semantic RED vector|semantic test set|invalid status/i);
+  });
+});
+
+test("F2-GOV-06 requires conclusive numeric 1024x768 evidence", async () => {
+  const transition = await readJson(f201TransitionPath);
+  assert.deepEqual(transition.f201.matrix.viewports["1024x768"], [1024, 768]);
+});
+
+test("F2-GOV-06 derives integrated state only from complete coherent approved GREEN", async (t) => {
+  const [transitionSource, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const transition = structuredClone(transitionSource);
+  transition.status = "F2_01_INTEGRATED_VERIFIED";
+  transition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
+  transition.stateMachine.previous = "F2_01_AUTHORIZED_IN_DEVELOPMENT";
+  const authoritySha = "1111111111111111111111111111111111111111";
+  const futureBaseline = reportForRequiredMatrix(transition, baseline);
+  const evidence = {
+    report: { ...structuredClone(futureBaseline), execution: completeExecution({}) },
+    processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 0 },
+    targetBaseline: futureBaseline,
+    authoritySha,
+    liveDiff: { complete: true, authoritySha, paths: ["src/css/branct.css"] },
+    approval: { decision: "APPROVED", authoritySha, independent: true },
+    browsers: { chromium: "VERIFIED", firefox: "NOT_REQUIRED", webkit: "NOT_REQUIRED" },
+  };
+  for (const entry of evidence.report.menuResults) entry.evidenceId = readCanonicalMenuEvidenceMatrix(transition).entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport)?.evidenceId;
+  evidence.report.execution.actions = completeActionsFor(transition);
+  const historical = structuredClone(transitionSource);
+  historical.status = "PHASE_1_HISTORICAL";
+  historical.stateMachine.current = "PHASE_1_HISTORICAL";
+  historical.stateMachine.previous = null;
+  assert.equal(deriveF201State(historical, {}), "PHASE_1_HISTORICAL");
+  assert.equal(deriveF201State(transition, evidence), "F2_01_INTEGRATED_VERIFIED");
+  for (const [label, mutate, expected] of [
+    ["1024 viewport absent", (value) => { delete value.transition.f201.matrix.viewports["1024x768"]; }, /viewport/i],
+    ["1024 dimensions swapped", (value) => { value.transition.f201.matrix.viewports["1024x768"] = [768, 1024]; }, /viewport/i],
+    ["1024 dimension partial", (value) => { value.transition.f201.matrix.viewports["1024x768"] = [1024]; }, /viewport/i],
+    ["1024 dimension strings", (value) => { value.transition.f201.matrix.viewports["1024x768"] = ["1024", "768"]; }, /viewport/i],
+    ["1024 observation absent", (value) => { value.evidence.report.observations = value.evidence.report.observations.filter((entry) => !(entry.viewport === "1024x768" && entry.route === "index.html")); }, /truncated report|observation matrix/i],
+    ["1024 observation duplicated", (value) => { const index = value.evidence.report.observations.findIndex((entry) => entry.viewport === "1024x768" && entry.route === "index.html"); value.evidence.report.observations[index] = structuredClone(value.evidence.report.observations.find((entry) => entry.viewport === "1024x768" && entry.route === "crm-gestao.html")); }, /observation matrix/i],
+    ["1024 observation inconclusive", (value) => { value.evidence.report.observations.find((entry) => entry.viewport === "1024x768").conclusion = "INCONCLUSIVE"; }, /inconclusive/i],
+  ]) await t.test(label, () => {
+    const value = { transition: structuredClone(transition), evidence: structuredClone(evidence) };
+    mutate(value);
+    assert.throws(() => deriveF201State(value.transition, value.evidence), expected);
+  });
+  const cases = [
+    ["approval absent", (value) => { delete value.approval; }],
+    ["approval head mismatch", (value) => { value.approval.authoritySha = "2222222222222222222222222222222222222222"; }],
+    ["mandatory browser not verified", (value) => { value.browsers.chromium = "NOT_VERIFIED"; }],
+    ["semantic RED", (value) => { value.report.execution.semanticTests[0].status = "FAIL"; }],
+    ["baseline mismatch", (value) => { value.report.observations[0].scrollWidth += 1; }],
+    ["live diff absent", (value) => { delete value.liveDiff; }],
+    ["live diff head mismatch", (value) => { value.liveDiff.authoritySha = "2222222222222222222222222222222222222222"; }],
+    ["report truncated", (value) => { value.report.observations.pop(); }],
+    ["report absent", (value) => { delete value.report; }],
+    ["approval decision", (value) => { value.approval.decision = "CHANGES_REQUIRED"; }],
+    ["browser evidence absent", (value) => { delete value.browsers; }],
+  ];
+  for (const [label, mutate] of cases) await t.test(label, () => {
+    const value = structuredClone(evidence);
+    mutate(value);
+    assert.throws(() => deriveF201State(transition, value), new RegExp(label.split(" ")[0], "i"));
+  });
+  for (const [label, mutate] of [
+    ["state absent", (value) => { delete value.status; }],
+    ["state unknown", (value) => { value.status = "UNKNOWN"; }],
+    ["state inverted", (value) => { value.stateMachine.previous = "F2_01_INTEGRATED_VERIFIED"; }],
+  ]) await t.test(label, () => {
+    const value = structuredClone(transition);
+    mutate(value);
+    assert.throws(() => deriveF201State(value, evidence), /state/i);
+  });
+});
+
+test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and HEAD movement", async (t) => {
+  const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-git-"));
+  const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  try {
+    git("init", "--initial-branch=main");
+    git("config", "user.name", "F2 GOV test");
+    git("config", "user.email", "f2-gov@example.invalid");
+    await writeFile(join(repository, ".gitattributes"), "fixture.txt text eol=lf\n");
+    await writeFile(join(repository, "fixture.txt"), "alpha\nbeta\ngamma\n");
+    git("add", "--", ".gitattributes", "fixture.txt");
+    git("commit", "-m", "authoritative fixture");
+    const authoritySha = git("rev-parse", "HEAD");
+    const blobOid = git("rev-parse", `${authoritySha}:fixture.txt`);
+    const sha256 = hashBytes(Buffer.from("alpha\nbeta\ngamma\n"));
+    const expected = { path: "fixture.txt", gitBlobOid: blobOid, sha256 };
+    assert.equal(hashBytes(readAuthoritativeGitBlob(repository, authoritySha, expected)), sha256);
+    await writeFile(join(repository, "fixture.txt"), "alpha\r\nbeta\r\ngamma\r\n");
+    assert.equal(hashBytes(readAuthoritativeGitBlob(repository, authoritySha, expected)), sha256, "checkout CRLF must not change the authoritative blob");
+    const variants = [
+      ["content modified", "alpha\nbeta changed\ngamma\n"],
+      ["line removed", "alpha\ngamma\n"],
+      ["lines reordered", "beta\nalpha\ngamma\n"],
+      ["space added", "alpha \nbeta\ngamma\n"],
+    ];
+    for (const [label, content] of variants) await t.test(label, async () => {
+      await writeFile(join(repository, "fixture.txt"), content);
+      git("add", "--", "fixture.txt");
+      git("commit", "-m", label);
+      const changedSha = git("rev-parse", "HEAD");
+      assert.throws(() => readAuthoritativeGitBlob(repository, changedSha, expected), /blob oid mismatch/i);
+      assert.equal(hashBytes(readAuthoritativeGitBlob(repository, authoritySha, expected)), sha256, "moving HEAD must not move the authority");
+    });
+    const syntheticTree = git("write-tree");
+    const syntheticMerge = execFileSync("git", ["commit-tree", syntheticTree, "-p", authoritySha, "-p", git("rev-parse", "HEAD")], { cwd: repository, input: "synthetic merge\n", encoding: "utf8" }).trim();
+    git("update-ref", "HEAD", syntheticMerge);
+    assert.equal(hashBytes(readAuthoritativeGitBlob(repository, authoritySha, expected)), sha256, "synthetic merge HEAD must not replace the explicit authority");
+    assert.throws(() => readAuthoritativeGitBlob(repository, syntheticMerge, expected), /blob oid mismatch/i);
+    await unlink(join(repository, "fixture.txt"));
+    git("add", "--", "fixture.txt");
+    git("commit", "-m", "remove fixture");
+    assert.throws(() => readAuthoritativeGitBlob(repository, git("rev-parse", "HEAD"), expected), /missing authoritative path/i);
+    for (const invalid of [undefined, "", "HEAD", "abc", "f".repeat(40)]) assert.throws(() => readAuthoritativeGitBlob(repository, invalid, expected), /authority sha/i);
+  } finally {
+    await rm(repository, { recursive: true, force: true });
   }
 });
 

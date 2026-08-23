@@ -1,0 +1,5690 @@
+{
+  "schemaVersion": 1,
+  "source": "a47abb9a43248320dfef8449b6a65e187913fd24",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/151.0.7922.173",
+    "revision": "@a96602f30358e9b5d256a0464e7e4d4bec223004",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "jsVersion": "15.1.206.23"
+  },
+  "viewports": {
+    "320x568": [
+      320,
+      568
+    ],
+    "360x800": [
+      360,
+      800
+    ],
+    "390x844": [
+      390,
+      844
+    ],
+    "412x915": [
+      412,
+      915
+    ],
+    "768x1024": [
+      768,
+      1024
+    ],
+    "1440x900": [
+      1440,
+      900
+    ]
+  },
+  "observations": [
+    {
+      "route": "index.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -104,
+          "right": 376,
+          "width": 480
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "span.stamp",
+          "left": 109.6,
+          "right": 340.4,
+          "width": 230.8
+        },
+        {
+          "selector": "div.aurora",
+          "left": -104,
+          "right": 376,
+          "width": 480
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -104,
+          "right": 376,
+          "width": 480
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "left": 12.8,
+          "right": 329.3,
+          "width": 316.5
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -104,
+          "right": 376,
+          "width": 480
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "processo.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div",
+          "left": 92.8,
+          "right": 346.3,
+          "width": 253.5
+        },
+        {
+          "selector": "h3",
+          "left": 92.8,
+          "right": 346.3,
+          "width": 253.5
+        },
+        {
+          "selector": "p",
+          "left": 92.8,
+          "right": 346.3,
+          "width": 253.5
+        },
+        {
+          "selector": "div.receipt",
+          "left": 92.4,
+          "right": 346.7,
+          "width": 254.3
+        },
+        {
+          "selector": "span.receipt__what",
+          "left": 217.1,
+          "right": 327.6,
+          "width": 110.5
+        },
+        {
+          "selector": "span",
+          "left": 241.1,
+          "right": 327.6,
+          "width": 86.5
+        },
+        {
+          "selector": "div",
+          "left": 92.8,
+          "right": 330.8,
+          "width": 238
+        },
+        {
+          "selector": "h3",
+          "left": 92.8,
+          "right": 330.8,
+          "width": 238
+        },
+        {
+          "selector": "p",
+          "left": 92.8,
+          "right": 330.8,
+          "width": 238
+        },
+        {
+          "selector": "div.receipt",
+          "left": 92.3,
+          "right": 331.4,
+          "width": 239.1
+        },
+        {
+          "selector": "div",
+          "left": 92.8,
+          "right": 342.7,
+          "width": 249.9
+        },
+        {
+          "selector": "h3",
+          "left": 92.8,
+          "right": 342.7,
+          "width": 249.9
+        },
+        {
+          "selector": "p",
+          "left": 92.8,
+          "right": 342.7,
+          "width": 249.9
+        },
+        {
+          "selector": "div.receipt",
+          "left": 92.4,
+          "right": 343.1,
+          "width": 250.7
+        },
+        {
+          "selector": "span.receipt__what",
+          "left": 217.1,
+          "right": 324,
+          "width": 106.9
+        },
+        {
+          "selector": "span",
+          "left": 241.1,
+          "right": 324,
+          "width": 82.9
+        },
+        {
+          "selector": "div",
+          "left": 92.8,
+          "right": 333.5,
+          "width": 240.7
+        },
+        {
+          "selector": "h3",
+          "left": 92.8,
+          "right": 333.5,
+          "width": 240.7
+        },
+        {
+          "selector": "p",
+          "left": 92.8,
+          "right": 333.5,
+          "width": 240.7
+        },
+        {
+          "selector": "div.receipt",
+          "left": 92.3,
+          "right": 334,
+          "width": 241.7
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "politica-privacidade.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 14,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -81.2,
+          "right": 357.4,
+          "width": 438.6
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "blog.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -81.2,
+          "right": 357.4,
+          "width": 438.6
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -81.2,
+          "right": 357.4,
+          "width": 438.6
+        },
+        {
+          "selector": "div.aurora",
+          "left": -81.2,
+          "right": 357.4,
+          "width": 438.6
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 320,
+        "right": 595.2,
+        "width": 275.2,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "styleguide.html",
+      "viewport": "320x568",
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 0,
+      "header": {
+        "left": 0,
+        "right": 320,
+        "width": 320
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "index.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -117,
+          "right": 423,
+          "width": 540
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "span.stamp",
+          "left": 148,
+          "right": 378.8,
+          "width": 230.8
+        },
+        {
+          "selector": "div.aurora",
+          "left": -117,
+          "right": 423,
+          "width": 540
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -117,
+          "right": 423,
+          "width": 540
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -117,
+          "right": 423,
+          "width": 540
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "processo.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -91.6,
+          "right": 402.2,
+          "width": 493.8
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "politica-privacidade.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 14,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -91.6,
+          "right": 402.2,
+          "width": 493.8
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "blog.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -91.6,
+          "right": 402.2,
+          "width": 493.8
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -91.6,
+          "right": 402.2,
+          "width": 493.8
+        },
+        {
+          "selector": "div.aurora",
+          "left": -91.6,
+          "right": 402.2,
+          "width": 493.8
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 360,
+        "right": 669.6,
+        "width": 309.6,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "styleguide.html",
+      "viewport": "360x800",
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 0,
+      "header": {
+        "left": 0,
+        "right": 360,
+        "width": 360
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "index.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -126.8,
+          "right": 458.3,
+          "width": 585
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "span.stamp",
+          "left": 176.8,
+          "right": 407.6,
+          "width": 230.8
+        },
+        {
+          "selector": "div.aurora",
+          "left": -126.8,
+          "right": 458.3,
+          "width": 585
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -126.8,
+          "right": 458.3,
+          "width": 585
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -126.8,
+          "right": 458.3,
+          "width": 585
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "processo.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -99.4,
+          "right": 435.8,
+          "width": 535.2
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "politica-privacidade.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 14,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -99.3,
+          "right": 435.8,
+          "width": 535.2
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "blog.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -99.4,
+          "right": 435.8,
+          "width": 535.2
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -99.4,
+          "right": 435.8,
+          "width": 535.2
+        },
+        {
+          "selector": "div.aurora",
+          "left": -99.4,
+          "right": 435.8,
+          "width": 535.2
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 390,
+        "right": 725.4,
+        "width": 335.4,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "styleguide.html",
+      "viewport": "390x844",
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 0,
+      "header": {
+        "left": 0,
+        "right": 390,
+        "width": 390
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "index.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -133.9,
+          "right": 484.1,
+          "width": 618
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "span.stamp",
+          "left": 197.9,
+          "right": 428.7,
+          "width": 230.8
+        },
+        {
+          "selector": "div.aurora",
+          "left": -133.9,
+          "right": 484.1,
+          "width": 618
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -133.9,
+          "right": 484.1,
+          "width": 618
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -133.9,
+          "right": 484.1,
+          "width": 618
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "processo.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -105,
+          "right": 460.5,
+          "width": 565.5
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "politica-privacidade.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 14,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -105,
+          "right": 460.5,
+          "width": 565.5
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "blog.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -105,
+          "right": 460.5,
+          "width": 565.5
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -105,
+          "right": 460.5,
+          "width": 565.5
+        },
+        {
+          "selector": "div.aurora",
+          "left": -105,
+          "right": 460.5,
+          "width": 565.5
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 412,
+        "right": 766.3,
+        "width": 354.3,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "styleguide.html",
+      "viewport": "412x915",
+      "clientWidth": 412,
+      "scrollWidth": 412,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 0,
+      "header": {
+        "left": 0,
+        "right": 412,
+        "width": 412
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "index.html",
+      "viewport": "768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -249.6,
+          "right": 902.4,
+          "width": 1152
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 768,
+        "width": 768
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 768,
+        "right": 1148,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 768,
+        "width": 768
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 768,
+        "right": 1148,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "span.stamp",
+          "left": 539.7,
+          "right": 770.5,
+          "width": 230.8
+        },
+        {
+          "selector": "div.aurora",
+          "left": -249.6,
+          "right": 902.4,
+          "width": 1152
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 768,
+        "width": 768
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 768,
+        "right": 1148,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -249.6,
+          "right": 902.4,
+          "width": 1152
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 768,
+        "width": 768
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 768,
+        "right": 1148,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -249.6,
+          "right": 902.4,
+          "width": 1152
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 768,
+        "width": 768
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 768,
+        "right": 1148,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "processo.html",
+      "viewport": "768x1024",
+      "clientWidth": 753,
+      "scrollWidth": 753,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -193.4,
+          "right": 842.8,
+          "width": 1036.1
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 753,
+        "width": 753
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 753,
+        "right": 1133,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "768x1024",
+      "clientWidth": 753,
+      "scrollWidth": 753,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 753,
+        "width": 753
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 753,
+        "right": 1133,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "politica-privacidade.html",
+      "viewport": "768x1024",
+      "clientWidth": 753,
+      "scrollWidth": 753,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 14,
+      "header": {
+        "left": 0,
+        "right": 753,
+        "width": 753
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -142.4,
+          "right": 814.6,
+          "width": 957
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 768,
+        "width": 768
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 768,
+        "right": 1148,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "blog.html",
+      "viewport": "768x1024",
+      "clientWidth": 753,
+      "scrollWidth": 753,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -193.4,
+          "right": 842.8,
+          "width": 1036.1
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 753,
+        "width": 753
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 753,
+        "right": 1133,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "768x1024",
+      "clientWidth": 753,
+      "scrollWidth": 753,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -78.2,
+          "right": 426.4,
+          "width": 504.6
+        },
+        {
+          "selector": "div.aurora",
+          "left": -193.4,
+          "right": 842.8,
+          "width": 1036.1
+        }
+      ],
+      "smallTargets": [],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 753,
+        "width": 753
+      },
+      "toggle": {
+        "width": 44,
+        "height": 44,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 753,
+        "right": 1133,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "styleguide.html",
+      "viewport": "768x1024",
+      "clientWidth": 753,
+      "scrollWidth": 753,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 0,
+      "header": {
+        "left": 0,
+        "right": 753,
+        "width": 753
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "index.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -463.1,
+          "right": 1674.4,
+          "width": 2137.5
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://www.neoprag.com.br",
+          "text": "Neoprag",
+          "parent": "div.proof-names",
+          "display": "block",
+          "width": 69.5,
+          "height": 26.9,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://www.vertexway.pt",
+          "text": "VertexWay",
+          "parent": "div.proof-names",
+          "display": "block",
+          "width": 87.8,
+          "height": 26.9,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://albinosantos.pt/t4-rua-damiao-de-gois-porto/",
+          "text": "Albino Santos",
+          "parent": "div.proof-names",
+          "display": "block",
+          "width": 111.2,
+          "height": 26.9,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://www.kbassessoriacontabil.com.br",
+          "text": "KB Assessoria",
+          "parent": "div.proof-names",
+          "display": "block",
+          "width": 114.9,
+          "height": 26.9,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "website-premium.html",
+          "text": "Ver detalhes",
+          "parent": "article.card.card--hover",
+          "display": "inline-flex",
+          "width": 125.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "landing-page.html",
+          "text": "Ver detalhes",
+          "parent": "article.card.card--hover",
+          "display": "inline-flex",
+          "width": 125.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--accent",
+          "href": "crm-gestao.html",
+          "text": "Testa grátis 7 dias",
+          "parent": "article.card.card--hover",
+          "display": "inline-flex",
+          "width": 160.7,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "automacao-ia.html",
+          "text": "Ver detalhes",
+          "parent": "article.card.card--hover",
+          "display": "inline-flex",
+          "width": 125.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Política de Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 148.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos e Condições",
+          "parent": "li",
+          "display": "inline",
+          "width": 134.9,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--accent",
+          "href": "#trial-signup",
+          "text": "Testa grátis 7 dias",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 160.7,
+          "height": 43,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Privacidade",
+          "parent": "nav.footer__links",
+          "display": "block",
+          "width": 72.5,
+          "height": 21.8,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos",
+          "parent": "nav.footer__links",
+          "display": "block",
+          "width": 46.5,
+          "height": 21.8,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "nav.footer__links",
+          "display": "block",
+          "width": 141.1,
+          "height": 21.8,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -463.1,
+          "right": 1674.4,
+          "width": 2137.5
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.7,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos",
+          "parent": "li",
+          "display": "inline",
+          "width": 49.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -463.1,
+          "right": 1674.4,
+          "width": 2137.5
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.7,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos",
+          "parent": "li",
+          "display": "inline",
+          "width": 49.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -463.1,
+          "right": 1674.4,
+          "width": 2137.5
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Política de Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 148.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos e Condições",
+          "parent": "li",
+          "display": "inline",
+          "width": 134.9,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "processo.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -259.3,
+          "right": 1507.7,
+          "width": 1767
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Política de Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 148.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos e Condições",
+          "parent": "li",
+          "display": "inline",
+          "width": 134.9,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "#form",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.7,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos",
+          "parent": "li",
+          "display": "inline",
+          "width": 49.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "politica-privacidade.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [],
+      "inlineTextExceptions": 14,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "blog.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -259.3,
+          "right": 1507.7,
+          "width": 1767
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.7,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos",
+          "parent": "li",
+          "display": "inline",
+          "width": 49.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 2,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [
+        {
+          "selector": "div.aurora",
+          "left": -65,
+          "right": 805,
+          "width": 870
+        },
+        {
+          "selector": "div.aurora",
+          "left": -259.3,
+          "right": 1507.7,
+          "width": 1767
+        }
+      ],
+      "smallTargets": [
+        {
+          "selector": "button.nav-link",
+          "href": null,
+          "text": "Serviços",
+          "parent": "li.nav-item--dropdown",
+          "display": "inline-block",
+          "width": 62.6,
+          "height": 24.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 85.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 67.6,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.8,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 110.1,
+          "height": 21,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--primary",
+          "href": "contactos.html",
+          "text": "Pedir proposta",
+          "parent": "div.header__actions",
+          "display": "flex",
+          "width": 138.6,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "website-premium.html",
+          "text": "Ver detalhes",
+          "parent": "article.card.card--hover",
+          "display": "flex",
+          "width": 125.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "landing-page.html",
+          "text": "Ver detalhes",
+          "parent": "article.card.card--hover",
+          "display": "flex",
+          "width": 125.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "automacao-ia.html",
+          "text": "Ver detalhes",
+          "parent": "article.card.card--hover",
+          "display": "flex",
+          "width": 125.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a.btn.btn--accent",
+          "href": "crm-gestao.html",
+          "text": "Testa grátis 7 dias",
+          "parent": "article.card.card--hover",
+          "display": "flex",
+          "width": 160.7,
+          "height": 37.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "website-premium.html",
+          "text": "Website Premium",
+          "parent": "li",
+          "display": "inline",
+          "width": 115.5,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "landing-page.html",
+          "text": "Landing Pages",
+          "parent": "li",
+          "display": "inline",
+          "width": 96.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "crm-gestao.html",
+          "text": "Branct CRM",
+          "parent": "li",
+          "display": "inline",
+          "width": 78.3,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "automacao-ia.html",
+          "text": "Automação & IA",
+          "parent": "li",
+          "display": "inline",
+          "width": 104,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "processo.html",
+          "text": "Processo",
+          "parent": "li",
+          "display": "inline",
+          "width": 62.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "contactos.html",
+          "text": "Contactos",
+          "parent": "li",
+          "display": "inline",
+          "width": 70.6,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "blog.html",
+          "text": "Blog",
+          "parent": "li",
+          "display": "inline",
+          "width": 29.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "https://app.branct.com/",
+          "text": "Área de Cliente",
+          "parent": "li",
+          "display": "inline",
+          "width": 100.8,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#privacidade",
+          "text": "Privacidade",
+          "parent": "li",
+          "display": "inline",
+          "width": 76.7,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "politica-privacidade.html#termos",
+          "text": "Termos",
+          "parent": "li",
+          "display": "inline",
+          "width": 49.2,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "mailto:contacto@branct.com",
+          "text": "contacto@branct.com",
+          "parent": "span",
+          "display": "inline",
+          "width": 149.4,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "tel:+351935183488",
+          "text": "935 183 488",
+          "parent": "span",
+          "display": "inline",
+          "width": 78.1,
+          "height": 19,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-reject",
+          "href": null,
+          "text": "Recusar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 99.3,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "#consent-accept",
+          "href": null,
+          "text": "Aceitar",
+          "parent": "div.consent__actions",
+          "display": "flex",
+          "width": 90.7,
+          "height": 39.3,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 1,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": {
+        "width": 0,
+        "height": 0,
+        "expanded": "false",
+        "controls": "mobile-drawer",
+        "name": "Menu"
+      },
+      "drawer": {
+        "left": 1425,
+        "right": 1805,
+        "width": 380,
+        "open": false
+      },
+      "consoleIssues": []
+    },
+    {
+      "route": "styleguide.html",
+      "viewport": "1440x900",
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "overflow": false,
+      "overflowElements": [],
+      "smallTargets": [
+        {
+          "selector": "a.btn.btn--ghost",
+          "href": "#",
+          "text": "Detalhes",
+          "parent": "div.sg-row",
+          "display": "flex",
+          "width": 100.8,
+          "height": 39.3,
+          "inlineText": false
+        },
+        {
+          "selector": "a",
+          "href": "/",
+          "text": "← branct.com",
+          "parent": "div.container.footer__meta",
+          "display": "block",
+          "width": 91.1,
+          "height": 23,
+          "inlineText": false
+        }
+      ],
+      "inlineTextExceptions": 0,
+      "header": {
+        "left": 0,
+        "right": 1425,
+        "width": 1425
+      },
+      "toggle": null,
+      "drawer": null,
+      "consoleIssues": []
+    }
+  ],
+  "menuResults": [
+    {
+      "route": "index.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "processo.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "blog.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "320x568",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "index.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "processo.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "blog.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "360x800",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "index.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "processo.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "blog.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "390x844",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "index.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "crm-gestao.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "website-premium.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "landing-page.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "automacao-ia.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "processo.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "contactos.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "area-do-usuario.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "blog.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "servicos.html",
+      "viewport": "412x915",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    },
+    {
+      "route": "index.html",
+      "viewport": "768x1024",
+      "focusReached": true,
+      "focusStyle": {
+        "visible": true,
+        "style": "solid",
+        "width": 2
+      },
+      "open": {
+        "expanded": "true",
+        "drawerInside": true,
+        "focusInside": true,
+        "bodyLocked": true,
+        "backgroundInert": true,
+        "closeTarget": {
+          "x": 44,
+          "y": 44,
+          "name": "Fechar menu"
+        }
+      },
+      "closed": {
+        "expanded": "false",
+        "focusReturned": true,
+        "backgroundRestored": true,
+        "closed": true
+      },
+      "closeButtonClosed": true,
+      "outsideClosed": true
+    }
+  ],
+  "reducedMotion": {
+    "matches": true,
+    "durationsMs": [
+      0.01,
+      0.01
+    ]
+  }
+}
