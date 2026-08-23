@@ -2,7 +2,7 @@ import { appendFile, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const LIVE = new Set(["root-published", "html", "css", "javascript", "fonts", "translations", "images", "video"]);
-const AUDIT_SAFE = (path) => /^(CLAUDE\.md|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate)\.yml$|scripts\/governance\/)/.test(path);
+const AUDIT_SAFE = (path) => /^(?:package(?:-lock)?\.json$|CLAUDE\.md|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate)\.yml$|scripts\/governance\/)/.test(path);
 const GIT_STATUS = /^(?:A|M|D|T|[RC](?:100|0\d{2}))$/;
 
 function assertSafePath(path) {
@@ -27,6 +27,7 @@ function categoryOf(path) {
   if (path === "deploy/publish-manifest.json") return "manifest";
   if (/^(scripts\/deploy\/|tests\/deploy\/|docs\/deploy-protection\/)/.test(path)) return "deploy-internal";
   if (/^scripts\/governance\//.test(path)) return "gate-internal";
+  if (/^package(?:-lock)?\.json$/.test(path)) return "gate-internal";
   return "unknown";
 }
 

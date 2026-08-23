@@ -18,7 +18,7 @@
     "sha256": "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae"
   },
   "f201": {
-    "requiredBrowsers": ["chromium"],
+    "requiredBrowsers": ["chromium", "firefox", "webkit"],
     "matrix": {
       "routes": ["index.html", "crm-gestao.html", "website-premium.html", "landing-page.html", "automacao-ia.html", "processo.html", "contactos.html", "politica-privacidade.html", "area-do-usuario.html", "blog.html", "servicos.html", "styleguide.html"],
       "viewports": {
@@ -44,8 +44,8 @@
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "gitBlobOid": "eed466e5191c8b84938fdc83e27683bbb6b194e2",
-      "copiedSha256": "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb"
+      "gitBlobOid": "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6",
+      "copiedSha256": "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results.json",
@@ -76,13 +76,16 @@
     }
   },
   "stateMachine": {
-    "states": ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"],
+    "states": ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"],
     "current": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
     "previous": "PHASE_1_HISTORICAL",
+    "approvalAuthority": "GitHub Via A branch protection; never repository evidence",
+    "readyEvidenceMustContainApproval": false,
     "integratedEvidencePath": "fixtures/audit/f2-01-integration-evidence.json",
     "transitions": {
       "PHASE_1_HISTORICAL": ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
-      "F2_01_AUTHORIZED_IN_DEVELOPMENT": ["F2_01_INTEGRATED_VERIFIED"],
+      "F2_01_AUTHORIZED_IN_DEVELOPMENT": ["READY_FOR_VIA_A_REVIEW"],
+      "READY_FOR_VIA_A_REVIEW": ["F2_01_INTEGRATED_VERIFIED"],
       "F2_01_INTEGRATED_VERIFIED": []
     }
   }

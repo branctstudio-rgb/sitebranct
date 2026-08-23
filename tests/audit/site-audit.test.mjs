@@ -18,6 +18,7 @@ const redGreenPath = new URL("../../docs/audit/evidence/red-green.md", import.me
 const collectorPath = new URL("./collect-browser-baseline.mjs", import.meta.url);
 const negativeControlPath = new URL("../../fixtures/audit/visual-negative-control.json", import.meta.url);
 const f201TransitionPath = new URL("../../fixtures/audit/f2-01-transition.json", import.meta.url);
+const f201RuntimePath = new URL("../../fixtures/audit/f2-01-ci-runtime.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
 const hashBytes = (value) => createHash("sha256").update(value).digest("hex");
@@ -26,7 +27,7 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
-  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "eed466e5191c8b84938fdc83e27683bbb6b194e2", sha256: "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6", sha256: "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f" }),
   targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results.json", gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
   menuEvidenceMatrix: Object.freeze({
     path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
@@ -244,9 +245,10 @@ function assertCompleteReport(transition, report, matrix) {
   assert.ok(report && typeof report === "object" && !Array.isArray(report), "report is absent or unreadable");
   assert.equal(Object.hasOwn(report, "expectedMenuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
   assert.equal(Object.hasOwn(report, "menuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
-  assert.equal(report.schemaVersion, 1, "report schema is absent or invalid");
+  assert.equal(report.schemaVersion, 2, "report schema is absent or invalid");
   assert.equal(report.source, transition.baseSha, "report source differs from the transition base");
-  assert.match(report.browser?.product ?? "", /(?:Chrome|Chromium)\//, "report browser evidence is absent or invalid");
+  assert.ok(transition.f201.requiredBrowsers.includes(report.browser?.engine), "report browser engine evidence is absent or invalid");
+  assert.match(report.browser?.version ?? "", /\d+\.\d+/, "report browser version evidence is absent or invalid");
   assert.deepEqual(report.viewports, transition.f201.matrix.viewports, "report viewport matrix is incomplete or divergent");
   for (const name of transition.f201.expectedDevelopmentRed.requiredEvidence) assert.ok(report[name] !== undefined && report[name] !== null, `required evidence absent: ${name}`);
   assert.equal(report.observations.length, transition.f201.targetBaseline.observationCount, `truncated report observation count: expected ${transition.f201.targetBaseline.observationCount}`);
@@ -286,16 +288,17 @@ const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed
   !closeButtonClosed || !outsideClosed;
 
 function validateStateMachine(transition) {
-  const states = ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"];
+  const states = ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"];
   assert.ok(transition.status, "state absent");
   assert.ok(states.includes(transition.status), `state unknown: ${transition.status}`);
   assert.deepEqual(transition.stateMachine.states, states, "state set is incomplete or reordered");
   assert.equal(transition.stateMachine.current, transition.status, "state current mismatch");
-  const expectedPrevious = { PHASE_1_HISTORICAL: null, F2_01_AUTHORIZED_IN_DEVELOPMENT: "PHASE_1_HISTORICAL", F2_01_INTEGRATED_VERIFIED: "F2_01_AUTHORIZED_IN_DEVELOPMENT" }[transition.status];
+  const expectedPrevious = { PHASE_1_HISTORICAL: null, F2_01_AUTHORIZED_IN_DEVELOPMENT: "PHASE_1_HISTORICAL", READY_FOR_VIA_A_REVIEW: "F2_01_AUTHORIZED_IN_DEVELOPMENT", F2_01_INTEGRATED_VERIFIED: "READY_FOR_VIA_A_REVIEW" }[transition.status];
   assert.equal(transition.stateMachine.previous, expectedPrevious, "state transition is inverted or regressed");
   assert.deepEqual(transition.stateMachine.transitions, {
     PHASE_1_HISTORICAL: ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
-    F2_01_AUTHORIZED_IN_DEVELOPMENT: ["F2_01_INTEGRATED_VERIFIED"],
+    F2_01_AUTHORIZED_IN_DEVELOPMENT: ["READY_FOR_VIA_A_REVIEW"],
+    READY_FOR_VIA_A_REVIEW: ["F2_01_INTEGRATED_VERIFIED"],
     F2_01_INTEGRATED_VERIFIED: [],
   }, "state transition graph is not closed");
   assert.ok(Array.isArray(transition.f201.requiredBrowsers) && transition.f201.requiredBrowsers.length > 0, "mandatory browser set is absent");
@@ -339,14 +342,18 @@ function deriveF201State(transition, evidence) {
   assert.equal(evidence.liveDiff.complete, true, "live diff incomplete");
   assert.equal(evidence.liveDiff.authoritySha, authoritySha, "live diff head mismatch");
   assert.ok(Array.isArray(evidence.liveDiff.paths) && evidence.liveDiff.paths.length > 0 && evidence.liveDiff.paths.every((path) => /^(?:[^/]+\.html|src\/(?:css|js)\/)/.test(path)), "live diff paths are absent or outside F2-01");
-  assert.ok(evidence.approval, "approval absent");
-  assert.equal(evidence.approval.decision, "APPROVED", "approval decision is not APPROVED");
-  assert.equal(evidence.approval.independent, true, "approval is not independent");
-  assert.equal(evidence.approval.authoritySha, authoritySha, "approval head mismatch");
   const reportWithoutExecution = structuredClone(evidence.report);
   delete reportWithoutExecution.execution;
   for (const entry of reportWithoutExecution.menuResults) delete entry.evidenceId;
   assert.deepEqual(reportWithoutExecution, evidence.targetBaseline, "baseline mismatch with integrated report");
+  assert.equal(Object.hasOwn(evidence, "approval"), false, "offline evidence must not contain or simulate Via A approval");
+  if (transition.status === "READY_FOR_VIA_A_REVIEW") return transition.status;
+  assert.ok(evidence.integration, "real merge evidence absent");
+  assert.equal(evidence.integration.merged, true, "real merge not confirmed");
+  assert.match(evidence.integration.mergeCommitSha ?? "", shaPattern, "merge commit sha is absent or malformed");
+  assert.equal(evidence.integration.headSha, authoritySha, "merged head differs from readiness authority");
+  assert.match(evidence.integration.treeSha ?? "", shaPattern, "integrated tree sha is absent or malformed");
+  assert.equal(evidence.integration.validatedTreeSha, evidence.integration.treeSha, "integrated tree was not the tree validated after merge");
   return transition.status;
 }
 
@@ -417,27 +424,71 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
     assert.equal(deriveF201State(transition, {}), "PHASE_1_HISTORICAL");
     return;
   }
-  const reportDir = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-"));
-  const reportPath = join(reportDir, "report.json");
-  let failure;
-  const childEnvironment = { ...process.env, F2_01_REPORT_PATH:reportPath };
-  delete childEnvironment.NODE_TEST_CONTEXT;
-  try { execFileSync("node", ["--test", transition.f201.responsiveTest.path], { encoding:"utf8", env:childEnvironment }); }
-  catch (error) { failure = error; }
-  try {
-    const report = JSON.parse(await readFile(reportPath, "utf8"));
-    if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
-      assert.ok(failure, "development state must prove the specific F2-01 RED");
-      const processOutcome = { exited: true, timedOut: failure.killed === true, signal: failure.signal ?? null, exitCode: failure.status };
-      assert.equal(deriveF201State(transition, { report, processOutcome }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
-    } else {
-      assert.equal(failure, undefined, "integrated state requires the responsive suite to finish GREEN");
-      const integratedEvidence = await readJson(new URL(`../../${transition.stateMachine.integratedEvidencePath}`, import.meta.url));
-      const targetBaseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
-      const processOutcome = { exited: true, timedOut: false, signal: null, exitCode: 0 };
-      assert.equal(deriveF201State(transition, { ...integratedEvidence, report, targetBaseline, authoritySha, processOutcome }), "F2_01_INTEGRATED_VERIFIED");
-    }
-  } finally { await rm(reportDir, { recursive:true, force:true }); }
+  const baseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
+  const report = developmentReportFrom(transition, baseline);
+  assert.equal(deriveF201State(transition, { report, processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+});
+
+test("F2-01 readiness separates offline eligibility from Via A approval and requires three pinned engines", async () => {
+  const transition = await readJson(f201TransitionPath);
+  assert.deepEqual(transition.stateMachine.states, [
+    "PHASE_1_HISTORICAL",
+    "F2_01_AUTHORIZED_IN_DEVELOPMENT",
+    "READY_FOR_VIA_A_REVIEW",
+    "F2_01_INTEGRATED_VERIFIED",
+  ]);
+  assert.deepEqual(transition.f201.requiredBrowsers, ["chromium", "firefox", "webkit"]);
+  assert.equal(transition.stateMachine.approvalAuthority, "GitHub Via A branch protection; never repository evidence");
+  assert.equal(transition.stateMachine.readyEvidenceMustContainApproval, false);
+  const runtime = await readJson(f201RuntimePath);
+  assert.equal(runtime.playwright.version, "1.62.0");
+  assert.deepEqual(runtime.playwright.engines, ["chromium", "firefox", "webkit"]);
+  assert.match(runtime.container.indexDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.match(runtime.container.linuxAmd64Digest, /^sha256:[0-9a-f]{64}$/);
+});
+
+test("F2-01 runtime and engine evidence fail closed on omissions, drift and adulteration", async (t) => {
+  const [{ validateRuntimeContract, validateEngineReport }, runtime, transition, packageJson, packageLock] = await Promise.all([
+    import("../../scripts/governance/verify-f2-01-readiness.mjs"),
+    readJson(f201RuntimePath),
+    readJson(f201TransitionPath),
+    readJson(new URL("../../package.json", import.meta.url)),
+    readJson(new URL("../../package-lock.json", import.meta.url)),
+  ]);
+  const valid = { runtime, transition, packageJson, packageLock, ci: true, ciDigest: runtime.container.indexDigest };
+  assert.doesNotThrow(() => validateRuntimeContract(valid));
+  for (const [label, mutate, expected] of [
+    ["Firefox absent", (value) => { value.runtime.playwright.engines = value.runtime.playwright.engines.filter((name) => name !== "firefox"); }, /engine set/i],
+    ["WebKit absent", (value) => { value.runtime.playwright.engines = value.runtime.playwright.engines.filter((name) => name !== "webkit"); }, /engine set/i],
+    ["engine omitted from transition", (value) => { value.transition.f201.requiredBrowsers.pop(); }, /browser set/i],
+    ["Playwright version drift", (value) => { value.packageJson.devDependencies.playwright = "1.62.1"; }, /version/i],
+    ["container digest drift", (value) => { value.ciDigest = `sha256:${"0".repeat(64)}`; }, /container digest/i],
+    ["container digest malformed", (value) => { value.runtime.container.indexDigest = "latest"; }, /digest/i],
+  ]) await t.test(label, () => {
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => validateRuntimeContract(value), expected);
+  });
+  const report = {
+    schemaVersion: 2,
+    browser: { engine: "firefox", version: "150.0" },
+    observations: Array.from({ length: 84 }, () => ({})),
+    menuResults: Array.from({ length: 41 }, () => ({})),
+    execution: { complete: true, infrastructureErrors: [], actions: Array.from({ length: 184 }, () => ({})), semanticTests: Array.from({ length: 4 }, () => ({})) },
+  };
+  assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox"));
+  for (const [label, mutate, expected] of [
+    ["engine identity adulterated", (value) => { value.browser.engine = "chromium"; }, /engine evidence/i],
+    ["result incomplete", (value) => { value.observations.pop(); }, /observation evidence incomplete/i],
+    ["menu evidence omitted", (value) => { value.menuResults.pop(); }, /menu evidence incomplete/i],
+    ["action evidence omitted", (value) => { value.execution.actions.pop(); }, /action evidence incomplete/i],
+    ["execution ignored", (value) => { value.execution.complete = false; }, /execution incomplete/i],
+    ["infrastructure substituted", (value) => { value.execution.infrastructureErrors = ["browser missing"]; }, /infrastructure failure/i],
+  ]) await t.test(label, () => {
+    const value = structuredClone(report);
+    mutate(value);
+    assert.throws(() => validateEngineReport(runtime, value, "firefox"), expected);
+  });
 });
 
 test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory PR identity", async () => {
@@ -475,6 +526,8 @@ const completeExecution = (statuses) => ({
 const completeActionsFor = (transition) => readCanonicalMenuEvidenceMatrix(transition).entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
 const reportForRequiredMatrix = (transition, baseline) => {
   const report = structuredClone(baseline);
+  report.schemaVersion = 2;
+  report.browser = { engine: "chromium", version: "fixture-1.0" };
   report.viewports = structuredClone(transition.f201.matrix.viewports);
   report.observations = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => {
     const existing = baseline.observations.find((entry) => entry.route === route && entry.viewport === viewport);
@@ -679,11 +732,11 @@ test("F2-GOV-06 requires conclusive numeric 1024x768 evidence", async () => {
   assert.deepEqual(transition.f201.matrix.viewports["1024x768"], [1024, 768]);
 });
 
-test("F2-GOV-06 derives integrated state only from complete coherent approved GREEN", async (t) => {
+test("F2-GOV-06 derives readiness without self-approval and integration only from a real merged tree", async (t) => {
   const [transitionSource, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
   const transition = structuredClone(transitionSource);
-  transition.status = "F2_01_INTEGRATED_VERIFIED";
-  transition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
+  transition.status = "READY_FOR_VIA_A_REVIEW";
+  transition.stateMachine.current = "READY_FOR_VIA_A_REVIEW";
   transition.stateMachine.previous = "F2_01_AUTHORIZED_IN_DEVELOPMENT";
   const authoritySha = "1111111111111111111111111111111111111111";
   const futureBaseline = reportForRequiredMatrix(transition, baseline);
@@ -693,8 +746,7 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     targetBaseline: futureBaseline,
     authoritySha,
     liveDiff: { complete: true, authoritySha, paths: ["src/css/branct.css"] },
-    approval: { decision: "APPROVED", authoritySha, independent: true },
-    browsers: { chromium: "VERIFIED", firefox: "NOT_REQUIRED", webkit: "NOT_REQUIRED" },
+    browsers: { chromium: "VERIFIED", firefox: "VERIFIED", webkit: "VERIFIED" },
   };
   for (const entry of evidence.report.menuResults) entry.evidenceId = readCanonicalMenuEvidenceMatrix(transition).entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport)?.evidenceId;
   evidence.report.execution.actions = completeActionsFor(transition);
@@ -703,7 +755,8 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
   historical.stateMachine.current = "PHASE_1_HISTORICAL";
   historical.stateMachine.previous = null;
   assert.equal(deriveF201State(historical, {}), "PHASE_1_HISTORICAL");
-  assert.equal(deriveF201State(transition, evidence), "F2_01_INTEGRATED_VERIFIED");
+  assert.equal(deriveF201State(transition, evidence), "READY_FOR_VIA_A_REVIEW");
+  assert.throws(() => deriveF201State(transition, { ...structuredClone(evidence), approval: { decision: "APPROVED", authoritySha, independent: true } }), /must not contain.*approval/i);
   for (const [label, mutate, expected] of [
     ["1024 viewport absent", (value) => { delete value.transition.f201.matrix.viewports["1024x768"]; }, /viewport/i],
     ["1024 dimensions swapped", (value) => { value.transition.f201.matrix.viewports["1024x768"] = [768, 1024]; }, /viewport/i],
@@ -718,8 +771,6 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     assert.throws(() => deriveF201State(value.transition, value.evidence), expected);
   });
   const cases = [
-    ["approval absent", (value) => { delete value.approval; }],
-    ["approval head mismatch", (value) => { value.approval.authoritySha = "2222222222222222222222222222222222222222"; }],
     ["mandatory browser not verified", (value) => { value.browsers.chromium = "NOT_VERIFIED"; }],
     ["semantic RED", (value) => { value.report.execution.semanticTests[0].status = "FAIL"; }],
     ["baseline mismatch", (value) => { value.report.observations[0].scrollWidth += 1; }],
@@ -727,13 +778,37 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     ["live diff head mismatch", (value) => { value.liveDiff.authoritySha = "2222222222222222222222222222222222222222"; }],
     ["report truncated", (value) => { value.report.observations.pop(); }],
     ["report absent", (value) => { delete value.report; }],
-    ["approval decision", (value) => { value.approval.decision = "CHANGES_REQUIRED"; }],
     ["browser evidence absent", (value) => { delete value.browsers; }],
   ];
   for (const [label, mutate] of cases) await t.test(label, () => {
     const value = structuredClone(evidence);
     mutate(value);
     assert.throws(() => deriveF201State(transition, value), new RegExp(label.split(" ")[0], "i"));
+  });
+  const integratedTransition = structuredClone(transition);
+  integratedTransition.status = "F2_01_INTEGRATED_VERIFIED";
+  integratedTransition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
+  integratedTransition.stateMachine.previous = "READY_FOR_VIA_A_REVIEW";
+  const integratedEvidence = {
+    ...structuredClone(evidence),
+    integration: {
+      merged: true,
+      mergeCommitSha: "3".repeat(40),
+      headSha: authoritySha,
+      treeSha: "4".repeat(40),
+      validatedTreeSha: "4".repeat(40),
+    },
+  };
+  assert.equal(deriveF201State(integratedTransition, integratedEvidence), "F2_01_INTEGRATED_VERIFIED");
+  for (const [label, mutate] of [
+    ["real merge evidence absent", (value) => { delete value.integration; }],
+    ["real merge false", (value) => { value.integration.merged = false; }],
+    ["merged head divergent", (value) => { value.integration.headSha = "5".repeat(40); }],
+    ["integrated tree unvalidated", (value) => { value.integration.validatedTreeSha = "5".repeat(40); }],
+  ]) await t.test(label, () => {
+    const value = structuredClone(integratedEvidence);
+    mutate(value);
+    assert.throws(() => deriveF201State(integratedTransition, value), /merge|head|tree/i);
   });
   for (const [label, mutate] of [
     ["state absent", (value) => { delete value.status; }],

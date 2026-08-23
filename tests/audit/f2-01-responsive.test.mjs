@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import test, { after } from "node:test";
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { extname, join, normalize } from "node:path";
+import { chromium, firefox, webkit } from "playwright";
 
 const root = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const site = JSON.parse(await readFile(new URL("../../fixtures/audit/site-contract.json", import.meta.url), "utf8"));
@@ -22,6 +21,9 @@ const evidenceActionPhases = (route) => ["before-open", "open", "after-open", "e
 const evidenceIdentity = (route, viewport) => `menu-${createHash("sha256").update(JSON.stringify({ route, viewport, actionPhases: evidenceActionPhases(route) })).digest("hex")}`;
 const reportPath = process.env.F2_01_REPORT_PATH;
 const captureDirectory = process.env.F2_01_CAPTURE_DIR;
+const engineName = process.env.F2_01_BROWSER;
+const engines = { chromium, firefox, webkit };
+assert.ok(Object.hasOwn(engines, engineName), `F2_01_BROWSER must be one of ${Object.keys(engines).join(", ")}`);
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
@@ -49,97 +51,19 @@ const server = createServer(async (request, response) => {
 }).listen(0, "127.0.0.1");
 await new Promise((resolve) => server.once("listening", resolve));
 
-const candidates = process.platform === "win32"
-  ? ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"]
-  : ["google-chrome", "chromium", "chromium-browser"];
-let browser;
-for (const executable of candidates) {
-  try {
-    browser = spawn(executable, [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-sandbox",
-      "--remote-debugging-port=0",
-      `--user-data-dir=${join(tmpdir(), `branct-f2-01-${process.pid}`)}`,
-      "about:blank",
-    ], { stdio: ["ignore", "ignore", "pipe"] });
-    await new Promise((resolve, reject) => { browser.once("spawn", resolve); browser.once("error", reject); });
-    break;
-  } catch {
-    browser = undefined;
-  }
-}
-assert.ok(browser, "Chrome/Chromium is required for the F2-01 responsive contract");
-let endpoint = "";
-for await (const chunk of browser.stderr) {
-  const match = chunk.toString().match(/DevTools listening on (ws:\/\/[^\s]+)/);
-  if (match) { endpoint = match[1]; break; }
-}
-assert.ok(endpoint, "Chrome did not expose a DevTools endpoint");
-
-const ws = new WebSocket(endpoint);
-await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
-let id = 0;
-const pending = new Map();
-const lifecycleEvents = [];
-const lifecycleWaiters = new Set();
+const browser = await engines[engineName].launch({ headless: true });
+const page = await browser.newPage();
 let consoleIssues = [];
 const actionResults = [];
 const infrastructureErrors = [];
-ws.onmessage = ({ data }) => {
-  const message = JSON.parse(data);
-  if (message.method === "Runtime.exceptionThrown") consoleIssues.push("exception");
-  if (message.method === "Runtime.consoleAPICalled" && ["error", "warning"].includes(message.params.type)) consoleIssues.push(message.params.type);
-  if (message.method === "Page.lifecycleEvent") {
-    lifecycleEvents.push(message.params);
-    for (const waiter of lifecycleWaiters) {
-      if (waiter.loaderId === message.params.loaderId && waiter.name === message.params.name) {
-        clearTimeout(waiter.timer);
-        lifecycleWaiters.delete(waiter);
-        waiter.resolve(message.params);
-      }
-    }
-  }
-  if (message.id && pending.has(message.id)) {
-    const { resolve, reject } = pending.get(message.id);
-    pending.delete(message.id);
-    message.error ? reject(new Error(message.error.message)) : resolve(message.result);
-  }
-};
-const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
-  const call = ++id;
-  pending.set(call, { resolve, reject });
-  ws.send(JSON.stringify({ id: call, method, params, ...(sessionId ? { sessionId } : {}) }));
-});
-const waitForLifecycle = (loaderId, name, context, timeout = 10000) => {
-  const prior = lifecycleEvents.find((event) => event.loaderId === loaderId && event.name === name);
-  if (prior) return Promise.resolve(prior);
-  return new Promise((resolve, reject) => {
-    const waiter = { loaderId, name, resolve, timer: undefined };
-    waiter.timer = setTimeout(() => {
-      lifecycleWaiters.delete(waiter);
-      reject(new Error(`timeout waiting for ${name} (${context})`));
-    }, timeout);
-    lifecycleWaiters.add(waiter);
-  });
-};
-const { targetId } = await send("Target.createTarget", { url: "about:blank" });
-const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
-await send("Page.enable", {}, sessionId);
-await send("Page.setLifecycleEventsEnabled", { enabled: true }, sessionId);
-await send("Runtime.enable", {}, sessionId);
-
-const evaluate = async (expression) => {
-  const { result, exceptionDetails } = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: true, expression }, sessionId);
-  assert.equal(exceptionDetails, undefined, exceptionDetails?.text || "browser evaluation failed");
-  return result.value;
-};
+page.on("console", (message) => { if (["error", "warning"].includes(message.type())) consoleIssues.push(message.type()); });
+page.on("pageerror", () => consoleIssues.push("exception"));
+const evaluate = (expression) => page.evaluate((source) => globalThis.eval(source), expression);
 const navigate = async (route, viewport) => {
   consoleIssues = [];
   const context = `route=${route} viewport=${viewport}`;
-  const navigation = await send("Page.navigate", { url: `http://127.0.0.1:${server.address().port}/${route}` }, sessionId);
-  assert.ok(navigation.loaderId, `navigation did not create a loader (${context})`);
-  await waitForLifecycle(navigation.loaderId, "load", context);
+  const response = await page.goto(`http://127.0.0.1:${server.address().port}/${route}`, { waitUntil: "load", timeout: 10000 });
+  assert.ok(response?.ok(), `navigation failed (${context})`);
   const ready = await evaluate(`(async()=>{if(document.readyState!=="complete")await new Promise(r=>addEventListener("load",r,{once:true}));await document.fonts.ready;return {readyState:document.readyState,path:location.pathname}})()`);
   assert.deepEqual(ready, { readyState: "complete", path: `/${route}` }, `wrong document loaded (${context})`);
 };
@@ -147,7 +71,7 @@ const waitFor = async (expression, context, timeout = 3000) => {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     if (await evaluate(expression)) return true;
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await page.waitForTimeout(25);
   }
   return false;
 };
@@ -200,15 +124,14 @@ if (captureDirectory) await mkdir(captureDirectory, { recursive: true });
 
 try {
   for (const [viewport, [width, height]] of Object.entries(viewports)) {
-    await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 600 }, sessionId);
+    await page.setViewportSize({ width, height });
     for (const route of site.routes) {
       await navigate(route, viewport);
       const metrics = await evaluate(metricsExpression);
       observations.push({ route, viewport, conclusion: "CONCLUSIVE", ...metrics, consoleIssues: [...consoleIssues] });
 
       if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-closed`)) {
-        const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 86, fromSurface: true }, sessionId);
-        await writeFile(join(captureDirectory, `home-${viewport}-closed.jpg`), Buffer.from(shot.data, "base64"));
+        await page.screenshot({ path: join(captureDirectory, `home-${engineName}-${viewport}-closed.jpg`), type: "jpeg", quality: 86, fullPage: false });
         captured.add(`${viewport}-closed`);
       }
 
@@ -225,13 +148,11 @@ try {
         });
         const open = await boundedAction({ phase: "after-open", route, viewport }, () => evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`));
         if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-open`)) {
-          const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 86, fromSurface: true }, sessionId);
-          await writeFile(join(captureDirectory, `home-${viewport}-open.jpg`), Buffer.from(shot.data, "base64"));
+          await page.screenshot({ path: join(captureDirectory, `home-${engineName}-${viewport}-open.jpg`), type: "jpeg", quality: 86, fullPage: false });
           captured.add(`${viewport}-open`);
         }
         await boundedAction({ phase: "escape-close", route, viewport }, async () => {
-          await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
-          await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
+          await page.keyboard.press("Escape");
           if (!await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer close ${route} ${viewport}`)) throw new ActionTimeout(`timeout during escape-close (${route} ${viewport})`);
         });
         const closed = await evaluate(`(()=>{const t=document.querySelector('.mobile-toggle'),d=document.querySelector('.mobile-drawer');return{expanded:t.getAttribute('aria-expanded'),focusReturned:document.activeElement===t,backgroundRestored:!document.querySelector('main')?.inert,closed:!d.classList.contains('is-open')}})()`);
@@ -245,8 +166,7 @@ try {
           const closeButtonInvoked = await boundedAction({ phase: "close-button-close", route, viewport }, async () => {
             const invoked = await evaluate(`(()=>{const button=document.querySelector('.drawer-close,[data-drawer-close]');if(!button)return false;button.click();return true})()`);
             if (!invoked) {
-              await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
-              await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
+              await page.keyboard.press("Escape");
             }
             if (invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button ${viewport}`)) throw new ActionTimeout(`timeout during close-button-close (${route} ${viewport})`);
             if (!invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `close button recovery ${viewport}`)) throw new ActionTimeout(`timeout during close-button-close (${route} ${viewport})`);
@@ -260,8 +180,7 @@ try {
           const overlayInvoked = await boundedAction({ phase: "outside-close", route, viewport }, async () => {
             const invoked = await evaluate(`(()=>{const overlay=document.querySelector('.drawer-overlay');if(!overlay)return false;overlay.click();return true})()`);
             if (!invoked) {
-              await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" }, sessionId);
-              await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape" }, sessionId);
+              await page.keyboard.press("Escape");
             }
             if (invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside click ${viewport}`)) throw new ActionTimeout(`timeout during outside-close (${route} ${viewport})`);
             if (!invoked && !await waitFor(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `outside recovery ${viewport}`)) throw new ActionTimeout(`timeout during outside-close (${route} ${viewport})`);
@@ -273,17 +192,24 @@ try {
       }
     }
   }
-  await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true }, sessionId);
-  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] }, sessionId);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await navigate("index.html", "390x844 reduced motion");
   reducedMotion = await evaluate(`(()=>{const values=[...document.querySelectorAll('.mobile-drawer,.drawer-overlay')].flatMap(element=>getComputedStyle(element).transitionDuration.split(',').map(value=>parseFloat(value)*(value.trim().endsWith('ms')?1:1000)));return{matches:matchMedia('(prefers-reduced-motion: reduce)').matches,durationsMs:values}})()`);
   collectionComplete = true;
 } catch (error) {
   infrastructureErrors.push(error.message);
 } finally {
-  globalThis.__f201Report = { schemaVersion: 1, source: "a47abb9a43248320dfef8449b6a65e187913fd24", browser: await send("Browser.getVersion"), viewports, observations, menuResults, reducedMotion };
-  ws.close();
-  browser.kill();
+  globalThis.__f201Report = {
+    schemaVersion: 2,
+    source: "a47abb9a43248320dfef8449b6a65e187913fd24",
+    browser: { engine: engineName, version: browser.version() },
+    viewports,
+    observations,
+    menuResults,
+    reducedMotion,
+  };
+  await browser.close();
   server.close();
 }
 
