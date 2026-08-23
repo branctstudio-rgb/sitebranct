@@ -33,10 +33,11 @@
     },
     "menuEvidenceMatrix": {
       "path": "fixtures/audit/f2-01-menu-evidence-matrix.json",
-      "canonicalization": "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases}]) with fixed key order",
+      "canonicalization": "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases,developmentSemanticStatus,developmentResult,developmentResultSha256}]) with fixed key order",
       "identityAlgorithm": "sha256(JSON.stringify({route,viewport,actionPhases}))",
+      "resultBindingAlgorithm": "sha256(JSON.stringify({evidenceId,route,viewport,actionSequence,semanticStatus,measuredResult}))",
       "digestAlgorithm": "sha256",
-      "sha256": "c28a1840d4ad85ebfe609082e9c33ba21de2c1c5b72776d37fa142c5aae0701e",
+      "sha256": "0a7ef81ed646e50fd760b04562bb7f2f31d9b60b414fd790f289ee43d8d1db72",
       "evidenceCount": 41,
       "actionCount": 184
     },
