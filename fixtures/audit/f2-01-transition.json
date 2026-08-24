@@ -6,6 +6,7 @@
   "authority": {
     "source": "github.event.pull_request.head.sha",
     "localOverride": "F2_GOV_AUTHORITY_SHA",
+    "pullRequestBaseSha": "4ffdff435f90612b9d46051110bd87b2afc40d17",
     "rejectSyntheticMergeHead": true
   },
   "productionAuthorized": false,

@@ -199,7 +199,8 @@ function resolveAuthoritySha(transition, options = {}) {
     eventHead = event?.pull_request?.head?.sha;
     eventBase = event?.pull_request?.base?.sha;
     assert.match(eventHead ?? "", shaPattern, "authority event head sha is absent or malformed");
-    assert.equal(eventBase, transition.baseSha, "authority event base sha differs from the transition contract");
+    assert.match(transition.authority?.pullRequestBaseSha ?? "", shaPattern, "authority pull request base sha is absent or malformed");
+    assert.equal(eventBase, transition.authority.pullRequestBaseSha, "authority event base sha differs from the transition contract");
   }
   assert.ok(explicit || eventHead, "authority sha is absent");
   if (explicit && eventHead) assert.equal(explicit, eventHead, "explicit authority sha differs from event head sha");
@@ -497,7 +498,7 @@ test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory P
   const eventPath = join(directory, "event.json");
   const head = "1".repeat(40);
   try {
-    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: transition.baseSha } } }));
+    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: transition.authority.pullRequestBaseSha } } }));
     assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
     assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: head }), head);
     assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "2".repeat(40) }), /differs from event head/i);
@@ -871,7 +872,8 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
 test("the audited diff cannot mutate live pages or deployment", async () => {
   const contract = await readJson(contractPath);
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
-  const changed = execFileSync("git", ["diff", "--name-only", diffBase], { encoding: "utf8" })
+  const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
+  const changed = execFileSync("git", ["diff", "--name-only", diffBase], { cwd: repository, encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
   const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
