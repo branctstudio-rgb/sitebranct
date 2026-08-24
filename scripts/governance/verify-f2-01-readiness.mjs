@@ -71,7 +71,11 @@ async function main() {
     assert.equal(result.status, expectedExit, `${engine}: semantic process exit differs; stderr=${result.stderr.slice(-1000)}`);
     let report;
     try { report = JSON.parse(readFileSync(reportPath, "utf8")); }
-    catch { assert.fail(`${engine}: report is absent, unreadable or malformed`); }
+    catch {
+      const stdoutTail = result.stdout.slice(-1000).replaceAll("\u0000", "<NUL>");
+      const stderrTail = result.stderr.slice(-1000).replaceAll("\u0000", "<NUL>");
+      assert.fail(`${engine}: report is absent, unreadable or malformed; status=${result.status}; stdout=${stdoutTail}; stderr=${stderrTail}`);
+    }
     validateEngineReport(runtime, report, engine);
     assert.deepEqual(Object.fromEntries(report.execution.semanticTests.map(({ name, status }) => [name, status])), expectedStatuses(), `${engine}: semantic result vector divergent`);
     reports.push({ engine, browserVersion: report.browser.version, reportSha256: hash(JSON.stringify(report)), conclusion: transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT" ? "EXPECTED_SEMANTIC_RED" : "GREEN" });
