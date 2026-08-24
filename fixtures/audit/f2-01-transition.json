@@ -82,7 +82,7 @@
     "previous": "PHASE_1_HISTORICAL",
     "approvalAuthority": "GitHub Via A branch protection; never repository evidence",
     "readyEvidenceMustContainApproval": false,
-    "integratedEvidencePath": "fixtures/audit/f2-01-integration-evidence.json",
+    "integrationAuthority": "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref",
     "transitions": {
       "PHASE_1_HISTORICAL": ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
       "F2_01_AUTHORIZED_IN_DEVELOPMENT": ["READY_FOR_VIA_A_REVIEW"],

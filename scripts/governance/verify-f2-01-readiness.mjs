@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync, rmSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -15,6 +15,7 @@ const packageJson = readJson("package.json");
 const packageLock = readJson("package-lock.json");
 const browserRegistry = readJson("node_modules/playwright-core/browsers.json");
 const matrix = readJson("fixtures/audit/f2-01-menu-evidence-matrix.json");
+const targetBaseline = readJson(transition.f201.targetBaseline.path);
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const semanticNames = Object.keys(transition.f201.expectedDevelopmentRed.semanticVector);
 const actionPhases = (route) => ["before-open", "open", "after-open", "escape-close", ...(route === "index.html" ? ["close-button-open", "close-button-close", "outside-open", "outside-close"] : [])];
@@ -108,6 +109,36 @@ export function validateEngineReport(runtime, report, engine) {
   }
 }
 
+export function validateReadyBaseline(report, baseline) {
+  assert.ok(baseline && typeof baseline === "object" && !Array.isArray(baseline), "GREEN target baseline is absent or unreadable");
+  const projection = structuredClone(report);
+  delete projection.execution;
+  for (const entry of projection.menuResults ?? []) delete entry.evidenceId;
+  assert.deepEqual(projection, baseline, "engine report differs from the independent GREEN target baseline");
+}
+
+export function derivePostIntegrationState({ transition, repository, eventPath, mainRef = "refs/remotes/origin/main" }) {
+  assert.equal(transition.status, "READY_FOR_VIA_A_REVIEW", "only a reviewed-ready tree can derive the post-integration state");
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref", "post-integration authority is divergent");
+  let event;
+  try { event = JSON.parse(readFileSync(eventPath, "utf8")); }
+  catch { assert.fail("GitHub main push event is absent, unreadable or malformed"); }
+  assert.equal(event?.ref, "refs/heads/main", "GitHub integration event is not for refs/heads/main");
+  assert.equal(event?.repository?.full_name, transition.repository, "GitHub integration repository is divergent");
+  for (const name of ["before", "after"]) assert.match(event?.[name] ?? "", /^[0-9a-f]{40}$/, `GitHub integration ${name} sha is absent or malformed`);
+  const git = (...args) => {
+    try { return execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+    catch { assert.fail(`post-integration Git authority cannot resolve: git ${args.join(" ")}`); }
+  };
+  assert.equal(git("rev-parse", mainRef), event.after, "resolved canonical main ref differs from the GitHub push event");
+  const [commit, ...parents] = git("rev-list", "--parents", "-n", "1", event.after).split(/\s+/);
+  assert.equal(commit, event.after, "resolved main commit differs from the GitHub push event");
+  assert.equal(parents.length, 2, "main integration is not a normal two-parent merge");
+  assert.equal(parents[0], event.before, "main merge first parent differs from the sealed pre-merge main");
+  const treeSha = git("rev-parse", `${event.after}^{tree}`);
+  return { state: "F2_01_INTEGRATED_VERIFIED", mergeCommitSha: event.after, baseSha: event.before, headSha: parents[1], treeSha, mainRef };
+}
+
 function expectedStatuses() {
   if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") return transition.f201.expectedDevelopmentRed.semanticVector;
   if (["READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"].includes(transition.status)) {
@@ -142,11 +173,16 @@ async function main() {
       assert.fail(`${engine}: report is absent, unreadable or malformed; status=${result.status}; stdout=${stdoutTail}; stderr=${stderrTail}`);
     }
     validateEngineReport(runtime, report, engine);
+    if (["READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"].includes(transition.status)) validateReadyBaseline(report, targetBaseline);
     assert.deepEqual(Object.fromEntries(report.execution.semanticTests.map(({ name, status }) => [name, status])), expectedStatuses(), `${engine}: semantic result vector divergent`);
     reports.push({ engine, browserVersion: report.browser.version, reportSha256: hash(JSON.stringify(report)), conclusion: transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT" ? "EXPECTED_SEMANTIC_RED" : "GREEN" });
   }
   assert.deepEqual(reports.map(({ engine }) => engine), runtime.playwright.engines, "engine execution set is divergent");
-    process.stdout.write(`${JSON.stringify({ status: transition.status, playwrightVersion: runtime.playwright.version, containerDigest: runtime.container.indexDigest, reports }, null, 2)}\n`);
+    let postIntegration = null;
+    if (transition.status === "READY_FOR_VIA_A_REVIEW" && process.env.GITHUB_EVENT_NAME === "push") {
+      postIntegration = derivePostIntegrationState({ transition, repository: new URL("../../", import.meta.url), eventPath: process.env.GITHUB_EVENT_PATH });
+    }
+    process.stdout.write(`${JSON.stringify({ status: postIntegration?.state ?? transition.status, storedStatus: transition.status, postIntegration, playwrightVersion: runtime.playwright.version, containerDigest: runtime.container.indexDigest, reports }, null, 2)}\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

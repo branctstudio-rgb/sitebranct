@@ -196,8 +196,15 @@ function resolveAuthoritySha(transition, options = {}) {
     let event;
     try { event = JSON.parse(readFileSync(eventPath, "utf8")); }
     catch { assert.fail("authority event is absent, unreadable or malformed"); }
-    eventHead = event?.pull_request?.head?.sha;
-    eventBase = event?.pull_request?.base?.sha;
+    if (event?.pull_request) {
+      eventHead = event.pull_request?.head?.sha;
+      eventBase = event.pull_request?.base?.sha;
+    } else {
+      assert.equal(event?.ref, "refs/heads/main", "authority push event is not for main");
+      assert.equal(event?.repository?.full_name, transition.repository, "authority push repository is divergent");
+      eventHead = event?.after;
+      eventBase = event?.before;
+    }
     assert.match(eventHead ?? "", shaPattern, "authority event head sha is absent or malformed");
     assert.match(transition.authority?.pullRequestBaseSha ?? "", shaPattern, "authority pull request base sha is absent or malformed");
     assert.equal(eventBase, transition.authority.pullRequestBaseSha, "authority event base sha differs from the transition contract");
@@ -284,25 +291,30 @@ function assertProcessOutcome(outcome, expectedExitCode) {
 function verifyIntegratedGitEvidence(transition, integration, options = {}) {
   const repository = options.repository;
   assert.ok(repository, "integrated Git repository is absent");
-  assert.match(transition.stateMachine.integratedEvidencePath ?? "", /^(?![./\\])(?!.+\\)(?!.*(?:^|\/)\.\.(?:\/|$)).+\.json$/, "integrated evidence path is absent or unsafe");
-  const evidencePath = join(repository, transition.stateMachine.integratedEvidencePath);
-  let persisted;
-  try { persisted = JSON.parse(readFileSync(evidencePath, "utf8")); }
-  catch { assert.fail("integrated evidence is absent, unreadable or malformed"); }
-  assert.deepEqual(persisted, integration, "integrated evidence differs from the persisted post-merge proof");
-  exactKeys(integration, ["merged", "mergeCommitSha", "headSha", "baseSha", "treeSha", "validatedTreeSha", "integratedRefSha"], "integrated Git evidence");
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref", "integrated main authority is divergent");
+  const eventPath = options.mainEventPath;
+  assert.ok(eventPath, "integrated main event path is absent");
+  let event;
+  try { event = JSON.parse(readFileSync(eventPath, "utf8")); }
+  catch { assert.fail("integrated main event is absent, unreadable or malformed"); }
+  assert.equal(event?.ref, "refs/heads/main", "integrated event is not for refs/heads/main");
+  assert.equal(event?.repository?.full_name, transition.repository, "integrated event repository is divergent");
+  assert.match(event?.before ?? "", shaPattern, "integrated event base sha is absent or malformed");
+  assert.match(event?.after ?? "", shaPattern, "integrated event main sha is absent or malformed");
+  exactKeys(integration, ["merged", "headSha", "treeSha", "validatedTreeSha"], "integrated Git evidence");
   assert.equal(integration.merged, true, "real merge not confirmed");
-  for (const name of ["mergeCommitSha", "headSha", "baseSha", "treeSha", "validatedTreeSha", "integratedRefSha"]) assert.match(integration[name] ?? "", shaPattern, `${name} is absent or malformed`);
+  for (const name of ["headSha", "treeSha", "validatedTreeSha"]) assert.match(integration[name] ?? "", shaPattern, `${name} is absent or malformed`);
   const git = (...args) => {
     try { return execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
     catch { assert.fail(`integrated Git proof cannot resolve: git ${args.join(" ")}`); }
   };
-  for (const sha of [integration.mergeCommitSha, integration.headSha, integration.baseSha, integration.integratedRefSha]) git("cat-file", "-e", `${sha}^{commit}`);
-  assert.equal(integration.integratedRefSha, integration.mergeCommitSha, "integrated ref does not identify the merge commit");
-  const [commit, ...parents] = git("rev-list", "--parents", "-n", "1", integration.mergeCommitSha).split(/\s+/);
-  assert.equal(commit, integration.mergeCommitSha, "resolved merge commit differs from evidence");
-  assert.deepEqual(parents, [integration.baseSha, integration.headSha], "merge parents do not prove a normal merge of the authorized head onto the sealed base");
-  const actualTree = git("rev-parse", `${integration.mergeCommitSha}^{tree}`);
+  for (const sha of [event.after, event.before, integration.headSha]) git("cat-file", "-e", `${sha}^{commit}`);
+  const mainRef = options.mainRef ?? "refs/remotes/origin/main";
+  assert.equal(git("rev-parse", mainRef), event.after, "resolved canonical main ref differs from the GitHub push event");
+  const [commit, ...parents] = git("rev-list", "--parents", "-n", "1", event.after).split(/\s+/);
+  assert.equal(commit, event.after, "resolved merge commit differs from the GitHub main event");
+  assert.deepEqual(parents, [event.before, integration.headSha], "merge parents do not prove a normal merge of the authorized head onto the sealed main base");
+  const actualTree = git("rev-parse", `${event.after}^{tree}`);
   assert.equal(integration.treeSha, actualTree, "integrated tree differs from the real merge tree");
   assert.equal(integration.validatedTreeSha, actualTree, "validated tree differs from the real merge tree");
 }
@@ -332,6 +344,7 @@ function validateStateMachine(transition) {
   assert.deepEqual(transition.f201.matrix.viewports, canonicalF201Viewports, "viewport contract is absent, malformed or divergent");
   assert.equal(transition.f201.targetBaseline.observationCount, transition.f201.matrix.routes.length * Object.keys(canonicalF201Viewports).length, "viewport observation cardinality is divergent");
   assert.deepEqual(transition.f201.expectedDevelopmentRed.semanticVector, canonicalDevelopmentRedVector, "semantic RED vector contract is divergent");
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref", "integrated main authority is absent or divergent");
   const matrix = readCanonicalMenuEvidenceMatrix(transition);
   assert.equal(transition.f201.targetBaseline.menuExerciseCount, matrix.evidenceCount, "canonical menu evidence count differs from target baseline");
   return matrix;
@@ -464,15 +477,19 @@ test("F2-01 readiness separates offline eligibility from Via A approval and requ
   assert.deepEqual(transition.f201.requiredBrowsers, ["chromium", "firefox", "webkit"]);
   assert.equal(transition.stateMachine.approvalAuthority, "GitHub Via A branch protection; never repository evidence");
   assert.equal(transition.stateMachine.readyEvidenceMustContainApproval, false);
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref");
   const runtime = await readJson(f201RuntimePath);
   assert.equal(runtime.playwright.version, "1.62.0");
   assert.deepEqual(runtime.playwright.engines, ["chromium", "firefox", "webkit"]);
   assert.match(runtime.container.indexDigest, /^sha256:[0-9a-f]{64}$/);
   assert.match(runtime.container.linuxAmd64Digest, /^sha256:[0-9a-f]{64}$/);
+  const offlineWorkflow = await readFile(workflowPath, "utf8");
+  assert.match(offlineWorkflow, /push:\s*\n\s+branches: \[main\]/, "post-integration verifier must run on a real main push");
+  assert.match(offlineWorkflow, /AUDIT_DIFF_BASE: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}/, "main push must bind the sealed pre-merge base");
 });
 
 test("F2-01 runtime and engine evidence fail closed on omissions, drift and adulteration", async (t) => {
-  const [{ validateRuntimeContract, validateEngineReport }, runtime, transition, packageJson, packageLock] = await Promise.all([
+  const [{ validateRuntimeContract, validateEngineReport, validateReadyBaseline }, runtime, transition, packageJson, packageLock] = await Promise.all([
     import("../../scripts/governance/verify-f2-01-readiness.mjs"),
     readJson(f201RuntimePath),
     readJson(f201TransitionPath),
@@ -512,6 +529,26 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
     mutate(value);
     assert.throws(() => validateEngineReport(runtime, value, "firefox"), expected);
   });
+  const greenReport = reportForRequiredMatrix(transition, baseline);
+  const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
+  greenReport.browser = { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version };
+  greenReport.menuResults = baseline.menuResults.map((entry) => ({ evidenceId: canonicalMatrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport).evidenceId, ...structuredClone(entry) }));
+  greenReport.execution = completeExecution({});
+  greenReport.execution.actions = completeActionsFor(transition);
+  const greenBaseline = structuredClone(greenReport);
+  delete greenBaseline.execution;
+  for (const entry of greenBaseline.menuResults) delete entry.evidenceId;
+  assert.doesNotThrow(() => validateReadyBaseline(greenReport, greenBaseline));
+  for (const [label, mutate] of [
+    ["READY observation transplanted", (value) => { value.observations[0] = structuredClone(value.observations[1]); }],
+    ["READY menu result adulterated", (value) => { value.menuResults[0].open.drawerInside = false; }],
+    ["READY evidence omitted", (value) => { value.menuResults.pop(); }],
+    ["READY evidence duplicated", (value) => { value.menuResults[1] = structuredClone(value.menuResults[0]); }],
+  ]) await t.test(label, () => {
+    const value = structuredClone(greenReport);
+    mutate(value);
+    assert.throws(() => validateReadyBaseline(value, greenBaseline), /GREEN target baseline/i);
+  });
 });
 
 test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory PR identity", async () => {
@@ -530,6 +567,10 @@ test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory P
     assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /unreadable or malformed/i);
     await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: "2".repeat(40) } } }));
     assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /base sha differs/i);
+    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/main", before: transition.authority.pullRequestBaseSha, after: head, repository: { full_name: transition.repository } }));
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
+    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/not-main", before: transition.authority.pullRequestBaseSha, after: head, repository: { full_name: transition.repository } }));
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /not for main/i);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -812,9 +853,8 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
   integratedTransition.status = "F2_01_INTEGRATED_VERIFIED";
   integratedTransition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
   integratedTransition.stateMachine.previous = "READY_FOR_VIA_A_REVIEW";
-  integratedTransition.stateMachine.integratedEvidencePath = "post-merge-evidence.json";
   const repository = await mkdtemp(join(tmpdir(), "branct-f2-01-integrated-git-"));
-  const integrationEvidencePath = join(repository, "post-merge-evidence.json");
+  const mainEventPath = join(repository, "github-push-event.json");
   const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   try {
     git("init", "--initial-branch=main");
@@ -833,14 +873,30 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
     git("merge", "--no-ff", "authorized-head", "-m", "normal merge");
     const mergeCommitSha = git("rev-parse", "HEAD");
     const treeSha = git("rev-parse", "HEAD^{tree}");
+    git("update-ref", "refs/remotes/origin/main", mergeCommitSha);
+    await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: mergeCommitSha, repository: { full_name: integratedTransition.repository } }));
+    const { derivePostIntegrationState } = await import("../../scripts/governance/verify-f2-01-readiness.mjs");
+    assert.deepEqual(derivePostIntegrationState({ transition, repository, eventPath: mainEventPath }), {
+      state: "F2_01_INTEGRATED_VERIFIED",
+      mergeCommitSha,
+      baseSha,
+      headSha: integratedHeadSha,
+      treeSha,
+      mainRef: "refs/remotes/origin/main",
+    });
+    git("update-ref", "refs/remotes/origin/main", integratedHeadSha);
+    assert.throws(() => derivePostIntegrationState({ transition, repository, eventPath: mainEventPath }), /canonical main ref/i);
+    git("update-ref", "refs/remotes/origin/main", mergeCommitSha);
+    await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: "5".repeat(40), repository: { full_name: integratedTransition.repository } }));
+    assert.throws(() => derivePostIntegrationState({ transition, repository, eventPath: mainEventPath }), /canonical main ref|cannot resolve/i);
+    await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: mergeCommitSha, repository: { full_name: integratedTransition.repository } }));
     const integratedEvidence = {
       ...structuredClone(evidence),
       authoritySha: integratedHeadSha,
       liveDiff: { ...structuredClone(evidence.liveDiff), authoritySha: integratedHeadSha },
-      integration: { merged: true, mergeCommitSha, headSha: integratedHeadSha, baseSha, treeSha, validatedTreeSha: treeSha, integratedRefSha: mergeCommitSha },
+      integration: { merged: true, headSha: integratedHeadSha, treeSha, validatedTreeSha: treeSha },
     };
-    await writeFile(integrationEvidencePath, JSON.stringify(integratedEvidence.integration));
-    const options = { repository };
+    const options = { repository, mainEventPath };
     assert.equal(deriveF201State(integratedTransition, integratedEvidence, options), "F2_01_INTEGRATED_VERIFIED");
     git("checkout", "authorized-head");
     assert.equal(deriveF201State(integratedTransition, integratedEvidence, options), "F2_01_INTEGRATED_VERIFIED", "moving HEAD must not change explicit merge authority");
@@ -849,12 +905,15 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
       ["real merge false", (value) => { value.integration.merged = false; }, /real merge not confirmed/i],
       ["merged head divergent", (value) => { value.integration.headSha = baseSha; value.authoritySha = baseSha; value.liveDiff.authoritySha = baseSha; }, /merge parents/i],
       ["integrated tree unvalidated", (value) => { value.integration.validatedTreeSha = baseSha; }, /validated tree/i],
-      ["merge commit unresolvable", (value) => { value.integration.mergeCommitSha = "5".repeat(40); value.integration.integratedRefSha = "5".repeat(40); }, /cannot resolve/i],
-      ["integrated ref transplanted", (value) => { value.integration.integratedRefSha = integratedHeadSha; }, /integrated ref/i],
+      ["canonical main ref transplanted", (value, setup) => { setup("update-ref", "refs/remotes/origin/main", integratedHeadSha); }, /canonical main ref/i],
+      ["push event merge unresolvable", (value, setup, writeEvent) => { writeEvent({ ref: "refs/heads/main", before: baseSha, after: "5".repeat(40), repository: { full_name: integratedTransition.repository } }); }, /cannot resolve/i],
     ]) await t.test(label, async () => {
       const value = structuredClone(integratedEvidence);
-      mutate(value);
-      if (value.integration) await writeFile(integrationEvidencePath, JSON.stringify(value.integration));
+      git("update-ref", "refs/remotes/origin/main", mergeCommitSha);
+      await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: mergeCommitSha, repository: { full_name: integratedTransition.repository } }));
+      let pendingEvent;
+      mutate(value, git, (event) => { pendingEvent = event; });
+      if (pendingEvent) await writeFile(mainEventPath, JSON.stringify(pendingEvent));
       assert.throws(() => deriveF201State(integratedTransition, value, options), expected);
     });
   } finally {
