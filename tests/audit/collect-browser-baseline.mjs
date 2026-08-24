@@ -53,7 +53,7 @@ const candidates = process.platform === "win32"
 let browser;
 for (const executable of candidates) {
   try {
-    browser = spawn(executable, ["--headless=new", "--disable-gpu", "--no-sandbox", "--remote-debugging-port=0", `--user-data-dir=${join(tmpdir(), `branct-audit-${process.pid}`)}`, "about:blank"], { stdio:["ignore","ignore","pipe"] });
+    browser = spawn(executable, ["--headless=new", "--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox", "--remote-debugging-port=0", `--user-data-dir=${join(tmpdir(), `branct-audit-${process.pid}`)}`, "about:blank"], { stdio:["ignore","ignore","pipe"] });
     await new Promise((resolve, reject) => { browser.once("spawn", resolve); browser.once("error", reject); });
     break;
   } catch { browser = undefined; }

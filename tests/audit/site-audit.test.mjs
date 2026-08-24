@@ -943,6 +943,7 @@ test("the audit handoff and CI preserve the offline boundary", async () => {
   assert.match(collector, /Emulation\.setDeviceMetricsOverride/);
   assert.match(collector, /targetsUnder44/);
   assert.match(collector, /playwrightChromium\.executablePath\(\)/);
+  assert.match(collector, /--disable-dev-shm-usage/);
   assert.match(workflow, /collect-browser-baseline\.mjs/);
   assert.match(workflow, /check-visual-evidence\.mjs/);
 });
