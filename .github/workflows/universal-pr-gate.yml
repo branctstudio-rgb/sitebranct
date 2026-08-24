@@ -81,6 +81,8 @@ jobs:
         run: node --test tests/audit/site-audit.test.mjs
 
       - name: Verify F2-01 readiness in Chromium, Firefox and WebKit
+        env:
+          HOME: /root
         run: node scripts/governance/verify-f2-01-readiness.mjs
 
       - name: Reproduce browser baseline

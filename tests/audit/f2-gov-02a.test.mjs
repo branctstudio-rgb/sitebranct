@@ -78,6 +78,7 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     assert.match(source, /image: mcr\.microsoft\.com\/playwright:v1\.62\.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07/, "immutable Playwright container missing");
     assert.match(source, /npm ci --ignore-scripts/, "exact lockfile install missing");
     assert.match(source, /node scripts\/governance\/verify-f2-01-readiness\.mjs/, "three-engine readiness runner missing");
+    assert.match(source, /name: Verify F2-01 readiness in Chromium, Firefox and WebKit\s+env:\s+HOME: \/root\s+run: node scripts\/governance\/verify-f2-01-readiness\.mjs/, "Firefox-compatible root HOME is missing from the isolated readiness step");
     assert.match(source, /node scripts\/governance\/classify-pr-paths\.mjs/, "real classifier is not invoked");
     for (const command of [
       "tests/audit/f2-gov-02a.test.mjs",
@@ -173,6 +174,7 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
       ["terminal result removed", (s) => s.replace("name: Gate terminal result", "name: Removed terminal"), "explicit terminal result missing"],
       ["checkout credentials restored", (s) => s.replace("persist-credentials: false", "persist-credentials: true"), "checkout credentials must not persist"],
       ["checkout trust broadened", (s) => s.replace('safe.directory "$GITHUB_WORKSPACE"', 'safe.directory "*"'), "wildcard safe directory forbidden"],
+      ["Firefox runtime HOME removed", (s) => s.replace(/^\s+HOME: \/root\s*\r?\n/m, ""), "Firefox-compatible root HOME is missing"],
       ["required Action removed", (s) => s.replace(/^\s+- name: Prepare Node\.js[\s\S]*?node-version: 22\s*\r?\n/m, ""), "required Action inventory mismatch"],
       ["extra permission", (s) => s.replace("  contents: read", "  contents: read\n  issues: read"), "permissions must be contents read only"],
       ["second job", (s) => `${s}\n  shadow-job:\n    runs-on: ubuntu-latest\n    steps: []\n`, "exactly one universal job is allowed"],
