@@ -112,9 +112,14 @@ export function validateEngineReport(runtime, report, engine) {
 export function validateReadyBaseline(report, baseline) {
   assert.ok(baseline && typeof baseline === "object" && !Array.isArray(baseline), "GREEN target baseline is absent or unreadable");
   const projection = structuredClone(report);
+  const baselineProjection = structuredClone(baseline);
   delete projection.execution;
+  delete projection.browser;
+  delete baselineProjection.execution;
+  delete baselineProjection.browser;
   for (const entry of projection.menuResults ?? []) delete entry.evidenceId;
-  assert.deepEqual(projection, baseline, "engine report differs from the independent GREEN target baseline");
+  for (const entry of baselineProjection.menuResults ?? []) delete entry.evidenceId;
+  assert.deepEqual(projection, baselineProjection, "engine semantic report differs from the independent GREEN target baseline");
 }
 
 export function derivePostIntegrationState({ transition, repository, eventPath, mainRef = "refs/remotes/origin/main" }) {

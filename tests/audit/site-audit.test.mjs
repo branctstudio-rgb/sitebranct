@@ -539,6 +539,9 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   delete greenBaseline.execution;
   for (const entry of greenBaseline.menuResults) delete entry.evidenceId;
   assert.doesNotThrow(() => validateReadyBaseline(greenReport, greenBaseline));
+  const webkitSemanticTwin = structuredClone(greenReport);
+  webkitSemanticTwin.browser = { engine: "webkit", version: runtime.playwright.browserBuilds.webkit.version };
+  assert.doesNotThrow(() => validateReadyBaseline(webkitSemanticTwin, greenBaseline), "engine metadata must remain outside the shared semantic baseline");
   for (const [label, mutate] of [
     ["READY observation transplanted", (value) => { value.observations[0] = structuredClone(value.observations[1]); }],
     ["READY menu result adulterated", (value) => { value.menuResults[0].open.drawerInside = false; }],
