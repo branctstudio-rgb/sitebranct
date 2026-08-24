@@ -73,6 +73,8 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     assert.deepEqual(jobKeys, ["universal-pr-gate"], "exactly one universal job is allowed");
     assert.doesNotMatch(source, /\bsecrets\b|FTP_PASSWORD|lftp|mirror\s+--reverse|deployments?:\s*write|\bcurl\b|\bwget\b|\bgit\s+push\b|\bgh\s+api\b|\bnpm\s+publish\b/i, "secret, deploy or external mutation primitive forbidden");
     assert.match(source, /persist-credentials: false/, "checkout credentials must not persist");
+    assert.doesNotMatch(source, /safe\.directory\s+["']?\*["']?/, "wildcard safe directory forbidden");
+    assert.match(source, /git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/, "container checkout trust must be limited to GITHUB_WORKSPACE");
     assert.match(source, /image: mcr\.microsoft\.com\/playwright:v1\.62\.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07/, "immutable Playwright container missing");
     assert.match(source, /npm ci --ignore-scripts/, "exact lockfile install missing");
     assert.match(source, /node scripts\/governance\/verify-f2-01-readiness\.mjs/, "three-engine readiness runner missing");
@@ -170,6 +172,7 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
       ["unpinned Action", (s) => s.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v4"), "required Action inventory mismatch"],
       ["terminal result removed", (s) => s.replace("name: Gate terminal result", "name: Removed terminal"), "explicit terminal result missing"],
       ["checkout credentials restored", (s) => s.replace("persist-credentials: false", "persist-credentials: true"), "checkout credentials must not persist"],
+      ["checkout trust broadened", (s) => s.replace('safe.directory "$GITHUB_WORKSPACE"', 'safe.directory "*"'), "wildcard safe directory forbidden"],
       ["required Action removed", (s) => s.replace(/^\s+- name: Prepare Node\.js[\s\S]*?node-version: 22\s*\r?\n/m, ""), "required Action inventory mismatch"],
       ["extra permission", (s) => s.replace("  contents: read", "  contents: read\n  issues: read"), "permissions must be contents read only"],
       ["second job", (s) => `${s}\n  shadow-job:\n    runs-on: ubuntu-latest\n    steps: []\n`, "exactly one universal job is allowed"],

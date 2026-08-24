@@ -932,6 +932,8 @@ test("the audit handoff and CI preserve the offline boundary", async () => {
   assert.doesNotMatch(workflow, /github\.head_ref|agent\/phase-1-offline-audit/);
   assert.match(workflow, /34e114876b0b11c390a56381ad16ebd13914f8d5/);
   assert.match(workflow, /49933ea5288caeca8642d1e84afbd3f7d6820020/);
+  assert.match(workflow, /git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/);
+  assert.doesNotMatch(workflow, /safe\.directory\s+["']?\*["']?/);
   assert.doesNotMatch(workflow, /FTP_PASSWORD|lftp/i);
   assert.match(redGreen, /ENOENT/);
   assert.match(redGreen, /GREEN/);
