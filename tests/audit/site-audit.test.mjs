@@ -915,13 +915,14 @@ test("route matrix and visual evidence are complete and tamper-evident", async (
 });
 
 test("the audit handoff and CI preserve the offline boundary", async () => {
-  const [audit, roadmap, risks, workflow, redGreen, collector] = await Promise.all([
+  const [audit, roadmap, risks, workflow, redGreen, collector, visualChecker] = await Promise.all([
     readFile(auditPath, "utf8"),
     readFile(roadmapPath, "utf8"),
     readFile(riskPath, "utf8"),
     readFile(workflowPath, "utf8"),
     readFile(redGreenPath, "utf8"),
     readFile(collectorPath, "utf8"),
+    readFile(new URL("./check-visual-evidence.mjs", import.meta.url), "utf8"),
   ]);
 
   assert.match(audit, /da8800cd7669f66a82cbf9cd2e4f22fa99d59320/);
@@ -944,6 +945,8 @@ test("the audit handoff and CI preserve the offline boundary", async () => {
   assert.match(collector, /targetsUnder44/);
   assert.match(collector, /playwrightChromium\.executablePath\(\)/);
   assert.match(collector, /--disable-dev-shm-usage/);
+  assert.match(visualChecker, /playwrightChromium\.executablePath\(\)/);
+  assert.match(visualChecker, /--disable-dev-shm-usage/);
   assert.match(workflow, /collect-browser-baseline\.mjs/);
   assert.match(workflow, /check-visual-evidence\.mjs/);
 });

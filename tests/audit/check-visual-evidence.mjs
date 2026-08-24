@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, normalize } from "node:path";
+import { chromium as playwrightChromium } from "playwright";
 
 const root = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const reportDirectory = process.argv[2] === "--report" ? normalize(process.argv[3]) : undefined;
@@ -12,9 +13,9 @@ const negativeControl = JSON.parse(await readFile(new URL("../../fixtures/audit/
 const server = createServer(async (req,res)=>{try{const rel=decodeURIComponent(new URL(req.url,"http://local").pathname).replace(/^\/+/,"");const external=rel.startsWith("report/");const base=external?reportDirectory:root;assert.ok(base);const child=external?rel.slice(7):rel;const file=normalize(join(base,child));assert.ok(file.startsWith(base));assert.ok((await stat(file)).isFile());res.writeHead(200,{"content-type":"image/jpeg","access-control-allow-origin":"*"});res.end(await readFile(file));}catch{res.writeHead(404);res.end();}}).listen(0,"127.0.0.1");
 await new Promise(r=>server.once("listening",r));
 
-const candidates=process.platform==="win32"?["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe","C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"]:["google-chrome","chromium","chromium-browser"];
+const candidates=process.platform==="win32"?[playwrightChromium.executablePath(),"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe","C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"]:[playwrightChromium.executablePath(),"google-chrome","chromium","chromium-browser"];
 let browser;
-for(const executable of candidates){try{browser=spawn(executable,["--headless=new","--disable-gpu","--no-sandbox","--remote-debugging-port=0",`--user-data-dir=${join(tmpdir(),`branct-visual-${process.pid}`)}`,"about:blank"],{stdio:["ignore","ignore","pipe"]});await new Promise((r,j)=>{browser.once("spawn",r);browser.once("error",j)});break;}catch{browser=undefined;}}
+for(const executable of candidates){try{browser=spawn(executable,["--headless=new","--disable-gpu","--disable-dev-shm-usage","--no-sandbox","--remote-debugging-port=0",`--user-data-dir=${join(tmpdir(),`branct-visual-${process.pid}`)}`,"about:blank"],{stdio:["ignore","ignore","pipe"]});await new Promise((r,j)=>{browser.once("spawn",r);browser.once("error",j)});break;}catch{browser=undefined;}}
 assert.ok(browser,"Chrome/Chromium is required");
 let endpoint="";for await(const chunk of browser.stderr){const m=chunk.toString().match(/DevTools listening on (ws:\/\/[^\s]+)/);if(m){endpoint=m[1];break;}}
 assert.ok(endpoint);
