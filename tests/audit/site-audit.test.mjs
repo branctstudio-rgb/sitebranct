@@ -281,6 +281,32 @@ function assertProcessOutcome(outcome, expectedExitCode) {
   assert.equal(outcome.exitCode, expectedExitCode, `process error exit code: expected ${expectedExitCode}, got ${outcome.exitCode}`);
 }
 
+function verifyIntegratedGitEvidence(transition, integration, options = {}) {
+  const repository = options.repository;
+  assert.ok(repository, "integrated Git repository is absent");
+  assert.match(transition.stateMachine.integratedEvidencePath ?? "", /^(?![./\\])(?!.+\\)(?!.*(?:^|\/)\.\.(?:\/|$)).+\.json$/, "integrated evidence path is absent or unsafe");
+  const evidencePath = join(repository, transition.stateMachine.integratedEvidencePath);
+  let persisted;
+  try { persisted = JSON.parse(readFileSync(evidencePath, "utf8")); }
+  catch { assert.fail("integrated evidence is absent, unreadable or malformed"); }
+  assert.deepEqual(persisted, integration, "integrated evidence differs from the persisted post-merge proof");
+  exactKeys(integration, ["merged", "mergeCommitSha", "headSha", "baseSha", "treeSha", "validatedTreeSha", "integratedRefSha"], "integrated Git evidence");
+  assert.equal(integration.merged, true, "real merge not confirmed");
+  for (const name of ["mergeCommitSha", "headSha", "baseSha", "treeSha", "validatedTreeSha", "integratedRefSha"]) assert.match(integration[name] ?? "", shaPattern, `${name} is absent or malformed`);
+  const git = (...args) => {
+    try { return execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+    catch { assert.fail(`integrated Git proof cannot resolve: git ${args.join(" ")}`); }
+  };
+  for (const sha of [integration.mergeCommitSha, integration.headSha, integration.baseSha, integration.integratedRefSha]) git("cat-file", "-e", `${sha}^{commit}`);
+  assert.equal(integration.integratedRefSha, integration.mergeCommitSha, "integrated ref does not identify the merge commit");
+  const [commit, ...parents] = git("rev-list", "--parents", "-n", "1", integration.mergeCommitSha).split(/\s+/);
+  assert.equal(commit, integration.mergeCommitSha, "resolved merge commit differs from evidence");
+  assert.deepEqual(parents, [integration.baseSha, integration.headSha], "merge parents do not prove a normal merge of the authorized head onto the sealed base");
+  const actualTree = git("rev-parse", `${integration.mergeCommitSha}^{tree}`);
+  assert.equal(integration.treeSha, actualTree, "integrated tree differs from the real merge tree");
+  assert.equal(integration.validatedTreeSha, actualTree, "validated tree differs from the real merge tree");
+}
+
 const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) =>
   !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
   open.expanded !== "true" || !open.drawerInside || !open.focusInside || !open.bodyLocked || !open.backgroundInert ||
@@ -311,7 +337,7 @@ function validateStateMachine(transition) {
   return matrix;
 }
 
-function deriveF201State(transition, evidence) {
+function deriveF201State(transition, evidence, options = {}) {
   const matrix = validateStateMachine(transition);
   if (transition.status === "PHASE_1_HISTORICAL") return transition.status;
   assertCompleteReport(transition, evidence.report, matrix);
@@ -350,11 +376,8 @@ function deriveF201State(transition, evidence) {
   assert.equal(Object.hasOwn(evidence, "approval"), false, "offline evidence must not contain or simulate Via A approval");
   if (transition.status === "READY_FOR_VIA_A_REVIEW") return transition.status;
   assert.ok(evidence.integration, "real merge evidence absent");
-  assert.equal(evidence.integration.merged, true, "real merge not confirmed");
-  assert.match(evidence.integration.mergeCommitSha ?? "", shaPattern, "merge commit sha is absent or malformed");
   assert.equal(evidence.integration.headSha, authoritySha, "merged head differs from readiness authority");
-  assert.match(evidence.integration.treeSha ?? "", shaPattern, "integrated tree sha is absent or malformed");
-  assert.equal(evidence.integration.validatedTreeSha, evidence.integration.treeSha, "integrated tree was not the tree validated after merge");
+  verifyIntegratedGitEvidence(transition, evidence.integration, options);
   return transition.status;
 }
 
@@ -470,13 +493,9 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
     mutate(value);
     assert.throws(() => validateRuntimeContract(value), expected);
   });
-  const report = {
-    schemaVersion: 2,
-    browser: { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version },
-    observations: Array.from({ length: 84 }, () => ({})),
-    menuResults: Array.from({ length: 41 }, () => ({})),
-    execution: { complete: true, infrastructureErrors: [], actions: Array.from({ length: 184 }, () => ({})), semanticTests: Array.from({ length: 4 }, () => ({})) },
-  };
+  const baseline = await readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url));
+  const report = developmentReportFrom(transition, baseline);
+  report.browser = { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version };
   assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox"));
   for (const [label, mutate, expected] of [
     ["engine identity adulterated", (value) => { value.browser.engine = "chromium"; }, /engine evidence/i],
@@ -485,6 +504,9 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
     ["action evidence omitted", (value) => { value.execution.actions.pop(); }, /action evidence incomplete/i],
     ["execution ignored", (value) => { value.execution.complete = false; }, /execution incomplete/i],
     ["infrastructure substituted", (value) => { value.execution.infrastructureErrors = ["browser missing"]; }, /infrastructure failure/i],
+    ["cardinality-only empty observations", (value) => { value.observations = Array.from({ length: 84 }, () => ({})); }, /observation.*(?:inconclusive|bijection)/i],
+    ["canonical result transplanted", (value) => { const first = value.menuResults[0]; const second = value.menuResults[1]; value.menuResults[0] = { ...first, focusReached: second.focusReached, focusStyle: second.focusStyle, open: second.open, closed: second.closed, closeButtonClosed: second.closeButtonClosed, outsideClosed: second.outsideClosed }; }, /transplanted|divergent/i],
+    ["action tuple copied", (value) => { value.execution.actions[1] = structuredClone(value.execution.actions[0]); }, /action tuple/i],
   ]) await t.test(label, () => {
     const value = structuredClone(report);
     mutate(value);
@@ -790,27 +812,54 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
   integratedTransition.status = "F2_01_INTEGRATED_VERIFIED";
   integratedTransition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
   integratedTransition.stateMachine.previous = "READY_FOR_VIA_A_REVIEW";
-  const integratedEvidence = {
-    ...structuredClone(evidence),
-    integration: {
-      merged: true,
-      mergeCommitSha: "3".repeat(40),
-      headSha: authoritySha,
-      treeSha: "4".repeat(40),
-      validatedTreeSha: "4".repeat(40),
-    },
-  };
-  assert.equal(deriveF201State(integratedTransition, integratedEvidence), "F2_01_INTEGRATED_VERIFIED");
-  for (const [label, mutate] of [
-    ["real merge evidence absent", (value) => { delete value.integration; }],
-    ["real merge false", (value) => { value.integration.merged = false; }],
-    ["merged head divergent", (value) => { value.integration.headSha = "5".repeat(40); }],
-    ["integrated tree unvalidated", (value) => { value.integration.validatedTreeSha = "5".repeat(40); }],
-  ]) await t.test(label, () => {
-    const value = structuredClone(integratedEvidence);
-    mutate(value);
-    assert.throws(() => deriveF201State(integratedTransition, value), /merge|head|tree/i);
-  });
+  integratedTransition.stateMachine.integratedEvidencePath = "post-merge-evidence.json";
+  const repository = await mkdtemp(join(tmpdir(), "branct-f2-01-integrated-git-"));
+  const integrationEvidencePath = join(repository, "post-merge-evidence.json");
+  const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  try {
+    git("init", "--initial-branch=main");
+    git("config", "user.name", "F2 integration proof");
+    git("config", "user.email", "f2-integration@example.invalid");
+    await writeFile(join(repository, "base.txt"), "base\n");
+    git("add", "--", "base.txt");
+    git("commit", "-m", "sealed base");
+    const baseSha = git("rev-parse", "HEAD");
+    git("checkout", "-b", "authorized-head");
+    await writeFile(join(repository, "f2-01.txt"), "verified\n");
+    git("add", "--", "f2-01.txt");
+    git("commit", "-m", "authorized F2-01 head");
+    const integratedHeadSha = git("rev-parse", "HEAD");
+    git("checkout", "main");
+    git("merge", "--no-ff", "authorized-head", "-m", "normal merge");
+    const mergeCommitSha = git("rev-parse", "HEAD");
+    const treeSha = git("rev-parse", "HEAD^{tree}");
+    const integratedEvidence = {
+      ...structuredClone(evidence),
+      authoritySha: integratedHeadSha,
+      liveDiff: { ...structuredClone(evidence.liveDiff), authoritySha: integratedHeadSha },
+      integration: { merged: true, mergeCommitSha, headSha: integratedHeadSha, baseSha, treeSha, validatedTreeSha: treeSha, integratedRefSha: mergeCommitSha },
+    };
+    await writeFile(integrationEvidencePath, JSON.stringify(integratedEvidence.integration));
+    const options = { repository };
+    assert.equal(deriveF201State(integratedTransition, integratedEvidence, options), "F2_01_INTEGRATED_VERIFIED");
+    git("checkout", "authorized-head");
+    assert.equal(deriveF201State(integratedTransition, integratedEvidence, options), "F2_01_INTEGRATED_VERIFIED", "moving HEAD must not change explicit merge authority");
+    for (const [label, mutate, expected] of [
+      ["real merge evidence absent", (value) => { delete value.integration; }, /merge evidence absent/i],
+      ["real merge false", (value) => { value.integration.merged = false; }, /real merge not confirmed/i],
+      ["merged head divergent", (value) => { value.integration.headSha = baseSha; value.authoritySha = baseSha; value.liveDiff.authoritySha = baseSha; }, /merge parents/i],
+      ["integrated tree unvalidated", (value) => { value.integration.validatedTreeSha = baseSha; }, /validated tree/i],
+      ["merge commit unresolvable", (value) => { value.integration.mergeCommitSha = "5".repeat(40); value.integration.integratedRefSha = "5".repeat(40); }, /cannot resolve/i],
+      ["integrated ref transplanted", (value) => { value.integration.integratedRefSha = integratedHeadSha; }, /integrated ref/i],
+    ]) await t.test(label, async () => {
+      const value = structuredClone(integratedEvidence);
+      mutate(value);
+      if (value.integration) await writeFile(integrationEvidencePath, JSON.stringify(value.integration));
+      assert.throws(() => deriveF201State(integratedTransition, value, options), expected);
+    });
+  } finally {
+    await rm(repository, { recursive: true, force: true });
+  }
   for (const [label, mutate] of [
     ["state absent", (value) => { delete value.status; }],
     ["state unknown", (value) => { value.status = "UNKNOWN"; }],

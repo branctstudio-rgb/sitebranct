@@ -14,7 +14,44 @@ const transition = readJson("fixtures/audit/f2-01-transition.json");
 const packageJson = readJson("package.json");
 const packageLock = readJson("package-lock.json");
 const browserRegistry = readJson("node_modules/playwright-core/browsers.json");
+const matrix = readJson("fixtures/audit/f2-01-menu-evidence-matrix.json");
 const hash = (value) => createHash("sha256").update(value).digest("hex");
+const semanticNames = Object.keys(transition.f201.expectedDevelopmentRed.semanticVector);
+const actionPhases = (route) => ["before-open", "open", "after-open", "escape-close", ...(route === "index.html" ? ["close-button-open", "close-button-close", "outside-open", "outside-close"] : [])];
+const evidenceId = ({ route, viewport, actionPhases }) => `menu-${hash(JSON.stringify({ route, viewport, actionPhases }))}`;
+const actionSequence = ({ actionPhases }) => actionPhases.map((phase, sequence) => ({ sequence, phase, status: "COMPLETED" }));
+const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) =>
+  !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
+  open?.expanded !== "true" || !open.drawerInside || !open.focusInside || !open.bodyLocked || !open.backgroundInert ||
+  !open.closeTarget || open.closeTarget.x < 44 || open.closeTarget.y < 44 || !open.closeTarget.name ||
+  closed?.expanded !== "false" || !closed.focusReturned || !closed.backgroundRestored || !closed.closed ||
+  !closeButtonClosed || !outsideClosed;
+
+function measuredResult(entry) {
+  assert.deepEqual(Object.keys(entry).sort(), ["evidenceId", "route", "viewport", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"].sort(), `menu result schema differs: ${entry?.route} ${entry?.viewport}`);
+  return {
+    focusReached: entry.focusReached,
+    focusStyle: entry.focusStyle,
+    open: entry.open,
+    closed: entry.closed,
+    closeButtonClosed: entry.closeButtonClosed,
+    outsideClosed: entry.outsideClosed,
+  };
+}
+
+function validateCanonicalMatrix() {
+  assert.equal(matrix.schemaVersion, 2, "canonical matrix schema is divergent");
+  assert.equal(matrix.entries?.length, matrix.evidenceCount, "canonical matrix evidence cardinality is divergent");
+  assert.equal(matrix.evidenceCount, runtime.evidence.requiredMenuEvidenceCountPerEngine, "runtime menu cardinality differs from canonical matrix");
+  assert.equal(matrix.actionCount, runtime.evidence.requiredActionCountPerEngine, "runtime action cardinality differs from canonical matrix");
+  const canonicalBytes = JSON.stringify(matrix.entries.map(({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }) => ({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 })));
+  assert.equal(hash(canonicalBytes), matrix.sha256, "canonical matrix digest is divergent");
+  assert.equal(matrix.sha256, transition.f201.menuEvidenceMatrix.sha256, "canonical matrix differs from transition authority");
+  for (const entry of matrix.entries) {
+    assert.deepEqual(entry.actionPhases, actionPhases(entry.route), `canonical action phases differ: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.evidenceId, evidenceId(entry), `canonical identity differs: ${entry.route} ${entry.viewport}`);
+  }
+}
 
 export function validateRuntimeContract({ runtime, transition, packageJson, packageLock, ci = false, ciDigest = "" }) {
   assert.deepEqual(Object.keys(runtime ?? {}).sort(), ["container", "evidence", "playwright", "schemaVersion"].sort(), "runtime schema is divergent");
@@ -32,15 +69,43 @@ export function validateRuntimeContract({ runtime, transition, packageJson, pack
 }
 
 export function validateEngineReport(runtime, report, engine) {
+  validateCanonicalMatrix();
   assert.equal(report.schemaVersion, runtime.evidence.reportSchemaVersion, `${engine}: report schema divergent`);
+  assert.equal(report.source, transition.baseSha, `${engine}: report source is divergent`);
   assert.equal(report.browser?.engine, engine, `${engine}: browser engine evidence missing or divergent`);
   assert.equal(report.browser?.version, runtime.playwright.browserBuilds[engine]?.version, `${engine}: browser version evidence missing or divergent`);
+  assert.deepEqual(report.viewports, transition.f201.matrix.viewports, `${engine}: viewport authority is divergent`);
   assert.equal(report.observations?.length, runtime.evidence.requiredObservationCountPerEngine, `${engine}: observation evidence incomplete`);
   assert.equal(report.menuResults?.length, runtime.evidence.requiredMenuEvidenceCountPerEngine, `${engine}: menu evidence incomplete`);
   assert.equal(report.execution?.actions?.length, runtime.evidence.requiredActionCountPerEngine, `${engine}: action evidence incomplete`);
   assert.equal(report.execution?.complete, true, `${engine}: execution incomplete`);
   assert.deepEqual(report.execution.infrastructureErrors, [], `${engine}: infrastructure failure cannot satisfy readiness`);
-  assert.equal(report.execution.semanticTests?.length, 4, `${engine}: semantic result vector incomplete`);
+  assert.deepEqual(report.execution.semanticTests?.map(({ name }) => name), semanticNames, `${engine}: semantic result vector incomplete, reordered or duplicated`);
+  const expectedObservations = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => `${route}\0${viewport}`)).sort();
+  const actualObservations = report.observations.map(({ route, viewport, conclusion }) => {
+    assert.equal(conclusion, "CONCLUSIVE", `${engine}: observation is inconclusive: ${route} ${viewport}`);
+    return `${route}\0${viewport}`;
+  }).sort();
+  assert.deepEqual(actualObservations, expectedObservations, `${engine}: observation bijection is divergent`);
+  const actualMenuIds = report.menuResults.map((entry) => {
+    const canonical = matrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
+    assert.ok(canonical, `${engine}: menu tuple is unknown: ${entry.route} ${entry.viewport}`);
+    assert.equal(entry.evidenceId, canonical.evidenceId, `${engine}: menu identity differs from canonical tuple: ${entry.route} ${entry.viewport}`);
+    measuredResult(entry);
+    return entry.evidenceId;
+  }).sort();
+  assert.deepEqual(actualMenuIds, matrix.entries.map(({ evidenceId }) => evidenceId).sort(), `${engine}: menu evidence bijection is divergent`);
+  const expectedActions = matrix.entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
+  assert.deepEqual(report.execution.actions, expectedActions, `${engine}: action tuple, order or completion is divergent`);
+  if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
+    for (const canonical of matrix.entries) {
+      const result = measuredResult(report.menuResults.find(({ evidenceId: id }) => id === canonical.evidenceId));
+      const semanticStatus = menuFailure(result) ? "FAIL" : "PASS";
+      assert.equal(semanticStatus, canonical.developmentSemanticStatus, `${engine}: development semantic result differs: ${canonical.route} ${canonical.viewport}`);
+      const envelope = { evidenceId: canonical.evidenceId, route: canonical.route, viewport: canonical.viewport, actionSequence: actionSequence(canonical), semanticStatus, measuredResult: result };
+      assert.equal(hash(JSON.stringify(envelope)), canonical.developmentResultSha256, `${engine}: measured result is transplanted or divergent: ${canonical.route} ${canonical.viewport}`);
+    }
+  }
 }
 
 function expectedStatuses() {
