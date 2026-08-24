@@ -871,9 +871,11 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
 
 test("the audited diff cannot mutate live pages or deployment", async () => {
   const contract = await readJson(contractPath);
+  const transition = await readJson(f201TransitionPath);
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
+  const authoritySha = resolveAuthoritySha(transition);
   const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
-  const changed = execFileSync("git", ["diff", "--name-only", diffBase], { cwd: repository, encoding: "utf8" })
+  const changed = execFileSync("git", ["diff", "--name-only", diffBase, authoritySha], { cwd: repository, encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
   const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
