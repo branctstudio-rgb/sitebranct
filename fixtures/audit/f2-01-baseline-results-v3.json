@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 3,
+  "contract": "F2_01_MULTIENGINE_SEMANTIC_BASELINE",
+  "conclusion": "CONCLUSIVE",
+  "origin": {
+    "governanceBaseSha": "1f7e95315e518a4ea0a5f1668db67e5b18a69087",
+    "migration": "v2-observational-snapshot-to-v3-semantic-contract",
+    "previous": {
+      "path": "fixtures/audit/f2-01-baseline-results.json",
+      "schemaVersion": 1,
+      "gitBlobOid": "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8",
+      "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab"
+    }
+  },
+  "reportSchemaVersion": 2,
+  "engines": [
+    { "engine": "chromium", "revision": "1234", "version": "151.0.7922.34" },
+    { "engine": "firefox", "revision": "1538", "version": "153.0" },
+    { "engine": "webkit", "revision": "2336", "version": "26.5" }
+  ],
+  "canonicalMatrix": {
+    "routes": [
+      "index.html",
+      "crm-gestao.html",
+      "website-premium.html",
+      "landing-page.html",
+      "automacao-ia.html",
+      "processo.html",
+      "contactos.html",
+      "politica-privacidade.html",
+      "area-do-usuario.html",
+      "blog.html",
+      "servicos.html",
+      "styleguide.html"
+    ],
+    "viewports": {
+      "320x568": [320, 568],
+      "360x800": [360, 800],
+      "390x844": [390, 844],
+      "412x915": [412, 915],
+      "768x1024": [768, 1024],
+      "1024x768": [1024, 768],
+      "1440x900": [1440, 900]
+    },
+    "observationCountPerEngine": 84,
+    "menu": {
+      "path": "fixtures/audit/f2-01-menu-evidence-matrix.json",
+      "schemaVersion": 2,
+      "sha256": "0a7ef81ed646e50fd760b04562bb7f2f31d9b60b414fd790f289ee43d8d1db72",
+      "evidenceCountPerEngine": 41,
+      "actionCountPerEngine": 184
+    }
+  },
+  "semanticPredicates": {
+    "overflowCount": 0,
+    "mobileOrTabletMaximumWidth": 768,
+    "minimumNonInlineTargetWidth": 44,
+    "minimumNonInlineTargetHeight": 44,
+    "menuSemanticStatus": "PASS",
+    "reducedMotionMatches": true,
+    "reducedMotionMaximumDurationMs": 1,
+    "drawerViewportEdgeAllowanceCssPx": 0.5,
+    "infrastructureErrors": 0,
+    "semanticTestStatus": "PASS"
+  },
+  "geometryPolicy": {
+    "comparison": "PER_ENGINE_PLAUSIBILITY_AND_SEMANTIC_INVARIANTS",
+    "requireFiniteNumbers": true,
+    "requireNonNegativeSizes": true,
+    "requireBoundingBoxConsistency": true,
+    "crossEngineByteEquality": false,
+    "globalTolerance": null
+  },
+  "metadataPolicy": {
+    "authoritative": false,
+    "allowedKeys": ["capturedAt", "capturePath", "message"],
+    "forbidControlCharacters": true
+  },
+  "canonicalPayloadSha256": "54e881d35a918d0647cfca995bfd57d51bbdbaf5f33d350a6882148862d6d03e"
+}

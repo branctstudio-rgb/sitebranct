@@ -6,7 +6,7 @@
   "authority": {
     "source": "github.event.pull_request.head.sha",
     "localOverride": "F2_GOV_AUTHORITY_SHA",
-    "pullRequestBaseSha": "4ffdff435f90612b9d46051110bd87b2afc40d17",
+    "pullRequestBaseSha": "1f7e95315e518a4ea0a5f1668db67e5b18a69087",
     "rejectSyntheticMergeHead": true
   },
   "productionAuthorized": false,
@@ -45,13 +45,15 @@
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "gitBlobOid": "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6",
-      "copiedSha256": "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f"
+      "gitBlobOid": "025e7a41f1021abcdff44532c810aa2cacf75cf9",
+      "copiedSha256": "3c947df99005341108dc36fc9a8096fc89aac849170e4c19d4acda045a3b7240"
     },
     "targetBaseline": {
-      "path": "fixtures/audit/f2-01-baseline-results.json",
-      "gitBlobOid": "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8",
-      "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab",
+      "path": "fixtures/audit/f2-01-baseline-results-v3.json",
+      "schemaVersion": 3,
+      "conclusion": "CONCLUSIVE",
+      "gitBlobOid": "1de45e118299aca96f0dad6c3b3853b74169960f",
+      "sha256": "29455ce2346b7b269f5201c3104396e4fce53f1e4de1d08976dfa11651a3449e",
       "observationCount": 84,
       "menuExerciseCount": 41,
       "greenSummary": {
@@ -60,6 +62,20 @@
         "menuFailureCount": 0,
         "reducedMotionMaxDurationMs": 1
       }
+    },
+    "previousTargetBaseline": {
+      "status": "SUPERSEDED_IMMUTABLE_V2",
+      "path": "fixtures/audit/f2-01-baseline-results.json",
+      "schemaVersion": 1,
+      "gitBlobOid": "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8",
+      "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab"
+    },
+    "multiengineFixture": {
+      "path": "fixtures/audit/f2-gov-07-multiengine-fixture.json",
+      "schemaVersion": 1,
+      "gitBlobOid": "d9603e831116bd737548ea254c206ad4ea10f395",
+      "sha256": "3b4c278b036a768eabea2c39cdb151cbf9177113be53857b7140d051507f3c35",
+      "conclusion": "CONCLUSIVE"
     },
     "expectedDevelopmentRed": {
       "testName": "F2-01 matrix has zero overflow and no undersized non-inline targets",

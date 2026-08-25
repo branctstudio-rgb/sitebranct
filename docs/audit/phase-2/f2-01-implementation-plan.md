@@ -19,7 +19,7 @@ A lista final deve ser determinada pelo RED e reservada na Issue antes de editar
 ## Sequência RED→GREEN
 
 1. Criar branch/worktree a partir da base humana autorizada e congelar o inventário de ficheiros.
-2. Reexecutar as 60 observações e guardar RED por rota/viewport, incluindo overflow, alvos, consola e menu.
+2. Reexecutar as 84 observações por engine e guardar RED por rota/viewport, incluindo overflow, alvos, consola e menu.
 3. Adicionar testes comportamentais de teclado e ARIA que falhem contra a implementação atual.
 4. Corrigir primeiro a causa partilhada mínima em CSS/JS; evitar exceções de rota.
 5. Corrigir markup apenas onde o teste provar necessidade, sem conteúdo editorial novo.
@@ -30,12 +30,20 @@ A lista final deve ser determinada pelo RED e reservada na Issue antes de editar
 
 ## QA multiviewport e revisão visual
 
-- Matriz completa: 12 rotas × `1440×900`, `1024×768`, `768×1024`, `390×844`, `360×800`.
+- Matriz completa: 12 rotas × `320×568`, `360×800`, `390×844`, `412×915`, `768×1024`, `1024×768`, `1440×900`, em Chromium, Firefox e WebKit realmente executados.
 - Confirmar `scrollWidth <= clientWidth`, alvos ≥44×44 CSS px e zero conteúdo cortado.
 - Percorrer header/menu apenas com teclado em cada padrão estrutural e validar foco após Escape.
 - Ativar `prefers-reduced-motion: reduce` e confirmar equivalência funcional.
 - Comparar capturas lado a lado, incluindo estados fechado, aberto, foco e conteúdo longo.
-- Registar Chromium. Firefox e WebKit ficam `NOT_VERIFIED` até execução real.
+- Exigir `CONCLUSIVE` em Chromium, Firefox e WebKit. Qualquer engine não executada, parcial ou inconclusiva bloqueia o gate.
+
+## Migração protegida v2 → v3
+
+- A baseline v2 permanece byte-idêntica como snapshot observacional histórico.
+- A baseline v3 fixa matriz, engines/builds e predicados semânticos; não exige igualdade geométrica cega entre engines.
+- O verificador recalcula os resultados a partir de evidência bruta, valida o vínculo efémero de cada payload e agrega somente três relatórios conclusivos com bijeções exatas.
+- Não há compatibilidade permissiva para conclusão ausente: desenvolvimento, GREEN e promoção exigem `conclusion: CONCLUSIVE` explícita e execução completa. O RED histórico é preservado somente por projeção versionada dos novos campos de proveniência.
+- A promoção futura exige a v3 canónica, capturas hasheadas pelo verificador e execução real das três engines no CI; esta missão de governança não promove o estado atual.
 
 ## Riscos e contenções
 

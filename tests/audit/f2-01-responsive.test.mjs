@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { after } from "node:test";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
@@ -22,8 +22,15 @@ const evidenceIdentity = (route, viewport) => `menu-${createHash("sha256").updat
 const reportPath = process.env.F2_01_REPORT_PATH;
 const captureDirectory = process.env.F2_01_CAPTURE_DIR;
 const engineName = process.env.F2_01_BROWSER;
+const runChallenge = process.env.F2_01_RUN_CHALLENGE;
 const engines = { chromium, firefox, webkit };
 assert.ok(Object.hasOwn(engines, engineName), `F2_01_BROWSER must be one of ${Object.keys(engines).join(", ")}`);
+assert.match(runChallenge ?? "", /^[0-9a-f]{64}$/, "F2_01_RUN_CHALLENGE must be a verifier-issued 256-bit challenge");
+const evidenceBinding = (route, viewport, measuredResult) => {
+  const evidenceId = evidenceIdentity(route, viewport);
+  const actionSequence = evidenceActionPhases(route).map((phase, sequence) => ({ sequence, phase, status: "COMPLETED" }));
+  return createHmac("sha256", runChallenge).update(JSON.stringify({ engine: engineName, evidenceId, route, viewport, actionSequence, measuredResult })).digest("hex");
+};
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
@@ -146,7 +153,7 @@ try {
           await evaluate(`document.querySelector('.mobile-toggle').click()`);
           if (!await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer open ${route} ${viewport}`, 3000)) throw new ActionTimeout(`timeout during open (${route} ${viewport})`);
         });
-        const open = await boundedAction({ phase: "after-open", route, viewport }, () => evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`));
+        const open = await boundedAction({ phase: "after-open", route, viewport }, () => evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]'),viewportWidth=document.documentElement.clientWidth;return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=viewportWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null,drawerBounds:{left:+r.left.toFixed(1),right:+r.right.toFixed(1),width:+r.width.toFixed(1),viewportWidth}}})()`));
         if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-open`)) {
           await page.screenshot({ path: join(captureDirectory, `home-${engineName}-${viewport}-open.jpg`), type: "jpeg", quality: 86, fullPage: false });
           captured.add(`${viewport}-open`);
@@ -188,7 +195,8 @@ try {
           });
           outsideClosed = overlayInvoked && await evaluate(`!document.querySelector('.mobile-drawer')?.classList.contains('is-open')`);
         }
-        menuResults.push({ evidenceId: evidenceIdentity(route, viewport), route, viewport, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed });
+        const measuredResult = { focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed };
+        menuResults.push({ evidenceId: evidenceIdentity(route, viewport), evidenceBinding: evidenceBinding(route, viewport, measuredResult), route, viewport, ...measuredResult });
       }
     }
   }
@@ -264,7 +272,7 @@ semanticTest("F2-01 responsive report validator rejects every contracted regress
 after(async () => {
   if (!reportPath) return;
   const complete = collectionComplete && infrastructureErrors.length === 0 && actionResults.every(({ status }) => status === "COMPLETED");
-  const report = { ...globalThis.__f201Report, execution: { complete, infrastructureErrors, actions: actionResults, semanticTests: semanticResults } };
+  const report = { ...globalThis.__f201Report, execution: { complete, infrastructureErrors, actions: actionResults, semanticTests: semanticResults }, conclusion: complete ? "CONCLUSIVE" : "INCONCLUSIVE" };
   await mkdir(normalize(join(reportPath, "..")), { recursive: true });
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 });
