@@ -18,6 +18,7 @@ const redGreenPath = new URL("../../docs/audit/evidence/red-green.md", import.me
 const collectorPath = new URL("./collect-browser-baseline.mjs", import.meta.url);
 const negativeControlPath = new URL("../../fixtures/audit/visual-negative-control.json", import.meta.url);
 const f201TransitionPath = new URL("../../fixtures/audit/f2-01-transition.json", import.meta.url);
+const f201RuntimePath = new URL("../../fixtures/audit/f2-01-ci-runtime.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
 const hashBytes = (value) => createHash("sha256").update(value).digest("hex");
@@ -26,7 +27,7 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
-  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "eed466e5191c8b84938fdc83e27683bbb6b194e2", sha256: "20654691e9f3c75ea911b28a2a08713ade0da23176b89d939b13f6b15e10eceb" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6", sha256: "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f" }),
   targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results.json", gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
   menuEvidenceMatrix: Object.freeze({
     path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
@@ -195,10 +196,18 @@ function resolveAuthoritySha(transition, options = {}) {
     let event;
     try { event = JSON.parse(readFileSync(eventPath, "utf8")); }
     catch { assert.fail("authority event is absent, unreadable or malformed"); }
-    eventHead = event?.pull_request?.head?.sha;
-    eventBase = event?.pull_request?.base?.sha;
+    if (event?.pull_request) {
+      eventHead = event.pull_request?.head?.sha;
+      eventBase = event.pull_request?.base?.sha;
+    } else {
+      assert.equal(event?.ref, "refs/heads/main", "authority push event is not for main");
+      assert.equal(event?.repository?.full_name, transition.repository, "authority push repository is divergent");
+      eventHead = event?.after;
+      eventBase = event?.before;
+    }
     assert.match(eventHead ?? "", shaPattern, "authority event head sha is absent or malformed");
-    assert.equal(eventBase, transition.baseSha, "authority event base sha differs from the transition contract");
+    assert.match(transition.authority?.pullRequestBaseSha ?? "", shaPattern, "authority pull request base sha is absent or malformed");
+    assert.equal(eventBase, transition.authority.pullRequestBaseSha, "authority event base sha differs from the transition contract");
   }
   assert.ok(explicit || eventHead, "authority sha is absent");
   if (explicit && eventHead) assert.equal(explicit, eventHead, "explicit authority sha differs from event head sha");
@@ -244,9 +253,10 @@ function assertCompleteReport(transition, report, matrix) {
   assert.ok(report && typeof report === "object" && !Array.isArray(report), "report is absent or unreadable");
   assert.equal(Object.hasOwn(report, "expectedMenuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
   assert.equal(Object.hasOwn(report, "menuEvidenceMatrix"), false, "canonical menu evidence matrix cannot be redefined by the report");
-  assert.equal(report.schemaVersion, 1, "report schema is absent or invalid");
+  assert.equal(report.schemaVersion, 2, "report schema is absent or invalid");
   assert.equal(report.source, transition.baseSha, "report source differs from the transition base");
-  assert.match(report.browser?.product ?? "", /(?:Chrome|Chromium)\//, "report browser evidence is absent or invalid");
+  assert.ok(transition.f201.requiredBrowsers.includes(report.browser?.engine), "report browser engine evidence is absent or invalid");
+  assert.match(report.browser?.version ?? "", /\d+\.\d+/, "report browser version evidence is absent or invalid");
   assert.deepEqual(report.viewports, transition.f201.matrix.viewports, "report viewport matrix is incomplete or divergent");
   for (const name of transition.f201.expectedDevelopmentRed.requiredEvidence) assert.ok(report[name] !== undefined && report[name] !== null, `required evidence absent: ${name}`);
   assert.equal(report.observations.length, transition.f201.targetBaseline.observationCount, `truncated report observation count: expected ${transition.f201.targetBaseline.observationCount}`);
@@ -278,6 +288,37 @@ function assertProcessOutcome(outcome, expectedExitCode) {
   assert.equal(outcome.exitCode, expectedExitCode, `process error exit code: expected ${expectedExitCode}, got ${outcome.exitCode}`);
 }
 
+function verifyIntegratedGitEvidence(transition, integration, options = {}) {
+  const repository = options.repository;
+  assert.ok(repository, "integrated Git repository is absent");
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref", "integrated main authority is divergent");
+  const eventPath = options.mainEventPath;
+  assert.ok(eventPath, "integrated main event path is absent");
+  let event;
+  try { event = JSON.parse(readFileSync(eventPath, "utf8")); }
+  catch { assert.fail("integrated main event is absent, unreadable or malformed"); }
+  assert.equal(event?.ref, "refs/heads/main", "integrated event is not for refs/heads/main");
+  assert.equal(event?.repository?.full_name, transition.repository, "integrated event repository is divergent");
+  assert.match(event?.before ?? "", shaPattern, "integrated event base sha is absent or malformed");
+  assert.match(event?.after ?? "", shaPattern, "integrated event main sha is absent or malformed");
+  exactKeys(integration, ["merged", "headSha", "treeSha", "validatedTreeSha"], "integrated Git evidence");
+  assert.equal(integration.merged, true, "real merge not confirmed");
+  for (const name of ["headSha", "treeSha", "validatedTreeSha"]) assert.match(integration[name] ?? "", shaPattern, `${name} is absent or malformed`);
+  const git = (...args) => {
+    try { return execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+    catch { assert.fail(`integrated Git proof cannot resolve: git ${args.join(" ")}`); }
+  };
+  for (const sha of [event.after, event.before, integration.headSha]) git("cat-file", "-e", `${sha}^{commit}`);
+  const mainRef = options.mainRef ?? "refs/remotes/origin/main";
+  assert.equal(git("rev-parse", mainRef), event.after, "resolved canonical main ref differs from the GitHub push event");
+  const [commit, ...parents] = git("rev-list", "--parents", "-n", "1", event.after).split(/\s+/);
+  assert.equal(commit, event.after, "resolved merge commit differs from the GitHub main event");
+  assert.deepEqual(parents, [event.before, integration.headSha], "merge parents do not prove a normal merge of the authorized head onto the sealed main base");
+  const actualTree = git("rev-parse", `${event.after}^{tree}`);
+  assert.equal(integration.treeSha, actualTree, "integrated tree differs from the real merge tree");
+  assert.equal(integration.validatedTreeSha, actualTree, "validated tree differs from the real merge tree");
+}
+
 const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) =>
   !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
   open.expanded !== "true" || !open.drawerInside || !open.focusInside || !open.bodyLocked || !open.backgroundInert ||
@@ -286,28 +327,30 @@ const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed
   !closeButtonClosed || !outsideClosed;
 
 function validateStateMachine(transition) {
-  const states = ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "F2_01_INTEGRATED_VERIFIED"];
+  const states = ["PHASE_1_HISTORICAL", "F2_01_AUTHORIZED_IN_DEVELOPMENT", "READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"];
   assert.ok(transition.status, "state absent");
   assert.ok(states.includes(transition.status), `state unknown: ${transition.status}`);
   assert.deepEqual(transition.stateMachine.states, states, "state set is incomplete or reordered");
   assert.equal(transition.stateMachine.current, transition.status, "state current mismatch");
-  const expectedPrevious = { PHASE_1_HISTORICAL: null, F2_01_AUTHORIZED_IN_DEVELOPMENT: "PHASE_1_HISTORICAL", F2_01_INTEGRATED_VERIFIED: "F2_01_AUTHORIZED_IN_DEVELOPMENT" }[transition.status];
+  const expectedPrevious = { PHASE_1_HISTORICAL: null, F2_01_AUTHORIZED_IN_DEVELOPMENT: "PHASE_1_HISTORICAL", READY_FOR_VIA_A_REVIEW: "F2_01_AUTHORIZED_IN_DEVELOPMENT", F2_01_INTEGRATED_VERIFIED: "READY_FOR_VIA_A_REVIEW" }[transition.status];
   assert.equal(transition.stateMachine.previous, expectedPrevious, "state transition is inverted or regressed");
   assert.deepEqual(transition.stateMachine.transitions, {
     PHASE_1_HISTORICAL: ["F2_01_AUTHORIZED_IN_DEVELOPMENT"],
-    F2_01_AUTHORIZED_IN_DEVELOPMENT: ["F2_01_INTEGRATED_VERIFIED"],
+    F2_01_AUTHORIZED_IN_DEVELOPMENT: ["READY_FOR_VIA_A_REVIEW"],
+    READY_FOR_VIA_A_REVIEW: ["F2_01_INTEGRATED_VERIFIED"],
     F2_01_INTEGRATED_VERIFIED: [],
   }, "state transition graph is not closed");
   assert.ok(Array.isArray(transition.f201.requiredBrowsers) && transition.f201.requiredBrowsers.length > 0, "mandatory browser set is absent");
   assert.deepEqual(transition.f201.matrix.viewports, canonicalF201Viewports, "viewport contract is absent, malformed or divergent");
   assert.equal(transition.f201.targetBaseline.observationCount, transition.f201.matrix.routes.length * Object.keys(canonicalF201Viewports).length, "viewport observation cardinality is divergent");
   assert.deepEqual(transition.f201.expectedDevelopmentRed.semanticVector, canonicalDevelopmentRedVector, "semantic RED vector contract is divergent");
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref", "integrated main authority is absent or divergent");
   const matrix = readCanonicalMenuEvidenceMatrix(transition);
   assert.equal(transition.f201.targetBaseline.menuExerciseCount, matrix.evidenceCount, "canonical menu evidence count differs from target baseline");
   return matrix;
 }
 
-function deriveF201State(transition, evidence) {
+function deriveF201State(transition, evidence, options = {}) {
   const matrix = validateStateMachine(transition);
   if (transition.status === "PHASE_1_HISTORICAL") return transition.status;
   assertCompleteReport(transition, evidence.report, matrix);
@@ -339,14 +382,15 @@ function deriveF201State(transition, evidence) {
   assert.equal(evidence.liveDiff.complete, true, "live diff incomplete");
   assert.equal(evidence.liveDiff.authoritySha, authoritySha, "live diff head mismatch");
   assert.ok(Array.isArray(evidence.liveDiff.paths) && evidence.liveDiff.paths.length > 0 && evidence.liveDiff.paths.every((path) => /^(?:[^/]+\.html|src\/(?:css|js)\/)/.test(path)), "live diff paths are absent or outside F2-01");
-  assert.ok(evidence.approval, "approval absent");
-  assert.equal(evidence.approval.decision, "APPROVED", "approval decision is not APPROVED");
-  assert.equal(evidence.approval.independent, true, "approval is not independent");
-  assert.equal(evidence.approval.authoritySha, authoritySha, "approval head mismatch");
   const reportWithoutExecution = structuredClone(evidence.report);
   delete reportWithoutExecution.execution;
   for (const entry of reportWithoutExecution.menuResults) delete entry.evidenceId;
   assert.deepEqual(reportWithoutExecution, evidence.targetBaseline, "baseline mismatch with integrated report");
+  assert.equal(Object.hasOwn(evidence, "approval"), false, "offline evidence must not contain or simulate Via A approval");
+  if (transition.status === "READY_FOR_VIA_A_REVIEW") return transition.status;
+  assert.ok(evidence.integration, "real merge evidence absent");
+  assert.equal(evidence.integration.headSha, authoritySha, "merged head differs from readiness authority");
+  verifyIntegratedGitEvidence(transition, evidence.integration, options);
   return transition.status;
 }
 
@@ -417,27 +461,97 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
     assert.equal(deriveF201State(transition, {}), "PHASE_1_HISTORICAL");
     return;
   }
-  const reportDir = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-"));
-  const reportPath = join(reportDir, "report.json");
-  let failure;
-  const childEnvironment = { ...process.env, F2_01_REPORT_PATH:reportPath };
-  delete childEnvironment.NODE_TEST_CONTEXT;
-  try { execFileSync("node", ["--test", transition.f201.responsiveTest.path], { encoding:"utf8", env:childEnvironment }); }
-  catch (error) { failure = error; }
-  try {
-    const report = JSON.parse(await readFile(reportPath, "utf8"));
-    if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
-      assert.ok(failure, "development state must prove the specific F2-01 RED");
-      const processOutcome = { exited: true, timedOut: failure.killed === true, signal: failure.signal ?? null, exitCode: failure.status };
-      assert.equal(deriveF201State(transition, { report, processOutcome }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
-    } else {
-      assert.equal(failure, undefined, "integrated state requires the responsive suite to finish GREEN");
-      const integratedEvidence = await readJson(new URL(`../../${transition.stateMachine.integratedEvidencePath}`, import.meta.url));
-      const targetBaseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
-      const processOutcome = { exited: true, timedOut: false, signal: null, exitCode: 0 };
-      assert.equal(deriveF201State(transition, { ...integratedEvidence, report, targetBaseline, authoritySha, processOutcome }), "F2_01_INTEGRATED_VERIFIED");
-    }
-  } finally { await rm(reportDir, { recursive:true, force:true }); }
+  const baseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
+  const report = developmentReportFrom(transition, baseline);
+  assert.equal(deriveF201State(transition, { report, processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
+});
+
+test("F2-01 readiness separates offline eligibility from Via A approval and requires three pinned engines", async () => {
+  const transition = await readJson(f201TransitionPath);
+  assert.deepEqual(transition.stateMachine.states, [
+    "PHASE_1_HISTORICAL",
+    "F2_01_AUTHORIZED_IN_DEVELOPMENT",
+    "READY_FOR_VIA_A_REVIEW",
+    "F2_01_INTEGRATED_VERIFIED",
+  ]);
+  assert.deepEqual(transition.f201.requiredBrowsers, ["chromium", "firefox", "webkit"]);
+  assert.equal(transition.stateMachine.approvalAuthority, "GitHub Via A branch protection; never repository evidence");
+  assert.equal(transition.stateMachine.readyEvidenceMustContainApproval, false);
+  assert.equal(transition.stateMachine.integrationAuthority, "GitHub push event for refs/heads/main plus the resolved refs/heads/main Git ref");
+  const runtime = await readJson(f201RuntimePath);
+  assert.equal(runtime.playwright.version, "1.62.0");
+  assert.deepEqual(runtime.playwright.engines, ["chromium", "firefox", "webkit"]);
+  assert.match(runtime.container.indexDigest, /^sha256:[0-9a-f]{64}$/);
+  assert.match(runtime.container.linuxAmd64Digest, /^sha256:[0-9a-f]{64}$/);
+  const offlineWorkflow = await readFile(workflowPath, "utf8");
+  assert.match(offlineWorkflow, /push:\s*\n\s+branches: \[main\]/, "post-integration verifier must run on a real main push");
+  assert.match(offlineWorkflow, /AUDIT_DIFF_BASE: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}/, "main push must bind the sealed pre-merge base");
+});
+
+test("F2-01 runtime and engine evidence fail closed on omissions, drift and adulteration", async (t) => {
+  const [{ validateRuntimeContract, validateEngineReport, validateReadyBaseline }, runtime, transition, packageJson, packageLock] = await Promise.all([
+    import("../../scripts/governance/verify-f2-01-readiness.mjs"),
+    readJson(f201RuntimePath),
+    readJson(f201TransitionPath),
+    readJson(new URL("../../package.json", import.meta.url)),
+    readJson(new URL("../../package-lock.json", import.meta.url)),
+  ]);
+  const valid = { runtime, transition, packageJson, packageLock, ci: true, ciDigest: runtime.container.indexDigest };
+  assert.doesNotThrow(() => validateRuntimeContract(valid));
+  for (const [label, mutate, expected] of [
+    ["Firefox absent", (value) => { value.runtime.playwright.engines = value.runtime.playwright.engines.filter((name) => name !== "firefox"); }, /engine set/i],
+    ["WebKit absent", (value) => { value.runtime.playwright.engines = value.runtime.playwright.engines.filter((name) => name !== "webkit"); }, /engine set/i],
+    ["engine omitted from transition", (value) => { value.transition.f201.requiredBrowsers.pop(); }, /browser set/i],
+    ["Playwright version drift", (value) => { value.packageJson.devDependencies.playwright = "1.62.1"; }, /version/i],
+    ["container digest drift", (value) => { value.ciDigest = `sha256:${"0".repeat(64)}`; }, /container digest/i],
+    ["container digest malformed", (value) => { value.runtime.container.indexDigest = "latest"; }, /digest/i],
+  ]) await t.test(label, () => {
+    const value = structuredClone(valid);
+    mutate(value);
+    assert.throws(() => validateRuntimeContract(value), expected);
+  });
+  const baseline = await readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url));
+  const report = developmentReportFrom(transition, baseline);
+  report.browser = { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version };
+  assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox"));
+  for (const [label, mutate, expected] of [
+    ["engine identity adulterated", (value) => { value.browser.engine = "chromium"; }, /engine evidence/i],
+    ["result incomplete", (value) => { value.observations.pop(); }, /observation evidence incomplete/i],
+    ["menu evidence omitted", (value) => { value.menuResults.pop(); }, /menu evidence incomplete/i],
+    ["action evidence omitted", (value) => { value.execution.actions.pop(); }, /action evidence incomplete/i],
+    ["execution ignored", (value) => { value.execution.complete = false; }, /execution incomplete/i],
+    ["infrastructure substituted", (value) => { value.execution.infrastructureErrors = ["browser missing"]; }, /infrastructure failure/i],
+    ["cardinality-only empty observations", (value) => { value.observations = Array.from({ length: 84 }, () => ({})); }, /observation.*(?:inconclusive|bijection)/i],
+    ["canonical result transplanted", (value) => { const first = value.menuResults[0]; const second = value.menuResults[1]; value.menuResults[0] = { ...first, focusReached: second.focusReached, focusStyle: second.focusStyle, open: second.open, closed: second.closed, closeButtonClosed: second.closeButtonClosed, outsideClosed: second.outsideClosed }; }, /transplanted|divergent/i],
+    ["action tuple copied", (value) => { value.execution.actions[1] = structuredClone(value.execution.actions[0]); }, /action tuple/i],
+  ]) await t.test(label, () => {
+    const value = structuredClone(report);
+    mutate(value);
+    assert.throws(() => validateEngineReport(runtime, value, "firefox"), expected);
+  });
+  const greenReport = reportForRequiredMatrix(transition, baseline);
+  const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
+  greenReport.browser = { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version };
+  greenReport.menuResults = baseline.menuResults.map((entry) => ({ evidenceId: canonicalMatrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport).evidenceId, ...structuredClone(entry) }));
+  greenReport.execution = completeExecution({});
+  greenReport.execution.actions = completeActionsFor(transition);
+  const greenBaseline = structuredClone(greenReport);
+  delete greenBaseline.execution;
+  for (const entry of greenBaseline.menuResults) delete entry.evidenceId;
+  assert.doesNotThrow(() => validateReadyBaseline(greenReport, greenBaseline));
+  const webkitSemanticTwin = structuredClone(greenReport);
+  webkitSemanticTwin.browser = { engine: "webkit", version: runtime.playwright.browserBuilds.webkit.version };
+  assert.doesNotThrow(() => validateReadyBaseline(webkitSemanticTwin, greenBaseline), "engine metadata must remain outside the shared semantic baseline");
+  for (const [label, mutate] of [
+    ["READY observation transplanted", (value) => { value.observations[0] = structuredClone(value.observations[1]); }],
+    ["READY menu result adulterated", (value) => { value.menuResults[0].open.drawerInside = false; }],
+    ["READY evidence omitted", (value) => { value.menuResults.pop(); }],
+    ["READY evidence duplicated", (value) => { value.menuResults[1] = structuredClone(value.menuResults[0]); }],
+  ]) await t.test(label, () => {
+    const value = structuredClone(greenReport);
+    mutate(value);
+    assert.throws(() => validateReadyBaseline(value, greenBaseline), /GREEN target baseline/i);
+  });
 });
 
 test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory PR identity", async () => {
@@ -446,7 +560,7 @@ test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory P
   const eventPath = join(directory, "event.json");
   const head = "1".repeat(40);
   try {
-    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: transition.baseSha } } }));
+    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: transition.authority.pullRequestBaseSha } } }));
     assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
     assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: head }), head);
     assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "2".repeat(40) }), /differs from event head/i);
@@ -456,6 +570,10 @@ test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory P
     assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /unreadable or malformed/i);
     await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: "2".repeat(40) } } }));
     assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /base sha differs/i);
+    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/main", before: transition.authority.pullRequestBaseSha, after: head, repository: { full_name: transition.repository } }));
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
+    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/not-main", before: transition.authority.pullRequestBaseSha, after: head, repository: { full_name: transition.repository } }));
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /not for main/i);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -475,6 +593,8 @@ const completeExecution = (statuses) => ({
 const completeActionsFor = (transition) => readCanonicalMenuEvidenceMatrix(transition).entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
 const reportForRequiredMatrix = (transition, baseline) => {
   const report = structuredClone(baseline);
+  report.schemaVersion = 2;
+  report.browser = { engine: "chromium", version: "fixture-1.0" };
   report.viewports = structuredClone(transition.f201.matrix.viewports);
   report.observations = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => {
     const existing = baseline.observations.find((entry) => entry.route === route && entry.viewport === viewport);
@@ -679,11 +799,11 @@ test("F2-GOV-06 requires conclusive numeric 1024x768 evidence", async () => {
   assert.deepEqual(transition.f201.matrix.viewports["1024x768"], [1024, 768]);
 });
 
-test("F2-GOV-06 derives integrated state only from complete coherent approved GREEN", async (t) => {
+test("F2-GOV-06 derives readiness without self-approval and integration only from a real merged tree", async (t) => {
   const [transitionSource, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
   const transition = structuredClone(transitionSource);
-  transition.status = "F2_01_INTEGRATED_VERIFIED";
-  transition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
+  transition.status = "READY_FOR_VIA_A_REVIEW";
+  transition.stateMachine.current = "READY_FOR_VIA_A_REVIEW";
   transition.stateMachine.previous = "F2_01_AUTHORIZED_IN_DEVELOPMENT";
   const authoritySha = "1111111111111111111111111111111111111111";
   const futureBaseline = reportForRequiredMatrix(transition, baseline);
@@ -693,8 +813,7 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     targetBaseline: futureBaseline,
     authoritySha,
     liveDiff: { complete: true, authoritySha, paths: ["src/css/branct.css"] },
-    approval: { decision: "APPROVED", authoritySha, independent: true },
-    browsers: { chromium: "VERIFIED", firefox: "NOT_REQUIRED", webkit: "NOT_REQUIRED" },
+    browsers: { chromium: "VERIFIED", firefox: "VERIFIED", webkit: "VERIFIED" },
   };
   for (const entry of evidence.report.menuResults) entry.evidenceId = readCanonicalMenuEvidenceMatrix(transition).entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport)?.evidenceId;
   evidence.report.execution.actions = completeActionsFor(transition);
@@ -703,7 +822,8 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
   historical.stateMachine.current = "PHASE_1_HISTORICAL";
   historical.stateMachine.previous = null;
   assert.equal(deriveF201State(historical, {}), "PHASE_1_HISTORICAL");
-  assert.equal(deriveF201State(transition, evidence), "F2_01_INTEGRATED_VERIFIED");
+  assert.equal(deriveF201State(transition, evidence), "READY_FOR_VIA_A_REVIEW");
+  assert.throws(() => deriveF201State(transition, { ...structuredClone(evidence), approval: { decision: "APPROVED", authoritySha, independent: true } }), /must not contain.*approval/i);
   for (const [label, mutate, expected] of [
     ["1024 viewport absent", (value) => { delete value.transition.f201.matrix.viewports["1024x768"]; }, /viewport/i],
     ["1024 dimensions swapped", (value) => { value.transition.f201.matrix.viewports["1024x768"] = [768, 1024]; }, /viewport/i],
@@ -718,8 +838,6 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     assert.throws(() => deriveF201State(value.transition, value.evidence), expected);
   });
   const cases = [
-    ["approval absent", (value) => { delete value.approval; }],
-    ["approval head mismatch", (value) => { value.approval.authoritySha = "2222222222222222222222222222222222222222"; }],
     ["mandatory browser not verified", (value) => { value.browsers.chromium = "NOT_VERIFIED"; }],
     ["semantic RED", (value) => { value.report.execution.semanticTests[0].status = "FAIL"; }],
     ["baseline mismatch", (value) => { value.report.observations[0].scrollWidth += 1; }],
@@ -727,7 +845,6 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     ["live diff head mismatch", (value) => { value.liveDiff.authoritySha = "2222222222222222222222222222222222222222"; }],
     ["report truncated", (value) => { value.report.observations.pop(); }],
     ["report absent", (value) => { delete value.report; }],
-    ["approval decision", (value) => { value.approval.decision = "CHANGES_REQUIRED"; }],
     ["browser evidence absent", (value) => { delete value.browsers; }],
   ];
   for (const [label, mutate] of cases) await t.test(label, () => {
@@ -735,6 +852,76 @@ test("F2-GOV-06 derives integrated state only from complete coherent approved GR
     mutate(value);
     assert.throws(() => deriveF201State(transition, value), new RegExp(label.split(" ")[0], "i"));
   });
+  const integratedTransition = structuredClone(transition);
+  integratedTransition.status = "F2_01_INTEGRATED_VERIFIED";
+  integratedTransition.stateMachine.current = "F2_01_INTEGRATED_VERIFIED";
+  integratedTransition.stateMachine.previous = "READY_FOR_VIA_A_REVIEW";
+  const repository = await mkdtemp(join(tmpdir(), "branct-f2-01-integrated-git-"));
+  const mainEventPath = join(repository, "github-push-event.json");
+  const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  try {
+    git("init", "--initial-branch=main");
+    git("config", "user.name", "F2 integration proof");
+    git("config", "user.email", "f2-integration@example.invalid");
+    await writeFile(join(repository, "base.txt"), "base\n");
+    git("add", "--", "base.txt");
+    git("commit", "-m", "sealed base");
+    const baseSha = git("rev-parse", "HEAD");
+    git("checkout", "-b", "authorized-head");
+    await writeFile(join(repository, "f2-01.txt"), "verified\n");
+    git("add", "--", "f2-01.txt");
+    git("commit", "-m", "authorized F2-01 head");
+    const integratedHeadSha = git("rev-parse", "HEAD");
+    git("checkout", "main");
+    git("merge", "--no-ff", "authorized-head", "-m", "normal merge");
+    const mergeCommitSha = git("rev-parse", "HEAD");
+    const treeSha = git("rev-parse", "HEAD^{tree}");
+    git("update-ref", "refs/remotes/origin/main", mergeCommitSha);
+    await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: mergeCommitSha, repository: { full_name: integratedTransition.repository } }));
+    const { derivePostIntegrationState } = await import("../../scripts/governance/verify-f2-01-readiness.mjs");
+    assert.deepEqual(derivePostIntegrationState({ transition, repository, eventPath: mainEventPath }), {
+      state: "F2_01_INTEGRATED_VERIFIED",
+      mergeCommitSha,
+      baseSha,
+      headSha: integratedHeadSha,
+      treeSha,
+      mainRef: "refs/remotes/origin/main",
+    });
+    git("update-ref", "refs/remotes/origin/main", integratedHeadSha);
+    assert.throws(() => derivePostIntegrationState({ transition, repository, eventPath: mainEventPath }), /canonical main ref/i);
+    git("update-ref", "refs/remotes/origin/main", mergeCommitSha);
+    await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: "5".repeat(40), repository: { full_name: integratedTransition.repository } }));
+    assert.throws(() => derivePostIntegrationState({ transition, repository, eventPath: mainEventPath }), /canonical main ref|cannot resolve/i);
+    await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: mergeCommitSha, repository: { full_name: integratedTransition.repository } }));
+    const integratedEvidence = {
+      ...structuredClone(evidence),
+      authoritySha: integratedHeadSha,
+      liveDiff: { ...structuredClone(evidence.liveDiff), authoritySha: integratedHeadSha },
+      integration: { merged: true, headSha: integratedHeadSha, treeSha, validatedTreeSha: treeSha },
+    };
+    const options = { repository, mainEventPath };
+    assert.equal(deriveF201State(integratedTransition, integratedEvidence, options), "F2_01_INTEGRATED_VERIFIED");
+    git("checkout", "authorized-head");
+    assert.equal(deriveF201State(integratedTransition, integratedEvidence, options), "F2_01_INTEGRATED_VERIFIED", "moving HEAD must not change explicit merge authority");
+    for (const [label, mutate, expected] of [
+      ["real merge evidence absent", (value) => { delete value.integration; }, /merge evidence absent/i],
+      ["real merge false", (value) => { value.integration.merged = false; }, /real merge not confirmed/i],
+      ["merged head divergent", (value) => { value.integration.headSha = baseSha; value.authoritySha = baseSha; value.liveDiff.authoritySha = baseSha; }, /merge parents/i],
+      ["integrated tree unvalidated", (value) => { value.integration.validatedTreeSha = baseSha; }, /validated tree/i],
+      ["canonical main ref transplanted", (value, setup) => { setup("update-ref", "refs/remotes/origin/main", integratedHeadSha); }, /canonical main ref/i],
+      ["push event merge unresolvable", (value, setup, writeEvent) => { writeEvent({ ref: "refs/heads/main", before: baseSha, after: "5".repeat(40), repository: { full_name: integratedTransition.repository } }); }, /cannot resolve/i],
+    ]) await t.test(label, async () => {
+      const value = structuredClone(integratedEvidence);
+      git("update-ref", "refs/remotes/origin/main", mergeCommitSha);
+      await writeFile(mainEventPath, JSON.stringify({ ref: "refs/heads/main", before: baseSha, after: mergeCommitSha, repository: { full_name: integratedTransition.repository } }));
+      let pendingEvent;
+      mutate(value, git, (event) => { pendingEvent = event; });
+      if (pendingEvent) await writeFile(mainEventPath, JSON.stringify(pendingEvent));
+      assert.throws(() => deriveF201State(integratedTransition, value, options), expected);
+    });
+  } finally {
+    await rm(repository, { recursive: true, force: true });
+  }
   for (const [label, mutate] of [
     ["state absent", (value) => { delete value.status; }],
     ["state unknown", (value) => { value.status = "UNKNOWN"; }],
@@ -795,10 +982,13 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
 
 test("the audited diff cannot mutate live pages or deployment", async () => {
   const contract = await readJson(contractPath);
+  const transition = await readJson(f201TransitionPath);
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
-  const changed = execFileSync("git", ["diff", "--name-only", diffBase], { encoding: "utf8" })
+  const authoritySha = resolveAuthoritySha(transition);
+  const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
+  const changed = execFileSync("git", ["diff", "--name-only", diffBase, authoritySha], { cwd: repository, encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
-  const allowed = /^(CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
+  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
   assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
   assert.ok(!changed.includes(".github/workflows/deploy.yml"));
@@ -836,13 +1026,14 @@ test("route matrix and visual evidence are complete and tamper-evident", async (
 });
 
 test("the audit handoff and CI preserve the offline boundary", async () => {
-  const [audit, roadmap, risks, workflow, redGreen, collector] = await Promise.all([
+  const [audit, roadmap, risks, workflow, redGreen, collector, visualChecker] = await Promise.all([
     readFile(auditPath, "utf8"),
     readFile(roadmapPath, "utf8"),
     readFile(riskPath, "utf8"),
     readFile(workflowPath, "utf8"),
     readFile(redGreenPath, "utf8"),
     readFile(collectorPath, "utf8"),
+    readFile(new URL("./check-visual-evidence.mjs", import.meta.url), "utf8"),
   ]);
 
   assert.match(audit, /da8800cd7669f66a82cbf9cd2e4f22fa99d59320/);
@@ -855,11 +1046,18 @@ test("the audit handoff and CI preserve the offline boundary", async () => {
   assert.doesNotMatch(workflow, /github\.head_ref|agent\/phase-1-offline-audit/);
   assert.match(workflow, /34e114876b0b11c390a56381ad16ebd13914f8d5/);
   assert.match(workflow, /49933ea5288caeca8642d1e84afbd3f7d6820020/);
+  assert.match(workflow, /git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/);
+  assert.doesNotMatch(workflow, /safe\.directory\s+["']?\*["']?/);
+  assert.match(workflow, /name: Verify F2-01 readiness in Chromium, Firefox and WebKit\s+env:\s+HOME: \/root\s+run: node scripts\/governance\/verify-f2-01-readiness\.mjs/);
   assert.doesNotMatch(workflow, /FTP_PASSWORD|lftp/i);
   assert.match(redGreen, /ENOENT/);
   assert.match(redGreen, /GREEN/);
   assert.match(collector, /Emulation\.setDeviceMetricsOverride/);
   assert.match(collector, /targetsUnder44/);
+  assert.match(collector, /playwrightChromium\.executablePath\(\)/);
+  assert.match(collector, /--disable-dev-shm-usage/);
+  assert.match(visualChecker, /playwrightChromium\.executablePath\(\)/);
+  assert.match(visualChecker, /--disable-dev-shm-usage/);
   assert.match(workflow, /collect-browser-baseline\.mjs/);
   assert.match(workflow, /check-visual-evidence\.mjs/);
 });

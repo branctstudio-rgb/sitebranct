@@ -73,6 +73,12 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     assert.deepEqual(jobKeys, ["universal-pr-gate"], "exactly one universal job is allowed");
     assert.doesNotMatch(source, /\bsecrets\b|FTP_PASSWORD|lftp|mirror\s+--reverse|deployments?:\s*write|\bcurl\b|\bwget\b|\bgit\s+push\b|\bgh\s+api\b|\bnpm\s+publish\b/i, "secret, deploy or external mutation primitive forbidden");
     assert.match(source, /persist-credentials: false/, "checkout credentials must not persist");
+    assert.doesNotMatch(source, /safe\.directory\s+["']?\*["']?/, "wildcard safe directory forbidden");
+    assert.match(source, /git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/, "container checkout trust must be limited to GITHUB_WORKSPACE");
+    assert.match(source, /image: mcr\.microsoft\.com\/playwright:v1\.62\.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07/, "immutable Playwright container missing");
+    assert.match(source, /npm ci --ignore-scripts/, "exact lockfile install missing");
+    assert.match(source, /node scripts\/governance\/verify-f2-01-readiness\.mjs/, "three-engine readiness runner missing");
+    assert.match(source, /name: Verify F2-01 readiness in Chromium, Firefox and WebKit\s+env:\s+HOME: \/root\s+run: node scripts\/governance\/verify-f2-01-readiness\.mjs/, "Firefox-compatible root HOME is missing from the isolated readiness step");
     assert.match(source, /node scripts\/governance\/classify-pr-paths\.mjs/, "real classifier is not invoked");
     for (const command of [
       "tests/audit/f2-gov-02a.test.mjs",
@@ -113,7 +119,7 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     assert.equal(matrix.schemaVersion, 1);
     assert.equal(matrix.workflowName, "Universal PR Gate Candidate");
     assert.equal(matrix.checkName, "Universal PR Gate");
-    const required = ["documentation", "tests", "fixtures", "html", "css", "javascript", "fonts", "translations", "images", "video", "workflow", "manifest", "create", "modify", "delete", "rename", "mixed-live-internal", "unknown", "gate-self"];
+    const required = ["documentation", "tests", "fixtures", "html", "css", "javascript", "fonts", "translations", "images", "video", "workflow", "manifest", "create", "modify", "delete", "rename", "mixed-live-internal", "unknown", "runtime-lock", "gate-self"];
     assert.deepEqual(matrix.scenarios.map(({ id }) => id), required);
     for (const scenario of matrix.scenarios) await t.test(scenario.id, () => {
       const first = classifyRecords(scenario.changes);
@@ -146,6 +152,15 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     }
   });
 
+  test("Playwright lockfiles and readiness runner are classified as protected gate internals", () => {
+    for (const path of ["package.json", "package-lock.json", "scripts/governance/verify-f2-01-readiness.mjs"]) {
+      const result = classifyRecords([{ status: "M", path }]);
+      assert.equal(result.accepted, true, `${path}: protected runtime path rejected`);
+      assert.deepEqual(result.categories, ["gate-internal"]);
+      assert.ok(result.suites.includes("audit-contract"), `${path}: audit verification not selected`);
+    }
+  });
+
   test("workflow negatives reject disappearance and unsafe reach", async (t) => {
     const cases = [
       ["workflow renamed", (s) => s.replace("name: Universal PR Gate Candidate", "name: Renamed"), "stable workflow name missing"],
@@ -158,6 +173,8 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
       ["unpinned Action", (s) => s.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v4"), "required Action inventory mismatch"],
       ["terminal result removed", (s) => s.replace("name: Gate terminal result", "name: Removed terminal"), "explicit terminal result missing"],
       ["checkout credentials restored", (s) => s.replace("persist-credentials: false", "persist-credentials: true"), "checkout credentials must not persist"],
+      ["checkout trust broadened", (s) => s.replace('safe.directory "$GITHUB_WORKSPACE"', 'safe.directory "*"'), "wildcard safe directory forbidden"],
+      ["Firefox runtime HOME removed", (s) => s.replace(/^\s+HOME: \/root\s*\r?\n/m, ""), "Firefox-compatible root HOME is missing"],
       ["required Action removed", (s) => s.replace(/^\s+- name: Prepare Node\.js[\s\S]*?node-version: 22\s*\r?\n/m, ""), "required Action inventory mismatch"],
       ["extra permission", (s) => s.replace("  contents: read", "  contents: read\n  issues: read"), "permissions must be contents read only"],
       ["second job", (s) => `${s}\n  shadow-job:\n    runs-on: ubuntu-latest\n    steps: []\n`, "exactly one universal job is allowed"],

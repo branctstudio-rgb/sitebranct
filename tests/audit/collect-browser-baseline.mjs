@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join, normalize } from "node:path";
+import { chromium as playwrightChromium } from "playwright";
 
 const root = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const contract = JSON.parse(await readFile(new URL("../../fixtures/audit/site-contract.json", import.meta.url), "utf8"));
@@ -47,12 +48,12 @@ const server = createServer(async (req, res) => {
 await new Promise((resolve) => server.once("listening", resolve));
 
 const candidates = process.platform === "win32"
-  ? ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"]
-  : ["google-chrome", "chromium", "chromium-browser"];
+  ? [playwrightChromium.executablePath(), "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"]
+  : [playwrightChromium.executablePath(), "google-chrome", "chromium", "chromium-browser"];
 let browser;
 for (const executable of candidates) {
   try {
-    browser = spawn(executable, ["--headless=new", "--disable-gpu", "--no-sandbox", "--remote-debugging-port=0", `--user-data-dir=${join(tmpdir(), `branct-audit-${process.pid}`)}`, "about:blank"], { stdio:["ignore","ignore","pipe"] });
+    browser = spawn(executable, ["--headless=new", "--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox", "--remote-debugging-port=0", `--user-data-dir=${join(tmpdir(), `branct-audit-${process.pid}`)}`, "about:blank"], { stdio:["ignore","ignore","pipe"] });
     await new Promise((resolve, reject) => { browser.once("spawn", resolve); browser.once("error", reject); });
     break;
   } catch { browser = undefined; }

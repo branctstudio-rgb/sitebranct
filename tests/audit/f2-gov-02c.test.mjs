@@ -63,10 +63,10 @@ Module._load = (request, parent, isMain) => request === "node:https" ? ({ get(op
 
 const trustClasses = {
   workflows: [".github/workflows/universal-pr-gate.yml", ".github/workflows/audit-offline.yml", ".github/workflows/deploy.yml"],
-  executors: ["scripts/governance/classify-pr-paths.mjs", "scripts/deploy/build-publish-payload.mjs"],
-  tests: ["tests/audit/f2-gov-02a.test.mjs", "tests/audit/f2-gov-02c.test.mjs", "tests/audit/phase-2-governance.test.mjs", "tests/audit/f2-gov-01.test.mjs", "tests/deploy/deploy-scope.test.mjs", "tests/audit/site-audit.test.mjs"],
+  executors: ["scripts/governance/classify-pr-paths.mjs", "scripts/governance/verify-f2-01-readiness.mjs", "scripts/deploy/build-publish-payload.mjs"],
+  tests: ["tests/audit/f2-gov-02a.test.mjs", "tests/audit/f2-gov-02c.test.mjs", "tests/audit/phase-2-governance.test.mjs", "tests/audit/f2-gov-01.test.mjs", "tests/deploy/deploy-scope.test.mjs", "tests/audit/site-audit.test.mjs", "tests/audit/f2-01-responsive.test.mjs"],
   browserVisual: ["tests/audit/collect-browser-baseline.mjs", "tests/audit/check-visual-evidence.mjs"],
-  authorities: ["deploy/publish-manifest.json", "fixtures/audit/site-contract.json", "fixtures/audit/baseline-results.json", "fixtures/audit/evidence-manifest.json", "docs/audit/phase-2/f2-00-contract.json"],
+  authorities: ["deploy/publish-manifest.json", "fixtures/audit/site-contract.json", "fixtures/audit/baseline-results.json", "fixtures/audit/evidence-manifest.json", "fixtures/audit/f2-01-ci-runtime.json", "fixtures/audit/f2-01-transition.json", "fixtures/audit/f2-01-baseline-results.json", "fixtures/audit/f2-01-menu-evidence-matrix.json", "package.json", "package-lock.json", "docs/audit/phase-2/f2-00-contract.json"],
 };
 
 function assertSentinelAllows(source, paths) {
@@ -170,6 +170,20 @@ test("closed trust set covers every decision class and remains self-protected", 
     for (const path of paths) assert.ok(protectedPaths.includes(path), `${className} trust path missing: ${path}`);
   }
   assert.ok(protectedPaths.includes(sentinelPath), "trust-set definition must protect itself");
+});
+
+test("sentinel protects the complete F2-01 readiness runtime and authorities", async () => {
+  const protectedPaths = protectedGatePaths(await read(sentinelPath));
+  for (const path of [
+    "package.json",
+    "package-lock.json",
+    "scripts/governance/verify-f2-01-readiness.mjs",
+    "fixtures/audit/f2-01-ci-runtime.json",
+    "fixtures/audit/f2-01-transition.json",
+    "fixtures/audit/f2-01-baseline-results.json",
+    "fixtures/audit/f2-01-menu-evidence-matrix.json",
+    "tests/audit/f2-01-responsive.test.mjs",
+  ]) assert.ok(protectedPaths.includes(path), `F2-01 readiness trust path missing: ${path}`);
 });
 
 test("protected changes fail for modification, deletion, empty replacement and both rename names", async () => {
