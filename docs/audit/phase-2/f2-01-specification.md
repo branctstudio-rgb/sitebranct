@@ -8,15 +8,25 @@ A baseline integrada da Fase 1 cobre 12 rotas em 5 viewports. Em mobile, 9 das 1
 
 ## Matriz obrigatória
 
-Cada rota deve ser medida em processos novos de navegador nas viewports:
+Cada rota deve ser medida em processos novos de cada navegador obrigatório nas viewports:
 
+- 320×568
+- 412×915
 - 1440×900
 - 1024×768
 - 768×1024
 - 390×844
 - 360×800
 
-Isso produz 60 observações por execução. Chromium é obrigatório. Firefox e WebKit permanecem `NOT_VERIFIED` até serem realmente executados; compatibilidade não pode ser inferida.
+Isso produz 84 observações conclusivas por engine. Chromium, Firefox e WebKit são obrigatórios, nas versões/builds fixados pelo runtime protegido. Engine ausente, ignorada, divergente, parcial ou inconclusiva bloqueia a elegibilidade; compatibilidade nunca é inferida.
+
+## Contrato multiengine v3
+
+`fixtures/audit/f2-01-baseline-results-v3.json` é a autoridade semântica canónica. A baseline v2 anterior permanece imutável como snapshot observacional e não autoriza readiness. Cada relatório deve declarar `conclusion: CONCLUSIVE`, cobrir exatamente 84 observações, 41 exercícios de menu e 184 ações e corresponder um-a-um às identidades canónicas protegidas.
+
+O gate recalcula predicados a partir das medições brutas: overflow, alvos 44×44, operação do menu, foco, `inert`, scroll lock, reduced motion e conclusão da execução. Geometria continua obrigatória, finita, não negativa e internamente coerente, mas diferenças legítimas de layout/rounding entre engines não são comparadas byte a byte nem por uma tolerância global arbitrária. Metadados como data, caminho e mensagem são apenas sanitizados; nunca autorizam GREEN.
+
+Capturas fechada/aberta exigidas por engine e viewport são lidas e hasheadas pelo verificador. Ausência, vazio, duplicação, digest inválido, infraestrutura incompleta ou relatório parcial falham fechado.
 
 ## RED mensurável
 

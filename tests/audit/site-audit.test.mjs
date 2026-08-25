@@ -596,7 +596,7 @@ const reportForRequiredMatrix = (transition, baseline) => {
   const report = structuredClone(baseline);
   report.schemaVersion = 2;
   report.conclusion = "CONCLUSIVE";
-  report.browser = { engine: "chromium", version: "fixture-1.0" };
+  report.browser = { engine: "chromium", version: "151.0.7922.34" };
   report.viewports = structuredClone(transition.f201.matrix.viewports);
   report.observations = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => {
     const existing = baseline.observations.find((entry) => entry.route === route && entry.viewport === viewport);
@@ -842,7 +842,7 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
   const cases = [
     ["mandatory browser not verified", (value) => { value.browsers.chromium = "NOT_VERIFIED"; }],
     ["semantic RED", (value) => { value.report.execution.semanticTests[0].status = "FAIL"; }],
-    ["baseline mismatch", (value) => { value.report.observations[0].scrollWidth += 1; }],
+    ["reported overflow mismatch", (value) => { value.report.observations[0].scrollWidth += 1; }],
     ["live diff absent", (value) => { delete value.liveDiff; }],
     ["live diff head mismatch", (value) => { value.liveDiff.authoritySha = "2222222222222222222222222222222222222222"; }],
     ["report truncated", (value) => { value.report.observations.pop(); }],
@@ -1045,6 +1045,28 @@ async function f2Gov07GreenBundle() {
   })]));
   return { runtime, transition, baselineV3, fixture, reports, capturesByEngine, guards: { validateCaptureEvidence, validateEngineReport, validateMultiengineReports, validateBaselineV3 } };
 }
+const cloneF2Gov07Bundle = (value) => ({ ...structuredClone({ runtime: value.runtime, transition: value.transition, baselineV3: value.baselineV3, fixture: value.fixture, reports: value.reports, capturesByEngine: value.capturesByEngine }), guards: value.guards });
+
+test("F2-GOV-07 has twelve explicit positive controls", async (t) => {
+  const base = await f2Gov07GreenBundle();
+  const byEngine = Object.fromEntries(base.reports.map((report) => [report.browser.engine, report]));
+  const cases = [
+    ["canonical baseline v3", () => base.guards.validateBaselineV3(base.baselineV3, { runtime: base.runtime, transition: base.transition })],
+    ["chromium conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.chromium, "chromium", { baseline: base.baselineV3, requireGreen: true })],
+    ["firefox conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.firefox, "firefox", { baseline: base.baselineV3, requireGreen: true })],
+    ["webkit conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.webkit, "webkit", { baseline: base.baselineV3, requireGreen: true })],
+    ["chromium capture set", () => base.guards.validateCaptureEvidence("chromium", base.capturesByEngine.chromium, base.baselineV3)],
+    ["firefox capture set", () => base.guards.validateCaptureEvidence("firefox", base.capturesByEngine.firefox, base.baselineV3)],
+    ["webkit capture set", () => base.guards.validateCaptureEvidence("webkit", base.capturesByEngine.webkit, base.baselineV3)],
+    ["three-engine aggregate", () => base.guards.validateMultiengineReports(base.runtime, base.reports, { baseline: base.baselineV3, capturesByEngine: base.capturesByEngine })],
+    ["84 observations per engine", () => assert.ok(base.reports.every(({ observations }) => observations.length === 84))],
+    ["41 canonical menu identities per engine", () => assert.ok(base.reports.every(({ menuResults }) => menuResults.length === 41))],
+    ["184 completed actions per engine", () => assert.ok(base.reports.every(({ execution }) => execution.actions.length === 184 && execution.actions.every(({ status }) => status === "COMPLETED")))],
+    ["independent geometry remains semantically GREEN", () => assert.equal(new Set(base.reports.map(({ observations }) => observations[0].drawer.left)).size, 3)],
+  ];
+  assert.equal(cases.length, 12);
+  for (const [label, validate] of cases) await t.test(label, () => assert.doesNotThrow(validate));
+});
 
 test("F2-GOV-07 validates three conclusive engines without cross-engine geometry equality", async () => {
   const value = await f2Gov07GreenBundle();
@@ -1064,7 +1086,7 @@ test("F2-GOV-07 fails closed on conclusion, engine and canonical cardinality reg
     ["engine unexpected", (v) => { v.reports[2].browser.engine = "gecko"; }, /multiengine set/i],
   ];
   for (const [label, mutate, expected] of engineCases) await t.test(label, () => {
-    const value = structuredClone(base);
+    const value = cloneF2Gov07Bundle(base);
     mutate(value);
     assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }), expected);
   });
@@ -1085,7 +1107,7 @@ test("F2-GOV-07 fails closed on conclusion, engine and canonical cardinality reg
     ["identity forged", (r) => { r.menuResults[0].evidenceId = "menu-forged"; }, /menu identity/i],
   ];
   for (const [label, mutate, expected] of reportCases) await t.test(label, () => {
-    const value = structuredClone(base);
+    const value = cloneF2Gov07Bundle(base);
     mutate(value.reports[0]);
     assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
   });
@@ -1108,7 +1130,7 @@ test("F2-GOV-07 recalculates semantic predicates from raw evidence", async (t) =
     ["PASS field adulterated", (r) => { r.observations[0].scrollWidth += 1; r.observations[0].overflow = false; r.execution.semanticTests[0].status = "PASS"; }, /reported overflow/i],
   ];
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
-    const value = structuredClone(base);
+    const value = cloneF2Gov07Bundle(base);
     mutate(value.reports[0]);
     assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
   });
@@ -1124,7 +1146,7 @@ test("F2-GOV-07 rejects implausible geometry and incomplete raw evidence", async
     ["inconsistent box", (r) => { r.observations[0].drawer.right += 5; }, /bounding box/i],
   ];
   for (const [label, mutate, expected] of geometryCases) await t.test(label, () => {
-    const value = structuredClone(base);
+    const value = cloneF2Gov07Bundle(base);
     mutate(value.reports[0]);
     assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
   });
@@ -1135,7 +1157,7 @@ test("F2-GOV-07 rejects implausible geometry and incomplete raw evidence", async
     ["capture empty", (v) => { v.capturesByEngine.chromium[0].bytes = 0; }, /capture is empty/i],
     ["capture digest malformed", (v) => { v.capturesByEngine.chromium[0].sha256 = "self"; }, /capture digest/i],
   ]) await t.test(label, () => {
-    const value = structuredClone(base);
+    const value = cloneF2Gov07Bundle(base);
     mutate(value);
     assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }), expected);
   });
@@ -1167,7 +1189,7 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
   const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
   const changed = execFileSync("git", ["diff", "--name-only", diffBase, authoritySha], { cwd: repository, encoding: "utf8" })
     .trim().split(/\r?\n/).filter(Boolean);
-  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
+  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|docs\/superpowers\/plans\/2026-08-25-f2-gov-07-multiengine-contract\.md$|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
   assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
   assert.ok(!changed.includes(".github/workflows/deploy.yml"));

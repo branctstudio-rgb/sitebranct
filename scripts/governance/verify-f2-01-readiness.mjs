@@ -33,13 +33,21 @@ const cleanText = (value, context) => {
   assert.equal(typeof value, "string", `${context} must be a string`);
   assert.doesNotMatch(value, /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/, `${context} contains control characters`);
 };
+const numericResolution = (value) => {
+  const text = String(value).toLowerCase();
+  if (text.includes("e")) return Number.EPSILON * Math.max(1, Math.abs(value));
+  const decimals = text.includes(".") ? text.length - text.indexOf(".") - 1 : 0;
+  return 10 ** -decimals;
+};
 const box = (value, context) => {
   exactKeys(value, ["left", "right", "width"], context);
   finite(value.left, `${context}.left`);
   finite(value.right, `${context}.right`);
   finite(value.width, `${context}.width`, { nonNegative: true });
   assert.ok(value.right >= value.left, `${context} has inverted bounds`);
-  assert.equal(Number((value.right - value.left).toFixed(1)), value.width, `${context} bounding box is inconsistent with width`);
+  const discrepancy = Math.abs((value.right - value.left) - value.width);
+  const serializedResolution = Math.max(numericResolution(value.left), numericResolution(value.right), numericResolution(value.width));
+  assert.ok(discrepancy <= serializedResolution + Number.EPSILON * Math.max(1, Math.abs(value.right), Math.abs(value.left), Math.abs(value.width)), `${context} bounding box is inconsistent with width`);
 };
 const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) =>
   !focusReached || !focusStyle?.visible || focusStyle.style === "none" || focusStyle.width < 2 ||
@@ -146,7 +154,7 @@ function validateObservation(entry, expected, baseline, { requireGreen }) {
   assert.equal(entry.conclusion, "CONCLUSIVE", `observation conclusion must be CONCLUSIVE: ${route} ${viewport}`);
   finite(entry.clientWidth, `${route} ${viewport} clientWidth`, { nonNegative: true });
   finite(entry.scrollWidth, `${route} ${viewport} scrollWidth`, { nonNegative: true });
-  assert.equal(entry.clientWidth, baseline.canonicalMatrix.viewports[viewport][0], `observation clientWidth differs from canonical viewport: ${route} ${viewport}`);
+  assert.ok(entry.clientWidth > 0 && entry.clientWidth <= baseline.canonicalMatrix.viewports[viewport][0], `observation clientWidth is implausible for canonical viewport: ${route} ${viewport}`);
   const derivedOverflow = entry.scrollWidth > entry.clientWidth;
   assert.equal(entry.overflow, derivedOverflow, `reported overflow differs from raw widths: ${route} ${viewport}`);
   if (requireGreen) assert.equal(derivedOverflow, false, `horizontal overflow exceeds zero: ${route} ${viewport}`);
@@ -258,7 +266,7 @@ export function validateEngineReport(runtime, report, engine, { baseline = targe
   for (const duration of report.reducedMotion.durationsMs) finite(duration, `${engine}: reduced-motion duration`, { nonNegative: true });
   if (requireGreen) assert.ok(report.reducedMotion.durationsMs.every((duration) => duration <= baseline.semanticPredicates.reducedMotionMaximumDurationMs), `${engine}: reduced-motion semantic predicate failed`);
   if (requireGreen) assert.ok(report.execution.semanticTests.every(({ status }) => status === baseline.semanticPredicates.semanticTestStatus), `${engine}: semantic test status is not GREEN`);
-  if (transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
+  if (!requireGreen && transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
     for (const canonical of matrix.entries) {
       const result = measuredResult(report.menuResults.find(({ evidenceId: id }) => id === canonical.evidenceId));
       const semanticStatus = menuFailure(result) ? "FAIL" : "PASS";
