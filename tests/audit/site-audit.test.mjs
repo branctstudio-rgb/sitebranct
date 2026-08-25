@@ -1074,6 +1074,46 @@ test("F2-GOV-07 validates three conclusive engines without cross-engine geometry
   assert.notEqual(value.reports[0].observations[0].drawer.left, value.reports[2].observations[0].drawer.left);
 });
 
+test("F2-GOV-07 rejects adversarial producer bypasses", async (t) => {
+  const base = await f2Gov07GreenBundle();
+  await t.test("payload transplanted between canonical identities", () => {
+    const value = cloneF2Gov07Bundle(base);
+    value.reports[0].menuResults[0].focusStyle.width = 2.25;
+    value.reports[0].menuResults[1].focusStyle.width = 2.5;
+    const first = value.reports[0].menuResults[0];
+    const second = value.reports[0].menuResults[1];
+    for (const key of ["focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"]) {
+      [first[key], second[key]] = [structuredClone(second[key]), structuredClone(first[key])];
+    }
+    assert.throws(
+      () => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }),
+      /binding|transplant/i,
+    );
+  });
+  await t.test("offscreen raw drawer geometry masked by PASS boolean", () => {
+    const value = cloneF2Gov07Bundle(base);
+    const observation = value.reports[0].observations.find(({ route, viewport }) => route === "index.html" && viewport === "320x568");
+    observation.drawer = { left: -500, right: -224.8, width: 275.2, open: true };
+    value.reports[0].menuResults.find(({ route, viewport }) => route === "index.html" && viewport === "320x568").open.drawerInside = true;
+    assert.throws(
+      () => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }),
+      /drawer.*viewport|raw drawer/i,
+    );
+  });
+  await t.test("missing conclusion cannot use legacy synthesis", async () => {
+    const [transition, baselineV2] = await Promise.all([
+      readJson(f201TransitionPath),
+      readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url)),
+    ]);
+    const report = developmentReportFrom(transition, baselineV2);
+    delete report.conclusion;
+    assert.throws(
+      () => base.guards.validateEngineReport(base.runtime, report, "chromium", { baseline: base.baselineV3, allowLegacyDevelopmentConclusion: true, requireGreen: false }),
+      /conclusion/i,
+    );
+  });
+});
+
 test("F2-GOV-07 fails closed on conclusion, engine and canonical cardinality regressions", async (t) => {
   const base = await f2Gov07GreenBundle();
   const engineCases = [
