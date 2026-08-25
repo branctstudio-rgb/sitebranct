@@ -4,7 +4,7 @@ import { readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 const root = new URL("../../", import.meta.url);
@@ -57,7 +57,7 @@ const menuFailure = ({ focusReached, focusStyle, open, closed, closeButtonClosed
   !closeButtonClosed || !outsideClosed;
 
 function measuredResult(entry) {
-  assert.deepEqual(Object.keys(entry).sort(), ["evidenceId", "route", "viewport", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"].sort(), `menu result schema differs: ${entry?.route} ${entry?.viewport}`);
+  assert.deepEqual(Object.keys(entry).sort(), ["evidenceId", "evidenceBinding", "route", "viewport", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"].sort(), `menu result schema differs: ${entry?.route} ${entry?.viewport}`);
   return {
     focusReached: entry.focusReached,
     focusStyle: entry.focusStyle,
@@ -67,6 +67,28 @@ function measuredResult(entry) {
     outsideClosed: entry.outsideClosed,
   };
 }
+
+const historicalMeasuredResult = (result) => ({
+  ...result,
+  open: {
+    expanded: result.open.expanded,
+    drawerInside: result.open.drawerInside,
+    focusInside: result.open.focusInside,
+    bodyLocked: result.open.bodyLocked,
+    backgroundInert: result.open.backgroundInert,
+    closeTarget: result.open.closeTarget,
+  },
+});
+const validateRunChallenge = (challenge) => assert.match(challenge ?? "", /^[0-9a-f]{64}$/, "verifier-issued run challenge is absent or malformed");
+const evidenceBindingPayload = (engine, canonical, result) => ({
+  engine,
+  evidenceId: canonical.evidenceId,
+  route: canonical.route,
+  viewport: canonical.viewport,
+  actionSequence: actionSequence(canonical),
+  measuredResult: result,
+});
+const expectedEvidenceBinding = (challenge, engine, canonical, result) => createHmac("sha256", challenge).update(JSON.stringify(evidenceBindingPayload(engine, canonical, result))).digest("hex");
 
 function validateCanonicalMatrix() {
   assert.equal(matrix.schemaVersion, 2, "canonical matrix schema is divergent");
@@ -121,6 +143,7 @@ export function validateBaselineV3(baseline, { runtime, transition, bytes } = {}
     menuSemanticStatus: "PASS",
     reducedMotionMatches: true,
     reducedMotionMaximumDurationMs: 1,
+    drawerViewportEdgeAllowanceCssPx: 0.5,
     infrastructureErrors: 0,
     semanticTestStatus: "PASS",
   }, "F2-01 baseline semantic predicates are divergent");
@@ -188,21 +211,33 @@ function validateObservation(entry, expected, baseline, { requireGreen }) {
     exactKeys(entry.drawer, ["left", "right", "width", "open"], `drawer ${route} ${viewport}`);
     box({ left: entry.drawer.left, right: entry.drawer.right, width: entry.drawer.width }, `drawer ${route} ${viewport}`);
     assert.equal(typeof entry.drawer.open, "boolean", `drawer open state is invalid: ${route} ${viewport}`);
+    if (entry.drawer.open) {
+      const allowance = baseline.semanticPredicates.drawerViewportEdgeAllowanceCssPx;
+      assert.ok(entry.drawer.left >= -allowance && entry.drawer.right <= entry.clientWidth + allowance, `raw drawer is outside canonical viewport: ${route} ${viewport}`);
+    }
   }
   assert.ok(Array.isArray(entry.consoleIssues), `console evidence is absent: ${route} ${viewport}`);
   for (const issue of entry.consoleIssues) cleanText(issue, `console issue ${route} ${viewport}`);
   if (requireGreen) assert.deepEqual(entry.consoleIssues, [], `console issue blocks GREEN: ${route} ${viewport}`);
 }
 
-function validateGreenMenu(entry) {
+function validateMenuEvidence(entry, observation, baseline, { requireGreen }) {
   const result = measuredResult(entry);
   finite(result.focusStyle.width, `${entry.route} ${entry.viewport} focus width`, { nonNegative: true });
+  exactKeys(result.open, ["expanded", "drawerInside", "focusInside", "bodyLocked", "backgroundInert", "closeTarget", "drawerBounds"], `${entry.route} ${entry.viewport} open drawer evidence`);
+  exactKeys(result.open.drawerBounds, ["left", "right", "width", "viewportWidth"], `${entry.route} ${entry.viewport} raw drawer bounds`);
+  box({ left: result.open.drawerBounds.left, right: result.open.drawerBounds.right, width: result.open.drawerBounds.width }, `${entry.route} ${entry.viewport} raw drawer bounds`);
+  finite(result.open.drawerBounds.viewportWidth, `${entry.route} ${entry.viewport} raw drawer viewport width`, { nonNegative: true });
+  assert.equal(result.open.drawerBounds.viewportWidth, observation.clientWidth, `raw drawer viewport differs from observation: ${entry.route} ${entry.viewport}`);
+  const allowance = baseline.semanticPredicates.drawerViewportEdgeAllowanceCssPx;
+  const derivedInside = result.open.drawerBounds.left >= -allowance && result.open.drawerBounds.right <= result.open.drawerBounds.viewportWidth + allowance;
+  assert.equal(result.open.drawerInside, derivedInside, `raw drawer geometry differs from reported viewport predicate: ${entry.route} ${entry.viewport}`);
   if (result.open.closeTarget) {
     finite(result.open.closeTarget.x, `${entry.route} ${entry.viewport} close target width`, { nonNegative: true });
     finite(result.open.closeTarget.y, `${entry.route} ${entry.viewport} close target height`, { nonNegative: true });
     cleanText(result.open.closeTarget.name, `${entry.route} ${entry.viewport} close target name`);
   }
-  assert.equal(menuFailure(result), false, `menu semantic predicate failed: ${entry.route} ${entry.viewport}`);
+  if (requireGreen) assert.equal(menuFailure(result), false, `menu semantic predicate failed: ${entry.route} ${entry.viewport}`);
 }
 
 export function validateRuntimeContract({ runtime, transition, packageJson, packageLock, browserRegistry, ci = false, ciDigest = "" }) {
@@ -222,10 +257,10 @@ export function validateRuntimeContract({ runtime, transition, packageJson, pack
   if (ci) assert.equal(ciDigest, runtime.container.indexDigest, "executed container digest differs from runtime authority");
 }
 
-export function validateEngineReport(runtime, report, engine, { baseline = targetBaseline, allowLegacyDevelopmentConclusion = false, requireGreen = transition.status !== "F2_01_AUTHORIZED_IN_DEVELOPMENT" } = {}) {
+export function validateEngineReport(runtime, report, engine, { baseline = targetBaseline, runChallenge, requireGreen = transition.status !== "F2_01_AUTHORIZED_IN_DEVELOPMENT" } = {}) {
   validateCanonicalMatrix();
   validateBaselineV3(baseline, { runtime, transition, bytes: baseline === targetBaseline ? targetBaselineBytes : undefined });
-  if (allowLegacyDevelopmentConclusion && report.conclusion === undefined) report.conclusion = report.execution?.complete === true ? "CONCLUSIVE" : undefined;
+  validateRunChallenge(runChallenge);
   exactKeys(report, ["schemaVersion", "source", "browser", "viewports", "observations", "menuResults", "reducedMotion", "execution", "conclusion"], `${engine}: report`);
   assert.equal(report.schemaVersion, runtime.evidence.reportSchemaVersion, `${engine}: report schema divergent`);
   assert.equal(report.conclusion, "CONCLUSIVE", `${engine}: report conclusion must be CONCLUSIVE`);
@@ -253,8 +288,10 @@ export function validateEngineReport(runtime, report, engine, { baseline = targe
     const canonical = matrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
     assert.ok(canonical, `${engine}: menu tuple is unknown: ${entry.route} ${entry.viewport}`);
     assert.equal(entry.evidenceId, canonical.evidenceId, `${engine}: menu identity differs from canonical tuple: ${entry.route} ${entry.viewport}`);
-    measuredResult(entry);
-    if (requireGreen) validateGreenMenu(entry);
+    const result = measuredResult(entry);
+    const observation = report.observations.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
+    validateMenuEvidence(entry, observation, baseline, { requireGreen });
+    assert.equal(entry.evidenceBinding, expectedEvidenceBinding(runChallenge, engine, canonical, result), `${engine}: verifier-issued evidence binding differs or payload was transplanted: ${entry.route} ${entry.viewport}`);
     return entry.evidenceId;
   }).sort();
   assert.deepEqual(actualMenuIds, matrix.entries.map(({ evidenceId }) => evidenceId).sort(), `${engine}: menu evidence bijection is divergent`);
@@ -268,7 +305,7 @@ export function validateEngineReport(runtime, report, engine, { baseline = targe
   if (requireGreen) assert.ok(report.execution.semanticTests.every(({ status }) => status === baseline.semanticPredicates.semanticTestStatus), `${engine}: semantic test status is not GREEN`);
   if (!requireGreen && transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT") {
     for (const canonical of matrix.entries) {
-      const result = measuredResult(report.menuResults.find(({ evidenceId: id }) => id === canonical.evidenceId));
+      const result = historicalMeasuredResult(measuredResult(report.menuResults.find(({ evidenceId: id }) => id === canonical.evidenceId)));
       const semanticStatus = menuFailure(result) ? "FAIL" : "PASS";
       assert.equal(semanticStatus, canonical.developmentSemanticStatus, `${engine}: development semantic result differs: ${canonical.route} ${canonical.viewport}`);
       const envelope = { evidenceId: canonical.evidenceId, route: canonical.route, viewport: canonical.viewport, actionSequence: actionSequence(canonical), semanticStatus, measuredResult: result };
@@ -277,11 +314,11 @@ export function validateEngineReport(runtime, report, engine, { baseline = targe
   }
 }
 
-export function validateReadyBaseline(report, baseline) {
+export function validateReadyBaseline(report, baseline, { runChallenge } = {}) {
   assert.ok(baseline && typeof baseline === "object" && !Array.isArray(baseline), "GREEN target baseline is absent or unreadable");
   const engine = report?.browser?.engine;
   assert.ok(runtime.playwright.engines.includes(engine), "GREEN report engine is absent or unexpected");
-  validateEngineReport(runtime, report, engine, { baseline, requireGreen: true });
+  validateEngineReport(runtime, report, engine, { baseline, runChallenge, requireGreen: true });
   return { engine, conclusion: "CONCLUSIVE" };
 }
 
@@ -304,13 +341,13 @@ export function validateCaptureEvidence(engine, captures, baseline = targetBasel
   return { engine, captures: captures.length, digest: hash(JSON.stringify(captures.map(({ name, bytes, sha256 }) => ({ name, bytes, sha256 })).sort((a, b) => a.name.localeCompare(b.name)))) };
 }
 
-export function validateMultiengineReports(runtime, reports, { baseline = targetBaseline, capturesByEngine = {} } = {}) {
+export function validateMultiengineReports(runtime, reports, { baseline = targetBaseline, capturesByEngine = {}, runChallengesByEngine = {} } = {}) {
   validateBaselineV3(baseline, { runtime, transition, bytes: baseline === targetBaseline ? targetBaselineBytes : undefined });
   assert.ok(Array.isArray(reports), "multiengine report set is absent");
   assert.equal(reports.length, runtime.playwright.engines.length, "multiengine report cardinality is incomplete or unexpected");
   const engines = reports.map((report) => report?.browser?.engine);
   assert.deepEqual([...engines].sort(), [...runtime.playwright.engines].sort(), "multiengine set contains a missing, duplicate or unexpected engine");
-  const validated = reports.map((report) => validateReadyBaseline(report, baseline));
+  const validated = reports.map((report) => validateReadyBaseline(report, baseline, { runChallenge: runChallengesByEngine[report.browser.engine] }));
   const captures = runtime.playwright.engines.map((engine) => validateCaptureEvidence(engine, capturesByEngine[engine], baseline));
   return { schemaVersion: 1, conclusion: "CONCLUSIVE", engines: validated, rawEvidence: captures };
 }
@@ -361,8 +398,11 @@ async function main() {
   mkdirSync(directory, { recursive: true });
   const reports = [];
   const completeReports = [];
+  const runChallengesByEngine = {};
   try {
   for (const engine of runtime.playwright.engines) {
+    const runChallenge = randomBytes(32).toString("hex");
+    runChallengesByEngine[engine] = runChallenge;
     const reportPath = join(directory, `${engine}.json`);
     const captureDirectory = join(directory, `${engine}-captures`);
     mkdirSync(captureDirectory, { recursive: true });
@@ -370,7 +410,7 @@ async function main() {
       cwd: new URL("../../", import.meta.url),
       encoding: "utf8",
       timeout: 180000,
-      env: { ...process.env, F2_01_BROWSER: engine, F2_01_REPORT_PATH: reportPath, F2_01_CAPTURE_DIR: captureDirectory },
+      env: { ...process.env, F2_01_BROWSER: engine, F2_01_REPORT_PATH: reportPath, F2_01_CAPTURE_DIR: captureDirectory, F2_01_RUN_CHALLENGE: runChallenge },
     });
     assert.equal(result.error, undefined, `${engine}: browser process failed to start: ${result.error?.message}`);
     assert.equal(result.signal, null, `${engine}: browser process terminated by ${result.signal}`);
@@ -383,9 +423,9 @@ async function main() {
       const stderrTail = result.stderr.slice(-1000).replaceAll("\u0000", "<NUL>");
       assert.fail(`${engine}: report is absent, unreadable or malformed; status=${result.status}; stdout=${stdoutTail}; stderr=${stderrTail}`);
     }
-    validateEngineReport(runtime, report, engine, { allowLegacyDevelopmentConclusion: transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT", requireGreen: transition.status !== "F2_01_AUTHORIZED_IN_DEVELOPMENT" });
+    validateEngineReport(runtime, report, engine, { runChallenge, requireGreen: transition.status !== "F2_01_AUTHORIZED_IN_DEVELOPMENT" });
     const captureEvidence = validateCaptureEvidence(engine, capturesFromDirectory(captureDirectory));
-    if (["READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"].includes(transition.status)) validateReadyBaseline(report, targetBaseline);
+    if (["READY_FOR_VIA_A_REVIEW", "F2_01_INTEGRATED_VERIFIED"].includes(transition.status)) validateReadyBaseline(report, targetBaseline, { runChallenge });
     assert.deepEqual(Object.fromEntries(report.execution.semanticTests.map(({ name, status }) => [name, status])), expectedStatuses(), `${engine}: semantic result vector divergent`);
     completeReports.push(report);
     reports.push({ engine, browserVersion: report.browser.version, reportSha256: hash(JSON.stringify(report)), rawEvidence: captureEvidence, conclusion: transition.status === "F2_01_AUTHORIZED_IN_DEVELOPMENT" ? "EXPECTED_SEMANTIC_RED" : "GREEN" });
@@ -394,6 +434,7 @@ async function main() {
     if (transition.status !== "F2_01_AUTHORIZED_IN_DEVELOPMENT") validateMultiengineReports(runtime, completeReports, {
       baseline: targetBaseline,
       capturesByEngine: Object.fromEntries(runtime.playwright.engines.map((engine) => [engine, capturesFromDirectory(join(directory, `${engine}-captures`))])),
+      runChallengesByEngine,
     });
     let postIntegration = null;
     if (transition.status === "READY_FOR_VIA_A_REVIEW" && process.env.GITHUB_EVENT_NAME === "push") {

@@ -41,8 +41,8 @@ A lista final deve ser determinada pelo RED e reservada na Issue antes de editar
 
 - A baseline v2 permanece byte-idêntica como snapshot observacional histórico.
 - A baseline v3 fixa matriz, engines/builds e predicados semânticos; não exige igualdade geométrica cega entre engines.
-- O verificador recalcula os resultados a partir de evidência bruta e agrega somente três relatórios conclusivos com bijeções exatas.
-- Durante `F2_01_AUTHORIZED_IN_DEVELOPMENT`, relatórios legados sem o campo superior `conclusion` podem ser classificados apenas pelo ramo RED histórico quando a execução completa já está provada. Essa compatibilidade não se aplica ao ramo GREEN nem a `READY_FOR_VIA_A_REVIEW`.
+- O verificador recalcula os resultados a partir de evidência bruta, valida o vínculo efémero de cada payload e agrega somente três relatórios conclusivos com bijeções exatas.
+- Não há compatibilidade permissiva para conclusão ausente: desenvolvimento, GREEN e promoção exigem `conclusion: CONCLUSIVE` explícita e execução completa. O RED histórico é preservado somente por projeção versionada dos novos campos de proveniência.
 - A promoção futura exige a v3 canónica, capturas hasheadas pelo verificador e execução real das três engines no CI; esta missão de governança não promove o estado atual.
 
 ## Riscos e contenções

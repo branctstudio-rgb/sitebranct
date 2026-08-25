@@ -45,15 +45,15 @@
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "gitBlobOid": "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6",
-      "copiedSha256": "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f"
+      "gitBlobOid": "025e7a41f1021abcdff44532c810aa2cacf75cf9",
+      "copiedSha256": "9835e75db7680cad92930ec6087eb351a6d1ffda4812dd0ccd15c1c9e26b532d"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results-v3.json",
       "schemaVersion": 3,
       "conclusion": "CONCLUSIVE",
-      "gitBlobOid": "525160c6c7b31d3d94e18acb51fcb1802805661f",
-      "sha256": "aa7f45b55060fd7785ceb13dac59ba580790b7bf0e9015f69dae237b0cc0b8b5",
+      "gitBlobOid": "1de45e118299aca96f0dad6c3b3853b74169960f",
+      "sha256": "29455ce2346b7b269f5201c3104396e4fce53f1e4de1d08976dfa11651a3449e",
       "observationCount": 84,
       "menuExerciseCount": 41,
       "greenSummary": {

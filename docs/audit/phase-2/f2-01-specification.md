@@ -24,7 +24,9 @@ Isso produz 84 observações conclusivas por engine. Chromium, Firefox e WebKit 
 
 `fixtures/audit/f2-01-baseline-results-v3.json` é a autoridade semântica canónica. A baseline v2 anterior permanece imutável como snapshot observacional e não autoriza readiness. Cada relatório deve declarar `conclusion: CONCLUSIVE`, cobrir exatamente 84 observações, 41 exercícios de menu e 184 ações e corresponder um-a-um às identidades canónicas protegidas.
 
-O gate recalcula predicados a partir das medições brutas: overflow, alvos 44×44, operação do menu, foco, `inert`, scroll lock, reduced motion e conclusão da execução. Geometria continua obrigatória, finita, não negativa e internamente coerente, mas diferenças legítimas de layout/rounding entre engines não são comparadas byte a byte nem por uma tolerância global arbitrária. Metadados como data, caminho e mensagem são apenas sanitizados; nunca autorizam GREEN.
+O gate recalcula predicados a partir das medições brutas: overflow, alvos 44×44, limites do drawer contra a largura da viewport, operação do menu, foco, `inert`, scroll lock, reduced motion e conclusão da execução. Geometria continua obrigatória, finita, não negativa e internamente coerente, mas diferenças legítimas de layout/rounding entre engines não são comparadas byte a byte nem por uma tolerância global arbitrária. Metadados como data, caminho e mensagem são apenas sanitizados; nunca autorizam GREEN.
+
+Cada execução recebe do verificador um challenge efémero distinto. O produtor protegido vincula por HMAC engine, identidade, rota, viewport, sequência e resultado bruto; o consumidor verifica o vínculo antes dos predicados. A matriz esperada continua vindo da fixture canónica independente. O HMAC não é um bypass para alterar o produtor: produtor, consumidor e contrato são componentes protegidos pela Sentinel.
 
 Capturas fechada/aberta exigidas por engine e viewport são lidas e hasheadas pelo verificador. Ausência, vazio, duplicação, digest inválido, infraestrutura incompleta ou relatório parcial falham fechado.
 

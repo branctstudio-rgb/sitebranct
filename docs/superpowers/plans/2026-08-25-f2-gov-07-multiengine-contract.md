@@ -1,7 +1,7 @@
 # F2-GOV-07 — contrato multiengine canônico da F2-01
 
-Issue-lock: #58  
-Branch: `agent/f2-gov-07-multiengine-contract`  
+Issue-lock: #58
+Branch: `agent/f2-gov-07-multiengine-contract`
 Base/HEAD inicial: `1f7e95315e518a4ea0a5f1668db67e5b18a69087`
 
 ## Invariantes selados
@@ -25,6 +25,12 @@ Base/HEAD inicial: `1f7e95315e518a4ea0a5f1668db67e5b18a69087`
 8. `docs/audit/phase-2/governance/f2-gov-07-handoff.md`
 9. `docs/superpowers/plans/2026-08-25-f2-gov-07-multiengine-contract.md`
 
+## Expansão fechada após revisão adversarial
+
+10. `tests/audit/f2-01-responsive.test.mjs`
+
+A revisão do head `33754166e178b8ba19ef14db18c8d3515a6ab427` demonstrou três bypasses reais: transplante de payload entre identidades válidas, booleano de drawer coerente com `PASS` mas geometria bruta fora da viewport e síntese permissiva de conclusão ausente. Fechar esses bypasses exige que o produtor protegido emita a conclusão explícita, os limites brutos do drawer e um vínculo HMAC sobre o payload com challenge efémero emitido pelo verificador. A expansão foi publicada na Issue #58 antes da edição. Expectativas funcionais, HTML, CSS, JavaScript vivo, assets e workflows continuam intocados.
+
 Dependência: a v3 nova contém somente autoridade semântica e esquema. A transição protegida fixa caminho, schema, digest, matriz e origem. O verificador consome essa autoridade e recalcula predicados a partir de evidência bruta; o teste integrado exercita o guardião real. Especificação, plano e handoff descrevem a migração e os limites sem promover F2-01.
 
 Exclusões deliberadas: baseline F2-01 v2 e baseline histórica permanecem byte-idênticas; workflows, dependências, lockfiles, Sentinel, classificador, deploy, manifesto e ficheiros vivos não mudam.
@@ -45,6 +51,7 @@ Exclusões deliberadas: baseline F2-01 v2 e baseline histórica permanecem byte-
 5. Ancorar v3 na transição sem promover `F2_01_AUTHORIZED_IN_DEVELOPMENT`.
 6. Adicionar os 40 negativos e 12 positivos exigidos; cada mutação deve provar que não foi vazia e falhar pela etiqueta prevista.
 7. Executar LF e CRLF, regressões totais, CI e revisão adversarial em quatro lentes.
+8. Reproduzir os bypasses da primeira revisão em commit RED append-only; fechar transplante simples/circular, cópia, recálculo sem chave, geometria mascarada e conclusão ausente; repetir CI e revisão independente.
 
 ## Critérios de paragem
 

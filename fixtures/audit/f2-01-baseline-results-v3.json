@@ -59,6 +59,7 @@
     "menuSemanticStatus": "PASS",
     "reducedMotionMatches": true,
     "reducedMotionMaximumDurationMs": 1,
+    "drawerViewportEdgeAllowanceCssPx": 0.5,
     "infrastructureErrors": 0,
     "semanticTestStatus": "PASS"
   },
@@ -75,5 +76,5 @@
     "allowedKeys": ["capturedAt", "capturePath", "message"],
     "forbidControlCharacters": true
   },
-  "canonicalPayloadSha256": "d5827c294f870d4fbdad8d83f1956bc750e7efc735d6811003139c0ca841c1de"
+  "canonicalPayloadSha256": "54e881d35a918d0647cfca995bfd57d51bbdbaf5f33d350a6882148862d6d03e"
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, readdir, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -30,8 +30,8 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
-  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6", sha256: "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f" }),
-  targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results-v3.json", schemaVersion: 3, conclusion: "CONCLUSIVE", gitBlobOid: "525160c6c7b31d3d94e18acb51fcb1802805661f", sha256: "aa7f45b55060fd7785ceb13dac59ba580790b7bf0e9015f69dae237b0cc0b8b5" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "025e7a41f1021abcdff44532c810aa2cacf75cf9", sha256: "9835e75db7680cad92930ec6087eb351a6d1ffda4812dd0ccd15c1c9e26b532d" }),
+  targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results-v3.json", schemaVersion: 3, conclusion: "CONCLUSIVE", gitBlobOid: "1de45e118299aca96f0dad6c3b3853b74169960f", sha256: "29455ce2346b7b269f5201c3104396e4fce53f1e4de1d08976dfa11651a3449e" }),
   previousTargetBaseline: Object.freeze({ status: "SUPERSEDED_IMMUTABLE_V2", path: "fixtures/audit/f2-01-baseline-results.json", schemaVersion: 1, gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
   menuEvidenceMatrix: Object.freeze({
     path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
@@ -108,11 +108,18 @@ const canonicalMeasuredResult = (value, context) => {
   };
 };
 const measuredResultFromReport = (entry) => {
-  exactKeys(entry, ["evidenceId", "route", "viewport", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"], `canonical menu evidence result ${entry?.route ?? "unknown"} ${entry?.viewport ?? "unknown"}`);
+  exactKeys(entry, ["evidenceId", "evidenceBinding", "route", "viewport", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"], `canonical menu evidence result ${entry?.route ?? "unknown"} ${entry?.viewport ?? "unknown"}`);
   return canonicalMeasuredResult({
     focusReached: entry.focusReached,
     focusStyle: entry.focusStyle,
-    open: entry.open,
+    open: {
+      expanded: entry.open.expanded,
+      drawerInside: entry.open.drawerInside,
+      focusInside: entry.open.focusInside,
+      bodyLocked: entry.open.bodyLocked,
+      backgroundInert: entry.open.backgroundInert,
+      closeTarget: entry.open.closeTarget,
+    },
     closed: entry.closed,
     closeButtonClosed: entry.closeButtonClosed,
     outsideClosed: entry.outsideClosed,
@@ -386,7 +393,7 @@ function deriveF201State(transition, evidence, options = {}) {
   assert.equal(evidence.liveDiff.complete, true, "live diff incomplete");
   assert.equal(evidence.liveDiff.authoritySha, authoritySha, "live diff head mismatch");
   assert.ok(Array.isArray(evidence.liveDiff.paths) && evidence.liveDiff.paths.length > 0 && evidence.liveDiff.paths.every((path) => /^(?:[^/]+\.html|src\/(?:css|js)\/)/.test(path)), "live diff paths are absent or outside F2-01");
-  validateReadyBaselineGuard(evidence.report, evidence.targetBaseline);
+  validateReadyBaselineGuard(evidence.report, evidence.targetBaseline, { runChallenge: evidence.runChallenge });
   assert.equal(Object.hasOwn(evidence, "approval"), false, "offline evidence must not contain or simulate Via A approval");
   if (transition.status === "READY_FOR_VIA_A_REVIEW") return transition.status;
   assert.ok(evidence.integration, "real merge evidence absent");
@@ -517,7 +524,8 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   const baseline = await readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url));
   const report = developmentReportFrom(transition, baseline);
   report.browser = { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version };
-  assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox", { baseline: baselineV3, requireGreen: false }));
+  bindReportEvidence(transition, report, unitRunChallenge);
+  assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox", { baseline: baselineV3, runChallenge: unitRunChallenge, requireGreen: false }));
   for (const [label, mutate, expected] of [
     ["engine identity adulterated", (value) => { value.browser.engine = "chromium"; }, /engine evidence/i],
     ["result incomplete", (value) => { value.observations.pop(); }, /observation evidence incomplete/i],
@@ -531,7 +539,7 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   ]) await t.test(label, () => {
     const value = structuredClone(report);
     mutate(value);
-    assert.throws(() => validateEngineReport(runtime, value, "firefox", { baseline: baselineV3, requireGreen: false }), expected);
+    assert.throws(() => validateEngineReport(runtime, value, "firefox", { baseline: baselineV3, runChallenge: unitRunChallenge, requireGreen: false }), expected);
   });
   const greenReport = reportForRequiredMatrix(transition, baseline);
   const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
@@ -539,10 +547,12 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   greenReport.menuResults = baseline.menuResults.map((entry) => ({ evidenceId: canonicalMatrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport).evidenceId, ...structuredClone(entry) }));
   greenReport.execution = completeExecution({});
   greenReport.execution.actions = completeActionsFor(transition);
-  assert.doesNotThrow(() => validateReadyBaseline(greenReport, baselineV3));
+  bindReportEvidence(transition, greenReport, unitRunChallenge);
+  assert.doesNotThrow(() => validateReadyBaseline(greenReport, baselineV3, { runChallenge: unitRunChallenge }));
   const webkitSemanticTwin = structuredClone(greenReport);
   webkitSemanticTwin.browser = { engine: "webkit", version: runtime.playwright.browserBuilds.webkit.version };
-  assert.doesNotThrow(() => validateReadyBaseline(webkitSemanticTwin, baselineV3), "engine metadata must remain outside the shared semantic baseline");
+  bindReportEvidence(transition, webkitSemanticTwin, unitRunChallenge);
+  assert.doesNotThrow(() => validateReadyBaseline(webkitSemanticTwin, baselineV3, { runChallenge: unitRunChallenge }), "engine metadata must remain outside the shared semantic baseline");
   for (const [label, mutate] of [
     ["READY observation transplanted", (value) => { value.observations[0] = structuredClone(value.observations[1]); }],
     ["READY menu result adulterated", (value) => { value.menuResults[0].open.drawerInside = false; }],
@@ -551,7 +561,7 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   ]) await t.test(label, () => {
     const value = structuredClone(greenReport);
     mutate(value);
-    assert.throws(() => validateReadyBaseline(value, baselineV3));
+    assert.throws(() => validateReadyBaseline(value, baselineV3, { runChallenge: unitRunChallenge }));
   });
 });
 
@@ -592,6 +602,35 @@ const completeExecution = (statuses) => ({
 });
 
 const completeActionsFor = (transition) => readCanonicalMenuEvidenceMatrix(transition).entries.flatMap(({ evidenceId, route, viewport, actionPhases }) => actionPhases.map((phase) => ({ evidenceId, route, viewport, phase, status: "COMPLETED" })));
+const unitRunChallenge = hashBytes("F2-GOV-07 verifier-issued unit challenge");
+const bindReportEvidence = (transition, report, challenge = unitRunChallenge) => {
+  const matrix = readCanonicalMenuEvidenceMatrix(transition);
+  for (const entry of report.menuResults) {
+    const canonical = matrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
+    assert.ok(canonical, `cannot bind unknown menu tuple ${entry.route} ${entry.viewport}`);
+    entry.evidenceId = canonical.evidenceId;
+    if (!entry.open.drawerBounds) {
+      const viewportWidth = transition.f201.matrix.viewports[entry.viewport][0];
+      const observation = report.observations.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport);
+      const width = observation?.drawer?.width ?? Math.min(320, viewportWidth);
+      const inside = entry.open.drawerInside;
+      entry.open.drawerBounds = inside
+        ? { left: viewportWidth - width, right: viewportWidth, width, viewportWidth: observation?.clientWidth ?? viewportWidth }
+        : { left: viewportWidth, right: viewportWidth + width, width, viewportWidth: observation?.clientWidth ?? viewportWidth };
+    }
+    const measuredResult = {
+      focusReached: entry.focusReached,
+      focusStyle: entry.focusStyle,
+      open: entry.open,
+      closed: entry.closed,
+      closeButtonClosed: entry.closeButtonClosed,
+      outsideClosed: entry.outsideClosed,
+    };
+    const payload = { engine: report.browser.engine, evidenceId: canonical.evidenceId, route: canonical.route, viewport: canonical.viewport, actionSequence: canonicalActionSequence(canonical), measuredResult };
+    entry.evidenceBinding = createHmac("sha256", challenge).update(JSON.stringify(payload)).digest("hex");
+  }
+  return report;
+};
 const reportForRequiredMatrix = (transition, baseline) => {
   const report = structuredClone(baseline);
   report.schemaVersion = 2;
@@ -604,7 +643,7 @@ const reportForRequiredMatrix = (transition, baseline) => {
     const source = baseline.observations.find((entry) => entry.route === route && entry.viewport === "1440x900");
     return { ...structuredClone(source), viewport, clientWidth: 1024, scrollWidth: 1024, overflow: false, smallTargets: [], conclusion: "CONCLUSIVE" };
   }));
-  return report;
+  return bindReportEvidence(transition, report);
 };
 const developmentReportFrom = (transition, baseline) => {
   const report = reportForRequiredMatrix(transition, baseline);
@@ -618,7 +657,7 @@ const developmentReportFrom = (transition, baseline) => {
     [semanticTestNames[1]]: "FAIL",
   });
   report.execution.actions = completeActionsFor(transition);
-  return report;
+  return bindReportEvidence(transition, report);
 };
 
 test("F2-GOV-06 rejects incomplete execution before classifying a development RED", async (t) => {
@@ -813,6 +852,7 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
     report: { ...structuredClone(futureBaseline), execution: completeExecution({}) },
     processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 0 },
     targetBaseline: baselineV3,
+    runChallenge: unitRunChallenge,
     authoritySha,
     liveDiff: { complete: true, authoritySha, paths: ["src/css/branct.css"] },
     browsers: { chromium: "VERIFIED", firefox: "VERIFIED", webkit: "VERIFIED" },
@@ -1010,9 +1050,10 @@ test("F2-GOV-07 accepts equivalent engine semantics with independently plausible
   webkit.browser = { engine: "webkit", version: "26.5" };
   webkit.observations[0].drawer.left = 319.8;
   webkit.observations[0].drawer.right = 595;
+  bindReportEvidence(transition, webkit, unitRunChallenge);
   assert.equal(webkit.observations[0].overflow, false);
   assert.doesNotThrow(
-    () => validateReadyBaseline(webkit, baselineV3),
+    () => validateReadyBaseline(webkit, baselineV3, { runChallenge: unitRunChallenge }),
     "legitimate engine rounding must be evaluated by semantic predicates, not blind geometry equality",
   );
 });
@@ -1027,6 +1068,7 @@ async function f2Gov07GreenBundle() {
     readJson(f2Gov07FixturePath),
   ]);
   const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
+  const runChallengesByEngine = Object.fromEntries(fixture.engines.map(({ engine }) => [engine, hashBytes(`F2-GOV-07:${engine}:verifier-issued-challenge`)]));
   const reports = fixture.engines.map(({ engine, version, geometry }) => {
     const report = reportForRequiredMatrix(transition, baselineV2);
     report.browser = { engine, version };
@@ -1036,29 +1078,29 @@ async function f2Gov07GreenBundle() {
     const observation = report.observations.find(({ route, viewport }) => route === "index.html" && viewport === "320x568");
     observation.drawer = { left: geometry.drawerLeft, right: geometry.drawerRight, width: geometry.drawerWidth, open: false };
     report.menuResults[0].focusStyle.width = geometry.focusWidth;
-    return report;
+    return bindReportEvidence(transition, report, runChallengesByEngine[engine]);
   });
   const capturesByEngine = Object.fromEntries(fixture.engines.map(({ engine }) => [engine, Object.keys(baselineV3.canonicalMatrix.viewports).flatMap((viewport) => {
     const names = [`home-${engine}-${viewport}-closed.jpg`];
     if (baselineV3.canonicalMatrix.viewports[viewport][0] <= 768) names.push(`home-${engine}-${viewport}-open.jpg`);
     return names.map((name) => ({ name, bytes: 1024 + name.length, sha256: hashBytes(`synthetic:${name}`) }));
   })]));
-  return { runtime, transition, baselineV3, fixture, reports, capturesByEngine, guards: { validateCaptureEvidence, validateEngineReport, validateMultiengineReports, validateBaselineV3 } };
+  return { runtime, transition, baselineV3, fixture, reports, capturesByEngine, runChallengesByEngine, guards: { validateCaptureEvidence, validateEngineReport, validateMultiengineReports, validateBaselineV3 } };
 }
-const cloneF2Gov07Bundle = (value) => ({ ...structuredClone({ runtime: value.runtime, transition: value.transition, baselineV3: value.baselineV3, fixture: value.fixture, reports: value.reports, capturesByEngine: value.capturesByEngine }), guards: value.guards });
+const cloneF2Gov07Bundle = (value) => ({ ...structuredClone({ runtime: value.runtime, transition: value.transition, baselineV3: value.baselineV3, fixture: value.fixture, reports: value.reports, capturesByEngine: value.capturesByEngine, runChallengesByEngine: value.runChallengesByEngine }), guards: value.guards });
 
 test("F2-GOV-07 has twelve explicit positive controls", async (t) => {
   const base = await f2Gov07GreenBundle();
   const byEngine = Object.fromEntries(base.reports.map((report) => [report.browser.engine, report]));
   const cases = [
     ["canonical baseline v3", () => base.guards.validateBaselineV3(base.baselineV3, { runtime: base.runtime, transition: base.transition })],
-    ["chromium conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.chromium, "chromium", { baseline: base.baselineV3, requireGreen: true })],
-    ["firefox conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.firefox, "firefox", { baseline: base.baselineV3, requireGreen: true })],
-    ["webkit conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.webkit, "webkit", { baseline: base.baselineV3, requireGreen: true })],
+    ["chromium conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.chromium, "chromium", { baseline: base.baselineV3, runChallenge: base.runChallengesByEngine.chromium, requireGreen: true })],
+    ["firefox conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.firefox, "firefox", { baseline: base.baselineV3, runChallenge: base.runChallengesByEngine.firefox, requireGreen: true })],
+    ["webkit conclusive report", () => base.guards.validateEngineReport(base.runtime, byEngine.webkit, "webkit", { baseline: base.baselineV3, runChallenge: base.runChallengesByEngine.webkit, requireGreen: true })],
     ["chromium capture set", () => base.guards.validateCaptureEvidence("chromium", base.capturesByEngine.chromium, base.baselineV3)],
     ["firefox capture set", () => base.guards.validateCaptureEvidence("firefox", base.capturesByEngine.firefox, base.baselineV3)],
     ["webkit capture set", () => base.guards.validateCaptureEvidence("webkit", base.capturesByEngine.webkit, base.baselineV3)],
-    ["three-engine aggregate", () => base.guards.validateMultiengineReports(base.runtime, base.reports, { baseline: base.baselineV3, capturesByEngine: base.capturesByEngine })],
+    ["three-engine aggregate", () => base.guards.validateMultiengineReports(base.runtime, base.reports, { baseline: base.baselineV3, capturesByEngine: base.capturesByEngine, runChallengesByEngine: base.runChallengesByEngine })],
     ["84 observations per engine", () => assert.ok(base.reports.every(({ observations }) => observations.length === 84))],
     ["41 canonical menu identities per engine", () => assert.ok(base.reports.every(({ menuResults }) => menuResults.length === 41))],
     ["184 completed actions per engine", () => assert.ok(base.reports.every(({ execution }) => execution.actions.length === 184 && execution.actions.every(({ status }) => status === "COMPLETED")))],
@@ -1070,7 +1112,7 @@ test("F2-GOV-07 has twelve explicit positive controls", async (t) => {
 
 test("F2-GOV-07 validates three conclusive engines without cross-engine geometry equality", async () => {
   const value = await f2Gov07GreenBundle();
-  assert.equal(value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }).conclusion, "CONCLUSIVE");
+  assert.equal(value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine, runChallengesByEngine: value.runChallengesByEngine }).conclusion, "CONCLUSIVE");
   assert.notEqual(value.reports[0].observations[0].drawer.left, value.reports[2].observations[0].drawer.left);
 });
 
@@ -1080,15 +1122,51 @@ test("F2-GOV-07 rejects adversarial producer bypasses", async (t) => {
     const value = cloneF2Gov07Bundle(base);
     value.reports[0].menuResults[0].focusStyle.width = 2.25;
     value.reports[0].menuResults[1].focusStyle.width = 2.5;
+    bindReportEvidence(value.transition, value.reports[0], value.runChallengesByEngine.chromium);
     const first = value.reports[0].menuResults[0];
     const second = value.reports[0].menuResults[1];
-    for (const key of ["focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"]) {
+    for (const key of ["evidenceBinding", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"]) {
       [first[key], second[key]] = [structuredClone(second[key]), structuredClone(first[key])];
     }
     assert.throws(
-      () => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }),
+      () => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }),
       /binding|transplant/i,
     );
+  });
+  for (const [label, mutate] of [
+    ["circular transplant across three identities", (value) => {
+      const entries = value.reports[0].menuResults.slice(0, 3);
+      entries.forEach((entry, index) => { entry.focusStyle.width = 2.25 + index * 0.25; });
+      bindReportEvidence(value.transition, value.reports[0], value.runChallengesByEngine.chromium);
+      const payloads = entries.map(({ evidenceBinding, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }) => structuredClone({ evidenceBinding, focusReached, focusStyle, open, closed, closeButtonClosed, outsideClosed }));
+      entries.forEach((entry, index) => Object.assign(entry, payloads[(index + 1) % payloads.length]));
+    }],
+    ["copied result and binding", (value) => {
+      const source = value.reports[0].menuResults[0];
+      const target = value.reports[0].menuResults[1];
+      for (const key of ["evidenceBinding", "focusReached", "focusStyle", "open", "closed", "closeButtonClosed", "outsideClosed"]) target[key] = structuredClone(source[key]);
+    }],
+    ["producer recalculates an unkeyed digest", (value) => {
+      const entry = value.reports[0].menuResults[0];
+      entry.focusStyle.width = 2.75;
+      entry.evidenceBinding = hashBytes(JSON.stringify(entry));
+    }],
+  ]) await t.test(label, () => {
+    const value = cloneF2Gov07Bundle(base);
+    mutate(value);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }), /binding|transplant/i);
+  });
+  for (const [label, challenge, expected] of [
+    ["verifier challenge absent", undefined, /challenge/i],
+    ["verifier challenge malformed", "attacker-controlled", /challenge/i],
+  ]) await t.test(label, () => {
+    const value = cloneF2Gov07Bundle(base);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: challenge, requireGreen: true }), expected);
+  });
+  await t.test("binding absent", () => {
+    const value = cloneF2Gov07Bundle(base);
+    delete value.reports[0].menuResults[0].evidenceBinding;
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }), /schema|binding/i);
   });
   await t.test("offscreen raw drawer geometry masked by PASS boolean", () => {
     const value = cloneF2Gov07Bundle(base);
@@ -1096,7 +1174,7 @@ test("F2-GOV-07 rejects adversarial producer bypasses", async (t) => {
     observation.drawer = { left: -500, right: -224.8, width: 275.2, open: true };
     value.reports[0].menuResults.find(({ route, viewport }) => route === "index.html" && viewport === "320x568").open.drawerInside = true;
     assert.throws(
-      () => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }),
+      () => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }),
       /drawer.*viewport|raw drawer/i,
     );
   });
@@ -1108,7 +1186,7 @@ test("F2-GOV-07 rejects adversarial producer bypasses", async (t) => {
     const report = developmentReportFrom(transition, baselineV2);
     delete report.conclusion;
     assert.throws(
-      () => base.guards.validateEngineReport(base.runtime, report, "chromium", { baseline: base.baselineV3, allowLegacyDevelopmentConclusion: true, requireGreen: false }),
+      () => base.guards.validateEngineReport(base.runtime, report, "chromium", { baseline: base.baselineV3, runChallenge: unitRunChallenge, requireGreen: false }),
       /conclusion/i,
     );
   });
@@ -1128,7 +1206,7 @@ test("F2-GOV-07 fails closed on conclusion, engine and canonical cardinality reg
   for (const [label, mutate, expected] of engineCases) await t.test(label, () => {
     const value = cloneF2Gov07Bundle(base);
     mutate(value);
-    assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }), expected);
+    assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine, runChallengesByEngine: value.runChallengesByEngine }), expected);
   });
   const reportCases = [
     ["83 observations", (r) => { r.observations.pop(); }, /observation evidence incomplete/i],
@@ -1149,7 +1227,7 @@ test("F2-GOV-07 fails closed on conclusion, engine and canonical cardinality reg
   for (const [label, mutate, expected] of reportCases) await t.test(label, () => {
     const value = cloneF2Gov07Bundle(base);
     mutate(value.reports[0]);
-    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }), expected);
   });
 });
 
@@ -1172,7 +1250,7 @@ test("F2-GOV-07 recalculates semantic predicates from raw evidence", async (t) =
   for (const [label, mutate, expected] of cases) await t.test(label, () => {
     const value = cloneF2Gov07Bundle(base);
     mutate(value.reports[0]);
-    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }), expected);
   });
 });
 
@@ -1188,7 +1266,7 @@ test("F2-GOV-07 rejects implausible geometry and incomplete raw evidence", async
   for (const [label, mutate, expected] of geometryCases) await t.test(label, () => {
     const value = cloneF2Gov07Bundle(base);
     mutate(value.reports[0]);
-    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, runChallenge: value.runChallengesByEngine.chromium, requireGreen: true }), expected);
   });
   for (const [label, mutate, expected] of [
     ["capture absent", (v) => { delete v.capturesByEngine.chromium; }, /capture evidence is absent/i],
@@ -1199,7 +1277,7 @@ test("F2-GOV-07 rejects implausible geometry and incomplete raw evidence", async
   ]) await t.test(label, () => {
     const value = cloneF2Gov07Bundle(base);
     mutate(value);
-    assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }), expected);
+    assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine, runChallengesByEngine: value.runChallengesByEngine }), expected);
   });
 });
 
