@@ -980,6 +980,41 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
   }
 });
 
+test("F2-GOV-07 RED: the current F2-01 baseline declares an explicit conclusive result", async () => {
+  const baseline = await readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url));
+  assert.equal(baseline.conclusion, "CONCLUSIVE", "F2-01 baseline conclusion is absent");
+});
+
+test("F2-GOV-07 RED: equivalent engine geometry is not rejected by blind baseline equality", async () => {
+  const [{ validateReadyBaseline }, transition, baseline] = await Promise.all([
+    import("../../scripts/governance/verify-f2-01-readiness.mjs"),
+    readJson(f201TransitionPath),
+    readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url)),
+  ]);
+  const chromium = reportForRequiredMatrix(transition, baseline);
+  const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
+  chromium.menuResults = chromium.menuResults.map((entry) => ({
+    evidenceId: canonicalMatrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport).evidenceId,
+    ...entry,
+  }));
+  chromium.execution = completeExecution({});
+  chromium.execution.actions = completeActionsFor(transition);
+  const semanticBaseline = structuredClone(chromium);
+  delete semanticBaseline.execution;
+  delete semanticBaseline.browser;
+  for (const entry of semanticBaseline.menuResults) delete entry.evidenceId;
+
+  const webkit = structuredClone(chromium);
+  webkit.browser = { engine: "webkit", version: "26.5" };
+  webkit.observations[0].drawer.left = 319.8;
+  webkit.observations[0].drawer.right = 595;
+  assert.equal(webkit.observations[0].overflow, false);
+  assert.doesNotThrow(
+    () => validateReadyBaseline(webkit, semanticBaseline),
+    "legitimate engine rounding must be evaluated by semantic predicates, not blind geometry equality",
+  );
+});
+
 test("the audited diff cannot mutate live pages or deployment", async () => {
   const contract = await readJson(contractPath);
   const transition = await readJson(f201TransitionPath);
