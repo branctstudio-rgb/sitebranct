@@ -30,7 +30,7 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
-  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "025e7a41f1021abcdff44532c810aa2cacf75cf9", sha256: "9835e75db7680cad92930ec6087eb351a6d1ffda4812dd0ccd15c1c9e26b532d" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "025e7a41f1021abcdff44532c810aa2cacf75cf9", sha256: "3c947df99005341108dc36fc9a8096fc89aac849170e4c19d4acda045a3b7240" }),
   targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results-v3.json", schemaVersion: 3, conclusion: "CONCLUSIVE", gitBlobOid: "1de45e118299aca96f0dad6c3b3853b74169960f", sha256: "29455ce2346b7b269f5201c3104396e4fce53f1e4de1d08976dfa11651a3449e" }),
   previousTargetBaseline: Object.freeze({ status: "SUPERSEDED_IMMUTABLE_V2", path: "fixtures/audit/f2-01-baseline-results.json", schemaVersion: 1, gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
   menuEvidenceMatrix: Object.freeze({

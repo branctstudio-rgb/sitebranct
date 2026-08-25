@@ -46,7 +46,7 @@
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
       "gitBlobOid": "025e7a41f1021abcdff44532c810aa2cacf75cf9",
-      "copiedSha256": "9835e75db7680cad92930ec6087eb351a6d1ffda4812dd0ccd15c1c9e26b532d"
+      "copiedSha256": "3c947df99005341108dc36fc9a8096fc89aac849170e4c19d4acda045a3b7240"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results-v3.json",
