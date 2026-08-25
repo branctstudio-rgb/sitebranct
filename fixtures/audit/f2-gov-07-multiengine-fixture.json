@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "conclusion": "CONCLUSIVE",
+  "source": "SYNTHETIC_GOVERNANCE_FIXTURE_NOT_PRODUCT_EVIDENCE",
+  "engines": [
+    {
+      "engine": "chromium",
+      "version": "151.0.7922.34",
+      "geometry": { "drawerLeft": 320, "drawerRight": 595.2, "drawerWidth": 275.2, "focusWidth": 2 }
+    },
+    {
+      "engine": "firefox",
+      "version": "153.0",
+      "geometry": { "drawerLeft": 320.25, "drawerRight": 595.45, "drawerWidth": 275.2, "focusWidth": 2.25 }
+    },
+    {
+      "engine": "webkit",
+      "version": "26.5",
+      "geometry": { "drawerLeft": 319.8, "drawerRight": 595, "drawerWidth": 275.2, "focusWidth": 2 }
+    }
+  ],
+  "rawEvidence": {
+    "algorithm": "sha256",
+    "authority": "VERIFIER_RECALCULATED_NON_AUTHORITATIVE_INTEGRITY",
+    "captureNamePattern": "home-{engine}-{viewport}-{state}.jpg"
+  }
+}

@@ -6,6 +6,7 @@ import { mkdtemp, readFile, readdir, rm, unlink, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { join, normalize } from "node:path";
 import test from "node:test";
+import { validateReadyBaseline as validateReadyBaselineGuard } from "../../scripts/governance/verify-f2-01-readiness.mjs";
 
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
 const auditPath = new URL("../../docs/audit/phase-1-audit.md", import.meta.url);
@@ -19,6 +20,8 @@ const collectorPath = new URL("./collect-browser-baseline.mjs", import.meta.url)
 const negativeControlPath = new URL("../../fixtures/audit/visual-negative-control.json", import.meta.url);
 const f201TransitionPath = new URL("../../fixtures/audit/f2-01-transition.json", import.meta.url);
 const f201RuntimePath = new URL("../../fixtures/audit/f2-01-ci-runtime.json", import.meta.url);
+const f201BaselineV3Path = new URL("../../fixtures/audit/f2-01-baseline-results-v3.json", import.meta.url);
+const f2Gov07FixturePath = new URL("../../fixtures/audit/f2-gov-07-multiengine-fixture.json", import.meta.url);
 
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
 const hashBytes = (value) => createHash("sha256").update(value).digest("hex");
@@ -28,7 +31,8 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
   responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6", sha256: "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f" }),
-  targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results.json", gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
+  targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results-v3.json", schemaVersion: 3, conclusion: "CONCLUSIVE", gitBlobOid: "525160c6c7b31d3d94e18acb51fcb1802805661f", sha256: "aa7f45b55060fd7785ceb13dac59ba580790b7bf0e9015f69dae237b0cc0b8b5" }),
+  previousTargetBaseline: Object.freeze({ status: "SUPERSEDED_IMMUTABLE_V2", path: "fixtures/audit/f2-01-baseline-results.json", schemaVersion: 1, gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
   menuEvidenceMatrix: Object.freeze({
     path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
     canonicalization: "UTF-8 JSON.stringify([{evidenceId,route,viewport,actionPhases,developmentSemanticStatus,developmentResult,developmentResultSha256}]) with fixed key order",
@@ -382,10 +386,7 @@ function deriveF201State(transition, evidence, options = {}) {
   assert.equal(evidence.liveDiff.complete, true, "live diff incomplete");
   assert.equal(evidence.liveDiff.authoritySha, authoritySha, "live diff head mismatch");
   assert.ok(Array.isArray(evidence.liveDiff.paths) && evidence.liveDiff.paths.length > 0 && evidence.liveDiff.paths.every((path) => /^(?:[^/]+\.html|src\/(?:css|js)\/)/.test(path)), "live diff paths are absent or outside F2-01");
-  const reportWithoutExecution = structuredClone(evidence.report);
-  delete reportWithoutExecution.execution;
-  for (const entry of reportWithoutExecution.menuResults) delete entry.evidenceId;
-  assert.deepEqual(reportWithoutExecution, evidence.targetBaseline, "baseline mismatch with integrated report");
+  validateReadyBaselineGuard(evidence.report, evidence.targetBaseline);
   assert.equal(Object.hasOwn(evidence, "approval"), false, "offline evidence must not contain or simulate Via A approval");
   if (transition.status === "READY_FOR_VIA_A_REVIEW") return transition.status;
   assert.ok(evidence.integration, "real merge evidence absent");
@@ -453,7 +454,8 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
   assert.equal(transition.status, transition.stateMachine.current);
   assert.deepEqual(transition.historicalPhase1, { status: "HISTORICAL_FROZEN", ...immutableF201Pins.historicalPhase1 });
   assert.deepEqual({ path: transition.f201.responsiveTest.path, gitBlobOid: transition.f201.responsiveTest.gitBlobOid, sha256: transition.f201.responsiveTest.copiedSha256 }, immutableF201Pins.responsiveTest);
-  assert.deepEqual({ path: transition.f201.targetBaseline.path, gitBlobOid: transition.f201.targetBaseline.gitBlobOid, sha256: transition.f201.targetBaseline.sha256 }, immutableF201Pins.targetBaseline);
+  assert.deepEqual({ path: transition.f201.targetBaseline.path, schemaVersion: transition.f201.targetBaseline.schemaVersion, conclusion: transition.f201.targetBaseline.conclusion, gitBlobOid: transition.f201.targetBaseline.gitBlobOid, sha256: transition.f201.targetBaseline.sha256 }, immutableF201Pins.targetBaseline);
+  assert.deepEqual(transition.f201.previousTargetBaseline, immutableF201Pins.previousTargetBaseline);
   readAuthoritativeGitBlob(repository, transition.historicalPhase1.authoritySha, immutableF201Pins.historicalPhase1);
   readAuthoritativeGitBlob(repository, authoritySha, immutableF201Pins.responsiveTest);
   readAuthoritativeGitBlob(repository, authoritySha, immutableF201Pins.targetBaseline);
@@ -461,7 +463,7 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
     assert.equal(deriveF201State(transition, {}), "PHASE_1_HISTORICAL");
     return;
   }
-  const baseline = await readJson(new URL(`../../${transition.f201.targetBaseline.path}`, import.meta.url));
+  const baseline = await readJson(new URL(`../../${transition.f201.previousTargetBaseline.path}`, import.meta.url));
   const report = developmentReportFrom(transition, baseline);
   assert.equal(deriveF201State(transition, { report, processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 1 } }), "F2_01_AUTHORIZED_IN_DEVELOPMENT");
 });
@@ -489,14 +491,16 @@ test("F2-01 readiness separates offline eligibility from Via A approval and requ
 });
 
 test("F2-01 runtime and engine evidence fail closed on omissions, drift and adulteration", async (t) => {
-  const [{ validateRuntimeContract, validateEngineReport, validateReadyBaseline }, runtime, transition, packageJson, packageLock] = await Promise.all([
+  const [{ validateRuntimeContract, validateEngineReport, validateReadyBaseline }, runtime, transition, packageJson, packageLock, baselineV3] = await Promise.all([
     import("../../scripts/governance/verify-f2-01-readiness.mjs"),
     readJson(f201RuntimePath),
     readJson(f201TransitionPath),
     readJson(new URL("../../package.json", import.meta.url)),
     readJson(new URL("../../package-lock.json", import.meta.url)),
+    readJson(f201BaselineV3Path),
   ]);
-  const valid = { runtime, transition, packageJson, packageLock, ci: true, ciDigest: runtime.container.indexDigest };
+  const browserRegistry = { browsers: runtime.playwright.engines.map((name) => ({ name, revision: runtime.playwright.browserBuilds[name].revision, browserVersion: runtime.playwright.browserBuilds[name].version })) };
+  const valid = { runtime, transition, packageJson, packageLock, browserRegistry, ci: true, ciDigest: runtime.container.indexDigest };
   assert.doesNotThrow(() => validateRuntimeContract(valid));
   for (const [label, mutate, expected] of [
     ["Firefox absent", (value) => { value.runtime.playwright.engines = value.runtime.playwright.engines.filter((name) => name !== "firefox"); }, /engine set/i],
@@ -513,7 +517,7 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   const baseline = await readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url));
   const report = developmentReportFrom(transition, baseline);
   report.browser = { engine: "firefox", version: runtime.playwright.browserBuilds.firefox.version };
-  assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox"));
+  assert.doesNotThrow(() => validateEngineReport(runtime, report, "firefox", { baseline: baselineV3, requireGreen: false }));
   for (const [label, mutate, expected] of [
     ["engine identity adulterated", (value) => { value.browser.engine = "chromium"; }, /engine evidence/i],
     ["result incomplete", (value) => { value.observations.pop(); }, /observation evidence incomplete/i],
@@ -527,7 +531,7 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   ]) await t.test(label, () => {
     const value = structuredClone(report);
     mutate(value);
-    assert.throws(() => validateEngineReport(runtime, value, "firefox"), expected);
+    assert.throws(() => validateEngineReport(runtime, value, "firefox", { baseline: baselineV3, requireGreen: false }), expected);
   });
   const greenReport = reportForRequiredMatrix(transition, baseline);
   const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
@@ -535,13 +539,10 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   greenReport.menuResults = baseline.menuResults.map((entry) => ({ evidenceId: canonicalMatrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport).evidenceId, ...structuredClone(entry) }));
   greenReport.execution = completeExecution({});
   greenReport.execution.actions = completeActionsFor(transition);
-  const greenBaseline = structuredClone(greenReport);
-  delete greenBaseline.execution;
-  for (const entry of greenBaseline.menuResults) delete entry.evidenceId;
-  assert.doesNotThrow(() => validateReadyBaseline(greenReport, greenBaseline));
+  assert.doesNotThrow(() => validateReadyBaseline(greenReport, baselineV3));
   const webkitSemanticTwin = structuredClone(greenReport);
   webkitSemanticTwin.browser = { engine: "webkit", version: runtime.playwright.browserBuilds.webkit.version };
-  assert.doesNotThrow(() => validateReadyBaseline(webkitSemanticTwin, greenBaseline), "engine metadata must remain outside the shared semantic baseline");
+  assert.doesNotThrow(() => validateReadyBaseline(webkitSemanticTwin, baselineV3), "engine metadata must remain outside the shared semantic baseline");
   for (const [label, mutate] of [
     ["READY observation transplanted", (value) => { value.observations[0] = structuredClone(value.observations[1]); }],
     ["READY menu result adulterated", (value) => { value.menuResults[0].open.drawerInside = false; }],
@@ -550,7 +551,7 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
   ]) await t.test(label, () => {
     const value = structuredClone(greenReport);
     mutate(value);
-    assert.throws(() => validateReadyBaseline(value, greenBaseline), /GREEN target baseline/i);
+    assert.throws(() => validateReadyBaseline(value, baselineV3));
   });
 });
 
@@ -594,6 +595,7 @@ const completeActionsFor = (transition) => readCanonicalMenuEvidenceMatrix(trans
 const reportForRequiredMatrix = (transition, baseline) => {
   const report = structuredClone(baseline);
   report.schemaVersion = 2;
+  report.conclusion = "CONCLUSIVE";
   report.browser = { engine: "chromium", version: "fixture-1.0" };
   report.viewports = structuredClone(transition.f201.matrix.viewports);
   report.observations = transition.f201.matrix.routes.flatMap((route) => Object.keys(transition.f201.matrix.viewports).map((viewport) => {
@@ -800,7 +802,7 @@ test("F2-GOV-06 requires conclusive numeric 1024x768 evidence", async () => {
 });
 
 test("F2-GOV-06 derives readiness without self-approval and integration only from a real merged tree", async (t) => {
-  const [transitionSource, baseline] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url))]);
+  const [transitionSource, baseline, baselineV3] = await Promise.all([readJson(f201TransitionPath), readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url)), readJson(f201BaselineV3Path)]);
   const transition = structuredClone(transitionSource);
   transition.status = "READY_FOR_VIA_A_REVIEW";
   transition.stateMachine.current = "READY_FOR_VIA_A_REVIEW";
@@ -810,7 +812,7 @@ test("F2-GOV-06 derives readiness without self-approval and integration only fro
   const evidence = {
     report: { ...structuredClone(futureBaseline), execution: completeExecution({}) },
     processOutcome: { exited: true, timedOut: false, signal: null, exitCode: 0 },
-    targetBaseline: futureBaseline,
+    targetBaseline: baselineV3,
     authoritySha,
     liveDiff: { complete: true, authoritySha, paths: ["src/css/branct.css"] },
     browsers: { chromium: "VERIFIED", firefox: "VERIFIED", webkit: "VERIFIED" },
@@ -980,16 +982,21 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
   }
 });
 
-test("F2-GOV-07 RED: the current F2-01 baseline declares an explicit conclusive result", async () => {
-  const baseline = await readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url));
-  assert.equal(baseline.conclusion, "CONCLUSIVE", "F2-01 baseline conclusion is absent");
+test("F2-GOV-07 keeps v2 immutable and makes the v3 baseline explicitly conclusive", async () => {
+  const [baselineV2, baselineV3] = await Promise.all([
+    readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url)),
+    readJson(f201BaselineV3Path),
+  ]);
+  assert.equal(baselineV2.conclusion, undefined, "the superseded v2 snapshot must remain byte-compatible");
+  assert.equal(baselineV3.conclusion, "CONCLUSIVE", "F2-01 baseline v3 conclusion is absent");
 });
 
-test("F2-GOV-07 RED: equivalent engine geometry is not rejected by blind baseline equality", async () => {
-  const [{ validateReadyBaseline }, transition, baseline] = await Promise.all([
+test("F2-GOV-07 accepts equivalent engine semantics with independently plausible geometry", async () => {
+  const [{ validateReadyBaseline }, transition, baseline, baselineV3] = await Promise.all([
     import("../../scripts/governance/verify-f2-01-readiness.mjs"),
     readJson(f201TransitionPath),
     readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url)),
+    readJson(f201BaselineV3Path),
   ]);
   const chromium = reportForRequiredMatrix(transition, baseline);
   const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
@@ -999,20 +1006,157 @@ test("F2-GOV-07 RED: equivalent engine geometry is not rejected by blind baselin
   }));
   chromium.execution = completeExecution({});
   chromium.execution.actions = completeActionsFor(transition);
-  const semanticBaseline = structuredClone(chromium);
-  delete semanticBaseline.execution;
-  delete semanticBaseline.browser;
-  for (const entry of semanticBaseline.menuResults) delete entry.evidenceId;
-
   const webkit = structuredClone(chromium);
   webkit.browser = { engine: "webkit", version: "26.5" };
   webkit.observations[0].drawer.left = 319.8;
   webkit.observations[0].drawer.right = 595;
   assert.equal(webkit.observations[0].overflow, false);
   assert.doesNotThrow(
-    () => validateReadyBaseline(webkit, semanticBaseline),
+    () => validateReadyBaseline(webkit, baselineV3),
     "legitimate engine rounding must be evaluated by semantic predicates, not blind geometry equality",
   );
+});
+
+async function f2Gov07GreenBundle() {
+  const [{ validateCaptureEvidence, validateEngineReport, validateMultiengineReports, validateBaselineV3 }, runtime, transition, baselineV2, baselineV3, fixture] = await Promise.all([
+    import("../../scripts/governance/verify-f2-01-readiness.mjs"),
+    readJson(f201RuntimePath),
+    readJson(f201TransitionPath),
+    readJson(new URL("../../fixtures/audit/f2-01-baseline-results.json", import.meta.url)),
+    readJson(f201BaselineV3Path),
+    readJson(f2Gov07FixturePath),
+  ]);
+  const canonicalMatrix = readCanonicalMenuEvidenceMatrix(transition);
+  const reports = fixture.engines.map(({ engine, version, geometry }) => {
+    const report = reportForRequiredMatrix(transition, baselineV2);
+    report.browser = { engine, version };
+    report.menuResults = report.menuResults.map((entry) => ({ evidenceId: canonicalMatrix.entries.find(({ route, viewport }) => route === entry.route && viewport === entry.viewport).evidenceId, ...entry }));
+    report.execution = completeExecution({});
+    report.execution.actions = completeActionsFor(transition);
+    const observation = report.observations.find(({ route, viewport }) => route === "index.html" && viewport === "320x568");
+    observation.drawer = { left: geometry.drawerLeft, right: geometry.drawerRight, width: geometry.drawerWidth, open: false };
+    report.menuResults[0].focusStyle.width = geometry.focusWidth;
+    return report;
+  });
+  const capturesByEngine = Object.fromEntries(fixture.engines.map(({ engine }) => [engine, Object.keys(baselineV3.canonicalMatrix.viewports).flatMap((viewport) => {
+    const names = [`home-${engine}-${viewport}-closed.jpg`];
+    if (baselineV3.canonicalMatrix.viewports[viewport][0] <= 768) names.push(`home-${engine}-${viewport}-open.jpg`);
+    return names.map((name) => ({ name, bytes: 1024 + name.length, sha256: hashBytes(`synthetic:${name}`) }));
+  })]));
+  return { runtime, transition, baselineV3, fixture, reports, capturesByEngine, guards: { validateCaptureEvidence, validateEngineReport, validateMultiengineReports, validateBaselineV3 } };
+}
+
+test("F2-GOV-07 validates three conclusive engines without cross-engine geometry equality", async () => {
+  const value = await f2Gov07GreenBundle();
+  assert.equal(value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }).conclusion, "CONCLUSIVE");
+  assert.notEqual(value.reports[0].observations[0].drawer.left, value.reports[2].observations[0].drawer.left);
+});
+
+test("F2-GOV-07 fails closed on conclusion, engine and canonical cardinality regressions", async (t) => {
+  const base = await f2Gov07GreenBundle();
+  const engineCases = [
+    ["conclusion absent", (v) => { delete v.reports[0].conclusion; }, /conclusion/i],
+    ["conclusion inconclusive", (v) => { v.reports[0].conclusion = "INCONCLUSIVE"; }, /conclusion/i],
+    ["conclusion partial", (v) => { v.reports[0].conclusion = "PARTIAL"; }, /conclusion/i],
+    ["conclusion unknown", (v) => { v.reports[0].conclusion = "UNKNOWN"; }, /conclusion/i],
+    ["engine absent", (v) => { v.reports.pop(); }, /multiengine report cardinality/i],
+    ["engine duplicated", (v) => { v.reports[2] = structuredClone(v.reports[0]); }, /multiengine set/i],
+    ["engine unexpected", (v) => { v.reports[2].browser.engine = "gecko"; }, /multiengine set/i],
+  ];
+  for (const [label, mutate, expected] of engineCases) await t.test(label, () => {
+    const value = structuredClone(base);
+    mutate(value);
+    assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }), expected);
+  });
+  const reportCases = [
+    ["83 observations", (r) => { r.observations.pop(); }, /observation evidence incomplete/i],
+    ["observation duplicated", (r) => { r.observations[1] = structuredClone(r.observations[0]); }, /observation bijection/i],
+    ["observation unknown", (r) => { r.observations[0].route = "forged.html"; }, /observation bijection/i],
+    ["40 menus", (r) => { r.menuResults.pop(); }, /menu evidence incomplete/i],
+    ["menu duplicated", (r) => { r.menuResults[1] = structuredClone(r.menuResults[0]); }, /menu tuple|menu evidence bijection/i],
+    ["menu route swapped", (r) => { r.menuResults[0].route = r.menuResults[1].route; }, /menu identity|menu evidence bijection/i],
+    ["menu viewport swapped", (r) => { r.menuResults[0].viewport = "360x800"; }, /menu identity|menu evidence bijection/i],
+    ["183 actions", (r) => { r.execution.actions.pop(); }, /action evidence incomplete/i],
+    ["action duplicated", (r) => { r.execution.actions[1] = structuredClone(r.execution.actions[0]); }, /action tuple/i],
+    ["action reordered", (r) => { [r.execution.actions[0], r.execution.actions[1]] = [r.execution.actions[1], r.execution.actions[0]]; }, /action tuple/i],
+    ["action copied", (r) => { r.execution.actions[8] = structuredClone(r.execution.actions[0]); }, /action tuple/i],
+    ["route forged", (r) => { r.menuResults[0].route = "forged.html"; }, /menu tuple/i],
+    ["viewport forged", (r) => { r.menuResults[0].viewport = "999x999"; }, /menu tuple/i],
+    ["identity forged", (r) => { r.menuResults[0].evidenceId = "menu-forged"; }, /menu identity/i],
+  ];
+  for (const [label, mutate, expected] of reportCases) await t.test(label, () => {
+    const value = structuredClone(base);
+    mutate(value.reports[0]);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
+  });
+});
+
+test("F2-GOV-07 recalculates semantic predicates from raw evidence", async (t) => {
+  const base = await f2Gov07GreenBundle();
+  const cases = [
+    ["overflow raw width", (r) => { r.observations[0].scrollWidth = r.observations[0].clientWidth + 1; r.observations[0].overflow = true; }, /horizontal overflow/i],
+    ["forged overflow PASS", (r) => { r.observations[0].scrollWidth = r.observations[0].clientWidth + 1; r.observations[0].overflow = false; }, /reported overflow/i],
+    ["target below 44", (r) => { r.observations[0].smallTargets = [{ selector: ".target", width: 43.9, height: 44 }]; }, /target below 44x44/i],
+    ["reduced motion fail", (r) => { r.reducedMotion.durationsMs[0] = 2; }, /reduced-motion semantic/i],
+    ["outside click fail", (r) => { r.menuResults[0].outsideClosed = false; }, /menu semantic predicate/i],
+    ["Escape fail", (r) => { r.menuResults[0].closed.closed = false; }, /menu semantic predicate/i],
+    ["focus return fail", (r) => { r.menuResults[0].closed.focusReturned = false; }, /menu semantic predicate/i],
+    ["background inert fail", (r) => { r.menuResults[0].open.backgroundInert = false; }, /menu semantic predicate/i],
+    ["scroll lock fail", (r) => { r.menuResults[0].open.bodyLocked = false; }, /menu semantic predicate/i],
+    ["timeout", (r) => { r.execution.complete = false; r.execution.infrastructureErrors = ["TIMEOUT"]; }, /execution incomplete|infrastructure/i],
+    ["partial with correct counts", (r) => { r.execution.complete = false; }, /execution incomplete/i],
+    ["PASS field adulterated", (r) => { r.observations[0].scrollWidth += 1; r.observations[0].overflow = false; r.execution.semanticTests[0].status = "PASS"; }, /reported overflow/i],
+  ];
+  for (const [label, mutate, expected] of cases) await t.test(label, () => {
+    const value = structuredClone(base);
+    mutate(value.reports[0]);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
+  });
+});
+
+test("F2-GOV-07 rejects implausible geometry and incomplete raw evidence", async (t) => {
+  const base = await f2Gov07GreenBundle();
+  const geometryCases = [
+    ["NaN geometry", (r) => { r.observations[0].drawer.left = Number.NaN; }, /finite number/i],
+    ["infinite geometry", (r) => { r.observations[0].drawer.left = Number.POSITIVE_INFINITY; }, /finite number/i],
+    ["string geometry", (r) => { r.observations[0].drawer.left = "320"; }, /finite number/i],
+    ["negative size", (r) => { r.observations[0].drawer.width = -1; }, /non-negative/i],
+    ["inconsistent box", (r) => { r.observations[0].drawer.right += 5; }, /bounding box/i],
+  ];
+  for (const [label, mutate, expected] of geometryCases) await t.test(label, () => {
+    const value = structuredClone(base);
+    mutate(value.reports[0]);
+    assert.throws(() => value.guards.validateEngineReport(value.runtime, value.reports[0], "chromium", { baseline: value.baselineV3, requireGreen: true }), expected);
+  });
+  for (const [label, mutate, expected] of [
+    ["capture absent", (v) => { delete v.capturesByEngine.chromium; }, /capture evidence is absent/i],
+    ["capture removed", (v) => { v.capturesByEngine.chromium.pop(); }, /capture evidence set/i],
+    ["capture duplicated", (v) => { v.capturesByEngine.chromium[1] = structuredClone(v.capturesByEngine.chromium[0]); }, /capture evidence set/i],
+    ["capture empty", (v) => { v.capturesByEngine.chromium[0].bytes = 0; }, /capture is empty/i],
+    ["capture digest malformed", (v) => { v.capturesByEngine.chromium[0].sha256 = "self"; }, /capture digest/i],
+  ]) await t.test(label, () => {
+    const value = structuredClone(base);
+    mutate(value);
+    assert.throws(() => value.guards.validateMultiengineReports(value.runtime, value.reports, { baseline: value.baselineV3, capturesByEngine: value.capturesByEngine }), expected);
+  });
+});
+
+test("F2-GOV-07 baseline v3 is canonical, pinned and downgrade-resistant", async (t) => {
+  const base = await f2Gov07GreenBundle();
+  assert.doesNotThrow(() => base.guards.validateBaselineV3(base.baselineV3, { runtime: base.runtime, transition: base.transition }));
+  for (const [label, mutate, expected] of [
+    ["baseline conclusion absent", (v) => { delete v.conclusion; }, /schema|conclusion/i],
+    ["baseline inconclusive", (v) => { v.conclusion = "INCONCLUSIVE"; }, /conclusion/i],
+    ["baseline old schema", (v) => { v.schemaVersion = 1; }, /downgrade|schema/i],
+    ["baseline matrix producer-controlled", (v) => { v.canonicalMatrix.routes[0] = "forged.html"; }, /route matrix/i],
+    ["baseline digest recomputed by attacker", (v) => { v.canonicalMatrix.routes[0] = "forged.html"; const payload = structuredClone(v); delete payload.canonicalPayloadSha256; v.canonicalPayloadSha256 = hashBytes(JSON.stringify(payload)); }, /route matrix/i],
+    ["baseline payload digest altered", (v) => { v.canonicalPayloadSha256 = "0".repeat(64); }, /payload digest/i],
+    ["baseline engine removed", (v) => { v.engines.pop(); }, /engine authority/i],
+  ]) await t.test(label, () => {
+    const value = structuredClone(base.baselineV3);
+    mutate(value);
+    assert.throws(() => base.guards.validateBaselineV3(value, { runtime: base.runtime, transition: base.transition }), expected);
+  });
 });
 
 test("the audited diff cannot mutate live pages or deployment", async () => {
