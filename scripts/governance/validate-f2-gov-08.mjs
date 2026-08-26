@@ -112,6 +112,85 @@ function treeEntries(repository, sha) {
   });
 }
 
+function gitObjectType(repository, oid) {
+  if (/^0+$/.test(oid)) return "absent";
+  return git(repository, ["cat-file", "-t", oid]).trim();
+}
+
+function parseRawDiff(repository, baseSha, headSha, renameDetection) {
+  const args = ["diff", "--raw", "-z", "--abbrev=40"];
+  if (renameDetection) args.push("--find-renames=1%", "--find-copies=1%", "--find-copies-harder");
+  else args.push("--no-renames");
+  args.push(baseSha, headSha, "--");
+  const fields = git(repository, args, { buffer: true }).toString("utf8").split("\0");
+  if (fields.at(-1) === "") fields.pop();
+  const changes = [];
+  for (let index = 0; index < fields.length;) {
+    const header = fields[index++];
+    const match = header.match(/^:(\d{6}) (\d{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([A-Z])(\d{0,3})$/);
+    assert.ok(match, `structural Git diff header is malformed: ${JSON.stringify(header)}`);
+    const [, oldMode, newMode, oldOid, newOid, status, score] = match;
+    const firstPath = fields[index++];
+    assert.notEqual(firstPath, undefined, "structural Git diff path is truncated");
+    let oldPath = status === "A" ? null : firstPath;
+    let newPath = status === "D" ? null : firstPath;
+    if (status === "R" || status === "C") {
+      oldPath = firstPath;
+      newPath = fields[index++];
+      assert.notEqual(newPath, undefined, "structural Git diff rename/copy destination is truncated");
+    }
+    if (oldPath !== null) safeRelativePath(oldPath, "structural Git old path");
+    if (newPath !== null) safeRelativePath(newPath, "structural Git new path");
+    changes.push({
+      status,
+      score: score === "" ? null : Number(score),
+      oldPath,
+      newPath,
+      oldMode,
+      newMode,
+      oldType: gitObjectType(repository, oldOid),
+      newType: gitObjectType(repository, newOid),
+      oldOid,
+      newOid,
+    });
+  }
+  return changes;
+}
+
+function protectedAuthorityEntries(authority) {
+  return new Map([
+    [CANONICAL_AUTHORITY_PATHS.contract, authority.contractBlob],
+    [CANONICAL_AUTHORITY_PATHS.manifest, authority.manifestBlob],
+    ...[...authority.files.values()].map((file) => [file.pin.path, file]),
+  ]);
+}
+
+function validateHeadStructuralIntegrity(repository, baseSha, headSha, authority) {
+  const protectedEntries = protectedAuthorityEntries(authority);
+  for (const [path, baseEntry] of protectedEntries) {
+    const label = Object.entries(CANONICAL_AUTHORITY_PATHS).find(([, canonicalPath]) => canonicalPath === path)?.[0] ?? path;
+    const headEntry = treeEntry(repository, headSha, path, `canonical ${label} at head`);
+    assert.equal(headEntry.mode, "100644", `canonical ${label} at head has unexpected Git mode`);
+    assert.equal(headEntry.type, "blob", `canonical ${label} at head has unexpected Git type`);
+    assert.equal(headEntry.oid, baseEntry.oid, `canonical ${label} at head changed, moved or was replaced`);
+  }
+
+  const noRenameChanges = parseRawDiff(repository, baseSha, headSha, false);
+  const detectedChanges = parseRawDiff(repository, baseSha, headSha, true);
+  const protectedOids = new Set([...protectedEntries.values()].map(({ oid }) => oid));
+  for (const change of [...noRenameChanges, ...detectedChanges]) {
+    for (const path of [change.oldPath, change.newPath].filter((value) => value !== null)) {
+      assert.ok(allowedCandidatePath(path, authority.contract), `head changed a non-live or protected authority path: ${path}`);
+    }
+    assert.equal(change.oldMode === "000000" ? change.oldType : gitObjectType(repository, change.oldOid), change.oldType, "structural Git old type is divergent");
+    assert.equal(change.newMode === "000000" ? change.newType : gitObjectType(repository, change.newOid), change.newType, "structural Git new type is divergent");
+    if (change.newPath && protectedOids.has(change.newOid)) {
+      assert.fail(`protected authority blob was transplanted to an allowed path: ${change.newPath}`);
+    }
+  }
+  return { noRenameChanges, detectedChanges };
+}
+
 function validateContract(contract) {
   exactKeys(contract, ["schemaVersion", "status", "repository", "canonicalAuthority", "trustedEvent", "candidate", "measurement", "environment", "limitations"], "F2-GOV-08 contract");
   assert.equal(contract.schemaVersion, 2, "F2-GOV-08 contract schema is divergent");
@@ -248,11 +327,7 @@ export function runBaseOnlyGitSimulation(input) {
   try { git(repository, ["merge-base", "--is-ancestor", baseSha, headSha]); }
   catch { assert.fail("trusted operational base is not an ancestor of head"); }
 
-  const changed = git(repository, ["diff", "--name-only", "-z", baseSha, headSha]).split("\0").filter(Boolean);
-  for (const path of changed) {
-    safeRelativePath(path, "changed path");
-    assert.ok(allowedCandidatePath(path, authority.contract), `head changed a non-live or protected authority path: ${path}`);
-  }
+  validateHeadStructuralIntegrity(repository, baseSha, headSha, authority);
 
   const trustedRoot = mkdtempSync(join(tmpdir(), "branct-f2-gov-08-trusted-"));
   const authorityRoot = join(trustedRoot, "authority");

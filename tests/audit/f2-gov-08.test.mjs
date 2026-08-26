@@ -59,6 +59,14 @@ async function createRepository() {
 
 const run = (fixture, extra = {}) => runBaseOnlyGitSimulation({ repository: fixture.repository, eventPath: fixture.eventPath, ...extra });
 
+async function publishFixtureHead(fixture, message) {
+  fixture.git("commit", "--quiet", "-m", message);
+  fixture.headSha = fixture.git("rev-parse", "HEAD");
+  fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+  fixture.event.pull_request.head.sha = fixture.headSha;
+  await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+}
+
 test("F2-GOV-08 legitimate path executes the exact base consumer and produces complete evidence", async () => {
   const fixture = await createRepository();
   try {
@@ -97,7 +105,7 @@ test("F2-GOV-08 rejects joint contract and manifest replacement in the producer 
     fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
     fixture.event.pull_request.head.sha = fixture.headSha;
     await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
-    assert.throws(() => run(fixture), /head changed a non-live or protected authority path/i);
+    assert.throws(() => run(fixture), /head changed a non-live or protected authority path|canonical .* at head changed/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
@@ -116,7 +124,7 @@ for (const [label, path, content] of [
     fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
     fixture.event.pull_request.head.sha = fixture.headSha;
     await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
-    assert.throws(() => run(fixture), /head changed a non-live or protected authority path/i);
+    assert.throws(() => run(fixture), /head changed a non-live or protected authority path|canonical .* at head changed/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
@@ -243,6 +251,86 @@ test("F2-GOV-08 actual materialization guard rejects TOCTOU before execution", a
     await writeFile(target, "process.exit(0);\n");
     assert.throws(() => verifyMaterializedAuthoritySnapshot(files, materialized), /TOCTOU|size changed after validation/i);
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+for (const [label, mutate] of [
+  ["full-similarity rename to an allowed root HTML path", async (fixture) => {
+    fixture.git("mv", CANONICAL_AUTHORITY_PATHS.consumer, "inert.html");
+  }],
+  ["partial-similarity rename to an allowed root HTML path", async (fixture) => {
+    fixture.git("mv", CANONICAL_AUTHORITY_PATHS.consumer, "inert.html");
+    await write(fixture.repository, "inert.html", `${canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8")}\n// partial rename\n`);
+    fixture.git("add", "inert.html");
+  }],
+  ["copy followed by removal", async (fixture) => {
+    await write(fixture.repository, "inert.html", canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer));
+    fixture.git("rm", "--quiet", CANONICAL_AUTHORITY_PATHS.consumer);
+    fixture.git("add", "inert.html");
+  }],
+  ["case-only path replacement", async (fixture) => {
+    const changedCase = "scripts/governance/F2-GOV-08-consumer.mjs";
+    fixture.git("mv", CANONICAL_AUTHORITY_PATHS.consumer, "temporary-authority-name");
+    fixture.git("mv", "temporary-authority-name", changedCase);
+  }],
+  ["rename to a path containing spaces", async (fixture) => {
+    fixture.git("mv", CANONICAL_AUTHORITY_PATHS.consumer, "inert authority.html");
+  }],
+  ["rename to a path containing unusual Unicode", async (fixture) => {
+    fixture.git("mv", CANONICAL_AUTHORITY_PATHS.consumer, "inert-autoridade-ç.html");
+  }],
+]) test(`F2-GOV-08 rejects protected consumer ${label}`, async () => {
+  const fixture = await createRepository();
+  try {
+    await mutate(fixture);
+    await publishFixtureHead(fixture, `protected consumer ${label}`);
+    assert.throws(() => run(fixture), /protected authority|canonical consumer.*head|structural Git diff/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects an authority blob transplanted to a Git path containing a tab", async () => {
+  const fixture = await createRepository();
+  try {
+    const oid = fixture.git("rev-parse", `HEAD:${CANONICAL_AUTHORITY_PATHS.consumer}`);
+    const existing = execFileSync("git", ["ls-tree", "-z", "HEAD^{tree}"], { cwd: fixture.repository, encoding: null }).toString("utf8").split("\0").filter(Boolean);
+    existing.push(`100644 blob ${oid}\tinert\tauthority.html`);
+    existing.sort((left, right) => left.slice(left.indexOf("\t") + 1).localeCompare(right.slice(right.indexOf("\t") + 1), "en"));
+    const tree = execFileSync("git", ["mktree", "-z"], { cwd: fixture.repository, input: Buffer.from(`${existing.join("\0")}\0`), encoding: "utf8" }).trim();
+    const commit = execFileSync("git", ["commit-tree", tree, "-p", fixture.headSha], { cwd: fixture.repository, input: "tab path authority transplant\n", encoding: "utf8" }).trim();
+    fixture.git("update-ref", "refs/heads/candidate", commit);
+    fixture.git("update-ref", "refs/remotes/origin/candidate", commit);
+    fixture.headSha = commit;
+    fixture.event.pull_request.head.sha = commit;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /protected authority blob was transplanted|protected authority/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+for (const [role, path] of [
+  ["contract", CANONICAL_AUTHORITY_PATHS.contract],
+  ["pins", CANONICAL_AUTHORITY_PATHS.manifest],
+  ["matrix", CANONICAL_AUTHORITY_PATHS.matrix],
+  ["expectations", CANONICAL_AUTHORITY_PATHS.expectations],
+]) test(`F2-GOV-08 rejects rename of canonical ${role} authority`, async () => {
+  const fixture = await createRepository();
+  try {
+    fixture.git("mv", path, `${role}-authority.html`);
+    await publishFixtureHead(fixture, `rename canonical ${role}`);
+    const canonicalLabel = role === "pins" ? "manifest" : role;
+    assert.throws(() => run(fixture), new RegExp(`protected authority|canonical ${canonicalLabel}.*head|structural Git diff`, "i"));
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+for (const [label, mode, oidFactory] of [
+  ["symlink", "120000", (fixture) => execFileSync("git", ["hash-object", "-w", "--stdin"], { cwd: fixture.repository, input: "inert.html", encoding: "utf8" }).trim()],
+  ["gitlink", "160000", (fixture) => fixture.baseSha],
+]) test(`F2-GOV-08 rejects consumer replaced by ${label} in the head tree`, async () => {
+  const fixture = await createRepository();
+  try {
+    const oid = oidFactory(fixture);
+    fixture.git("update-index", "--add", "--cacheinfo", `${mode},${oid},${CANONICAL_AUTHORITY_PATHS.consumer}`);
+    await publishFixtureHead(fixture, `replace consumer with ${label}`);
+    assert.throws(() => run(fixture), /canonical consumer.*head|protected authority|unexpected Git (mode|type)/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
 for (const [label, path, content, expected] of [
