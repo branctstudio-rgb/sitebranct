@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { join, normalize } from "node:path";
 import test from "node:test";
 
+import "./f2-gov-08.test.mjs";
+
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
 const auditPath = new URL("../../docs/audit/phase-1-audit.md", import.meta.url);
 const roadmapPath = new URL("../../docs/audit/target-architecture-roadmap.md", import.meta.url);
