@@ -24,6 +24,34 @@ async function write(repository, path, bytes) {
   await writeFile(target, bytes);
 }
 
+function splitNulBuffers(bytes) {
+  const fields = [];
+  for (let start = 0; start < bytes.length;) {
+    const end = bytes.indexOf(0, start);
+    assert.notEqual(end, -1, "binary Git fixture is not NUL terminated");
+    if (end > start) fields.push(bytes.subarray(start, end));
+    start = end + 1;
+  }
+  return fields;
+}
+
+async function publishBinaryRootEntries(fixture, entries, message) {
+  const records = splitNulBuffers(execFileSync("git", ["ls-tree", "-z", "HEAD^{tree}"], { cwd: fixture.repository, encoding: null }));
+  for (const { pathBytes, content = html("binary path") } of entries) {
+    const oid = execFileSync("git", ["hash-object", "-w", "--stdin"], { cwd: fixture.repository, input: Buffer.from(content), encoding: "utf8" }).trim();
+    records.push(Buffer.concat([Buffer.from(`100644 blob ${oid}\t`, "ascii"), pathBytes]));
+  }
+  records.sort((left, right) => Buffer.compare(left.subarray(left.indexOf(9) + 1), right.subarray(right.indexOf(9) + 1)));
+  const treeInput = Buffer.concat(records.flatMap((record) => [record, Buffer.from([0])]));
+  const tree = execFileSync("git", ["mktree", "-z"], { cwd: fixture.repository, input: treeInput, encoding: "utf8" }).trim();
+  const commit = execFileSync("git", ["commit-tree", tree, "-p", fixture.headSha], { cwd: fixture.repository, input: `${message}\n`, encoding: "utf8" }).trim();
+  fixture.git("update-ref", "refs/heads/candidate", commit);
+  fixture.git("update-ref", "refs/remotes/origin/candidate", commit);
+  fixture.headSha = commit;
+  fixture.event.pull_request.head.sha = commit;
+  await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+}
+
 async function createRepository() {
   const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-f1-"));
   const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -302,6 +330,57 @@ test("F2-GOV-08 rejects an authority blob transplanted to a Git path containing 
     fixture.event.pull_request.head.sha = commit;
     await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
     assert.throws(() => run(fixture), /protected authority blob was transplanted|protected authority/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+for (const [label, invalidBytes] of [
+  ["isolated invalid byte", [0xff]],
+  ["truncated sequence", [0xe2, 0x82]],
+  ["continuation byte without a starter", [0x80]],
+  ["overlong encoding", [0xc0, 0xaf]],
+  ["encoded surrogate", [0xed, 0xa0, 0x80]],
+]) test(`F2-GOV-08 rejects ${label} in a Git path before policy classification`, async () => {
+  const fixture = await createRepository();
+  try {
+    const pathBytes = Buffer.concat([Buffer.from("inert-", "ascii"), Buffer.from(invalidBytes), Buffer.from(".html", "ascii")]);
+    await publishBinaryRootEntries(fixture, [{ pathBytes }], `invalid UTF-8: ${label}`);
+    assert.throws(() => run(fixture), /Git path is not canonical UTF-8|invalid UTF-8/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects distinct invalid byte paths instead of collapsing both to replacement characters", async () => {
+  const fixture = await createRepository();
+  try {
+    await publishBinaryRootEntries(fixture, [
+      { pathBytes: Buffer.concat([Buffer.from("inert-", "ascii"), Buffer.from([0xff]), Buffer.from(".html", "ascii")]) },
+      { pathBytes: Buffer.concat([Buffer.from("inert-", "ascii"), Buffer.from([0xfe]), Buffer.from(".html", "ascii")]) },
+    ], "invalid UTF-8 collision");
+    assert.throws(() => run(fixture), /Git path is not canonical UTF-8|invalid UTF-8/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 accepts a valid NFC UTF-8 live path without weakening the allowlist", async () => {
+  const fixture = await createRepository();
+  try {
+    await publishBinaryRootEntries(fixture, [{ pathBytes: Buffer.from("página.html", "utf8") }], "valid NFC UTF-8 path");
+    assert.equal(run(fixture).decision, "PASS");
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects a canonically equivalent decomposed Unicode live path", async () => {
+  const fixture = await createRepository();
+  try {
+    await publishBinaryRootEntries(fixture, [{ pathBytes: Buffer.from("pa\u0301gina.html", "utf8") }], "decomposed Unicode path");
+    assert.throws(() => run(fixture), /Git path is not Unicode NFC|normalization/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects a byte-different decomposed representation of a protected-looking path", async () => {
+  const fixture = await createRepository();
+  try {
+    const pathBytes = Buffer.from("scripts-governance-f2-gov-08-consume\u0072\u0301.mjs.html", "utf8");
+    await publishBinaryRootEntries(fixture, [{ pathBytes }], "protected path normalization ambiguity");
+    assert.throws(() => run(fixture), /Git path is not Unicode NFC|normalization/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 

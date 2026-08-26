@@ -27,6 +27,38 @@ const exactKeys = (value, keys, label) => {
 };
 const validSha = (value, label) => assert.match(value ?? "", /^[0-9a-f]{40}$/, `${label} SHA is malformed`);
 
+function splitNulBuffers(bytes, label) {
+  assert.ok(Buffer.isBuffer(bytes), `${label} is not binary Git output`);
+  if (bytes.length === 0) return [];
+  assert.equal(bytes.at(-1), 0, `${label} is not NUL terminated`);
+  const fields = [];
+  for (let start = 0; start < bytes.length - 1;) {
+    const end = bytes.indexOf(0, start);
+    assert.notEqual(end, -1, `${label} contains a truncated NUL field`);
+    assert.notEqual(end, start, `${label} contains an empty field`);
+    fields.push(bytes.subarray(start, end));
+    start = end + 1;
+  }
+  return fields;
+}
+
+function decodeAscii(bytes, label) {
+  assert.ok([...bytes].every((byte) => byte <= 0x7f), `${label} is not ASCII`);
+  return bytes.toString("ascii");
+}
+
+function decodeGitPath(pathBytes, label = "Git path") {
+  assert.ok(Buffer.isBuffer(pathBytes), `${label} is not a byte sequence`);
+  let path;
+  try { path = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(pathBytes); }
+  catch { assert.fail(`${label} is not canonical UTF-8`); }
+  assert.equal(Buffer.from(path, "utf8").equals(pathBytes), true, `${label} UTF-8 round-trip is divergent`);
+  assert.equal(path.includes("\uFFFD"), false, `${label} contains a forbidden replacement character`);
+  assert.equal(path.normalize("NFC"), path, `${label} is not Unicode NFC`);
+  safeRelativePath(path, label);
+  return path;
+}
+
 function safeRelativePath(value, label = "path") {
   assert.equal(typeof value, "string", `${label} is not a string`);
   assert.ok(value.length > 0 && !value.includes("\0") && !value.includes("\\"), `unsafe ${label}: ${value}`);
@@ -56,13 +88,17 @@ function resolveRef(repository, ref, expected, label) {
 
 function treeEntry(repository, sha, path, label) {
   safeRelativePath(path, label);
-  const output = git(repository, ["ls-tree", "-z", sha, "--", path]);
-  const records = output.split("\0").filter(Boolean);
+  const records = splitNulBuffers(git(repository, ["ls-tree", "-z", sha, "--", path], { buffer: true }), `${label} Git tree output`);
   assert.equal(records.length, 1, `${label} Git entry is absent or ambiguous at exact base SHA: ${path}`);
-  const match = records[0].match(/^(\d{6}) (\w+) ([0-9a-f]+)\t(.+)$/s);
+  const separator = records[0].indexOf(9);
+  assert.ok(separator > 0, `${label} Git entry has no binary path delimiter`);
+  const match = decodeAscii(records[0].subarray(0, separator), `${label} Git entry header`).match(/^(\d{6}) (\w+) ([0-9a-f]+)$/);
   assert.ok(match, `${label} Git entry is malformed: ${path}`);
-  assert.equal(match[4], path, `${label} Git path is redirected`);
-  return { mode: match[1], type: match[2], oid: match[3], path: match[4] };
+  const pathBytes = records[0].subarray(separator + 1);
+  const decodedPath = decodeGitPath(pathBytes, `${label} Git path`);
+  assert.equal(pathBytes.equals(Buffer.from(path, "ascii")), true, `${label} canonical path bytes are redirected`);
+  assert.equal(decodedPath, path, `${label} Git path is redirected`);
+  return { mode: match[1], type: match[2], oid: match[3], path: decodedPath, pathBytes };
 }
 
 function readBaseBlob(repository, baseSha, path, label) {
@@ -105,10 +141,14 @@ function allowedCandidatePath(path, contract) {
 }
 
 function treeEntries(repository, sha) {
-  return git(repository, ["ls-tree", "-rz", "--full-tree", sha], { buffer: true }).toString("utf8").split("\0").filter(Boolean).map((record) => {
-    const match = record.match(/^(\d{6}) (\w+) ([0-9a-f]+)\t(.+)$/s);
-    assert.ok(match, `Git tree record is malformed: ${record}`);
-    return { mode: match[1], type: match[2], oid: match[3], path: match[4] };
+  return splitNulBuffers(git(repository, ["ls-tree", "-rz", "--full-tree", sha], { buffer: true }), "recursive Git tree output").map((record) => {
+    const separator = record.indexOf(9);
+    assert.ok(separator > 0, "Git tree record has no binary path delimiter");
+    const match = decodeAscii(record.subarray(0, separator), "Git tree record header").match(/^(\d{6}) (\w+) ([0-9a-f]+)$/);
+    assert.ok(match, "Git tree record is malformed");
+    const pathBytes = record.subarray(separator + 1);
+    const path = decodeGitPath(pathBytes, "recursive Git path");
+    return { mode: match[1], type: match[2], oid: match[3], path, pathBytes };
   });
 }
 
@@ -122,30 +162,34 @@ function parseRawDiff(repository, baseSha, headSha, renameDetection) {
   if (renameDetection) args.push("--find-renames=1%", "--find-copies=1%", "--find-copies-harder");
   else args.push("--no-renames");
   args.push(baseSha, headSha, "--");
-  const fields = git(repository, args, { buffer: true }).toString("utf8").split("\0");
-  if (fields.at(-1) === "") fields.pop();
+  const fields = splitNulBuffers(git(repository, args, { buffer: true }), "structural Git diff");
   const changes = [];
   for (let index = 0; index < fields.length;) {
-    const header = fields[index++];
+    const header = decodeAscii(fields[index++], "structural Git diff header");
     const match = header.match(/^:(\d{6}) (\d{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([A-Z])(\d{0,3})$/);
     assert.ok(match, `structural Git diff header is malformed: ${JSON.stringify(header)}`);
     const [, oldMode, newMode, oldOid, newOid, status, score] = match;
-    const firstPath = fields[index++];
-    assert.notEqual(firstPath, undefined, "structural Git diff path is truncated");
+    const firstPathBytes = fields[index++];
+    assert.notEqual(firstPathBytes, undefined, "structural Git diff path is truncated");
+    const firstPath = decodeGitPath(firstPathBytes, "structural Git path");
     let oldPath = status === "A" ? null : firstPath;
     let newPath = status === "D" ? null : firstPath;
+    let oldPathBytes = status === "A" ? null : firstPathBytes;
+    let newPathBytes = status === "D" ? null : firstPathBytes;
     if (status === "R" || status === "C") {
       oldPath = firstPath;
-      newPath = fields[index++];
-      assert.notEqual(newPath, undefined, "structural Git diff rename/copy destination is truncated");
+      oldPathBytes = firstPathBytes;
+      newPathBytes = fields[index++];
+      assert.notEqual(newPathBytes, undefined, "structural Git diff rename/copy destination is truncated");
+      newPath = decodeGitPath(newPathBytes, "structural Git rename/copy destination");
     }
-    if (oldPath !== null) safeRelativePath(oldPath, "structural Git old path");
-    if (newPath !== null) safeRelativePath(newPath, "structural Git new path");
     changes.push({
       status,
       score: score === "" ? null : Number(score),
       oldPath,
       newPath,
+      oldPathBytes,
+      newPathBytes,
       oldMode,
       newMode,
       oldType: gitObjectType(repository, oldOid),
