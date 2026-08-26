@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -14,7 +13,9 @@ import {
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 
 const root = new URL("../../", import.meta.url);
+const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$1").replace(/\/$/, "");
 const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
+const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `HEAD:${path}`], { cwd: sourceRepository, encoding: null, stdio: ["ignore", "pipe", "pipe"] });
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
 
 async function write(repository, path, bytes) {
@@ -29,7 +30,7 @@ async function createRepository() {
   git("init", "--quiet", "--initial-branch=main");
   git("config", "user.email", "f2-gov-08@example.invalid");
   git("config", "user.name", "F2-GOV-08 fixture");
-  for (const path of canonicalPaths) await write(repository, path, readFileSync(new URL(path, root)));
+  for (const path of canonicalPaths) await write(repository, path, canonicalBlob(path));
   await write(repository, "index.html", html("base"));
   await write(repository, "politica-privacidade.html", html("privacy"));
   await write(repository, "src/css/branct.css", ".menu{display:block}\n");
@@ -120,7 +121,7 @@ for (const [label, path, content] of [
 });
 
 test("F2-GOV-08 rejects alternate imports in the consumer authority", async () => {
-  const source = readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.consumer, root), "utf8");
+  const source = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const localImports = [...source.matchAll(/from\s+["'](\.\/[^"']+)["']/g)].map((match) => match[1]);
   assert.deepEqual(localImports, ["./f2-gov-08-static-server.mjs"]);
   assert.doesNotMatch(source, /import\s*\(|require\s*\(/);
@@ -172,7 +173,7 @@ test("F2-GOV-08 rejects a non-ancestral operational base", async () => {
 });
 
 for (const [label, mode, bytes, expected] of [
-  ["executable mode", "100755", readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.consumer, root)), /canonical consumer has unexpected Git mode/i],
+  ["executable mode", "100755", canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer), /canonical consumer has unexpected Git mode/i],
   ["symlink mode", "120000", Buffer.from("alternate-consumer.mjs\n"), /canonical consumer has unexpected Git mode/i],
   ["blob digest", "100644", Buffer.from("process.exit(0);\n"), /canonical consumer (size|digest) is divergent/i],
 ]) test(`F2-GOV-08 rejects authority ${label} at the trusted base`, async () => {
@@ -232,9 +233,9 @@ test("F2-GOV-08 actual materialization guard rejects TOCTOU before execution", a
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-toctou-"));
   try {
     const target = join(directory, "consumer.mjs");
-    const bytes = readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.consumer, root));
+    const bytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer);
     await writeFile(target, bytes);
-    const manifest = JSON.parse(readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.manifest, root), "utf8"));
+    const manifest = JSON.parse(canonicalBlob(CANONICAL_AUTHORITY_PATHS.manifest).toString("utf8"));
     const pin = manifest.files.find(({ role }) => role === "consumer");
     const files = new Map([["consumer", { bytes, pin }]]);
     const materialized = new Map([["consumer", target]]);
@@ -262,7 +263,7 @@ for (const [label, path, content, expected] of [
 });
 
 test("F2-GOV-08 records simulator limits instead of claiming workflow enforcement", () => {
-  const contract = JSON.parse(readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.contract, root), "utf8"));
+  const contract = JSON.parse(canonicalBlob(CANONICAL_AUTHORITY_PATHS.contract).toString("utf8"));
   assert.equal(contract.limitations.workflowEnforcement, "NOT_VERIFIED");
   assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED");
   assert.equal(contract.limitations.browserNetworkIsolation, "NOT_VERIFIED");
