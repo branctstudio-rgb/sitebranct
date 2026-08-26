@@ -89,6 +89,28 @@ async function createRepository() {
 
 const run = (fixture, extra = {}) => runBaseOnlyGitSimulation({ repository: fixture.repository, eventPath: fixture.eventPath, ...extra });
 
+const syntheticTreeEntries = (paths) => paths.map((path, index) => ({
+  mode: "100644",
+  type: "blob",
+  oid: (index + 1).toString(16).padStart(40, "0"),
+  path,
+  pathBytes: Buffer.from(path, "ascii"),
+}));
+
+function permutations(values) {
+  if (values.length < 2) return [values];
+  return values.flatMap((value, index) => permutations(values.filter((_, candidate) => candidate !== index)).map((rest) => [value, ...rest]));
+}
+
+function currentGitTreeEntries() {
+  return splitNulBuffers(execFileSync("git", ["ls-tree", "-rz", "--full-tree", "HEAD"], { cwd: sourceRepository, encoding: null })).map((record) => {
+    const tab = record.indexOf(9);
+    const [mode, type, oid] = record.subarray(0, tab).toString("ascii").split(" ");
+    const pathBytes = record.subarray(tab + 1);
+    return { mode, type, oid, path: pathBytes.toString("ascii"), pathBytes };
+  });
+}
+
 async function publishFixtureHead(fixture, message) {
   fixture.git("commit", "--quiet", "-m", message);
   fixture.headSha = fixture.git("rev-parse", "HEAD");
@@ -392,6 +414,46 @@ test("F2-GOV-08 portable grammar accepts every one of the 56 current published p
     publishedPaths.map((path) => portableGuard.validatePortableGitPathBytes(Buffer.from(path, "ascii"))),
     publishedPaths,
   );
+});
+
+test("F2-GOV-08 portable trie accepts all 806 current regular Git paths and all 56 manifest paths", () => {
+  const current = currentGitTreeEntries();
+  assert.equal(current.length, 806);
+  assert.ok(current.every(({ mode, type }) => mode === "100644" && type === "blob"));
+  assert.equal(portableGuard.validatePortableGitTreeEntries(current).entries.length, 806);
+  assert.equal(portableGuard.validatePortableGitTreeEntries(syntheticTreeEntries(publishedPaths)).entries.length, 56);
+});
+
+for (const [label, paths] of [
+  ["file versus case-folded child", ["src/js/Foo", "src/js/foo/bar.js"]],
+  ["case-divergent directory merge", ["src/JS/a.js", "src/js/b.js"]],
+  ["file as exact parent prefix", ["assets", "assets/logo.png"]],
+  ["multi-level case divergence", ["SRC/images/icons/a.png", "src/Images/other.png"]],
+  ["transitive three-way conflict", ["assets/logo.png", "ASSETS", "Assets/icons/x.svg"]],
+]) test(`F2-GOV-08 portable trie rejects ${label} in every input order`, () => {
+  for (const ordered of permutations(paths)) {
+    assert.throws(
+      () => portableGuard.validatePortableGitTreeEntries(syntheticTreeEntries(ordered)),
+      /portable tree collision|file.*directory|capitalization|prefix/i,
+      `order must fail closed: ${ordered.join(" -> ")}`,
+    );
+  }
+});
+
+test("F2-GOV-08 portable trie rejects a child inserted before its file parent", () => {
+  assert.throws(
+    () => portableGuard.validatePortableGitTreeEntries(syntheticTreeEntries(["assets/logo.png", "assets"])),
+    /portable tree collision|file.*directory|prefix/i,
+  );
+});
+
+test("F2-GOV-08 portable trie records only regular Git files as materializable leaves", () => {
+  assert.equal(typeof portableGuard.validatePortableGitTreeEntries, "function", "portable trie validator is absent");
+  for (const entry of [
+    { ...syntheticTreeEntries(["src/js/link.js"])[0], mode: "120000", type: "blob" },
+    { ...syntheticTreeEntries(["src/js/submodule.js"])[0], mode: "160000", type: "commit" },
+    { ...syntheticTreeEntries(["src/js/executable.js"])[0], mode: "100755", type: "blob" },
+  ]) assert.throws(() => portableGuard.validatePortableGitTreeEntries([entry]), /regular Git file|unexpected Git mode|unexpected Git type/i);
 });
 
 for (const [label, path, expected] of [

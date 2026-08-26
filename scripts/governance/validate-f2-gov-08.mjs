@@ -166,22 +166,73 @@ function treeEntries(repository, sha) {
   });
 }
 
-function validatePortableGitTree(entries) {
-  const destinations = new Map();
-  for (const entry of entries) {
-    const path = validatePortableGitPathBytes(entry.pathBytes, "recursive Git path");
-    assert.equal(path, entry.path, `recursive Git path bytes and text differ: ${entry.path}`);
-    const destinationKey = path.toLowerCase();
-    const previous = destinations.get(destinationKey);
-    assert.equal(previous, undefined, `portable path collision: ${previous} and ${path}`);
-    destinations.set(destinationKey, path);
+export function validatePortableGitTreeEntries(entries) {
+  assert.ok(Array.isArray(entries), "portable Git tree entries are absent or malformed");
+  const validated = entries.map((entry, index) => {
+    assert.ok(entry && typeof entry === "object", `portable Git tree entry ${index} is absent or malformed`);
+    const path = validatePortableGitPathBytes(entry.pathBytes, `portable Git tree entry ${index}`);
+    assert.equal(path, entry.path, `portable Git tree path bytes and text differ: ${entry.path}`);
+    assert.equal(entry.mode, "100644", `portable Git tree path is not a regular Git file (unexpected Git mode): ${path}`);
+    assert.equal(entry.type, "blob", `portable Git tree path is not a regular Git file (unexpected Git type): ${path}`);
+    assert.match(entry.oid ?? "", /^[0-9a-f]{40}$/, `portable Git tree blob identity is malformed: ${path}`);
+    assert.doesNotMatch(entry.oid, /^0+$/, `portable Git tree blob identity is absent: ${path}`);
+    return { ...entry, path };
+  }).sort((left, right) => {
+    const folded = Buffer.compare(Buffer.from(left.path.toLowerCase(), "ascii"), Buffer.from(right.path.toLowerCase(), "ascii"));
+    return folded || Buffer.compare(left.pathBytes, right.pathBytes);
+  });
+
+  const root = { kind: "directory", canonicalBytes: null, folded: null, origins: [], children: new Map() };
+  for (const entry of validated) {
+    const segments = entry.path.split("/");
+    let parent = root;
+    for (let index = 0; index < segments.length; index += 1) {
+      const segment = segments[index];
+      const segmentBytes = Buffer.from(segment, "ascii");
+      const folded = segment.toLowerCase();
+      const expectedKind = index === segments.length - 1 ? "file" : "directory";
+      const existing = parent.children.get(folded);
+
+      if (existing) {
+        assert.equal(
+          existing.canonicalBytes.equals(segmentBytes),
+          true,
+          `portable path collision: segment capitalization differs between ${existing.origins[0].path} and ${entry.path}`,
+        );
+        assert.equal(
+          existing.kind,
+          expectedKind,
+          `portable tree collision: file and directory share prefix ${segments.slice(0, index + 1).join("/")}`,
+        );
+        assert.equal(expectedKind, "directory", `portable tree collision: duplicate file ${entry.path}`);
+        existing.origins.push(entry);
+        parent = existing;
+        continue;
+      }
+
+      const node = {
+        kind: expectedKind,
+        canonicalBytes: segmentBytes,
+        canonicalSegment: segment,
+        folded,
+        origins: [entry],
+        children: new Map(),
+      };
+      parent.children.set(folded, node);
+      parent = node;
+    }
   }
-  const canonicalIndex = entries.find(({ pathBytes }) => pathBytes.equals(Buffer.from("index.html", "ascii")));
+  return { entries: validated, root };
+}
+
+function validatePortableGitTree(entries) {
+  const validated = validatePortableGitTreeEntries(entries);
+  const canonicalIndex = validated.entries.find(({ pathBytes }) => pathBytes.equals(Buffer.from("index.html", "ascii")));
   assert.ok(canonicalIndex, "canonical live path index.html is absent or has different bytes/capitalization");
   assert.equal(canonicalIndex.path, "index.html", "canonical live path index.html is redirected");
   assert.equal(canonicalIndex.mode, "100644", "canonical live path index.html has unexpected Git mode");
   assert.equal(canonicalIndex.type, "blob", "canonical live path index.html has unexpected Git type");
-  return entries;
+  return validated.entries;
 }
 
 function gitObjectType(repository, oid) {
