@@ -13,7 +13,7 @@
 ### Task 1: Seal the design and RED attacks
 
 **Files:**
-- Create: `docs/superpowers/specs/2026-08-26-f2-gov-08-base-only-authority-design.md`
+- Create: `docs/audit/phase-2/governance/f2-gov-08-design.md`
 - Create: `tests/audit/f2-gov-08.test.mjs`
 
 1. Add historical reproducers for `OBSERVATION_PAYLOAD_SWAP` and `KEYED_PRODUCER_TRANSPLANT`.
