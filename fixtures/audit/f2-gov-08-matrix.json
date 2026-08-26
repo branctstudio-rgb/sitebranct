@@ -1,0 +1,6 @@
+[
+  { "engine": "chromium", "route": "index.html", "viewport": [390, 844], "action": "open-drawer" },
+  { "engine": "firefox", "route": "index.html", "viewport": [390, 844], "action": "escape-close" },
+  { "engine": "webkit", "route": "index.html", "viewport": [1024, 768], "action": "focus-navigation" },
+  { "engine": "chromium", "route": "politica-privacidade.html", "viewport": [360, 800], "action": "open-drawer" }
+]

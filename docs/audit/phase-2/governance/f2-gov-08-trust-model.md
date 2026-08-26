@@ -10,8 +10,8 @@ It does not change or activate a workflow. It does not prove workflow enforcemen
 
 | Object | Producer | Consumer | Authoritative origin | Integrity |
 | --- | --- | --- | --- | --- |
-| Base SHA | GitHub pull-request metadata | trusted bootstrap | exact PR base commit | 40-hex equality and Git resolution |
-| Head SHA | GitHub pull-request metadata | trusted bootstrap | exact PR head commit | 40-hex equality and Git resolution |
+| Base/head SHAs and refs | GitHub pull-request metadata | trusted bootstrap | exact PR commits and named remote refs | API has no SHA parameters; commit resolution, ref equality and ancestry |
+| Contract and manifest | protected base evolution | trusted bootstrap | fixed canonical paths at exact base SHA | regular Git blobs; manifest digest is inside the base-owned contract |
 | Consumer | base maintainer through protected evolution | trusted bootstrap | blob at exact base SHA | recorded path, role, blob type and SHA-256 |
 | Static server | base maintainer through protected evolution | trusted consumer | blob at exact base SHA | recorded path, role, blob type and SHA-256 |
 | Matrix | base maintainer through protected evolution | trusted consumer | blob at exact base SHA | recorded digest plus exact schema and unique tuples |
@@ -39,11 +39,11 @@ The trusted consumer rejects executable blobs, symlinks, submodules, junctions/r
 
 ## Measurement lifecycle
 
-1. Seal exact base and head SHAs from trusted event metadata.
-2. Load the consumer, matrix, expectations, and static server exclusively from the base commit.
-3. Verify their paths, Git types, and recorded digests before evaluating the candidate.
+1. Read exact base/head SHAs and refs from the trusted event; reject any caller-supplied identity or authority input.
+2. Resolve both remote refs exactly, require base ancestry, and load the contract and manifest through fixed paths from the event base.
+3. Load the consumer, matrix, expectations and static server from manifest pins at that same base; verify path, Git type, mode, size and digest.
 4. Inspect the exact head tree and construct an isolated candidate root from allowlisted regular blobs only.
-5. Start the base-owned static server with an empty environment.
+5. Materialize the base-owned consumer/server in an isolated root, execute that exact consumer with an empty environment and verify the same bytes again after execution.
 6. Allow browser requests only to the server's exact loopback origin.
 7. Iterate canonical engine, route, viewport, and action tuples in the trusted consumer.
 8. Read only primitive raw state; reject candidate-supplied identity, matrix, key, result, PASS, envelope, or digest fields.
@@ -52,7 +52,7 @@ The trusted consumer rejects executable blobs, symlinks, submodules, junctions/r
 
 ## Attack outcomes
 
-The executable contract rejects:
+The F1 executable contract rejects:
 
 - `OBSERVATION_PAYLOAD_SWAP`;
 - `KEYED_PRODUCER_TRANSPLANT`;
@@ -60,7 +60,9 @@ The executable contract rejects:
 - copied, missing, partial, duplicate, or inconclusive evidence;
 - candidate-controlled identity, route, viewport, engine, action, result, PASS, envelope, or digest;
 - consumer, server, matrix, or expectation drift;
-- base or head drift;
+- caller-injected contract, manifest, pins, consumer, matrix, expectations, base, head, envelope, result or measurement callback;
+- base/head/ref drift, repository substitution and non-ancestral bases;
+- joint contract/manifest replacement in the head, alternate consumer import and materialized TOCTOU;
 - matrix duplicates and mutated authority pins;
 - symlinks, submodules, executable blobs, junctions/reparse points, traversal, absolute paths, backslashes, excluded files, and unknown paths;
 - external network requests or a second loopback port;
@@ -69,7 +71,9 @@ The executable contract rejects:
 
 A complete legitimate path also returns PASS, demonstrating that the contract is not a deny-all construction.
 
-The Git-backed tests create controlled repositories with separate base and head commits. They load the four authority blobs through `git ls-tree`/`git cat-file` at the explicit base SHA, enumerate candidate blobs at the explicit head SHA, prove that moving `HEAD` does not change either authority, and reject altered, removed, or head-modified authority blobs.
+The Git-backed tests create controlled repositories with separate trusted base and producer head commits plus exact simulated GitHub refs. They discover the contract and manifest only at fixed paths through `git ls-tree`/`git cat-file`, execute the exact base consumer, enumerate candidate blobs at the event head, and reject altered refs, non-ancestral identities, authority modes, symlinks, blobs and head-modified authorities.
+
+F2-GOV-06 now separates the immutable historical anchor `4ffdff435f90612b9d46051110bd87b2afc40d17` from the version-2 minimum operational base `1f7e95315e518a4ea0a5f1668db67e5b18a69087`. The event base must descend from the minimum, which must descend from the historical anchor; downgrade, reordering or silent replacement fails closed.
 
 ## Future protected evolution
 

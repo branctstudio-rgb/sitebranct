@@ -22,7 +22,8 @@ The attacks in scope include `OBSERVATION_PAYLOAD_SWAP`, `KEYED_PRODUCER_TRANSPL
 
 | Element | Owner | Source | Trust rule |
 | --- | --- | --- | --- |
-| Base SHA | GitHub PR metadata | exact 40-hex commit | must resolve and equal the sealed value |
+| Base/head SHAs and refs | trusted GitHub PR metadata | exact commits and remote refs | caller cannot pass them; refs must resolve exactly and base must be an ancestor of head |
+| Contract and manifest | trusted base | fixed paths compiled into the harness | loaded with Git plumbing only from the event base; neither path is an input |
 | Consumer | trusted base | Git blob at the base SHA | path and digest sealed before candidate evaluation |
 | Static server | trusted base | Git blob at the base SHA | never loaded from the candidate head |
 | Matrix and expectations | trusted base | Git blobs at the base SHA | exact schema, digest, and tuple set |
@@ -35,9 +36,11 @@ The attacks in scope include `OBSERVATION_PAYLOAD_SWAP`, `KEYED_PRODUCER_TRANSPL
 
 ## Selected architecture
 
-The future Universal PR Gate will use its existing unprivileged `pull_request` context. A trusted bootstrap must retrieve the exact base commit before any candidate code runs, verify the base-owned anchors, and start the base-owned consumer. The consumer will inspect the head tree with Git plumbing and materialize only allowlisted regular blobs in an isolated target directory. It will not execute candidate scripts, builds, installers, dependencies, or commands.
+The future Universal PR Gate will use its existing unprivileged `pull_request` context. A trusted bootstrap must retrieve the exact base and head identities before any candidate code runs. The offline API already accepts only a repository and trusted event path: `contract`, manifest, pins, matrix, expectations, consumer, base, head, envelope, result and measurement callbacks are rejected as extra input. Fixed paths discover the contract and manifest from the event base; their pins discover the remaining authority blobs from that same base.
 
-The static server and Playwright controller come from the base. Browser routing denies every request except the random loopback origin allocated for the isolated server. The environment exposed to the server and browser is explicitly empty of repository tokens, credentials, and secrets. A future workflow token is read-only and is used only by the trusted bootstrap to read repository contents.
+The simulator materializes the validated base consumer and its sole base-owned static-server import into an isolated directory, verifies Git mode/type/size/digest, executes that exact consumer file, then repeats the materialized and Git-object verification after execution. The head supplies only allowlisted live regular blobs. Candidate scripts, builds, installers, dependencies and commands are never invoked.
+
+The offline consumer uses a base-owned static reader and deterministic synthetic fixtures to prove authority flow. Active external-network APIs in the synthetic candidate are rejected and the child receives an empty environment. It does **not** run a real browser or prove browser routing. A later protected workflow must replace this simulated measurement adapter with the base-owned Playwright controller and enforce loopback-only routing. A future workflow token is read-only and is used only by the trusted bootstrap to read repository contents.
 
 The consumer iterates the canonical cases itself. Each case invocation carries the trusted tuple in a closure unavailable to page content. Page content may expose only raw DOM state through normal browser reads. The consumer rejects extra fields and then derives semantic status, identity, envelope, and digest. It performs an exact one-to-one comparison against the base-owned expected set before deciding PASS.
 
@@ -53,7 +56,7 @@ Candidate entries are accepted only when all of the following are true:
 - the materialized path remains within the isolated target directory;
 - no component is a symlink, junction, reparse point, or submodule.
 
-The simulator models these checks and includes permanent negatives. The later operational harness must implement them against real Git objects and the target filesystem; this package does not claim that operational proof.
+The simulator executes these checks against real Git objects in controlled repositories and real isolated temporary directories. GitHub-runner enforcement, filesystem isolation against a concurrent hostile process and browser network isolation remain `NOT_VERIFIED`.
 
 ## Measurement binding
 
@@ -67,7 +70,7 @@ No producer-controlled key is used. A producer response containing an identity, 
 
 ## Network and credential boundary
 
-Only the exact loopback origin chosen by the trusted server is allowed. DNS names, additional ports, WebSockets outside that origin, service workers, remote fonts, analytics, beacons, and all other HTTP(S) requests are rejected. A rejected request makes the measurement inconclusive and therefore FAIL.
+The target operational design permits only the exact loopback origin chosen by the trusted server. The current simulator rejects active network API attempts in its synthetic candidate but does not claim real browser interception. DNS, additional ports, service workers, remote resources and browser-level beacons must be exercised in the later protected workflow rehearsal; any request outside the loopback origin must make that future measurement inconclusive and therefore FAIL.
 
 The future job must use `permissions: contents: read`, persist no checkout credentials, and expose no secrets to the server, browser, or candidate content. This offline package checks the declared policy but does not activate it.
 

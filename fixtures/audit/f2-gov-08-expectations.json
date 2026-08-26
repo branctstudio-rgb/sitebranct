@@ -1,0 +1,6 @@
+[
+  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": true, "focusInside": true, "targetWidth": 44, "targetHeight": 44 } },
+  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": false, "focusInside": false, "targetWidth": 44, "targetHeight": 44 } },
+  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": false, "focusInside": true, "targetWidth": 48, "targetHeight": 48 } },
+  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": true, "focusInside": true, "targetWidth": 44, "targetHeight": 44 } }
+]

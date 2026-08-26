@@ -20,15 +20,17 @@ process exit=1
 
 The defect is architectural: hashing a producer-supplied envelope does not make the observation independent.
 
-## GREEN contract
+## F1 root cause and GREEN contract
 
-The offline consumer owns tuple selection, raw-reading validation, semantic derivation, identity, envelope, digest, and final decision. It obtains its matrix, expectations, consumer pin, and server pin from an exact simulated base SHA. The candidate supplies only a closed set of live regular blobs.
+The rejected head accepted joint replacement of contract/pins, never executed the blob it called the consumer, accepted caller-selected base/head, and confused the historical F2-GOV-06 base with every later operational PR base.
 
-The 49 permanent tests include a legitimate PASS path and fail-closed negatives for payload swaps, keyed transplant, tuple swaps, copied/omitted/duplicate/partial results, authority drift, Git/path/filesystem violations, external network, secret exposure, and candidate-authored result metadata. Controlled temporary Git repositories prove that authorities are read from explicit base blobs, candidate live blobs from the explicit head, `HEAD` movement is irrelevant, and altered or removed base authority blobs fail closed.
+F1 removes those inputs. The public harness accepts only repository plus trusted-event path. Fixed paths load contract and manifest from the event base; pins load consumer/server/matrix/expectations from that same commit. Exact remote refs and ancestry bind the head. The exact validated consumer is materialized, executed and reverified. Forty permanent F2-GOV-08 tests include a complete PASS and the required authority, event, ref, mode, symlink, blob, TOCTOU, network, payload-swap and keyed-transplant negatives.
+
+F2-GOV-06 keeps `4ffdff435f90612b9d46051110bd87b2afc40d17` as `HISTORICAL_ANCHOR` and records `1f7e95315e518a4ea0a5f1668db67e5b18a69087` as the version-2 `MINIMUM_OPERATIONAL_BASE`. The active event base must be its descendant, and the head must descend from that event base.
 
 ## Protected surface and expected Sentinel result
 
-This package changes the existing protected entrypoint `tests/audit/site-audit.test.mjs` so the new contract runs in the current offline audit. The real workflow and Sentinel are not modified. Therefore the Gate Integrity Sentinel is expected to fail on the protected test change. That result must not be bypassed or neutralized.
+This package changes two existing protected components: `fixtures/audit/f2-01-transition.json` and `tests/audit/site-audit.test.mjs`. The real workflow and Sentinel are not modified. Therefore the Sentinel must fail only for those two paths. The six new authority artefacts/scripts also require a separate future `anchors-evolution` before operational gate integration; this PR does not silently claim they are already protected.
 
 A future nominal ceremony is required only after an exact head, green non-Sentinel checks, a favorable independent review, and formal human approval.
 
@@ -42,8 +44,9 @@ Before merge: close the draft PR and preserve the branch for audit. After a sepa
 
 ## Future ceremony proposal (not authorized)
 
-- Ceremony ID: `F2-GATE-CHANGE-F2-GOV-08-PR<TBD>`
-- Exact protected files: to be derived from the final PR head and Sentinel trust-set impact.
+- Ceremony ID: `F2-GATE-CHANGE-F2-GOV-08-PR61-<FINAL_HEAD>`
+- Existing protected files changed: `fixtures/audit/f2-01-transition.json`, `tests/audit/site-audit.test.mjs`.
+- Future anchor-evolution set (not part of this ceremony): contract, manifest, consumer, server, matrix, expectations and validator paths introduced by F2-GOV-08, plus the workflow/Sentinel changes required to execute and protect them.
 - Temporary exception: none is proposed until the final head and CI are known.
 - Required controls: external approval on the exact head, sealed protection snapshot, at most 15 minutes if a required-check exception is later approved, immediate full restoration, independent readback, post-restoration disposable rehearsal, and content rollback through a normal PR.
 - Absolute limits: no FTP, deploy, `workflow_dispatch`, secrets, production, or F2-01 integration.

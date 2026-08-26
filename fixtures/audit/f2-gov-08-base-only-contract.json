@@ -1,103 +1,45 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "status": "OFFLINE_SIMULATOR_ONLY",
   "repository": "branctstudio-rgb/sitebranct",
-  "packageBaseSha": "1f7e95315e518a4ea0a5f1668db67e5b18a69087",
-  "simulation": {
-    "baseSha": "1111111111111111111111111111111111111111",
-    "headSha": "2222222222222222222222222222222222222222",
-    "origin": "http://127.0.0.1:4173"
+  "canonicalAuthority": {
+    "source": "exact-base-sha-git-objects",
+    "manifestPath": "fixtures/audit/f2-gov-08-authority-manifest.json",
+    "manifestSha256": "4873cc10f26f5a4bbb8558ca54029ee01f89bc396e9e61aba66a313e30b9ea1b",
+    "consumerPath": "scripts/governance/f2-gov-08-consumer.mjs",
+    "matrixPath": "fixtures/audit/f2-gov-08-matrix.json",
+    "expectationsPath": "fixtures/audit/f2-gov-08-expectations.json",
+    "staticServerPath": "scripts/governance/f2-gov-08-static-server.mjs"
   },
-  "authority": {
-    "source": "exact-base-sha-only",
-    "setSha256": "1356bbe37b378bafd2ef8da4fd8c36fa9978a8c206d67a3bf622f2cd29466d67",
-    "files": [
-      {
-        "role": "consumer",
-        "path": "trusted/consumer.mjs",
-        "sha256": "db205f864f80878d5ae778abbed3d6dbe8debdf298e1b815b2fe250baf717fd0"
-      },
-      {
-        "role": "matrix",
-        "path": "trusted/matrix.json",
-        "sha256": "17141e65d3830db488a717cc3f4194806b478054af9bd107b746396e26d80261"
-      },
-      {
-        "role": "expectations",
-        "path": "trusted/expectations.json",
-        "sha256": "36daa9d3dbdd35ebd70321f007e4df4089739ed5db4f49c69046aa94cdd7d4e9"
-      },
-      {
-        "role": "static-server",
-        "path": "trusted/static-server.mjs",
-        "sha256": "7ac547dd858c1d54a1c869b168053aeb0c914e9b49d658c441bfcb636b870054"
-      }
-    ]
+  "trustedEvent": {
+    "eventName": "pull_request",
+    "baseRef": "main",
+    "requireHeadRef": true,
+    "requireExactRemoteRefs": true,
+    "requireBaseAncestorOfHead": true
   },
   "candidate": {
     "gitMode": "100644",
     "gitType": "blob",
-    "allowlist": [
-      "root-html",
-      "src/css/**",
-      "src/js/**",
-      "src/fonts/**",
-      "src/i18n/**",
-      "src/img/**"
-    ],
+    "allowlist": ["root-html", "src/css/**", "src/js/**", "src/fonts/**", "src/i18n/**", "src/img/**"],
     "excluded": ["src/img/video.mp4"],
     "commandsAllowed": false,
     "dependenciesAllowed": false
   },
-  "rawObservation": {
-    "exactKeys": [
-      "complete",
-      "drawerOpen",
-      "focusInside",
-      "targetWidth",
-      "targetHeight"
-    ],
-    "producerForbiddenKeys": [
-      "identity",
-      "expectedIdentity",
-      "matrix",
-      "key",
-      "digest",
-      "envelope",
-      "semanticResult",
-      "result",
-      "pass",
-      "route",
-      "viewport",
-      "engine",
-      "action"
-    ]
-  },
-  "network": {
-    "allowExactOriginOnly": true,
-    "externalRequestsAllowed": false
+  "measurement": {
+    "origin": "http://127.0.0.1:4173",
+    "consumerProducesDecision": true,
+    "producerMaySupplyResults": false
   },
   "environment": {
+    "futureJobPermissions": { "contents": "read" },
     "exposedToBrowserOrServer": [],
-    "futureJobPermissions": {
-      "contents": "read"
-    },
-    "forbiddenNames": [
-      "GITHUB_TOKEN",
-      "ACTIONS_RUNTIME_TOKEN",
-      "FTP_SERVER",
-      "FTP_USERNAME",
-      "FTP_PASSWORD"
-    ]
-  },
-  "decision": {
-    "requiresExactBijection": true,
-    "inconclusiveMeans": "FAIL",
-    "producerCanDeclarePass": false
+    "forbiddenNames": ["GITHUB_TOKEN", "ACTIONS_RUNTIME_TOKEN", "FTP_SERVER", "FTP_USERNAME", "FTP_PASSWORD"]
   },
   "limitations": {
     "workflowEnforcement": "NOT_VERIFIED",
     "operationalIsolation": "NOT_VERIFIED",
+    "browserNetworkIsolation": "NOT_VERIFIED",
     "requiresFutureProtectedCeremony": true
   }
 }

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    { "role": "consumer", "path": "scripts/governance/f2-gov-08-consumer.mjs", "gitMode": "100644", "gitType": "blob", "size": 3639, "sha256": "325356fc53b67e76ab8dafe4fb00d34756d67fed2483e4750dbcce420b26f60a" },
+    { "role": "matrix", "path": "fixtures/audit/f2-gov-08-matrix.json", "gitMode": "100644", "gitType": "blob", "size": 422, "sha256": "10558999048a483d622fa0156b0e0833f6a4ab7a5921b20b1c9dd696bd293682" },
+    { "role": "expectations", "path": "fixtures/audit/f2-gov-08-expectations.json", "gitMode": "100644", "gitType": "blob", "size": 570, "sha256": "90eed332b6a06db3fd8868a2930591bcf840fc5c354051fec28ef5494206a8eb" },
+    { "role": "staticServer", "path": "scripts/governance/f2-gov-08-static-server.mjs", "gitMode": "100644", "gitType": "blob", "size": 743, "sha256": "2414893fad5009392f5641109133ae970615ab16c2e859a31162a427d77f9d25" }
+  ]
+}
