@@ -24,7 +24,7 @@ The defect is architectural: hashing a producer-supplied envelope does not make 
 
 The offline consumer owns tuple selection, raw-reading validation, semantic derivation, identity, envelope, digest, and final decision. It obtains its matrix, expectations, consumer pin, and server pin from an exact simulated base SHA. The candidate supplies only a closed set of live regular blobs.
 
-The permanent tests include a legitimate PASS path and fail-closed negatives for payload swaps, keyed transplant, tuple swaps, copied/omitted/duplicate/partial results, authority drift, Git/path/filesystem violations, external network, secret exposure, and candidate-authored result metadata.
+The 49 permanent tests include a legitimate PASS path and fail-closed negatives for payload swaps, keyed transplant, tuple swaps, copied/omitted/duplicate/partial results, authority drift, Git/path/filesystem violations, external network, secret exposure, and candidate-authored result metadata. Controlled temporary Git repositories prove that authorities are read from explicit base blobs, candidate live blobs from the explicit head, `HEAD` movement is irrelevant, and altered or removed base authority blobs fail closed.
 
 ## Protected surface and expected Sentinel result
 
@@ -34,7 +34,7 @@ A future nominal ceremony is required only after an exact head, green non-Sentin
 
 ## Limitations
 
-The package remains `OFFLINE_SIMULATOR_ONLY`. Workflow enforcement, runner-level isolation, real Git materialization, and real browser network blocking are `NOT_VERIFIED`. The package does not authorize workflow changes, protection changes, merge, F2-01 integration, deploy, secrets, or production.
+The package remains `OFFLINE_SIMULATOR_ONLY`. Git blob authority is verified in controlled temporary repositories. Workflow enforcement, GitHub-runner materialization, runner-level isolation, and real browser network blocking are `NOT_VERIFIED`. The package does not authorize workflow changes, protection changes, merge, F2-01 integration, deploy, secrets, or production.
 
 ## Rollback
 

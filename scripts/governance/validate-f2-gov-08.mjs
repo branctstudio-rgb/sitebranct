@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
@@ -191,6 +192,63 @@ export function runBaseOnlySimulation(input) {
     authority: { baseSha, headSha, origins: authority.origins, matrixDigest: canonical.matrixDigest, payloadDigest: candidate.payloadDigest },
     evidence,
   };
+}
+
+function git(repository, args, encoding = "utf8") {
+  try {
+    return execFileSync("git", args, { cwd: repository, encoding, stdio: ["ignore", "pipe", "ignore"] });
+  } catch {
+    assert.fail(`Git authority cannot resolve: git ${args.join(" ")}`);
+  }
+}
+
+function resolveCommit(repository, sha, label) {
+  validSha(sha, label);
+  const resolved = git(repository, ["rev-parse", "--verify", `${sha}^{commit}`]).trim();
+  assert.equal(resolved, sha, `${label} SHA resolves to a different commit`);
+}
+
+function treeEntries(repository, sha) {
+  const output = git(repository, ["ls-tree", "-rz", "--full-tree", sha]);
+  return output.split("\0").filter(Boolean).map((record) => {
+    const match = record.match(/^(\d{6}) (\w+) ([0-9a-f]+)\t(.+)$/s);
+    assert.ok(match, `Git tree record is malformed: ${record}`);
+    return { mode: match[1], type: match[2], oid: match[3], path: match[4] };
+  });
+}
+
+export function runBaseOnlyGitSimulation({ contract, repository, baseSha, headSha, origin, environment, networkRequests, readRaw }) {
+  assert.equal(typeof repository, "string", "Git repository path is absent");
+  resolveCommit(repository, baseSha, "base");
+  resolveCommit(repository, headSha, "head");
+
+  const changed = git(repository, ["diff", "--name-only", "-z", baseSha, headSha]).split("\0").filter(Boolean);
+  for (const path of changed) {
+    safeRelativePath(path);
+    assert.ok(allowedCandidatePath(path, contract), `head changed a non-live or protected authority path: ${path}`);
+  }
+
+  const baseTree = new Map(treeEntries(repository, baseSha).map((entry) => [entry.path, entry]));
+  const authorityFiles = contract.authority.files.map((pin) => {
+    const entry = baseTree.get(pin.path);
+    assert.ok(entry, `${pin.role} authority Git blob is absent at exact base SHA: ${pin.path}`);
+    return { path: pin.path, mode: entry.mode, type: entry.type, bytes: git(repository, ["cat-file", "blob", entry.oid]) };
+  });
+
+  const candidateEntries = treeEntries(repository, headSha)
+    .filter(({ path }) => allowedCandidatePath(path, contract))
+    .map((entry) => ({
+      path: entry.path,
+      mode: entry.mode,
+      type: entry.type,
+      filesystemType: entry.mode === "120000" ? "symlink" : "file",
+      bytes: git(repository, ["cat-file", "blob", entry.oid]),
+    }));
+
+  const boundContract = structuredClone(contract);
+  boundContract.simulation.baseSha = baseSha;
+  boundContract.simulation.headSha = headSha;
+  return runBaseOnlySimulation({ contract: boundContract, baseSha, headSha, authorityFiles, candidateEntries, origin, environment, networkRequests, readRaw });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

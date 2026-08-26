@@ -69,6 +69,8 @@ The executable contract rejects:
 
 A complete legitimate path also returns PASS, demonstrating that the contract is not a deny-all construction.
 
+The Git-backed tests create controlled repositories with separate base and head commits. They load the four authority blobs through `git ls-tree`/`git cat-file` at the explicit base SHA, enumerate candidate blobs at the explicit head SHA, prove that moving `HEAD` does not change either authority, and reject altered, removed, or head-modified authority blobs.
+
 ## Future protected evolution
 
 The Universal PR Gate and Gate Integrity Sentinel remain byte-unchanged in this mission. A later nominal ceremony must:
@@ -88,7 +90,8 @@ No ceremony is authorized by this document.
 
 - `WORKFLOW_ENFORCEMENT = NOT_VERIFIED`
 - `OPERATIONAL_ISOLATION = NOT_VERIFIED`
-- `REAL_GIT_OBJECT_MATERIALIZATION = NOT_VERIFIED`
+- `TEMP_REPOSITORY_GIT_BLOB_AUTHORITY = VERIFIED`
+- `GITHUB_RUNNER_GIT_OBJECT_MATERIALIZATION = NOT_VERIFIED`
 - `REAL_BROWSER_NETWORK_BLOCK = NOT_VERIFIED`
 - `REQUIRED_CHECK_ACTIVATION = NOT_AUTHORIZED`
 

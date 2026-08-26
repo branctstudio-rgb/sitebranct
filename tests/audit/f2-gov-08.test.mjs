@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import test from "node:test";
 
 import {
   runBaseOnlySimulation,
+  runBaseOnlyGitSimulation,
   sha256,
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 
@@ -192,4 +197,103 @@ test("F2-GOV-08 records simulator limitations without claiming operational enfor
   assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED");
   assert.equal(contract.limitations.requiresFutureProtectedCeremony, true);
   assert.equal(contract.status, "OFFLINE_SIMULATOR_ONLY");
+});
+
+async function createGitAuthorityRepository() {
+  const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-git-"));
+  const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  git("init", "--quiet");
+  git("config", "user.email", "f2-gov-08@example.invalid");
+  git("config", "user.name", "F2-GOV-08 fixture");
+  for (const file of [...authorityFiles, ...candidateEntries]) {
+    const path = join(repository, ...file.path.split("/"));
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, file.bytes, "utf8");
+  }
+  git("add", ".");
+  git("commit", "--quiet", "-m", "trusted base");
+  const baseSha = git("rev-parse", "HEAD");
+  await writeFile(join(repository, "index.html"), "<!doctype html><title>candidate head</title>", "utf8");
+  git("add", "index.html");
+  git("commit", "--quiet", "-m", "candidate live head");
+  const headSha = git("rev-parse", "HEAD");
+  return { repository, git, baseSha, headSha };
+}
+
+function gitSimulationInput(repository, baseSha, headSha) {
+  return {
+    contract: clone(contract), repository, baseSha, headSha,
+    origin: contract.simulation.origin, environment: {},
+    networkRequests: matrix.map(() => `${contract.simulation.origin}/index.html`),
+    readRaw: (canonicalCase) => clone(expectedByTuple.get(tupleKey(canonicalCase))),
+  };
+}
+
+test("F2-GOV-08 loads consumer, server, matrix and expectations from exact Git base blobs", async () => {
+  const fixture = await createGitAuthorityRepository();
+  try {
+    const result = runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, fixture.headSha));
+    assert.equal(result.decision, "PASS");
+    assert.equal(result.authority.baseSha, fixture.baseSha);
+    assert.ok(Object.values(result.authority.origins).every(({ baseSha }) => baseSha === fixture.baseSha));
+    fixture.git("commit", "--allow-empty", "--quiet", "-m", "move HEAD only");
+    assert.equal(runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, fixture.headSha)).decision, "PASS", "moving HEAD must not change explicit base/head authority");
+  } finally {
+    await rm(fixture.repository, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-08 rejects an authority blob altered in the candidate head", async () => {
+  const fixture = await createGitAuthorityRepository();
+  try {
+    await writeFile(join(fixture.repository, "trusted", "consumer.mjs"), "tampered candidate consumer\n", "utf8");
+    fixture.git("add", "trusted/consumer.mjs");
+    fixture.git("commit", "--quiet", "-m", "tamper protected consumer");
+    const tamperedHead = fixture.git("rev-parse", "HEAD");
+    assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, tamperedHead)), /head changed.*protected authority.*trusted\/consumer/i);
+  } finally {
+    await rm(fixture.repository, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-08 rejects an adulterated or missing authority blob at the selected base", async (t) => {
+  const fixture = await createGitAuthorityRepository();
+  try {
+    fixture.git("checkout", "--quiet", "-b", "tampered-base", fixture.baseSha);
+    await writeFile(join(fixture.repository, "trusted", "matrix.json"), JSON.stringify([{ engine: "chromium", route: "forged.html", viewport: [1, 1], action: "forge" }]), "utf8");
+    fixture.git("add", "trusted/matrix.json");
+    fixture.git("commit", "--quiet", "-m", "tampered base matrix");
+    const tamperedBase = fixture.git("rev-parse", "HEAD");
+    await writeFile(join(fixture.repository, "index.html"), "changed from tampered base", "utf8");
+    fixture.git("add", "index.html");
+    fixture.git("commit", "--quiet", "-m", "head over tampered base");
+    const tamperedHead = fixture.git("rev-parse", "HEAD");
+    await t.test("adulterated base blob", () => assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, tamperedBase, tamperedHead)), /matrix authority digest is divergent/i));
+
+    fixture.git("checkout", "--quiet", "-b", "missing-base", fixture.baseSha);
+    fixture.git("rm", "--quiet", "trusted/static-server.mjs");
+    fixture.git("commit", "--quiet", "-m", "remove base server");
+    const missingBase = fixture.git("rev-parse", "HEAD");
+    await writeFile(join(fixture.repository, "index.html"), "changed from missing base", "utf8");
+    fixture.git("add", "index.html");
+    fixture.git("commit", "--quiet", "-m", "head over missing base");
+    const missingHead = fixture.git("rev-parse", "HEAD");
+    await t.test("missing base blob", () => assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, missingBase, missingHead)), /static-server authority Git blob is absent/i));
+  } finally {
+    await rm(fixture.repository, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-08 rejects non-live candidate changes before measurement", async () => {
+  const fixture = await createGitAuthorityRepository();
+  try {
+    await mkdir(join(fixture.repository, "scripts"), { recursive: true });
+    await writeFile(join(fixture.repository, "scripts", "producer-command.mjs"), "process.exit(0);\n", "utf8");
+    fixture.git("add", "scripts/producer-command.mjs");
+    fixture.git("commit", "--quiet", "-m", "candidate command");
+    const commandHead = fixture.git("rev-parse", "HEAD");
+    assert.throws(() => runBaseOnlyGitSimulation(gitSimulationInput(fixture.repository, fixture.baseSha, commandHead)), /head changed a non-live.*scripts\/producer-command/i);
+  } finally {
+    await rm(fixture.repository, { recursive: true, force: true });
+  }
 });
