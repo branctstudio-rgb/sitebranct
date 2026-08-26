@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -11,11 +11,13 @@ import {
   runBaseOnlySimulation,
   verifyMaterializedAuthoritySnapshot,
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
+import * as portableGuard from "../../scripts/governance/validate-f2-gov-08.mjs";
 
 const root = new URL("../../", import.meta.url);
 const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$1").replace(/\/$/, "");
 const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
 const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `HEAD:${path}`], { cwd: sourceRepository, encoding: null, stdio: ["ignore", "pipe", "pipe"] });
+const publishedPaths = JSON.parse(canonicalBlob("deploy/publish-manifest.json").toString("utf8")).files;
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
 
 async function write(repository, path, bytes) {
@@ -311,7 +313,7 @@ for (const [label, mutate] of [
   try {
     await mutate(fixture);
     await publishFixtureHead(fixture, `protected consumer ${label}`);
-    assert.throws(() => run(fixture), /protected authority|canonical consumer.*head|structural Git diff/i);
+    assert.throws(() => run(fixture), /protected authority|canonical consumer.*head|structural Git diff|portable character|not ASCII/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
@@ -329,7 +331,7 @@ test("F2-GOV-08 rejects an authority blob transplanted to a Git path containing 
     fixture.headSha = commit;
     fixture.event.pull_request.head.sha = commit;
     await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
-    assert.throws(() => run(fixture), /protected authority blob was transplanted|protected authority/i);
+    assert.throws(() => run(fixture), /protected authority blob was transplanted|protected authority|forbidden portable character/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
@@ -359,11 +361,11 @@ test("F2-GOV-08 rejects distinct invalid byte paths instead of collapsing both t
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
-test("F2-GOV-08 accepts a valid NFC UTF-8 live path without weakening the allowlist", async () => {
+test("F2-GOV-08 rejects Unicode because the current portable path inventory is ASCII-only", async () => {
   const fixture = await createRepository();
   try {
     await publishBinaryRootEntries(fixture, [{ pathBytes: Buffer.from("página.html", "utf8") }], "valid NFC UTF-8 path");
-    assert.equal(run(fixture).decision, "PASS");
+    assert.throws(() => run(fixture), /Git path is not ASCII|ASCII-only/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
@@ -371,7 +373,7 @@ test("F2-GOV-08 rejects a canonically equivalent decomposed Unicode live path", 
   const fixture = await createRepository();
   try {
     await publishBinaryRootEntries(fixture, [{ pathBytes: Buffer.from("pa\u0301gina.html", "utf8") }], "decomposed Unicode path");
-    assert.throws(() => run(fixture), /Git path is not Unicode NFC|normalization/i);
+    assert.throws(() => run(fixture), /Git path is not ASCII|ASCII-only/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
@@ -380,8 +382,74 @@ test("F2-GOV-08 rejects a byte-different decomposed representation of a protecte
   try {
     const pathBytes = Buffer.from("scripts-governance-f2-gov-08-consume\u0072\u0301.mjs.html", "utf8");
     await publishBinaryRootEntries(fixture, [{ pathBytes }], "protected path normalization ambiguity");
-    assert.throws(() => run(fixture), /Git path is not Unicode NFC|normalization/i);
+    assert.throws(() => run(fixture), /Git path is not ASCII|ASCII-only/i);
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 portable grammar accepts every one of the 56 current published paths", () => {
+  assert.equal(publishedPaths.length, 56);
+  assert.deepEqual(
+    publishedPaths.map((path) => portableGuard.validatePortableGitPathBytes(Buffer.from(path, "ascii"))),
+    publishedPaths,
+  );
+});
+
+for (const [label, path, expected] of [
+  ["reserved CON with extension", "CON.html", /reserved Windows device/i],
+  ["reserved con without extension", "con", /reserved Windows device/i],
+  ["reserved NUL with extension", "NUL.txt", /reserved Windows device/i],
+  ["reserved COM1 with extension", "COM1.js", /reserved Windows device/i],
+  ["reserved LPT9 with extension", "LPT9.css", /reserved Windows device/i],
+  ["alternate data stream", "inert:probe.html", /forbidden portable character|alternate data stream/i],
+  ["alternate data stream marker", "index.html:$DATA", /forbidden portable character|alternate data stream/i],
+  ["trailing dot", "inert.html.", /trailing dot or space/i],
+  ["trailing space", "inert.html ", /trailing dot or space/i],
+  ["backslash", "src\\js\\branct.js", /backslash|forbidden portable character/i],
+  ["drive letter", "C:/index.html", /absolute|drive/i],
+  ["UNC path", "\\\\server\\share.html", /UNC|backslash|absolute/i],
+  ["parent traversal", "../escape.html", /traversal/i],
+  ["current traversal", "./index.html", /traversal/i],
+  ["empty segment", "src//index.html", /empty segment|traversal/i],
+  ["control character", "inert\u0001.html", /control|forbidden portable character/i],
+  ["forbidden question mark", "inert?.html", /forbidden portable character/i],
+  ["Unicode normalization ambiguity", "pa\u0301gina.html", /Git path is not ASCII|ASCII-only/i],
+]) test(`F2-GOV-08 portable grammar rejects ${label} deterministically`, () => {
+  assert.throws(() => portableGuard.validatePortableGitPathBytes(Buffer.from(path, "utf8")), expected);
+});
+
+test("F2-GOV-08 rejects a case-insensitive collision before materialization", async () => {
+  const fixture = await createRepository();
+  try {
+    await publishBinaryRootEntries(fixture, [{ pathBytes: Buffer.from("INDEX.html", "ascii") }], "case collision");
+    assert.throws(() => run(fixture), /portable path collision.*index\.html.*INDEX\.html|portable path collision.*INDEX\.html.*index\.html/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 requires the canonical index.html bytes and capitalization", async () => {
+  const fixture = await createRepository();
+  try {
+    fixture.git("mv", "index.html", "temporary-index-name");
+    fixture.git("mv", "temporary-index-name", "INDEX.html");
+    await publishFixtureHead(fixture, "replace canonical index capitalization");
+    assert.throws(() => run(fixture), /canonical live path index\.html is absent or has different bytes\/capitalization/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 rejects a reserved Windows name before materialization", async () => {
+  const fixture = await createRepository();
+  try {
+    await publishBinaryRootEntries(fixture, [{ pathBytes: Buffer.from("CON.html", "ascii") }], "reserved path");
+    assert.throws(() => run(fixture), /reserved Windows device/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-08 materializer rejects an escaping destination before writing", async () => {
+  const root = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-materialize-"));
+  const escaped = join(dirname(root), "escape.html");
+  try {
+    assert.throws(() => portableGuard.materializePortableBlob(root, "../escape.html", Buffer.from("blocked")), /traversal|escapes trusted root/i);
+    await assert.rejects(access(escaped));
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 for (const [role, path] of [

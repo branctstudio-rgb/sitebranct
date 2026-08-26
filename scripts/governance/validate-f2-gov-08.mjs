@@ -47,23 +47,37 @@ function decodeAscii(bytes, label) {
   return bytes.toString("ascii");
 }
 
-function decodeGitPath(pathBytes, label = "Git path") {
+export function validatePortableGitPathBytes(pathBytes, label = "portable Git path") {
   assert.ok(Buffer.isBuffer(pathBytes), `${label} is not a byte sequence`);
   let path;
   try { path = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(pathBytes); }
   catch { assert.fail(`${label} is not canonical UTF-8`); }
   assert.equal(Buffer.from(path, "utf8").equals(pathBytes), true, `${label} UTF-8 round-trip is divergent`);
   assert.equal(path.includes("\uFFFD"), false, `${label} contains a forbidden replacement character`);
-  assert.equal(path.normalize("NFC"), path, `${label} is not Unicode NFC`);
+  assert.ok([...pathBytes].every((byte) => byte <= 0x7f), `${label} is not ASCII; current path grammar is ASCII-only`);
   safeRelativePath(path, label);
   return path;
 }
 
+const decodeGitPath = validatePortableGitPathBytes;
+
+// Portable v1 grammar: ASCII bytes only; `/`-separated segments made from
+// A-Z, a-z, 0-9, `.`, `_`, and `-`. Additional checks below reject traversal,
+// Windows device names, trailing dot/space, absolute forms, ADS and case-fold
+// collisions before any trusted or candidate blob is materialized.
 function safeRelativePath(value, label = "path") {
   assert.equal(typeof value, "string", `${label} is not a string`);
-  assert.ok(value.length > 0 && !value.includes("\0") && !value.includes("\\"), `unsafe ${label}: ${value}`);
-  assert.ok(!value.startsWith("/") && !/^[A-Za-z]:/.test(value), `unsafe absolute ${label}: ${value}`);
-  assert.ok(value.split("/").every((segment) => segment && segment !== "." && segment !== ".."), `unsafe ${label} traversal: ${value}`);
+  assert.ok(value.length > 0 && !value.includes("\0"), `unsafe empty or NUL ${label}`);
+  assert.ok(!value.startsWith("\\\\"), `unsafe UNC ${label}: ${value}`);
+  assert.ok(!value.includes("\\"), `unsafe backslash in ${label}: ${value}`);
+  assert.ok(!value.startsWith("/") && !/^[A-Za-z]:/.test(value), `unsafe absolute or drive ${label}: ${value}`);
+  const segments = value.split("/");
+  assert.ok(segments.every((segment) => segment && segment !== "." && segment !== ".."), `unsafe ${label} traversal or empty segment: ${value}`);
+  for (const segment of segments) {
+    assert.doesNotMatch(segment, /[. ]$/, `${label} segment has trailing dot or space: ${segment}`);
+    assert.doesNotMatch(segment, /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i, `${label} uses a reserved Windows device: ${segment}`);
+  }
+  assert.match(value, /^[A-Za-z0-9._/-]+$/, `${label} contains a forbidden portable character or alternate data stream marker: ${value}`);
 }
 
 function git(repository, args, options = {}) {
@@ -150,6 +164,24 @@ function treeEntries(repository, sha) {
     const path = decodeGitPath(pathBytes, "recursive Git path");
     return { mode: match[1], type: match[2], oid: match[3], path, pathBytes };
   });
+}
+
+function validatePortableGitTree(entries) {
+  const destinations = new Map();
+  for (const entry of entries) {
+    const path = validatePortableGitPathBytes(entry.pathBytes, "recursive Git path");
+    assert.equal(path, entry.path, `recursive Git path bytes and text differ: ${entry.path}`);
+    const destinationKey = path.toLowerCase();
+    const previous = destinations.get(destinationKey);
+    assert.equal(previous, undefined, `portable path collision: ${previous} and ${path}`);
+    destinations.set(destinationKey, path);
+  }
+  const canonicalIndex = entries.find(({ pathBytes }) => pathBytes.equals(Buffer.from("index.html", "ascii")));
+  assert.ok(canonicalIndex, "canonical live path index.html is absent or has different bytes/capitalization");
+  assert.equal(canonicalIndex.path, "index.html", "canonical live path index.html is redirected");
+  assert.equal(canonicalIndex.mode, "100644", "canonical live path index.html has unexpected Git mode");
+  assert.equal(canonicalIndex.type, "blob", "canonical live path index.html has unexpected Git type");
+  return entries;
 }
 
 function gitObjectType(repository, oid) {
@@ -286,10 +318,14 @@ function loadAuthority(repository, baseSha) {
   return { contract, contractBlob, manifest, manifestBlob, files };
 }
 
-function materializeBlob(root, path, bytes) {
+export function materializePortableBlob(root, path, bytes) {
   safeRelativePath(path, "materialized authority path");
-  const target = resolve(root, ...path.split("/"));
-  assert.ok(target.startsWith(`${resolve(root)}${sep}`), "materialized authority path escapes trusted root");
+  const rootMetadata = lstatSync(root);
+  assert.equal(rootMetadata.isSymbolicLink(), false, "trusted materialization root is a symlink");
+  assert.equal(rootMetadata.isDirectory(), true, "trusted materialization root is not a directory");
+  const trustedRoot = realpathSync(root);
+  const target = resolve(trustedRoot, ...path.split("/"));
+  assert.ok(target.startsWith(`${trustedRoot}${sep}`), "materialized authority path escapes trusted root");
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, bytes, { flag: "wx", mode: 0o600 });
   const metadata = lstatSync(target);
@@ -297,6 +333,8 @@ function materializeBlob(root, path, bytes) {
   assert.equal(metadata.isFile(), true, `materialized authority is not a regular file: ${path}`);
   return target;
 }
+
+const materializeBlob = materializePortableBlob;
 
 export function verifyMaterializedAuthoritySnapshot(files, materialized) {
   for (const [role, file] of files) {
@@ -309,10 +347,10 @@ export function verifyMaterializedAuthoritySnapshot(files, materialized) {
   }
 }
 
-function materializeCandidate(repository, headSha, contract, root) {
+function materializeCandidate(repository, headSha, contract, root, headEntries) {
   const seen = new Set();
   const payload = [];
-  for (const entry of treeEntries(repository, headSha).filter(({ path }) => allowedCandidatePath(path, contract))) {
+  for (const entry of headEntries.filter(({ path }) => allowedCandidatePath(path, contract))) {
     safeRelativePath(entry.path, "candidate path");
     assert.equal(seen.has(entry.path), false, `duplicate candidate path: ${entry.path}`);
     seen.add(entry.path);
@@ -371,6 +409,7 @@ export function runBaseOnlyGitSimulation(input) {
   try { git(repository, ["merge-base", "--is-ancestor", baseSha, headSha]); }
   catch { assert.fail("trusted operational base is not an ancestor of head"); }
 
+  const headEntries = validatePortableGitTree(treeEntries(repository, headSha));
   validateHeadStructuralIntegrity(repository, baseSha, headSha, authority);
 
   const trustedRoot = mkdtempSync(join(tmpdir(), "branct-f2-gov-08-trusted-"));
@@ -381,7 +420,7 @@ export function runBaseOnlyGitSimulation(input) {
   try {
     const materialized = new Map();
     for (const [role, file] of authority.files) materialized.set(role, materializeBlob(authorityRoot, file.pin.path, file.bytes));
-    const candidate = materializeCandidate(repository, headSha, authority.contract, candidateRoot);
+    const candidate = materializeCandidate(repository, headSha, authority.contract, candidateRoot, headEntries);
     verifyMaterializedAuthoritySnapshot(authority.files, materialized);
     const requestPath = join(trustedRoot, "request.json");
     const responsePath = join(trustedRoot, "response.json");
