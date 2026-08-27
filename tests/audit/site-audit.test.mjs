@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { join, normalize } from "node:path";
 import test from "node:test";
 
+import "./f2-gov-08.test.mjs";
+
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
 const auditPath = new URL("../../docs/audit/phase-1-audit.md", import.meta.url);
 const roadmapPath = new URL("../../docs/audit/target-architecture-roadmap.md", import.meta.url);
@@ -206,8 +208,33 @@ function resolveAuthoritySha(transition, options = {}) {
       eventBase = event?.before;
     }
     assert.match(eventHead ?? "", shaPattern, "authority event head sha is absent or malformed");
-    assert.match(transition.authority?.pullRequestBaseSha ?? "", shaPattern, "authority pull request base sha is absent or malformed");
-    assert.equal(eventBase, transition.authority.pullRequestBaseSha, "authority event base sha differs from the transition contract");
+    assert.match(eventBase ?? "", shaPattern, "authority event base sha is absent or malformed");
+    const policy = transition.authority?.operationalBasePolicy;
+    assert.deepEqual(Object.keys(policy ?? {}).sort(), ["activeVersion", "history", "requireAncestry", "schemaVersion", "source"].sort(), "operational base policy is absent or malformed");
+    assert.equal(policy.schemaVersion, 2, "operational base policy schema is divergent");
+    assert.equal(policy.source, "github.event.pull_request.base.sha", "operational base authority source is divergent");
+    assert.equal(policy.requireAncestry, true, "operational base ancestry must remain mandatory");
+    assert.deepEqual(policy.history.map(({ version, status }) => ({ version, status })), [
+      { version: 1, status: "HISTORICAL_ANCHOR" },
+      { version: 2, status: "MINIMUM_OPERATIONAL_BASE" },
+    ], "operational base history is missing, reordered, downgraded or silently replaced");
+    assert.equal(policy.activeVersion, 2, "operational base active version is downgraded or unknown");
+    const [historical, active] = policy.history;
+    assert.equal(historical.sha, "4ffdff435f90612b9d46051110bd87b2afc40d17", "historical operational base anchor was replaced");
+    assert.equal(active.sha, "1f7e95315e518a4ea0a5f1668db67e5b18a69087", "minimum operational base was replaced");
+    const repository = options.repository ?? normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
+    for (const [label, sha] of [["historical", historical.sha], ["minimum", active.sha], ["event", eventBase], ["head", eventHead]]) {
+      try { execFileSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: repository, stdio: "ignore" }); }
+      catch { assert.fail(`${label} operational base authority is not resolvable`); }
+    }
+    for (const [label, ancestor, descendant] of [
+      ["historical-to-minimum", historical.sha, active.sha],
+      ["minimum-to-event", active.sha, eventBase],
+      ["event-to-head", eventBase, eventHead],
+    ]) {
+      try { execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], { cwd: repository, stdio: "ignore" }); }
+      catch { assert.fail(`operational base ancestry or downgrade violation: ${label}`); }
+    }
   }
   assert.ok(explicit || eventHead, "authority sha is absent");
   if (explicit && eventHead) assert.equal(explicit, eventHead, "explicit authority sha differs from event head sha");
@@ -449,7 +476,7 @@ test("F2-GOV-06 transition contract exists before live F2-01 work is admitted", 
   const transition = await readJson(f201TransitionPath);
   const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
   const authoritySha = resolveAuthoritySha(transition);
-  assert.equal(transition.schemaVersion, 1);
+  assert.equal(transition.schemaVersion, 2);
   assert.equal(transition.status, transition.stateMachine.current);
   assert.deepEqual(transition.historicalPhase1, { status: "HISTORICAL_FROZEN", ...immutableF201Pins.historicalPhase1 });
   assert.deepEqual({ path: transition.f201.responsiveTest.path, gitBlobOid: transition.f201.responsiveTest.gitBlobOid, sha256: transition.f201.responsiveTest.copiedSha256 }, immutableF201Pins.responsiveTest);
@@ -556,24 +583,33 @@ test("F2-01 runtime and engine evidence fail closed on omissions, drift and adul
 
 test("F2-GOV-06 authority resolver rejects absent, malformed and contradictory PR identity", async () => {
   const transition = await readJson(f201TransitionPath);
+  const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-06-event-"));
   const eventPath = join(directory, "event.json");
-  const head = "1".repeat(40);
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repository, encoding: "utf8" }).trim();
+  const operationalBase = transition.authority.operationalBasePolicy.history.find(({ version }) => version === transition.authority.operationalBasePolicy.activeVersion).sha;
+  const historicalBase = transition.authority.operationalBasePolicy.history[0].sha;
   try {
-    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: transition.authority.pullRequestBaseSha } } }));
-    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
-    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: head }), head);
-    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "2".repeat(40) }), /differs from event head/i);
+    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: operationalBase } } }));
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "", repository }), head);
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: head, repository }), head);
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "2".repeat(40), repository }), /differs from event head/i);
     assert.throws(() => resolveAuthoritySha(transition, { explicit: "HEAD", eventPath: "" }), /malformed/i);
     assert.throws(() => resolveAuthoritySha(transition, { explicit: "", eventPath: "" }), /absent/i);
     await writeFile(eventPath, "{");
-    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /unreadable or malformed/i);
-    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: "2".repeat(40) } } }));
-    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /base sha differs/i);
-    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/main", before: transition.authority.pullRequestBaseSha, after: head, repository: { full_name: transition.repository } }));
-    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "" }), head);
-    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/not-main", before: transition.authority.pullRequestBaseSha, after: head, repository: { full_name: transition.repository } }));
-    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "" }), /not for main/i);
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "", repository }), /unreadable or malformed/i);
+    await writeFile(eventPath, JSON.stringify({ pull_request: { head: { sha: head }, base: { sha: historicalBase } } }));
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "", repository }), /downgrade violation.*minimum-to-event/i);
+    const downgraded = structuredClone(transition);
+    downgraded.authority.operationalBasePolicy.activeVersion = 1;
+    assert.throws(() => resolveAuthoritySha(downgraded, { eventPath, explicit: "", repository }), /active version is downgraded/i);
+    const replaced = structuredClone(transition);
+    replaced.authority.operationalBasePolicy.history[0].sha = operationalBase;
+    assert.throws(() => resolveAuthoritySha(replaced, { eventPath, explicit: "", repository }), /historical operational base anchor was replaced/i);
+    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/main", before: operationalBase, after: head, repository: { full_name: transition.repository } }));
+    assert.equal(resolveAuthoritySha(transition, { eventPath, explicit: "", repository }), head);
+    await writeFile(eventPath, JSON.stringify({ ref: "refs/heads/not-main", before: operationalBase, after: head, repository: { full_name: transition.repository } }));
+    assert.throws(() => resolveAuthoritySha(transition, { eventPath, explicit: "", repository }), /not for main/i);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 

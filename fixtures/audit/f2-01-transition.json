@@ -1,12 +1,29 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "status": "F2_01_AUTHORIZED_IN_DEVELOPMENT",
   "repository": "branctstudio-rgb/sitebranct",
   "baseSha": "a47abb9a43248320dfef8449b6a65e187913fd24",
   "authority": {
     "source": "github.event.pull_request.head.sha",
     "localOverride": "F2_GOV_AUTHORITY_SHA",
-    "pullRequestBaseSha": "4ffdff435f90612b9d46051110bd87b2afc40d17",
+    "operationalBasePolicy": {
+      "schemaVersion": 2,
+      "source": "github.event.pull_request.base.sha",
+      "activeVersion": 2,
+      "requireAncestry": true,
+      "history": [
+        {
+          "version": 1,
+          "sha": "4ffdff435f90612b9d46051110bd87b2afc40d17",
+          "status": "HISTORICAL_ANCHOR"
+        },
+        {
+          "version": 2,
+          "sha": "1f7e95315e518a4ea0a5f1668db67e5b18a69087",
+          "status": "MINIMUM_OPERATIONAL_BASE"
+        }
+      ]
+    },
     "rejectSyntheticMergeHead": true
   },
   "productionAuthorized": false,
