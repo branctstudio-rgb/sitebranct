@@ -559,10 +559,28 @@ for (const [label, path, content, expected] of [
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
-test("F2-GOV-08 records simulator limits instead of claiming workflow enforcement", () => {
+test("F2-GOV-09 promotes the base-only authority to operational enforcement", () => {
   const contract = JSON.parse(canonicalBlob(CANONICAL_AUTHORITY_PATHS.contract).toString("utf8"));
-  assert.equal(contract.limitations.workflowEnforcement, "NOT_VERIFIED");
-  assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED");
-  assert.equal(contract.limitations.browserNetworkIsolation, "NOT_VERIFIED");
-  assert.equal(contract.status, "OFFLINE_SIMULATOR_ONLY");
+  const workflow = canonicalBlob(".github/workflows/universal-pr-gate.yml").toString("utf8");
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.equal(contract.status, "OPERATIONAL_CANDIDATE");
+  assert.equal(contract.limitations.workflowEnforcement, "CANDIDATE_PENDING_PROTECTED_MERGE");
+  assert.equal(contract.limitations.operationalIsolation, "VERIFIED_IN_CI");
+  assert.equal(contract.limitations.browserNetworkIsolation, "VERIFIED_IN_CI");
+  assert.match(workflow, /Run base-only F2-GOV-08 enforcement/);
+  assert.match(workflow, /git show "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/);
+  assert.match(consumer, /chromium/);
+  assert.match(consumer, /firefox/);
+  assert.match(consumer, /webkit/);
+  assert.match(consumer, /context\.route\(/);
+  assert.match(consumer, /127\.0\.0\.1/);
+});
+
+test("F2-GOV-09 canonical matrix fixes 84 observations, 41 identities and 184 actions per engine", () => {
+  const matrix = JSON.parse(canonicalBlob(CANONICAL_AUTHORITY_PATHS.matrix).toString("utf8"));
+  assert.deepEqual(matrix.engines, ["chromium", "firefox", "webkit"]);
+  assert.equal(matrix.observationCountPerEngine, 84);
+  assert.equal(matrix.menuEvidenceCountPerEngine, 41);
+  assert.equal(matrix.actionCountPerEngine, 184);
+  assert.deepEqual(matrix.viewports["1024x768"], [1024, 768]);
 });

@@ -1,6 +1,39 @@
-[
-  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": true, "focusInside": true, "targetWidth": 44, "targetHeight": 44 } },
-  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": false, "focusInside": false, "targetWidth": 44, "targetHeight": 44 } },
-  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": false, "focusInside": true, "targetWidth": 48, "targetHeight": 48 } },
-  { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": true, "focusInside": true, "targetWidth": 44, "targetHeight": 44 } }
-]
+{
+  "schemaVersion": 2,
+  "simulation": [
+    { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": true, "focusInside": true, "targetWidth": 44, "targetHeight": 44 } },
+    { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": false, "focusInside": false, "targetWidth": 44, "targetHeight": 44 } },
+    { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": false, "focusInside": true, "targetWidth": 48, "targetHeight": 48 } },
+    { "semanticResult": "PASS", "raw": { "complete": true, "drawerOpen": true, "focusInside": true, "targetWidth": 44, "targetHeight": 44 } }
+  ],
+  "operational": {
+    "allowedConclusions": ["EXPECTED_SEMANTIC_RED", "READY_GREEN"],
+    "developmentVector": {
+      "overflow": "FAIL",
+      "touchTargets": "FAIL",
+      "menu": "FAIL",
+      "reducedMotion": "PASS",
+      "reportIntegrity": "PASS",
+      "networkIsolation": "PASS"
+    },
+    "readyVector": {
+      "overflow": "PASS",
+      "touchTargets": "PASS",
+      "menu": "PASS",
+      "reducedMotion": "PASS",
+      "reportIntegrity": "PASS",
+      "networkIsolation": "PASS"
+    },
+    "developmentMinimums": {
+      "overflowCount": 1,
+      "smallTargetObservationCount": 1,
+      "menuFailureCount": 1
+    },
+    "readyMaximums": {
+      "overflowCount": 0,
+      "smallTargetObservationCount": 0,
+      "menuFailureCount": 0,
+      "reducedMotionDurationMs": 1
+    }
+  }
+}

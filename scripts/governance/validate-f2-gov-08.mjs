@@ -13,6 +13,9 @@ export const CANONICAL_AUTHORITY_PATHS = Object.freeze({
   matrix: "fixtures/audit/f2-gov-08-matrix.json",
   expectations: "fixtures/audit/f2-gov-08-expectations.json",
   staticServer: "scripts/governance/f2-gov-08-static-server.mjs",
+  runtime: "fixtures/audit/f2-01-ci-runtime.json",
+  menuEvidence: "fixtures/audit/f2-01-menu-evidence-matrix.json",
+  targetBaseline: "fixtures/audit/f2-01-baseline-results.json",
 });
 
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -320,8 +323,8 @@ function validateHeadStructuralIntegrity(repository, baseSha, headSha, authority
 
 function validateContract(contract) {
   exactKeys(contract, ["schemaVersion", "status", "repository", "canonicalAuthority", "trustedEvent", "candidate", "measurement", "environment", "limitations"], "F2-GOV-08 contract");
-  assert.equal(contract.schemaVersion, 2, "F2-GOV-08 contract schema is divergent");
-  assert.equal(contract.status, "OFFLINE_SIMULATOR_ONLY", "F2-GOV-08 must remain an offline simulator");
+  assert.equal(contract.schemaVersion, 3, "F2-GOV-08 contract schema is divergent");
+  assert.equal(contract.status, "OPERATIONAL_CANDIDATE", "F2-GOV-08 operational candidate status is divergent");
   assert.equal(contract.canonicalAuthority.source, "exact-base-sha-git-objects", "authority source is not exact-base-sha Git objects");
   for (const [role, path] of Object.entries(CANONICAL_AUTHORITY_PATHS)) {
     if (role === "contract") continue;
@@ -336,10 +339,14 @@ function validateContract(contract) {
   assert.equal(contract.candidate.commandsAllowed, false, "candidate commands must be forbidden");
   assert.equal(contract.candidate.dependenciesAllowed, false, "candidate dependencies must be forbidden");
   assert.equal(contract.measurement.producerMaySupplyResults, false, "producer result injection must be forbidden");
+  assert.deepEqual(contract.measurement.requiredEngines, ["chromium", "firefox", "webkit"], "required browser engines are divergent");
+  assert.equal(contract.measurement.networkPolicy, "loopback-only-browser-route-enforcement", "browser network policy is divergent");
+  assert.ok(Number.isInteger(contract.measurement.perEngineTimeoutMs) && contract.measurement.perEngineTimeoutMs >= 60000, "per-engine timeout is absent or unsafe");
   assert.equal(contract.environment.futureJobPermissions.contents, "read", "future job permission must remain contents read-only");
   assert.deepEqual(contract.environment.exposedToBrowserOrServer, [], "browser or server credential exposure must remain empty");
-  assert.equal(contract.limitations.workflowEnforcement, "NOT_VERIFIED", "workflow enforcement must remain NOT_VERIFIED");
-  assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED", "operational isolation must remain NOT_VERIFIED");
+  assert.equal(contract.limitations.workflowEnforcement, "CANDIDATE_PENDING_PROTECTED_MERGE", "workflow enforcement state is divergent");
+  assert.equal(contract.limitations.operationalIsolation, "VERIFIED_IN_CI", "operational isolation evidence is divergent");
+  assert.equal(contract.limitations.browserNetworkIsolation, "VERIFIED_IN_CI", "browser network isolation evidence is divergent");
 }
 
 function loadAuthority(repository, baseSha) {
@@ -351,7 +358,7 @@ function loadAuthority(repository, baseSha) {
   const manifest = parseJson(manifestBlob.bytes, "canonical manifest");
   exactKeys(manifest, ["schemaVersion", "files"], "canonical manifest");
   assert.equal(manifest.schemaVersion, 1, "canonical manifest schema is divergent");
-  const roles = ["consumer", "matrix", "expectations", "staticServer"];
+  const roles = ["consumer", "matrix", "expectations", "staticServer", "runtime", "menuEvidence", "targetBaseline"];
   assert.deepEqual(manifest.files.map(({ role }) => role), roles, "canonical manifest roles are missing, duplicated or reordered");
   const files = new Map();
   for (const pin of manifest.files) {
@@ -408,8 +415,12 @@ function materializeCandidate(repository, headSha, contract, root, headEntries) 
     assert.equal(entry.mode, contract.candidate.gitMode, `candidate ${entry.path} has unexpected Git mode`);
     assert.equal(entry.type, contract.candidate.gitType, `candidate ${entry.path} has unexpected Git type`);
     const bytes = git(repository, ["cat-file", "blob", entry.oid], { buffer: true });
+    assert.ok(bytes.length > 0, `candidate ${entry.path} is an empty blob`);
     if (/\.(?:html|css|js)$/i.test(entry.path)) {
-      const text = bytes.toString("utf8");
+      let text;
+      try { text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
+      catch { assert.fail(`candidate ${entry.path} is not canonical UTF-8`); }
+      assert.equal(Buffer.from(text, "utf8").equals(bytes), true, `candidate ${entry.path} UTF-8 round-trip is divergent`);
       assert.doesNotMatch(text, /\b(?:fetch|WebSocket|EventSource)\s*\(|\bXMLHttpRequest\b|navigator\.sendBeacon\s*\(/i, `external network intent is forbidden in the offline candidate: ${entry.path}`);
       assert.doesNotMatch(text, /data-(?:authority-key|expected-identity|envelope|digest|semantic-result|pass)=/i, `KEYED_PRODUCER_TRANSPLANT: candidate attempts to provide authority output: ${entry.path}`);
     }
@@ -420,38 +431,132 @@ function materializeCandidate(repository, headSha, contract, root, headEntries) 
   return { payload, payloadDigest: sha256(canonicalJson(payload)) };
 }
 
-function validateConsumerReport(report, authority, baseSha, headSha, payloadDigest) {
-  exactKeys(report, ["complete", "evidence"], "trusted consumer report");
-  assert.equal(report.complete, true, "trusted consumer report is incomplete");
+function validateSimulationReport(report, authority, baseSha, headSha, payloadDigest) {
+  exactKeys(report, ["complete", "executionMode", "evidence"], "trusted simulation report");
+  assert.equal(report.complete, true, "trusted simulation report is incomplete");
+  assert.equal(report.executionMode, "SIMULATION", "trusted simulation mode is divergent");
   const matrix = parseJson(authority.files.get("matrix").bytes, "canonical matrix");
   const expectations = parseJson(authority.files.get("expectations").bytes, "canonical expectations");
-  assert.equal(report.evidence.length, matrix.length, "trusted consumer report is partial");
+  assert.equal(report.evidence.length, matrix.simulation.length, "trusted simulation report is partial");
   const matrixDigest = authority.files.get("matrix").pin.sha256;
   const identities = new Set();
-  for (const [index, canonicalCase] of matrix.entries()) {
+  for (const [index, canonicalCase] of matrix.simulation.entries()) {
     const evidence = report.evidence[index];
-    exactKeys(evidence, ["baseSha", "headSha", "matrixDigest", "engine", "route", "viewport", "action", "payloadDigest", "identity", "rawObservation", "semanticResult", "digest"], `trusted evidence ${index}`);
+    exactKeys(evidence, ["baseSha", "headSha", "matrixDigest", "engine", "route", "viewport", "action", "payloadDigest", "identity", "rawObservation", "semanticResult", "digest"], `trusted simulation evidence ${index}`);
     const binding = { baseSha, headSha, matrixDigest, engine: canonicalCase.engine, route: canonicalCase.route, viewport: canonicalCase.viewport, action: canonicalCase.action, payloadDigest };
     const identity = sha256(canonicalJson(binding));
     assert.equal(evidence.identity, identity, `trusted evidence identity differs at ${index}`);
     assert.equal(identities.has(identity), false, `trusted evidence identity is duplicated: ${identity}`);
     identities.add(identity);
     for (const key of Object.keys(binding)) assert.deepEqual(evidence[key], binding[key], `trusted evidence ${key} differs at ${index}`);
-    assert.deepEqual(evidence.rawObservation, expectations[index].raw, `OBSERVATION_PAYLOAD_SWAP: semantic observation differs at ${index}`);
-    assert.equal(evidence.semanticResult, expectations[index].semanticResult, `trusted semantic result differs at ${index}`);
+    assert.deepEqual(evidence.rawObservation, expectations.simulation[index].raw, `OBSERVATION_PAYLOAD_SWAP: semantic observation differs at ${index}`);
+    assert.equal(evidence.semanticResult, expectations.simulation[index].semanticResult, `trusted semantic result differs at ${index}`);
     const envelope = { ...binding, identity, rawObservation: evidence.rawObservation, semanticResult: evidence.semanticResult };
     assert.equal(evidence.digest, sha256(canonicalJson(envelope)), `trusted evidence digest differs at ${index}`);
   }
   return report.evidence;
 }
 
-export function runBaseOnlyGitSimulation(input) {
-  exactKeys(input, ["repository", "eventPath"], "trusted harness input");
+function menuMeasurementPass(result) {
+  return result.focusReached === true && result.focusStyle === true && result.open?.expanded === "true" && result.open.drawerInside === true && result.open.focusInside === true && result.open.bodyLocked === true && result.open.backgroundInert === true && result.open.closeTarget?.width >= 44 && result.open.closeTarget?.height >= 44 && result.closed?.closed === true && result.closed?.focusReturned === true && (result.closeButtonClosed === null || result.closeButtonClosed?.invoked === true && result.closeButtonClosed?.closed === true) && (result.outsideClosed === null || result.outsideClosed?.invoked === true && result.outsideClosed?.closed === true);
+}
+
+function validateOperationalReport(report, authority, baseSha, headSha, payloadDigest) {
+  exactKeys(report, ["complete", "executionMode", "conclusion", "reports", "evidence"], "trusted operational report");
+  assert.equal(report.complete, true, "trusted operational report is incomplete");
+  assert.equal(report.executionMode, "OPERATIONAL", "trusted operational mode is divergent");
+  const matrix = parseJson(authority.files.get("matrix").bytes, "canonical matrix");
+  const expectations = parseJson(authority.files.get("expectations").bytes, "canonical expectations");
+  const menuAuthority = parseJson(authority.files.get("menuEvidence").bytes, "canonical menu evidence");
+  assert.deepEqual(report.reports.map(({ engine }) => engine), matrix.engines, "trusted engine report set is missing, reordered or divergent");
+  const matrixDigest = authority.files.get("matrix").pin.sha256;
+  const identities = new Set();
+  const expectedEvidenceKeys = new Set();
+  for (const engine of matrix.engines) {
+    for (const route of matrix.routes) for (const viewport of Object.keys(matrix.viewports)) expectedEvidenceKeys.add(`${engine}\0observation\0${route}\0${viewport}\0measure-responsive`);
+    for (const entry of menuAuthority.entries) expectedEvidenceKeys.add(`${engine}\0menu\0${entry.route}\0${entry.viewport}\0${entry.actionPhases.join("+")}`);
+  }
+  assert.equal(report.evidence.length, expectedEvidenceKeys.size, "trusted operational evidence report is partial or contains extras");
+  for (const [index, evidence] of report.evidence.entries()) {
+    exactKeys(evidence, ["baseSha", "headSha", "matrixDigest", "payloadDigest", "engine", "kind", "route", "viewport", "action", "identity", "rawObservation", "semanticResult", "digest"], `trusted operational evidence ${index}`);
+    const key = `${evidence.engine}\0${evidence.kind}\0${evidence.route}\0${evidence.viewport}\0${evidence.action}`;
+    assert.equal(expectedEvidenceKeys.delete(key), true, `trusted operational evidence identity is extra, duplicated or transplanted: ${key}`);
+    const binding = { baseSha, headSha, matrixDigest, payloadDigest, engine: evidence.engine, kind: evidence.kind, route: evidence.route, viewport: evidence.viewport, action: evidence.action };
+    const identity = sha256(canonicalJson(binding));
+    assert.equal(evidence.identity, identity, `trusted operational evidence identity differs at ${index}`);
+    assert.equal(identities.has(identity), false, `trusted operational evidence identity is duplicated: ${identity}`);
+    identities.add(identity);
+    for (const field of Object.keys(binding)) assert.deepEqual(evidence[field], binding[field], `trusted operational evidence ${field} differs at ${index}`);
+    const expectedSemantic = evidence.kind === "observation"
+      ? evidence.rawObservation.overflow || evidence.rawObservation.smallTargets?.length ? "FAIL" : "PASS"
+      : menuMeasurementPass(evidence.rawObservation.measuredResult) ? "PASS" : "FAIL";
+    assert.equal(evidence.semanticResult, expectedSemantic, `trusted operational semantic result differs at ${index}`);
+    const envelope = { ...binding, identity, rawObservation: evidence.rawObservation, semanticResult: evidence.semanticResult };
+    assert.equal(evidence.digest, sha256(canonicalJson(envelope)), `trusted operational evidence digest differs at ${index}`);
+  }
+  assert.equal(expectedEvidenceKeys.size, 0, "trusted operational evidence identities are missing");
+  let overflowCount = 0;
+  let smallTargetObservationCount = 0;
+  let menuFailureCount = 0;
+  for (const engineReport of report.reports) {
+    exactKeys(engineReport, ["engine", "version", "observations", "menuResults", "actions", "reducedMotion", "networkIsolation", "consoleIssues", "summary", "evidence"], `${engineReport?.engine ?? "unknown"} report`);
+    assert.equal(engineReport.observations.length, matrix.observationCountPerEngine, `${engineReport.engine}: observation evidence incomplete`);
+    assert.equal(engineReport.menuResults.length, matrix.menuEvidenceCountPerEngine, `${engineReport.engine}: menu evidence incomplete`);
+    assert.equal(engineReport.actions.length, matrix.actionCountPerEngine, `${engineReport.engine}: action evidence incomplete`);
+    assert.ok(engineReport.actions.every(({ status }) => status === "COMPLETED"), `${engineReport.engine}: action evidence is inconclusive`);
+    assert.equal(engineReport.networkIsolation.probeUrl, "https://f2-gov-09.invalid/network-probe", `${engineReport.engine}: network probe identity is divergent`);
+    assert.equal(engineReport.networkIsolation.probeResult, "BLOCKED", `${engineReport.engine}: external browser access was not blocked`);
+    assert.ok(engineReport.networkIsolation.blockedCount >= 1, `${engineReport.engine}: browser route blocker was not exercised`);
+    const observedOverflow = engineReport.observations.filter(({ overflow }) => overflow).length;
+    const observedSmall = engineReport.observations.filter(({ smallTargets }) => smallTargets.length).length;
+    const observedMenu = engineReport.menuResults.filter(({ semanticResult }) => semanticResult !== "PASS").length;
+    assert.deepEqual(engineReport.summary, {
+      overflowCount: observedOverflow,
+      smallTargetObservationCount: observedSmall,
+      menuFailureCount: observedMenu,
+      reducedMotionDurationMs: engineReport.reducedMotion.maxDurationMs,
+      consoleIssueCount: engineReport.consoleIssues.length,
+    }, `${engineReport.engine}: summary is divergent from measured evidence`);
+    overflowCount += observedOverflow;
+    smallTargetObservationCount += observedSmall;
+    menuFailureCount += observedMenu;
+  }
+  const reducedPass = report.reports.every(({ reducedMotion }) => reducedMotion.matches === true && reducedMotion.maxDurationMs <= expectations.operational.readyMaximums.reducedMotionDurationMs);
+  const ready = overflowCount === 0 && smallTargetObservationCount === 0 && menuFailureCount === 0 && reducedPass;
+  const development = overflowCount >= expectations.operational.developmentMinimums.overflowCount && smallTargetObservationCount >= expectations.operational.developmentMinimums.smallTargetObservationCount && menuFailureCount >= expectations.operational.developmentMinimums.menuFailureCount && reducedPass;
+  assert.ok(ready || development, "trusted operational evidence is neither exact READY GREEN nor contracted semantic RED");
+  assert.equal(report.conclusion, ready ? "READY_GREEN" : "EXPECTED_SEMANTIC_RED", "trusted operational conclusion is divergent");
+  return report.evidence;
+}
+
+const F2_GOV_09_EVOLUTION_BASE = "3656d57a78b777b1ff279c2cda01905877611117";
+const F2_GOV_09_EVOLUTION_PATHS = Object.freeze([
+  ".github/workflows/gate-integrity-sentinel.yml",
+  ".github/workflows/universal-pr-gate.yml",
+  "docs/audit/phase-2/governance/f2-gov-09-design.md",
+  "docs/audit/phase-2/governance/f2-gov-09-handoff.md",
+  "fixtures/audit/f2-gov-08-authority-manifest.json",
+  "fixtures/audit/f2-gov-08-base-only-contract.json",
+  "fixtures/audit/f2-gov-08-expectations.json",
+  "fixtures/audit/f2-gov-08-matrix.json",
+  "scripts/governance/f2-gov-08-consumer.mjs",
+  "scripts/governance/f2-gov-08-static-server.mjs",
+  "scripts/governance/validate-f2-gov-08.mjs",
+  "tests/audit/f2-gov-02a.test.mjs",
+  "tests/audit/f2-gov-02c.test.mjs",
+  "tests/audit/f2-gov-08.test.mjs",
+]);
+
+function runBaseOnlyGitHarness(input, executionMode, authorityMode = "BASE_ONLY") {
+  const expectedInputKeys = executionMode === "OPERATIONAL" ? ["repository", "eventPath", "trustedNodeModules"] : ["repository", "eventPath"];
+  exactKeys(input, expectedInputKeys, "trusted harness input");
   const repository = realpathSync(input.repository);
   const { event, baseSha, headSha, baseRef, headRef } = loadTrustedEvent(input.eventPath);
   resolveCommit(repository, baseSha, "trusted event base");
   resolveCommit(repository, headSha, "trusted event head");
-  const authority = loadAuthority(repository, baseSha);
+  assert.ok(["BASE_ONLY", "CANDIDATE_EVOLUTION"].includes(authorityMode), "trusted authority mode is invalid");
+  const authoritySha = authorityMode === "CANDIDATE_EVOLUTION" ? headSha : baseSha;
+  const authority = loadAuthority(repository, authoritySha);
   assert.equal(event.repository?.full_name, authority.contract.repository, "trusted event repository is divergent");
   assert.equal(baseRef, authority.contract.trustedEvent.baseRef, "trusted event base ref is divergent");
   assert.notEqual(headRef, baseRef, "trusted event head ref cannot equal the base ref");
@@ -461,7 +566,12 @@ export function runBaseOnlyGitSimulation(input) {
   catch { assert.fail("trusted operational base is not an ancestor of head"); }
 
   const headEntries = validatePortableGitTree(treeEntries(repository, headSha));
-  validateHeadStructuralIntegrity(repository, baseSha, headSha, authority);
+  if (authorityMode === "BASE_ONLY") validateHeadStructuralIntegrity(repository, baseSha, headSha, authority);
+  else {
+    assert.equal(baseSha, F2_GOV_09_EVOLUTION_BASE, "candidate evolution base is not the sealed F2-GOV-09 bootstrap base");
+    const changed = parseRawDiff(repository, baseSha, headSha, false).flatMap(({ oldPath, newPath }) => [oldPath, newPath]).filter(Boolean);
+    assert.deepEqual([...new Set(changed)].sort(), [...F2_GOV_09_EVOLUTION_PATHS], "candidate evolution diff is outside the closed F2-GOV-09 set");
+  }
 
   const trustedRoot = mkdtempSync(join(tmpdir(), "branct-f2-gov-08-trusted-"));
   const authorityRoot = join(trustedRoot, "authority");
@@ -475,24 +585,53 @@ export function runBaseOnlyGitSimulation(input) {
     verifyMaterializedAuthoritySnapshot(authority.files, materialized);
     const requestPath = join(trustedRoot, "request.json");
     const responsePath = join(trustedRoot, "response.json");
-    const request = { baseSha, headSha, candidateRoot, matrixPath: materialized.get("matrix"), expectationsPath: materialized.get("expectations"), matrixDigest: authority.files.get("matrix").pin.sha256, payloadDigest: candidate.payloadDigest };
+    const browserHome = join(trustedRoot, "browser-home");
+    mkdirSync(browserHome, { mode: 0o700 });
+    const trustedNodeModules = executionMode === "OPERATIONAL" ? realpathSync(input.trustedNodeModules) : authorityRoot;
+    if (executionMode === "OPERATIONAL") {
+      const modulesMetadata = lstatSync(trustedNodeModules);
+      assert.equal(modulesMetadata.isSymbolicLink(), false, "trusted node_modules root is a symlink");
+      assert.equal(modulesMetadata.isDirectory(), true, "trusted node_modules root is not a directory");
+    }
+    const request = {
+      executionMode,
+      baseSha,
+      headSha,
+      candidateRoot,
+      matrixPath: materialized.get("matrix"),
+      expectationsPath: materialized.get("expectations"),
+      runtimePath: materialized.get("runtime"),
+      menuEvidencePath: materialized.get("menuEvidence"),
+      targetBaselinePath: materialized.get("targetBaseline"),
+      trustedNodeModules,
+      browserHome,
+      perEngineTimeoutMs: authority.contract.measurement.perEngineTimeoutMs,
+      matrixDigest: authority.files.get("matrix").pin.sha256,
+      payloadDigest: candidate.payloadDigest,
+    };
     writeFileSync(requestPath, JSON.stringify(request), { flag: "wx", mode: 0o600 });
-    execFileSync(process.execPath, [materialized.get("consumer"), requestPath, responsePath], { cwd: authorityRoot, env: {}, timeout: 15000, stdio: ["ignore", "pipe", "pipe"] });
+    execFileSync(process.execPath, [materialized.get("consumer"), requestPath, responsePath], { cwd: authorityRoot, env: {}, timeout: executionMode === "OPERATIONAL" ? authority.contract.measurement.perEngineTimeoutMs * 3 + 30000 : 15000, stdio: ["ignore", "pipe", "pipe"] });
     verifyMaterializedAuthoritySnapshot(authority.files, materialized);
     for (const [role, file] of authority.files) {
-      const reread = readBaseBlob(repository, baseSha, file.pin.path, `post-execution ${role}`);
+      const reread = readBaseBlob(repository, authoritySha, file.pin.path, `post-execution ${role}`);
       assert.equal(sha256(reread.bytes), file.pin.sha256, `post-execution ${role} Git blob is divergent`);
     }
     const report = parseJson(readFileSync(responsePath), "trusted consumer response");
-    const evidence = validateConsumerReport(report, authority, baseSha, headSha, candidate.payloadDigest);
+    const evidence = executionMode === "OPERATIONAL"
+      ? validateOperationalReport(report, authority, baseSha, headSha, candidate.payloadDigest)
+      : validateSimulationReport(report, authority, baseSha, headSha, candidate.payloadDigest);
     return {
       decision: "PASS",
+      executionMode,
+      conclusion: report.conclusion ?? "SIMULATION_PASS",
       authority: {
         baseSha,
         headSha,
         contract: { path: CANONICAL_AUTHORITY_PATHS.contract, oid: authority.contractBlob.oid, sha256: sha256(authority.contractBlob.bytes) },
         manifest: { path: CANONICAL_AUTHORITY_PATHS.manifest, oid: authority.manifestBlob.oid, sha256: sha256(authority.manifestBlob.bytes) },
-        origins: Object.fromEntries([...authority.files].map(([role, file]) => [role, { baseSha, path: file.pin.path, oid: file.oid, sha256: file.pin.sha256 }])),
+        authorityMode,
+        authoritySha,
+        origins: Object.fromEntries([...authority.files].map(([role, file]) => [role, { authoritySha, path: file.pin.path, oid: file.oid, sha256: file.pin.sha256 }])),
         payloadDigest: candidate.payloadDigest,
       },
       evidence,
@@ -502,11 +641,28 @@ export function runBaseOnlyGitSimulation(input) {
   }
 }
 
+export function runBaseOnlyGitSimulation(input) {
+  return runBaseOnlyGitHarness(input, "SIMULATION");
+}
+
+export function runBaseOnlyGitEnforcement(input) {
+  return runBaseOnlyGitHarness(input, "OPERATIONAL");
+}
+
+export function runCandidateEvolutionProof(input) {
+  return runBaseOnlyGitHarness(input, "OPERATIONAL", "CANDIDATE_EVOLUTION");
+}
+
 export function runBaseOnlySimulation() {
   assert.fail("caller-controlled authority API was removed; use exact Git base objects and a trusted event");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.stderr.write("F2-GOV-08 is an import-only offline simulator; run its node:test contract.\n");
-  process.exitCode = 2;
+  const evolution = process.argv[2] === "--candidate-evolution";
+  const offset = evolution ? 1 : 0;
+  assert.deepEqual(process.argv.slice(2 + offset, 8 + offset).filter((_, index) => index % 2 === 0), ["--repository", "--event-path", "--trusted-node-modules"], "F2-GOV-08 operational CLI arguments are absent, reordered or divergent");
+  assert.equal(process.argv.length, 8 + offset, "F2-GOV-08 operational CLI requires exactly three named values");
+  const input = { repository: process.argv[3 + offset], eventPath: process.argv[5 + offset], trustedNodeModules: process.argv[7 + offset] };
+  const result = evolution ? runCandidateEvolutionProof(input) : runBaseOnlyGitEnforcement(input);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }

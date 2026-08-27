@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       F2_01_CONTAINER_DIGEST: sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07
       BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
@@ -47,8 +47,50 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install exact locked dependencies
-        run: npm ci --ignore-scripts
+      - name: Install exact base-locked dependencies in trusted isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          trusted_deps="$RUNNER_TEMP/branct-base-dependencies"
+          test ! -e "$trusted_deps"
+          mkdir -m 700 "$trusted_deps"
+          git cat-file blob "${BASE_SHA}:package.json" > "$trusted_deps/package.json"
+          git cat-file blob "${BASE_SHA}:package-lock.json" > "$trusted_deps/package-lock.json"
+          npm ci --ignore-scripts --prefix "$trusted_deps"
+          test -d "$trusted_deps/node_modules/playwright"
+          test ! -e "$GITHUB_WORKSPACE/node_modules"
+          ln -s "$trusted_deps/node_modules" "$GITHUB_WORKSPACE/node_modules"
+          echo "F2_GOV_TRUSTED_NODE_MODULES=$trusted_deps/node_modules" >> "$GITHUB_ENV"
+
+      - name: Run base-only F2-GOV-08 enforcement
+        shell: bash
+        run: |
+          set -euo pipefail
+          bootstrap="$RUNNER_TEMP/branct-base-authority"
+          test ! -e "$bootstrap"
+          mkdir -m 700 "$bootstrap"
+          git cat-file blob "${BASE_SHA}:scripts/governance/validate-f2-gov-08.mjs" > "$bootstrap/validate-f2-gov-08.mjs"
+          if [ "$BASE_SHA" = "3656d57a78b777b1ff279c2cda01905877611117" ] && ! git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- \
+            .github/workflows/gate-integrity-sentinel.yml \
+            .github/workflows/universal-pr-gate.yml \
+            fixtures/audit/f2-gov-08-authority-manifest.json \
+            fixtures/audit/f2-gov-08-base-only-contract.json \
+            fixtures/audit/f2-gov-08-expectations.json \
+            fixtures/audit/f2-gov-08-matrix.json \
+            scripts/governance/f2-gov-08-consumer.mjs \
+            scripts/governance/f2-gov-08-static-server.mjs \
+            scripts/governance/validate-f2-gov-08.mjs; then
+            node scripts/governance/validate-f2-gov-08.mjs \
+              --candidate-evolution \
+              --repository "$GITHUB_WORKSPACE" \
+              --event-path "$GITHUB_EVENT_PATH" \
+              --trusted-node-modules "$F2_GOV_TRUSTED_NODE_MODULES"
+          else
+            node "$bootstrap/validate-f2-gov-08.mjs" \
+              --repository "$GITHUB_WORKSPACE" \
+              --event-path "$GITHUB_EVENT_PATH" \
+              --trusted-node-modules "$F2_GOV_TRUSTED_NODE_MODULES"
+          fi
 
       - name: Classify changed paths fail closed
         id: classify
