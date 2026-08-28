@@ -181,7 +181,7 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
       ["checkout trust broadened", (s) => s.replace('safe.directory "$GITHUB_WORKSPACE"', 'safe.directory "*"'), "wildcard safe directory forbidden"],
       ["Firefox runtime HOME removed", (s) => s.replace(/^\s+HOME: \/root\s*\r?\n/m, ""), "Firefox-compatible root HOME is missing"],
       ["base bootstrap removed", (s) => s.replace(/git cat-file blob "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/, "git cat-file blob scripts/governance/validate-f2-gov-08.mjs"), "base-only consumer bootstrap missing"],
-      ["trusted event replaced", (s) => s.replace('--event-path "$GITHUB_EVENT_PATH"', '--event-path event-from-head.json'), "trusted GitHub event is not bound"],
+      ["trusted event replaced", (s) => s.replaceAll('--event-path "$GITHUB_EVENT_PATH"', '--event-path event-from-head.json'), "trusted GitHub event is not bound"],
       ["required Action removed", (s) => s.replace(/^\s+- name: Prepare Node\.js[\s\S]*?node-version: 22\s*\r?\n/m, ""), "required Action inventory mismatch"],
       ["extra permission", (s) => s.replace("  contents: read", "  contents: read\n  issues: read"), "permissions must be contents read only"],
       ["second job", (s) => `${s}\n  shadow-job:\n    runs-on: ubuntu-latest\n    steps: []\n`, "exactly one universal job is allowed"],
