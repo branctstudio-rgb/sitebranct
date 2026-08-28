@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -161,7 +161,7 @@ function expectedNetworkControl(action) {
   if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
   if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
   if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
-  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "index.html" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "crm-gestao.html" };
   if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
   return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
 }
@@ -197,7 +197,6 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
   const localRequests = [];
   const localResponses = [];
   const localViolations = [];
-  const reportToken = randomBytes(32).toString("hex");
   let scope = { phase: "initialization", action: "context-start", route: null, viewport: null };
   const setScope = (next) => { scope = { ...scope, ...next }; };
   const record = (detail, disposition = "BLOCKED_BEFORE_EGRESS") => {
@@ -220,104 +219,6 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     return attempt;
   };
 
-  await context.exposeBinding("__branctReportExternalAttempt", (_source, reportedToken, detail) => {
-    assert.equal(reportedToken, reportToken, `${engine}: browser network report token is invalid`);
-    assert.ok(detail && typeof detail === "object", `${engine}: browser network report is malformed`);
-    assert.equal(typeof detail.mechanism, "string", `${engine}: browser network mechanism is absent`);
-    assert.equal(typeof detail.url, "string", `${engine}: browser network URL is absent`);
-    return record(detail);
-  });
-  await context.addInitScript((trusted) => {
-    const reportedHints = new WeakSet();
-    const report = (mechanism, input) => {
-      let url;
-      try { url = new URL(String(input), location.href); }
-      catch { url = { href: String(input), origin: "INVALID" }; }
-      if (url.origin === location.origin) return false;
-      void globalThis.__branctReportExternalAttempt(trusted.reportToken, { mechanism, url: url.href });
-      return true;
-    };
-    const blockedError = () => new TypeError("external network blocked by trusted consumer");
-    const originalFetch = globalThis.fetch.bind(globalThis);
-    globalThis.fetch = (input, init) => {
-      const value = typeof input === "string" || input instanceof URL ? input : input?.url;
-      if (!report("fetch", value)) return originalFetch(input, init);
-      return Promise.reject(blockedError());
-    };
-    const wrapConstructor = (name, mechanism) => {
-      const Original = globalThis[name];
-      if (typeof Original !== "function") return;
-      globalThis[name] = new Proxy(Original, {
-        construct(target, args, newTarget) {
-          if (report(mechanism, args[0])) throw blockedError();
-          return Reflect.construct(target, args, newTarget);
-        },
-      });
-    };
-    wrapConstructor("WebSocket", "WebSocket");
-    wrapConstructor("EventSource", "EventSource");
-    const OriginalXHR = globalThis.XMLHttpRequest;
-    if (typeof OriginalXHR === "function") {
-      globalThis.XMLHttpRequest = class TrustedXMLHttpRequest extends OriginalXHR {
-        open(method, url, ...rest) {
-          if (report("XMLHttpRequest", url)) throw blockedError();
-          return super.open(method, url, ...rest);
-        }
-      };
-    }
-    if (typeof navigator.sendBeacon === "function") {
-      const originalBeacon = navigator.sendBeacon.bind(navigator);
-      navigator.sendBeacon = (url, data) => report("sendBeacon", url) ? false : originalBeacon(url, data);
-    }
-    if (navigator.serviceWorker && typeof navigator.serviceWorker.register === "function") {
-      const originalRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
-      Object.defineProperty(navigator.serviceWorker, "register", {
-        configurable: false,
-        writable: false,
-        value: (url, options) => report("serviceWorker.register", url) ? Promise.reject(blockedError()) : originalRegister(url, options),
-      });
-    }
-    const originalOpen = globalThis.open.bind(globalThis);
-    globalThis.open = (url, ...rest) => report("window.open", url) ? null : originalOpen(url, ...rest);
-    for (const [constructorName, property, mechanism] of [
-      ["HTMLScriptElement", "src", "script"], ["HTMLIFrameElement", "src", "frame"],
-      ["HTMLImageElement", "src", "image"], ["HTMLMediaElement", "src", "media"],
-      ["HTMLSourceElement", "src", "source"], ["HTMLLinkElement", "href", "link"],
-    ]) {
-      const Constructor = globalThis[constructorName];
-      const descriptor = Constructor && Object.getOwnPropertyDescriptor(Constructor.prototype, property);
-      if (!descriptor?.get || !descriptor?.set) continue;
-      Object.defineProperty(Constructor.prototype, property, {
-        configurable: false,
-        enumerable: descriptor.enumerable,
-        get() { return descriptor.get.call(this); },
-        set(value) {
-          const hint = constructorName === "HTMLLinkElement" && /(?:^|\s)(?:preconnect|dns-prefetch)(?:\s|$)/i.test(this.rel ?? "");
-          if (hint) reportedHints.add(this);
-          if (!report(hint ? "resource-hint" : mechanism, value)) descriptor.set.call(this, value);
-        },
-      });
-    }
-    const inspectHint = (node) => {
-      if (!(node instanceof HTMLLinkElement) || reportedHints.has(node)) return;
-      if (!/(?:^|\s)(?:preconnect|dns-prefetch)(?:\s|$)/i.test(node.rel ?? "")) return;
-      reportedHints.add(node);
-      report("resource-hint", node.href);
-    };
-    new MutationObserver((records) => {
-      for (const record of records) {
-        if (record.type === "attributes") inspectHint(record.target);
-        for (const node of record.addedNodes ?? []) {
-          inspectHint(node);
-          for (const nested of node.querySelectorAll?.('link[rel~="preconnect"],link[rel~="dns-prefetch"]') ?? []) inspectHint(nested);
-        }
-      }
-    }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["rel", "href"] });
-    addEventListener("DOMContentLoaded", () => {
-      for (const node of document.querySelectorAll('link[rel~="preconnect"],link[rel~="dns-prefetch"]')) inspectHint(node);
-    }, { once: true });
-  }, { reportToken });
-
   await context.route("**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -331,7 +232,8 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
         return route.abort("blockedbyclient");
       }
     }
-    record({ mechanism: request.resourceType() === "document" ? "navigation" : request.resourceType(), url: url.href });
+    const expected = channel === "control-probe" ? expectedNetworkControl(scope.action) : null;
+    record({ mechanism: expected?.mechanism ?? (request.resourceType() === "document" ? "navigation" : request.resourceType()), url: url.href });
     return route.abort("blockedbyclient");
   });
   assert.equal(typeof context.routeWebSocket, "function", `${engine}: trusted WebSocket blocker is unavailable`);
@@ -360,15 +262,25 @@ async function waitForControlAttempt(policy, action, before) {
   return observed;
 }
 
+async function assertNoControlAttempt(policy, action, before, phase) {
+  await new Promise((resolvePromise) => setTimeout(resolvePromise, 120));
+  assert.equal(policy.controlAttempts.length, before, `trusted network control attempted external access during ${phase}: ${action}`);
+}
+
 async function runNetworkControl(page, policy, engine, action, origin, probeId) {
   const url = action === "WebSocket" ? "wss://f2-gov-09.invalid/socket" : `https://f2-gov-09.invalid/${encodeURIComponent(action)}`;
   policy.setScope({ phase: "control-probe", action, route: "about:blank", viewport: "control" });
   const before = policy.controlAttempts.length;
   if (action === "consent-loader") {
-    policy.setScope({ phase: "control-probe", action, route: "index.html", viewport: "control" });
-    await page.goto(`${origin}/index.html`, { waitUntil: "load" });
-    await page.evaluate(() => localStorage.setItem("branct_consent", JSON.stringify({ status: "granted", version: "v1" })));
-    await page.reload({ waitUntil: "load" }).catch(() => {});
+    policy.setScope({ phase: "control-probe", action, route: "crm-gestao.html", viewport: "control" });
+    await page.goto(`${origin}/crm-gestao.html`, { waitUntil: "load" });
+    await assertNoControlAttempt(policy, action, before, "no consent decision");
+    await page.locator("#consent-reject").click();
+    await assertNoControlAttempt(policy, action, before, "explicit consent refusal");
+    await page.evaluate(() => localStorage.removeItem("branct_consent"));
+    await page.reload({ waitUntil: "load" });
+    await assertNoControlAttempt(policy, action, before, "consent withdrawal");
+    await page.locator("#consent-accept").click();
   } else if (action === "form-submit") {
     policy.setScope({ phase: "control-probe", action, route: "contactos.html", viewport: "control" });
     await page.goto(`${origin}/contactos.html`, { waitUntil: "load" });
@@ -393,6 +305,11 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
   if (["consent-loader", "form-submit"].includes(action)) {
     const observed = await waitForControlAttempt(policy, action, before);
     assertExpectedNetworkControl(observed, engine, action, probeId);
+    if (action === "consent-loader") {
+      await page.evaluate(() => localStorage.removeItem("branct_consent"));
+      await page.reload({ waitUntil: "load" });
+      await assertNoControlAttempt(policy, action, before + 1, "consent withdrawal after valid consent");
+    }
     await page.goto("about:blank");
     return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
   }

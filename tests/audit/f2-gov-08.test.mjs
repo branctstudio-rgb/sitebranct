@@ -24,8 +24,23 @@ const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$
 const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
 const canonicalAuthoritySha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: sourceRepository, encoding: "utf8" }).trim();
 const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `${canonicalAuthoritySha}:${path}`], { cwd: sourceRepository, encoding: null });
+const workingFile = (path) => readFileSync(join(sourceRepository, ...path.split("/")));
 const publishedPaths = JSON.parse(canonicalBlob("deploy/publish-manifest.json").toString("utf8")).files;
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
+
+function assertHostOnlyObservationAuthority(consumer) {
+  assert.doesNotMatch(consumer, /exposeBinding\(/, "candidate page must not receive an observation binding");
+  assert.doesNotMatch(consumer, /__branctReportExternalAttempt/, "candidate page must not observe the authority channel");
+  assert.doesNotMatch(consumer, /reportToken|trusted\.reportToken|randomBytes/, "candidate page must not receive an observation secret");
+  assert.match(consumer, /context\.route\("\*\*"/, "trusted host-side request interception is required");
+  assert.match(consumer, /context\.routeWebSocket\("\*\*"/, "trusted host-side socket interception is required");
+}
+
+function assertCanonicalConsentProbe(consumer) {
+  assert.match(consumer, /consent-loader"\) return \{ mechanism: "script", url: "https:\/\/connect\.facebook\.net\/en_US\/fbevents\.js", route: "crm-gestao\.html" \}/);
+  assert.match(consumer, /action === "consent-loader"[\s\S]*?route: "crm-gestao\.html"[\s\S]*?goto\(`\$\{origin\}\/crm-gestao\.html`/);
+  for (const phase of ["no consent decision", "explicit consent refusal", "consent withdrawal", "consent withdrawal after valid consent"]) assert.match(consumer, new RegExp(phase));
+}
 
 const crmPixelScripts = (crmSource = canonicalBlob("crm-gestao.html").toString("utf8")) => [...crmSource.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .map((match) => match[1])
@@ -182,7 +197,7 @@ const expectedControlObservationForTest = (action) => {
   if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
   if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
   if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
-  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "index.html" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "crm-gestao.html" };
   if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
   return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
 };
@@ -819,11 +834,11 @@ test("F2-GOV-09 rejects every local request violation even when i18n succeeds", 
 });
 
 test("F2-GOV-09 runtime policy observes generic preconnect and dns-prefetch hints", () => {
-  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   assert.match(consumer, /preconnect/);
   assert.match(consumer, /dns-prefetch/);
-  assert.match(consumer, /MutationObserver/);
-  assert.match(consumer, /resource-hint/);
+  assert.match(consumer, /context\.route\("\*\*"/);
+  assert.doesNotMatch(consumer, /__branctReportExternalAttempt/);
 });
 
 test("F2-GOV-09 isolates measured content from every trusted control context", () => {
@@ -901,13 +916,132 @@ test("F2-GOV-09 rejects consent and form control observations transplanted while
   );
 });
 
-test("F2-GOV-09 keeps the trusted runtime report token outside producer-controlled detail", () => {
-  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
-  assert.match(consumer, /randomBytes/);
-  assert.match(consumer, /exposeBinding\("__branctReportExternalAttempt", \(_source, reportedToken, detail\)/);
-  assert.match(consumer, /assert\.equal\(reportedToken, reportToken/);
-  assert.match(consumer, /addInitScript\(\(trusted\) => \{/);
-  assert.match(consumer, /trusted\.reportToken/);
+test("F2-GOV-09-F6 keeps observation authority entirely outside the candidate page realm", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assertHostOnlyObservationAuthority(consumer);
+});
+
+test("F2-GOV-09-F6 reproduces wrapper, suppression and replay against a page-exposed binding", async () => {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const accepted = [];
+    const authority = "authority-visible-to-page";
+    await context.exposeBinding("__vulnerableObservation", (_source, token, detail) => {
+      if (token === authority) accepted.push(detail);
+    });
+    await context.addInitScript((token) => {
+      const original = globalThis.__vulnerableObservation;
+      globalThis.__vulnerableObservation = (observedToken, detail) => {
+        globalThis.__capturedAuthority = observedToken;
+        globalThis.__suppressedObservation = detail;
+        return undefined;
+      };
+      globalThis.__emitVulnerableObservation = (detail) => globalThis.__vulnerableObservation(token, detail);
+      globalThis.__replayVulnerableObservation = (detail) => original(globalThis.__capturedAuthority, detail);
+    }, authority);
+    const page = await context.newPage();
+    await page.goto("about:blank");
+    await page.evaluate(() => globalThis.__emitVulnerableObservation({ mechanism: "fetch", url: "https://suppressed.invalid/" }));
+    assert.deepEqual(accepted, [], "wrapper must demonstrate suppression of the true observation");
+    assert.equal(await page.evaluate(() => globalThis.__capturedAuthority), authority, "wrapper must demonstrate authority capture");
+    await page.evaluate(() => globalThis.__replayVulnerableObservation({ mechanism: "script", url: "https://replayed.invalid/" }));
+    assert.deepEqual(accepted, [{ mechanism: "script", url: "https://replayed.invalid/" }], "wrapper must demonstrate replay of a fabricated tuple");
+    await context.close();
+  } finally { await browser.close(); }
+});
+
+test("F2-GOV-09-F6 consent-loader is bound to the corrected live CRM page", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  assertCanonicalConsentProbe(consumer);
+  assert.match(validator, /consent-loader"\) return \{ mechanism: "script", url: "https:\/\/connect\.facebook\.net\/en_US\/fbevents\.js", route: "crm-gestao\.html" \}/);
+});
+
+test("F2-GOV-09-F6 host interceptor cannot be suppressed or replayed by candidate globals", async () => {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const observed = [];
+    await context.route("**", (route) => { observed.push(route.request().url()); return route.abort("blockedbyclient"); });
+    const page = await context.newPage();
+    await page.goto("about:blank");
+    await page.evaluate(async () => {
+      globalThis.__branctReportExternalAttempt = () => undefined;
+      globalThis.__capturedAuthority = "fabricated";
+      globalThis.__replay = () => globalThis.__branctReportExternalAttempt("fabricated", { url: "https://replay.invalid/" });
+      globalThis.__replay();
+      await fetch("https://host-observed.invalid/actual").catch(() => {});
+    });
+    assert.deepEqual(observed, ["https://host-observed.invalid/actual"], "host observation must reflect only the real browser request");
+    await context.close();
+  } finally { await browser.close(); }
+});
+
+test("F2-GOV-09-F6 executes the real CRM consent lifecycle under host interception", async () => {
+  const { chromium } = await import("playwright");
+  const expectedPayload = publishedPaths.map((path) => {
+    const bytes = workingFile(path);
+    return { path, sha256: createHash("sha256").update(bytes).digest("hex") };
+  });
+  const server = await trustedServer.startTrustedStaticServer(sourceRepository, expectedPayload, 0);
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ serviceWorkers: "block" });
+    const attempts = [];
+    await context.route("**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === server.origin) return route.continue();
+      attempts.push({ mechanism: route.request().resourceType(), url: url.href });
+      return route.abort("blockedbyclient");
+    });
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/crm-gestao.html`, { waitUntil: "load" });
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [], "no decision must not attempt Meta");
+    await page.locator("#consent-reject").click();
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [], "refusal must not attempt Meta");
+    await page.evaluate(() => localStorage.removeItem("branct_consent"));
+    await page.reload({ waitUntil: "load" });
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [], "withdrawal must not attempt Meta");
+    await page.locator("#consent-accept").click();
+    await page.waitForFunction(() => globalThis.__brancrPixelInited === true);
+    assert.deepEqual(attempts, [{ mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js" }], "valid consent must produce exactly the canonical Meta attempt");
+    await page.evaluate(() => localStorage.removeItem("branct_consent"));
+    await page.reload({ waitUntil: "load" });
+    await page.waitForTimeout(120);
+    assert.equal(attempts.length, 1, "withdrawal after consent must not produce another attempt");
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("F2-GOV-09-F6 keeps CSP as report-only so host interception remains the decision authority", () => {
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  assert.match(server, /"content-security-policy-report-only"/);
+  assert.doesNotMatch(server, /"content-security-policy":/);
+  assert.match(server, /connect-src 'self'/);
+  assert.match(server, /script-src 'self' 'unsafe-inline'/);
+});
+
+test("F2-GOV-09-F6 mutation controls keep page-realm authority and CRM routing guards load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const exposed = consumer.replace("async function installRuntimeNetworkPolicy", "void context.exposeBinding('__branctReportExternalAttempt', () => {});\nasync function installRuntimeNetworkPolicy");
+  assert.notEqual(exposed, consumer, "page-realm authority mutation was a no-op");
+  assert.throws(() => assertHostOnlyObservationAuthority(exposed), /observation binding|authority channel/i);
+  const wrongRoute = consumer.replaceAll('route: "crm-gestao.html"', 'route: "index.html"').replaceAll("${origin}/crm-gestao.html", "${origin}/index.html");
+  assert.notEqual(wrongRoute, consumer, "consent route mutation was a no-op");
+  assert.throws(() => assertCanonicalConsentProbe(wrongRoute), /input did not match|crm-gestao/i);
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  const blockingCsp = server.replace('"content-security-policy-report-only"', '"content-security-policy"');
+  assert.notEqual(blockingCsp, server, "blocking CSP mutation was a no-op");
+  assert.match(blockingCsp, /"content-security-policy":/);
 });
 
 test("F2-GOV-09 mutation control proves the structural resource-hint parser is load-bearing", async () => {

@@ -32,7 +32,7 @@ function expectedNetworkControl(action) {
   if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
   if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
   if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
-  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "index.html" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "crm-gestao.html" };
   if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
   return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
 }
