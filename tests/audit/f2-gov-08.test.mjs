@@ -21,7 +21,8 @@ import * as trustedServer from "../../scripts/governance/f2-gov-08-static-server
 const root = new URL("../../", import.meta.url);
 const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$1").replace(/\/$/, "");
 const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
-const canonicalBlob = (path) => readFileSync(join(sourceRepository, ...path.split("/")));
+const canonicalAuthoritySha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: sourceRepository, encoding: "utf8" }).trim();
+const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `${canonicalAuthoritySha}:${path}`], { cwd: sourceRepository, encoding: null });
 const publishedPaths = JSON.parse(canonicalBlob("deploy/publish-manifest.json").toString("utf8")).files;
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
 
@@ -888,7 +889,7 @@ test("F2-GOV-09-F3 mutation controls prove consent guards are load-bearing", () 
   assert.equal(runCrmConsentPage(new Map(), null, forcedPersistedConsent).attempts.length, 1, "missing persisted-consent guard escaped detection");
 
   const acceptWithoutLoad = crm.replace(
-    "saveConsent('granted');\n        loadPixelAndInit();",
+    /saveConsent\('granted'\);\r?\n        loadPixelAndInit\(\);/,
     "saveConsent('granted');",
   );
   assert.notEqual(acceptWithoutLoad, crm, "accept-handler mutation was a no-op");
