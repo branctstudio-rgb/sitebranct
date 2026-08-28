@@ -184,7 +184,9 @@ test("F2-GOV-08 rejects alternate imports in the consumer authority", async () =
   const source = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const localImports = [...source.matchAll(/from\s+["'](\.\/[^"']+)["']/g)].map((match) => match[1]);
   assert.deepEqual(localImports, ["./f2-gov-08-static-server.mjs"]);
-  assert.doesNotMatch(source, /import\s*\(|require\s*\(/);
+  assert.doesNotMatch(source, /import\s*\(/);
+  assert.match(source, /const require = createRequire\(join\(modules, "\.\.", "package\.json"\)\);\s*const playwright = require\("playwright"\);/);
+  assert.equal((source.match(/\brequire\(/g) ?? []).length, 1, "trusted consumer may require only the pinned Playwright package");
 });
 
 test("F2-GOV-08 rejects event base, head, repository and ref transplantation", async (t) => {
@@ -568,12 +570,12 @@ test("F2-GOV-09 promotes the base-only authority to operational enforcement", ()
   assert.equal(contract.limitations.operationalIsolation, "VERIFIED_IN_CI");
   assert.equal(contract.limitations.browserNetworkIsolation, "VERIFIED_IN_CI");
   assert.match(workflow, /Run base-only F2-GOV-08 enforcement/);
-  assert.match(workflow, /git show "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/);
+  assert.match(workflow, /git cat-file blob "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/);
   assert.match(consumer, /chromium/);
   assert.match(consumer, /firefox/);
   assert.match(consumer, /webkit/);
   assert.match(consumer, /context\.route\(/);
-  assert.match(consumer, /127\.0\.0\.1/);
+  assert.match(canonicalBlob(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8"), /127\.0\.0\.1/);
 });
 
 test("F2-GOV-09 canonical matrix fixes 84 observations, 41 identities and 184 actions per engine", () => {
