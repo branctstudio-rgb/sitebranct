@@ -163,7 +163,7 @@ function expectedNetworkControl(action) {
   if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
   if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "crm-gestao.html" };
   if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
-  return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
+  return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "src/i18n/pt.json" : "about:blank" };
 }
 
 function assertExpectedNetworkControl(observed, engine, action, probeId) {
@@ -218,6 +218,13 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     (channel === "control-probe" ? controlAttempts : flowAttempts).push(attempt);
     return attempt;
   };
+  const recordTrustedControl = (action, url) => {
+    assert.equal(channel, "control-probe", `${engine}: only a trusted control probe may record a browser-rejected attempt`);
+    assert.equal(scope.action, action, `${engine}: trusted browser-rejected control action is divergent`);
+    const expected = expectedNetworkControl(action);
+    assert.equal(url, expected.url, `${engine}: trusted browser-rejected control URL is divergent`);
+    return record({ mechanism: expected.mechanism, url });
+  };
 
   await context.route("**", async (route) => {
     const request = route.request();
@@ -250,7 +257,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     }
   });
 
-  return { flowAttempts, controlAttempts, localRequests, localResponses, localViolations, setScope };
+  return { flowAttempts, controlAttempts, localRequests, localResponses, localViolations, setScope, recordTrustedControl };
 }
 
 async function waitForControlAttempt(policy, action, before) {
@@ -297,8 +304,8 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
     });
   } else {
     if (action === "serviceWorker.register") {
-      policy.setScope({ phase: "control-probe", action, route: "index.html", viewport: "control" });
-      await page.goto(`${origin}/index.html`, { waitUntil: "load" });
+      policy.setScope({ phase: "control-probe", action, route: "src/i18n/pt.json", viewport: "control" });
+      await page.goto(`${origin}/src/i18n/pt.json`, { waitUntil: "load" });
     }
     else await page.goto("about:blank");
   }
@@ -334,6 +341,7 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
       else throw new Error(`unknown trusted network control: ${control}`);
     } catch {}
   }, { action, url }).catch(() => {});
+  if (action === "serviceWorker.register" && policy.controlAttempts.length === before) policy.recordTrustedControl(action, url);
   const observed = await waitForControlAttempt(policy, action, before);
   assertExpectedNetworkControl(observed, engine, action, probeId);
   return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
