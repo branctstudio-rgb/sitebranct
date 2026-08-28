@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { lstatSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -155,6 +155,32 @@ function externalAttemptMessage(attempt) {
   return `observed external network attempt: ${attempt.mechanism} ${attempt.engine} ${attempt.action} ${attempt.url}`;
 }
 
+function expectedNetworkControl(action) {
+  const target = action === "WebSocket" ? "wss://f2-gov-09.invalid/socket" : `https://f2-gov-09.invalid/${encodeURIComponent(action)}`;
+  if (action === "fetch-computed") return { mechanism: "fetch", url: "https://f2-gov-09.invalid/computed", route: "about:blank" };
+  if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
+  if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
+  if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "index.html" };
+  if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
+  return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
+}
+
+function assertExpectedNetworkControl(observed, engine, action, probeId) {
+  assert.equal(observed.length, 1, `${engine}: trusted control observation cardinality is divergent: ${action}`);
+  const expected = expectedNetworkControl(action);
+  assert.deepEqual(observed[0], {
+    ...expected,
+    origin: new URL(expected.url).origin,
+    phase: "control-probe",
+    engine,
+    action,
+    viewport: "control",
+    disposition: "BLOCKED_BEFORE_EGRESS",
+    probeId,
+  }, `${engine}: trusted control observation is divergent: ${action}`);
+}
+
 export function assertNoObservedExternalAttempts(reports) {
   for (const report of reports) {
     const attempt = report.networkIsolation.flowAttempts[0];
@@ -171,6 +197,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
   const localRequests = [];
   const localResponses = [];
   const localViolations = [];
+  const reportToken = randomBytes(32).toString("hex");
   let scope = { phase: "initialization", action: "context-start", route: null, viewport: null };
   const setScope = (next) => { scope = { ...scope, ...next }; };
   const record = (detail, disposition = "BLOCKED_BEFORE_EGRESS") => {
@@ -193,20 +220,21 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     return attempt;
   };
 
-  await context.exposeBinding("__branctReportExternalAttempt", (_source, detail) => {
+  await context.exposeBinding("__branctReportExternalAttempt", (_source, reportedToken, detail) => {
+    assert.equal(reportedToken, reportToken, `${engine}: browser network report token is invalid`);
     assert.ok(detail && typeof detail === "object", `${engine}: browser network report is malformed`);
     assert.equal(typeof detail.mechanism, "string", `${engine}: browser network mechanism is absent`);
     assert.equal(typeof detail.url, "string", `${engine}: browser network URL is absent`);
     return record(detail);
   });
-  await context.addInitScript(() => {
+  await context.addInitScript((trusted) => {
     const reportedHints = new WeakSet();
     const report = (mechanism, input) => {
       let url;
       try { url = new URL(String(input), location.href); }
       catch { url = { href: String(input), origin: "INVALID" }; }
       if (url.origin === location.origin) return false;
-      void globalThis.__branctReportExternalAttempt({ mechanism, url: url.href });
+      void globalThis.__branctReportExternalAttempt(trusted.reportToken, { mechanism, url: url.href });
       return true;
     };
     const blockedError = () => new TypeError("external network blocked by trusted consumer");
@@ -288,7 +316,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     addEventListener("DOMContentLoaded", () => {
       for (const node of document.querySelectorAll('link[rel~="preconnect"],link[rel~="dns-prefetch"]')) inspectHint(node);
     }, { once: true });
-  });
+  }, { reportToken });
 
   await context.route("**", async (route) => {
     const request = route.request();
@@ -361,8 +389,7 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
   }
   if (["consent-loader", "form-submit"].includes(action)) {
     const observed = await waitForControlAttempt(policy, action, before);
-    assert.equal(observed.length, 1, `${engine}: trusted control observation cardinality is divergent: ${action}`);
-    assert.ok(observed.every((attempt) => attempt.probeId === probeId), `${engine}: trusted control probe identity is divergent: ${action}`);
+    assertExpectedNetworkControl(observed, engine, action, probeId);
     await page.goto("about:blank");
     return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
   }
@@ -388,8 +415,7 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
     } catch {}
   }, { action, url }).catch(() => {});
   const observed = await waitForControlAttempt(policy, action, before);
-  assert.equal(observed.length, 1, `${engine}: trusted control observation cardinality is divergent: ${action}`);
-  assert.ok(observed.every((attempt) => attempt.probeId === probeId), `${engine}: trusted control probe identity is divergent: ${action}`);
+  assertExpectedNetworkControl(observed, engine, action, probeId);
   return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
 }
 

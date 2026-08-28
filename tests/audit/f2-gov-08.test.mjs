@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 import vm from "node:vm";
 
@@ -175,6 +176,16 @@ const networkControlActionsForTest = [
   "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
   "resource-hint-dns-prefetch", "consent-loader", "form-submit",
 ];
+const expectedControlObservationForTest = (action) => {
+  const target = action === "WebSocket" ? "wss://f2-gov-09.invalid/socket" : `https://f2-gov-09.invalid/${encodeURIComponent(action)}`;
+  if (action === "fetch-computed") return { mechanism: "fetch", url: "https://f2-gov-09.invalid/computed", route: "about:blank" };
+  if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
+  if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
+  if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "index.html" };
+  if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
+  return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
+};
 
 function canonicalOperationalFixture() {
   const matrixBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.matrix);
@@ -230,7 +241,8 @@ function canonicalOperationalFixture() {
         flowAttempts: [],
         controls: networkControlActionsForTest.map((action) => {
           const probeId = sha256ForTest(canonicalJsonForTest({ baseSha, headSha, payloadDigest, engine, action }));
-          return { action, status: "BLOCKED_AND_RECORDED", probeId, observed: [{ mechanism: action, url: `https://example.invalid/${encodeURIComponent(action)}`, disposition: "BLOCKED_BEFORE_EGRESS", probeId }] };
+          const expected = expectedControlObservationForTest(action);
+          return { action, status: "BLOCKED_AND_RECORDED", probeId, observed: [{ ...expected, origin: new URL(expected.url).origin, phase: "control-probe", engine, action, viewport: "control", disposition: "BLOCKED_BEFORE_EGRESS", probeId }] };
         }),
       },
       consoleIssues: [],
@@ -839,8 +851,94 @@ for (const [rel, href] of [
   );
 });
 
+for (const [label, source] of [
+  ["unquoted preconnect", "<link rel=preconnect href=https://tracker.invalid>"],
+  ["unquoted dns-prefetch", "<link rel=dns-prefetch href=//tracker.invalid>"],
+  ["reordered attributes", "<link href=https://tracker.invalid rel=preconnect>"],
+  ["mixed spacing", "<link\trel = dns-prefetch\thref = //tracker.invalid>"],
+  ["case-insensitive names and values", "<LINK HREF=https://tracker.invalid REL=PRECONNECT>"],
+  ["multi-token rel", "<link rel='stylesheet preconnect' href=https://tracker.invalid>"],
+  ["ambiguous encoded rel", "<link rel=pre&#x63;onnect href=https://tracker.invalid>"],
+]) test(`F2-GOV-09 rejects external resource hint syntax: ${label}`, () => {
+  assert.throws(
+    () => trustedServer.assertNoExternalResourceHints(Buffer.from(source), "probe.html"),
+    /external resource hint|ambiguous resource hint/i,
+  );
+});
+
 test("F2-GOV-09 accepts local resource hints without granting an external domain allowlist", () => {
   assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="/src/">'), "probe.html"));
+});
+
+for (const [label, mutate] of [
+  ["forged mechanism", (attempt) => { attempt.mechanism = "fake"; }],
+  ["forged URL", (attempt) => { attempt.url = "https://fake.invalid/forged"; attempt.origin = "https://fake.invalid"; }],
+  ["forged action", (attempt) => { attempt.action = "fetch"; }],
+  ["forged phase", (attempt) => { attempt.phase = "measured-flow"; }],
+  ["forged route", (attempt) => { attempt.route = "about:blank"; }],
+  ["missing nonce", (attempt) => { delete attempt.probeId; }],
+]) test(`F2-GOV-09 rejects consent-loader observation with ${label}`, () => {
+  const fixture = canonicalOperationalFixture();
+  const attempt = fixture.report.reports[0].networkIsolation.controls.find(({ action }) => action === "consent-loader").observed[0];
+  mutate(attempt);
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control observation|probe identity|schema/i,
+  );
+});
+
+test("F2-GOV-09 rejects consent and form control observations transplanted while preserving probe identities", () => {
+  const fixture = canonicalOperationalFixture();
+  const controls = fixture.report.reports[0].networkIsolation.controls;
+  const consent = controls.find(({ action }) => action === "consent-loader").observed[0];
+  const form = controls.find(({ action }) => action === "form-submit").observed[0];
+  const consentPayload = { mechanism: consent.mechanism, url: consent.url, origin: consent.origin };
+  Object.assign(consent, { mechanism: form.mechanism, url: form.url, origin: form.origin });
+  Object.assign(form, consentPayload);
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control observation/i,
+  );
+});
+
+test("F2-GOV-09 keeps the trusted runtime report token outside producer-controlled detail", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /randomBytes/);
+  assert.match(consumer, /exposeBinding\("__branctReportExternalAttempt", \(_source, reportedToken, detail\)/);
+  assert.match(consumer, /assert\.equal\(reportedToken, reportToken/);
+  assert.match(consumer, /addInitScript\(\(trusted\) => \{/);
+  assert.match(consumer, /trusted\.reportToken/);
+});
+
+test("F2-GOV-09 mutation control proves the structural resource-hint parser is load-bearing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-hint-mutation-"));
+  try {
+    const source = canonicalBlob(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+    const weakened = source.replace("const attributes = parseLinkAttributes(tag, route);", "const attributes = new Map();");
+    assert.notEqual(weakened, source, "resource-hint parser mutation was a no-op");
+    const target = join(directory, "weakened-static-server.mjs");
+    await writeFile(target, weakened);
+    const module = await import(`${pathToFileURL(target).href}?mutation=${Date.now()}`);
+    assert.doesNotThrow(() => module.assertNoExternalResourceHints(Buffer.from("<link rel=preconnect href=https://tracker.invalid>"), "probe.html"));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09 mutation control proves exact control observation binding is load-bearing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-control-mutation-"));
+  try {
+    const source = canonicalBlob("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+    const weakened = source.replace(
+      "assert.deepEqual(observed, expectedObservation, `${engineReport.engine}: trusted control observation is divergent: ${control.action}`);",
+      "void expectedObservation;",
+    );
+    assert.notEqual(weakened, source, "control observation binding mutation was a no-op");
+    const target = join(directory, "weakened-validator.mjs");
+    await writeFile(target, weakened);
+    const module = await import(`${pathToFileURL(target).href}?mutation=${Date.now()}`);
+    const fixture = canonicalOperationalFixture();
+    fixture.report.reports[0].networkIsolation.controls.find(({ action }) => action === "consent-loader").observed[0].mechanism = "fake";
+    assert.doesNotThrow(() => module.validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest));
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 test("F2-GOV-09 accepts the real branct.js as inventoried capability rather than executed intent", async () => {

@@ -26,9 +26,9 @@ O primeiro ensaio comportamental revelou também uma tentativa real em `crm-gest
 - JavaScript vivo executado; recursos locais são servidos somente após vínculo ao blob verificado;
 - capacidades externas dormentes são inventariadas, sem allowlist por ficheiro, domínio ou URL;
 - qualquer tentativa externa observada é bloqueada, registrada e causa FAIL, inclusive quando nenhum byte sai;
-- fluxo candidato e probes usam contextos separados; cada probe tem identidade canónica e uma única observação;
+- fluxo candidato e probes usam contextos separados; cada probe tem identidade canónica e uma única observação vinculada por token secreto do consumidor e por igualdade estrutural de mecanismo, URL/origem, ação, fase, rota, viewport, engine, disposição e identidade;
 - qualquer pedido loopback fora da allowlist autoritativa causa FAIL, mesmo com resposta 404;
-- `preconnect` e `dns-prefetch` externos são rejeitados genericamente antes do consentimento e continuam bloqueados/observados depois dele;
+- `preconnect` e `dns-prefetch` externos são analisados estruturalmente em atributos cotados/não cotados, qualquer ordem, espaçamento e capitalização, rejeitados genericamente antes do consentimento e continuam bloqueados/observados depois dele;
 - `fetch` i18n local real deve concluir; contextos começam sem storage, cookies, permissões, workers ou consentimento;
 - Universal Gate preserva identidade estável e termina explicitamente;
 - Sentinel protege a superfície transitiva e deve reprovar esta evolução;

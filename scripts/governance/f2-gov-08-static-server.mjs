@@ -24,13 +24,57 @@ const MIME = new Map([
 ]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
+function parseLinkAttributes(tag, route) {
+  const opening = tag.match(/^<link\b/i);
+  assert.ok(opening, `resource hint tag is malformed: ${route}`);
+  const attributes = new Map();
+  let cursor = opening[0].length;
+  while (cursor < tag.length) {
+    while (/\s/.test(tag[cursor] ?? "")) cursor += 1;
+    if (tag[cursor] === ">") break;
+    if (tag[cursor] === "/" && tag[cursor + 1] === ">") break;
+    const nameStart = cursor;
+    while (cursor < tag.length && !/[\s=/>]/.test(tag[cursor])) cursor += 1;
+    assert.ok(cursor > nameStart, `resource hint attribute syntax is malformed: ${route}`);
+    const name = tag.slice(nameStart, cursor).toLowerCase();
+    while (/\s/.test(tag[cursor] ?? "")) cursor += 1;
+    let value = "";
+    if (tag[cursor] === "=") {
+      cursor += 1;
+      while (/\s/.test(tag[cursor] ?? "")) cursor += 1;
+      assert.ok(cursor < tag.length && tag[cursor] !== ">", `resource hint attribute value is missing: ${route}`);
+      const quote = tag[cursor] === '"' || tag[cursor] === "'" ? tag[cursor++] : null;
+      const valueStart = cursor;
+      if (quote) {
+        while (cursor < tag.length && tag[cursor] !== quote) cursor += 1;
+        assert.ok(cursor < tag.length, `resource hint quoted attribute is unterminated: ${route}`);
+        value = tag.slice(valueStart, cursor);
+        cursor += 1;
+      } else {
+        while (cursor < tag.length && !/[\s>]/.test(tag[cursor])) cursor += 1;
+        value = tag.slice(valueStart, cursor);
+        assert.ok(value.length > 0, `resource hint unquoted attribute value is missing: ${route}`);
+      }
+    }
+    assert.equal(attributes.has(name), false, `resource hint attribute is duplicated: ${name} (${route})`);
+    attributes.set(name, value);
+  }
+  return attributes;
+}
+
 export function assertNoExternalResourceHints(bytes, route = "unknown") {
-  const html = Buffer.isBuffer(bytes) ? bytes.toString("utf8") : String(bytes);
+  let html;
+  try { html = Buffer.isBuffer(bytes) ? new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes) : String(bytes); }
+  catch { assert.fail(`resource hint HTML is not canonical UTF-8: ${route}`); }
   for (const tag of html.match(/<link\b[^>]*>/gi) ?? []) {
-    const rel = tag.match(/\brel\s*=\s*["']([^"']*)["']/i)?.[1]?.toLowerCase().split(/\s+/).filter(Boolean) ?? [];
+    const attributes = parseLinkAttributes(tag, route);
+    const rawRel = attributes.get("rel") ?? "";
+    assert.doesNotMatch(rawRel, /[&\0]/, `ambiguous resource hint rel is forbidden: ${route}`);
+    const rel = rawRel.toLowerCase().split(/\s+/).filter(Boolean);
     if (!rel.some((value) => value === "preconnect" || value === "dns-prefetch")) continue;
-    const href = tag.match(/\bhref\s*=\s*["']([^"']*)["']/i)?.[1];
+    const href = attributes.get("href");
     assert.ok(href, `external resource hint is missing href: ${route}`);
+    assert.doesNotMatch(href, /[&\0]/, `ambiguous resource hint href is forbidden: ${route}`);
     const parsed = new URL(href, "http://trusted-local.invalid/");
     assert.equal(parsed.origin, "http://trusted-local.invalid", `external resource hint before consent: ${route}`);
   }

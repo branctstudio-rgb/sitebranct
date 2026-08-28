@@ -25,6 +25,17 @@ const NETWORK_CONTROL_ACTIONS = Object.freeze([
 ]);
 
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+
+function expectedNetworkControl(action) {
+  const target = action === "WebSocket" ? "wss://f2-gov-09.invalid/socket" : `https://f2-gov-09.invalid/${encodeURIComponent(action)}`;
+  if (action === "fetch-computed") return { mechanism: "fetch", url: "https://f2-gov-09.invalid/computed", route: "about:blank" };
+  if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
+  if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
+  if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "index.html" };
+  if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
+  return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "index.html" : "about:blank" };
+}
 const canonicalJson = (value) => {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
@@ -570,8 +581,20 @@ export function validateOperationalReport(report, authority, baseSha, headSha, p
       const expectedProbeId = sha256(canonicalJson({ baseSha, headSha, payloadDigest, engine: engineReport.engine, action: control.action }));
       assert.equal(control.probeId, expectedProbeId, `${engineReport.engine}: trusted control probe identity is divergent: ${control.action}`);
       assert.ok(Array.isArray(control.observed) && control.observed.length === 1, `${engineReport.engine}: trusted control observation cardinality is divergent: ${control.action}`);
-      assert.equal(control.observed[0].probeId, expectedProbeId, `${engineReport.engine}: trusted control observation probe identity is divergent: ${control.action}`);
-      assert.ok(control.observed.every(({ disposition }) => disposition === "BLOCKED_BEFORE_EGRESS"), `${engineReport.engine}: runtime network control escaped before blocking: ${control.action}`);
+      const expected = expectedNetworkControl(control.action);
+      const expectedObservation = {
+        ...expected,
+        origin: new URL(expected.url).origin,
+        phase: "control-probe",
+        engine: engineReport.engine,
+        action: control.action,
+        viewport: "control",
+        disposition: "BLOCKED_BEFORE_EGRESS",
+        probeId: expectedProbeId,
+      };
+      const observed = control.observed[0];
+      exactKeys(observed, ["mechanism", "url", "origin", "phase", "engine", "action", "route", "viewport", "disposition", "probeId"], `${engineReport.engine}: trusted control observation ${control.action}`);
+      assert.deepEqual(observed, expectedObservation, `${engineReport.engine}: trusted control observation is divergent: ${control.action}`);
     }
     const observedOverflow = engineReport.observations.filter(({ overflow }) => overflow).length;
     const observedSmall = engineReport.observations.filter(({ smallTargets }) => smallTargets.length).length;
