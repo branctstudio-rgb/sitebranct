@@ -78,6 +78,9 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
     assert.match(source, /image: mcr\.microsoft\.com\/playwright:v1\.62\.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07/, "immutable Playwright container missing");
     assert.match(source, /git cat-file blob "\$\{BASE_SHA\}:package-lock\.json"/, "base-only lockfile materialization missing");
     assert.match(source, /npm ci --ignore-scripts --prefix "\$trusted_deps"/, "exact base lockfile install missing");
+    assert.match(source, /test "\$\(git rev-parse "\$\{BASE_SHA\}:package\.json"\)" = "\$\(git rev-parse "\$\{HEAD_SHA\}:package\.json"\)"/, "package parity guard is missing");
+    assert.match(source, /test "\$\(git rev-parse "\$\{BASE_SHA\}:package-lock\.json"\)" = "\$\(git rev-parse "\$\{HEAD_SHA\}:package-lock\.json"\)"/, "lockfile parity guard is missing");
+    assert.match(source, /name: Install exact locked dependencies for existing regressions[\s\S]*?npm ci --ignore-scripts/, "existing regression install is missing");
     assert.match(source, /name: Run base-only F2-GOV-08 enforcement/, "base-only enforcement step missing");
     assert.match(source, /git cat-file blob "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/, "base-only consumer bootstrap missing");
     assert.match(source, /--event-path "\$GITHUB_EVENT_PATH"/, "trusted GitHub event is not bound to the enforcement");
@@ -182,6 +185,9 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
       ["Firefox runtime HOME removed", (s) => s.replace(/^\s+HOME: \/root\s*\r?\n/m, ""), "Firefox-compatible root HOME is missing"],
       ["base bootstrap removed", (s) => s.replace(/git cat-file blob "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/, "git cat-file blob scripts/governance/validate-f2-gov-08.mjs"), "base-only consumer bootstrap missing"],
       ["trusted event replaced", (s) => s.replaceAll('--event-path "$GITHUB_EVENT_PATH"', '--event-path event-from-head.json'), "trusted GitHub event is not bound"],
+      ["package parity removed", (s) => s.replace(/^\s+test "\$\(git rev-parse "\$\{BASE_SHA\}:package\.json".*\r?\n/m, ""), "package parity guard is missing"],
+      ["lockfile parity removed", (s) => s.replace(/^\s+test "\$\(git rev-parse "\$\{BASE_SHA\}:package-lock\.json".*\r?\n/m, ""), "lockfile parity guard is missing"],
+      ["regression install removed", (s) => s.replace(/^\s+npm ci --ignore-scripts\s*\r?\n/m, ""), "existing regression install is missing"],
       ["required Action removed", (s) => s.replace(/^\s+- name: Prepare Node\.js[\s\S]*?node-version: 22\s*\r?\n/m, ""), "required Action inventory mismatch"],
       ["extra permission", (s) => s.replace("  contents: read", "  contents: read\n  issues: read"), "permissions must be contents read only"],
       ["second job", (s) => `${s}\n  shadow-job:\n    runs-on: ubuntu-latest\n    steps: []\n`, "exactly one universal job is allowed"],

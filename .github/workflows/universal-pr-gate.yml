@@ -58,8 +58,6 @@ jobs:
           git cat-file blob "${BASE_SHA}:package-lock.json" > "$trusted_deps/package-lock.json"
           npm ci --ignore-scripts --prefix "$trusted_deps"
           test -d "$trusted_deps/node_modules/playwright"
-          test ! -e "$GITHUB_WORKSPACE/node_modules"
-          ln -s "$trusted_deps/node_modules" "$GITHUB_WORKSPACE/node_modules"
           echo "F2_GOV_TRUSTED_NODE_MODULES=$trusted_deps/node_modules" >> "$GITHUB_ENV"
 
       - name: Run base-only F2-GOV-08 enforcement
@@ -91,6 +89,14 @@ jobs:
               --event-path "$GITHUB_EVENT_PATH" \
               --trusted-node-modules "$F2_GOV_TRUSTED_NODE_MODULES"
           fi
+
+      - name: Install exact locked dependencies for existing regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "${BASE_SHA}:package.json")" = "$(git rev-parse "${HEAD_SHA}:package.json")"
+          test "$(git rev-parse "${BASE_SHA}:package-lock.json")" = "$(git rev-parse "${HEAD_SHA}:package-lock.json")"
+          npm ci --ignore-scripts
 
       - name: Classify changed paths fail closed
         id: classify
