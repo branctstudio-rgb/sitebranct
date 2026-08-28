@@ -384,7 +384,10 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
       form.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
     });
   } else {
-    if (action === "serviceWorker.register") await page.goto(`${origin}/index.html`, { waitUntil: "load" });
+    if (action === "serviceWorker.register") {
+      policy.setScope({ phase: "control-probe", action, route: "index.html", viewport: "control" });
+      await page.goto(`${origin}/index.html`, { waitUntil: "load" });
+    }
     else await page.goto("about:blank");
   }
   if (["consent-loader", "form-submit"].includes(action)) {
