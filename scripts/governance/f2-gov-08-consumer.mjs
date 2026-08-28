@@ -147,7 +147,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
   const browserType = playwright[engine];
   assert.ok(browserType?.launch, `trusted Playwright engine is unavailable: ${engine}`);
   const browser = await browserType.launch({ headless: true, env: { HOME: request.browserHome, TMPDIR: request.browserHome, TEMP: request.browserHome, TMP: request.browserHome } });
-  const context = await browser.newContext();
+  const context = await browser.newContext({ serviceWorkers: "block" });
   const blocked = [];
   const observations = [];
   const menuResults = [];
@@ -162,6 +162,16 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
       if (url.origin === server.origin) return route.continue();
       blocked.push(url.href);
       return route.abort("blockedbyclient");
+    });
+    assert.equal(typeof context.routeWebSocket, "function", `${engine}: trusted WebSocket blocker is unavailable`);
+    await context.routeWebSocket("**", (socket) => {
+      blocked.push(socket.url());
+      socket.close({ code: 1008, reason: "external network blocked" });
+    });
+    await context.addInitScript(() => {
+      const blockedRtc = class { constructor() { throw new Error("external network blocked"); } };
+      Object.defineProperty(globalThis, "RTCPeerConnection", { value: blockedRtc, configurable: false, writable: false });
+      Object.defineProperty(globalThis, "webkitRTCPeerConnection", { value: blockedRtc, configurable: false, writable: false });
     });
     const page = await context.newPage();
     page.on("console", (message) => { if (["error", "warning"].includes(message.type())) consoleIssues.push({ type: message.type(), text: message.text().slice(0, 300) }); });
@@ -188,7 +198,10 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
       return { matches:matchMedia('(prefers-reduced-motion: reduce)').matches, maxDurationMs:Math.max(0,...durations.filter(Number.isFinite)) };
     });
     const probeUrl = "https://f2-gov-09.invalid/network-probe";
-    const probeResult = await page.evaluate(async (url) => { try { await fetch(url, { cache:"no-store" }); return "UNEXPECTED_SUCCESS"; } catch { return "BLOCKED"; } }, probeUrl);
+    const probePage = await context.newPage();
+    await probePage.goto("about:blank");
+    const probeResult = await probePage.evaluate(async (url) => { try { await fetch(url, { cache:"no-store" }); return "UNEXPECTED_SUCCESS"; } catch { return "BLOCKED"; } }, probeUrl);
+    await probePage.close();
     assert.equal(probeResult, "BLOCKED", `${engine}: external browser probe was not blocked`);
     assert.ok(blocked.includes(probeUrl), `${engine}: external browser probe did not reach the trusted route blocker`);
     const summary = {

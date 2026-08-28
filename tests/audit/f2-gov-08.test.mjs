@@ -650,6 +650,18 @@ test("F2-GOV-09 canonical matrix fixes 84 observations, 41 identities and 184 ac
   assert.deepEqual(matrix.viewports["1024x768"], [1024, 768]);
 });
 
+test("F2-GOV-09 browser network boundary blocks workers, sockets, RTC and external HTTP", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = canonicalBlob(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  assert.match(consumer, /newContext\(\{ serviceWorkers: "block" \}\)/);
+  assert.match(consumer, /context\.routeWebSocket\("\*\*"/);
+  assert.match(consumer, /Object\.defineProperty\(globalThis, "RTCPeerConnection"/);
+  assert.match(consumer, /probePage\.goto\("about:blank"\)/);
+  assert.match(server, /connect-src 'self'/);
+  assert.match(server, /worker-src 'none'/);
+  assert.match(server, /frame-src 'none'/);
+});
+
 test("F2-GOV-09 operational validator accepts the exact complete semantic RED vector", () => {
   const fixture = canonicalOperationalFixture();
   assert.equal(validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest).length, 375);
