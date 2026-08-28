@@ -418,11 +418,11 @@ test("F2-GOV-08 portable grammar accepts every one of the 56 current published p
   );
 });
 
-test("F2-GOV-08 portable trie accepts all 806 current regular Git paths and all 56 manifest paths", () => {
+test("F2-GOV-08 portable trie accepts all 808 current regular Git paths and all 56 manifest paths", () => {
   const current = currentGitTreeEntries();
-  assert.equal(current.length, 806);
+  assert.equal(current.length, 808);
   assert.ok(current.every(({ mode, type }) => mode === "100644" && type === "blob"));
-  assert.equal(portableGuard.validatePortableGitTreeEntries(current).entries.length, 806);
+  assert.equal(portableGuard.validatePortableGitTreeEntries(current).entries.length, 808);
   assert.equal(portableGuard.validatePortableGitTreeEntries(syntheticTreeEntries(publishedPaths)).entries.length, 56);
 });
 
