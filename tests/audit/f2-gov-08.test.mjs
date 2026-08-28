@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -9,6 +10,7 @@ import {
   CANONICAL_AUTHORITY_PATHS,
   runBaseOnlyGitSimulation,
   runBaseOnlySimulation,
+  validateOperationalReport,
   verifyMaterializedAuthoritySnapshot,
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 import * as portableGuard from "../../scripts/governance/validate-f2-gov-08.mjs";
@@ -109,6 +111,67 @@ function currentGitTreeEntries() {
     const pathBytes = record.subarray(tab + 1);
     return { mode, type, oid, path: pathBytes.toString("ascii"), pathBytes };
   });
+}
+
+const canonicalJsonForTest = (value) => {
+  if (Array.isArray(value)) return `[${value.map(canonicalJsonForTest).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJsonForTest(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+};
+const sha256ForTest = (value) => createHash("sha256").update(value).digest("hex");
+
+function canonicalOperationalFixture() {
+  const matrixBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.matrix);
+  const expectationsBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.expectations);
+  const menuBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.menuEvidence);
+  const matrix = JSON.parse(matrixBytes.toString("utf8"));
+  const menu = JSON.parse(menuBytes.toString("utf8"));
+  const matrixDigest = sha256ForTest(matrixBytes);
+  const baseSha = "1".repeat(40);
+  const headSha = "2".repeat(40);
+  const payloadDigest = "3".repeat(64);
+  const authority = { files: new Map([
+    ["matrix", { bytes: matrixBytes, pin: { sha256: matrixDigest } }],
+    ["expectations", { bytes: expectationsBytes, pin: { sha256: sha256ForTest(expectationsBytes) } }],
+    ["menuEvidence", { bytes: menuBytes, pin: { sha256: sha256ForTest(menuBytes) } }],
+  ]) };
+  const evidence = [];
+  const reports = matrix.engines.map((engine, engineIndex) => {
+    const observations = [];
+    for (const route of matrix.routes) for (const [viewport] of Object.entries(matrix.viewports)) {
+      const rawObservation = { overflow: engineIndex === 0 && observations.length === 0, smallTargets: engineIndex === 0 && observations.length === 0 ? [{ width: 20, height: 20 }] : [] };
+      observations.push(rawObservation);
+      const binding = { baseSha, headSha, matrixDigest, payloadDigest, engine, kind: "observation", route, viewport, action: "measure-responsive" };
+      const identity = sha256ForTest(canonicalJsonForTest(binding));
+      const semanticResult = rawObservation.overflow || rawObservation.smallTargets.length ? "FAIL" : "PASS";
+      evidence.push({ ...binding, identity, rawObservation, semanticResult, digest: sha256ForTest(canonicalJsonForTest({ ...binding, identity, rawObservation, semanticResult })) });
+    }
+    const menuResults = menu.entries.map((entry, index) => {
+      const measuredResult = index === 0 && engineIndex === 0
+        ? { focusReached: false }
+        : { focusReached: true, focusStyle: true, open: { expanded: "true", drawerInside: true, focusInside: true, bodyLocked: true, backgroundInert: true, closeTarget: { width: 44, height: 44 } }, closed: { closed: true, focusReturned: true }, closeButtonClosed: null, outsideClosed: null };
+      const semanticResult = index === 0 && engineIndex === 0 ? "FAIL" : "PASS";
+      const action = entry.actionPhases.join("+");
+      const binding = { baseSha, headSha, matrixDigest, payloadDigest, engine, kind: "menu", route: entry.route, viewport: entry.viewport, action };
+      const identity = sha256ForTest(canonicalJsonForTest(binding));
+      const rawObservation = { measuredResult };
+      evidence.push({ ...binding, identity, rawObservation, semanticResult, digest: sha256ForTest(canonicalJsonForTest({ ...binding, identity, rawObservation, semanticResult })) });
+      return { semanticResult };
+    });
+    return {
+      engine,
+      version: "test-engine",
+      observations,
+      menuResults,
+      actions: Array.from({ length: matrix.actionCountPerEngine }, (_, index) => ({ id: index, status: "COMPLETED" })),
+      reducedMotion: { matches: true, maxDurationMs: 0 },
+      networkIsolation: { probeUrl: "https://f2-gov-09.invalid/network-probe", probeResult: "BLOCKED", blockedCount: 1 },
+      consoleIssues: [],
+      summary: { overflowCount: engineIndex === 0 ? 1 : 0, smallTargetObservationCount: engineIndex === 0 ? 1 : 0, menuFailureCount: engineIndex === 0 ? 1 : 0, reducedMotionDurationMs: 0, consoleIssueCount: 0 },
+      evidence: [],
+    };
+  });
+  return { authority, baseSha, headSha, payloadDigest, report: { complete: true, executionMode: "OPERATIONAL", conclusion: "EXPECTED_SEMANTIC_RED", reports, evidence } };
 }
 
 async function publishFixtureHead(fixture, message) {
@@ -585,4 +648,22 @@ test("F2-GOV-09 canonical matrix fixes 84 observations, 41 identities and 184 ac
   assert.equal(matrix.menuEvidenceCountPerEngine, 41);
   assert.equal(matrix.actionCountPerEngine, 184);
   assert.deepEqual(matrix.viewports["1024x768"], [1024, 768]);
+});
+
+test("F2-GOV-09 operational validator accepts the exact complete semantic RED vector", () => {
+  const fixture = canonicalOperationalFixture();
+  assert.equal(validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest).length, 375);
+});
+
+for (const [label, mutate, expected] of [
+  ["missing browser engine", (report) => report.reports.splice(1, 1), /engine report set is missing/i],
+  ["partial evidence", (report) => report.evidence.pop(), /evidence report is partial/i],
+  ["inconclusive browser action", (report) => { report.reports[0].actions[0].status = "TIMEOUT"; }, /action evidence is inconclusive/i],
+  ["unblocked external network", (report) => { report.reports[0].networkIsolation.probeResult = "ALLOWED"; }, /external browser access was not blocked/i],
+  ["unexercised browser route blocker", (report) => { report.reports[0].networkIsolation.blockedCount = 0; }, /route blocker was not exercised/i],
+  ["producer-selected conclusion", (report) => { report.conclusion = "READY_GREEN"; }, /operational conclusion is divergent/i],
+]) test(`F2-GOV-09 operational validator rejects ${label}`, () => {
+  const fixture = canonicalOperationalFixture();
+  mutate(fixture.report);
+  assert.throws(() => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest), expected);
 });

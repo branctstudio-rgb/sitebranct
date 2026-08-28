@@ -461,7 +461,7 @@ function menuMeasurementPass(result) {
   return result.focusReached === true && result.focusStyle === true && result.open?.expanded === "true" && result.open.drawerInside === true && result.open.focusInside === true && result.open.bodyLocked === true && result.open.backgroundInert === true && result.open.closeTarget?.width >= 44 && result.open.closeTarget?.height >= 44 && result.closed?.closed === true && result.closed?.focusReturned === true && (result.closeButtonClosed === null || result.closeButtonClosed?.invoked === true && result.closeButtonClosed?.closed === true) && (result.outsideClosed === null || result.outsideClosed?.invoked === true && result.outsideClosed?.closed === true);
 }
 
-function validateOperationalReport(report, authority, baseSha, headSha, payloadDigest) {
+export function validateOperationalReport(report, authority, baseSha, headSha, payloadDigest) {
   exactKeys(report, ["complete", "executionMode", "conclusion", "reports", "evidence"], "trusted operational report");
   assert.equal(report.complete, true, "trusted operational report is incomplete");
   assert.equal(report.executionMode, "OPERATIONAL", "trusted operational mode is divergent");
