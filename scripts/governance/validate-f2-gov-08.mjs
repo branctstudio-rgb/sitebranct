@@ -17,6 +17,12 @@ export const CANONICAL_AUTHORITY_PATHS = Object.freeze({
   menuEvidence: "fixtures/audit/f2-01-menu-evidence-matrix.json",
   targetBaseline: "fixtures/audit/f2-01-baseline-results.json",
 });
+const NETWORK_CONTROL_ACTIONS = Object.freeze([
+  "fetch", "fetch-computed", "XMLHttpRequest", "WebSocket", "EventSource", "sendBeacon",
+  "serviceWorker.register", "script", "dynamic-import", "frame", "image", "window.open",
+  "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
+  "resource-hint-dns-prefetch", "consent-loader", "form-submit",
+]);
 
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const canonicalJson = (value) => {
@@ -29,6 +35,40 @@ const exactKeys = (value, keys, label) => {
   assert.deepEqual(Object.keys(value).sort(), [...keys].sort(), `${label} schema is not exact`);
 };
 const validSha = (value, label) => assert.match(value ?? "", /^[0-9a-f]{40}$/, `${label} SHA is malformed`);
+
+export function inventoryNetworkCapabilities(path, bytes) {
+  assert.equal(typeof path, "string", "network capability path is absent");
+  assert.ok(Buffer.isBuffer(bytes), `network capability bytes are absent: ${path}`);
+  let text;
+  try { text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
+  catch { assert.fail(`network capability source is not canonical UTF-8: ${path}`); }
+  const rules = [
+    ["ACTIVE_API", "fetch", /\bfetch\s*\(/g],
+    ["ACTIVE_API", "XMLHttpRequest", /\b(?:new\s+)?XMLHttpRequest\b/g],
+    ["ACTIVE_API", "WebSocket", /\bnew\s+WebSocket\s*\(/g],
+    ["ACTIVE_API", "EventSource", /\bnew\s+EventSource\s*\(/g],
+    ["ACTIVE_API", "sendBeacon", /\bnavigator\s*\.\s*sendBeacon\s*\(/g],
+    ["ACTIVE_API", "serviceWorker.register", /\bserviceWorker\s*\.\s*register\s*\(/g],
+    ["ACTIVE_API", "dynamic-import", /\bimport\s*\(/g],
+    ["PROGRAMMATIC_NAVIGATION", "window.open", /\bwindow\s*\.\s*open\s*\(/g],
+    ["PROGRAMMATIC_NAVIGATION", "location.assign", /\blocation\s*\.\s*assign\s*\(/g],
+    ["PROGRAMMATIC_NAVIGATION", "location.replace", /\blocation\s*\.\s*replace\s*\(/g],
+    ["PROGRAMMATIC_NAVIGATION", "location.href", /\blocation\s*\.\s*href\s*=/g],
+    ["RESOURCE_ASSIGNMENT", "resource-src-assignment", /\.src\s*=/g],
+    ["EXTERNAL_LITERAL", "https-url", /https?:\/\/[^\s"'`<>]+/g],
+    ["EXTERNAL_LITERAL", "websocket-url", /wss?:\/\/[^\s"'`<>]+/g],
+  ];
+  const inventory = [];
+  for (const [category, mechanism, pattern] of rules) {
+    for (const match of text.matchAll(pattern)) {
+      const before = text.slice(0, match.index);
+      const line = before.split("\n").length;
+      const column = match.index - before.lastIndexOf("\n");
+      inventory.push({ path, line, column, category, mechanism, reference: category === "EXTERNAL_LITERAL" ? match[0] : null });
+    }
+  }
+  return inventory.sort((left, right) => left.line - right.line || left.column - right.column || left.mechanism.localeCompare(right.mechanism));
+}
 
 function splitNulBuffers(bytes, label) {
   assert.ok(Buffer.isBuffer(bytes), `${label} is not binary Git output`);
@@ -340,7 +380,10 @@ function validateContract(contract) {
   assert.equal(contract.candidate.dependenciesAllowed, false, "candidate dependencies must be forbidden");
   assert.equal(contract.measurement.producerMaySupplyResults, false, "producer result injection must be forbidden");
   assert.deepEqual(contract.measurement.requiredEngines, ["chromium", "firefox", "webkit"], "required browser engines are divergent");
-  assert.equal(contract.measurement.networkPolicy, "loopback-only-browser-route-enforcement", "browser network policy is divergent");
+  assert.equal(contract.measurement.networkPolicy, "verified-local-blobs-runtime-external-attempt-fails", "browser network policy is divergent");
+  assert.equal(contract.measurement.staticAnalysisRole, "inventory-only-not-proof-of-absence", "static network analysis must remain inventory-only");
+  assert.equal(contract.measurement.blockedAttemptResult, "FAIL", "a blocked runtime network attempt must remain a failure");
+  assert.deepEqual(contract.measurement.flowRestrictions, ["no-consent", "no-form-submit", "no-external-navigation"], "measured flow network restrictions are divergent");
   assert.ok(Number.isInteger(contract.measurement.perEngineTimeoutMs) && contract.measurement.perEngineTimeoutMs >= 60000, "per-engine timeout is absent or unsafe");
   assert.equal(contract.environment.futureJobPermissions.contents, "read", "future job permission must remain contents read-only");
   assert.deepEqual(contract.environment.exposedToBrowserOrServer, [], "browser or server credential exposure must remain empty");
@@ -408,6 +451,7 @@ export function verifyMaterializedAuthoritySnapshot(files, materialized) {
 function materializeCandidate(repository, headSha, contract, root, headEntries) {
   const seen = new Set();
   const payload = [];
+  const capabilityInventory = [];
   for (const entry of headEntries.filter(({ path }) => allowedCandidatePath(path, contract))) {
     safeRelativePath(entry.path, "candidate path");
     assert.equal(seen.has(entry.path), false, `duplicate candidate path: ${entry.path}`);
@@ -421,20 +465,21 @@ function materializeCandidate(repository, headSha, contract, root, headEntries) 
       try { text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
       catch { assert.fail(`candidate ${entry.path} is not canonical UTF-8`); }
       assert.equal(Buffer.from(text, "utf8").equals(bytes), true, `candidate ${entry.path} UTF-8 round-trip is divergent`);
-      assert.doesNotMatch(text, /\b(?:fetch|WebSocket|EventSource)\s*\(|\bXMLHttpRequest\b|navigator\.sendBeacon\s*\(/i, `external network intent is forbidden in the offline candidate: ${entry.path}`);
       assert.doesNotMatch(text, /data-(?:authority-key|expected-identity|envelope|digest|semantic-result|pass)=/i, `KEYED_PRODUCER_TRANSPLANT: candidate attempts to provide authority output: ${entry.path}`);
+      capabilityInventory.push(...inventoryNetworkCapabilities(entry.path, bytes));
     }
     materializeBlob(root, entry.path, bytes);
     payload.push({ path: entry.path, sha256: sha256(bytes) });
   }
   payload.sort((left, right) => left.path.localeCompare(right.path));
-  return { payload, payloadDigest: sha256(canonicalJson(payload)) };
+  return { payload, payloadDigest: sha256(canonicalJson(payload)), capabilityInventory };
 }
 
-function validateSimulationReport(report, authority, baseSha, headSha, payloadDigest) {
-  exactKeys(report, ["complete", "executionMode", "evidence"], "trusted simulation report");
+function validateSimulationReport(report, authority, baseSha, headSha, payloadDigest, capabilityInventory) {
+  exactKeys(report, ["complete", "executionMode", "capabilityInventory", "evidence"], "trusted simulation report");
   assert.equal(report.complete, true, "trusted simulation report is incomplete");
   assert.equal(report.executionMode, "SIMULATION", "trusted simulation mode is divergent");
+  assert.deepEqual(report.capabilityInventory, capabilityInventory, "trusted static capability inventory is divergent");
   const matrix = parseJson(authority.files.get("matrix").bytes, "canonical matrix");
   const expectations = parseJson(authority.files.get("expectations").bytes, "canonical expectations");
   assert.equal(report.evidence.length, matrix.simulation.length, "trusted simulation report is partial");
@@ -461,10 +506,11 @@ function menuMeasurementPass(result) {
   return result.focusReached === true && result.focusStyle === true && result.open?.expanded === "true" && result.open.drawerInside === true && result.open.focusInside === true && result.open.bodyLocked === true && result.open.backgroundInert === true && result.open.closeTarget?.width >= 44 && result.open.closeTarget?.height >= 44 && result.closed?.closed === true && result.closed?.focusReturned === true && (result.closeButtonClosed === null || result.closeButtonClosed?.invoked === true && result.closeButtonClosed?.closed === true) && (result.outsideClosed === null || result.outsideClosed?.invoked === true && result.outsideClosed?.closed === true);
 }
 
-export function validateOperationalReport(report, authority, baseSha, headSha, payloadDigest) {
-  exactKeys(report, ["complete", "executionMode", "conclusion", "reports", "evidence"], "trusted operational report");
+export function validateOperationalReport(report, authority, baseSha, headSha, payloadDigest, capabilityInventory = report.capabilityInventory ?? []) {
+  exactKeys(report, ["complete", "executionMode", "conclusion", "capabilityInventory", "reports", "evidence"], "trusted operational report");
   assert.equal(report.complete, true, "trusted operational report is incomplete");
   assert.equal(report.executionMode, "OPERATIONAL", "trusted operational mode is divergent");
+  assert.deepEqual(report.capabilityInventory, capabilityInventory, "trusted static capability inventory is divergent");
   const matrix = parseJson(authority.files.get("matrix").bytes, "canonical matrix");
   const expectations = parseJson(authority.files.get("expectations").bytes, "canonical expectations");
   const menuAuthority = parseJson(authority.files.get("menuEvidence").bytes, "canonical menu evidence");
@@ -504,9 +550,29 @@ export function validateOperationalReport(report, authority, baseSha, headSha, p
     assert.equal(engineReport.menuResults.length, matrix.menuEvidenceCountPerEngine, `${engineReport.engine}: menu evidence incomplete`);
     assert.equal(engineReport.actions.length, matrix.actionCountPerEngine, `${engineReport.engine}: action evidence incomplete`);
     assert.ok(engineReport.actions.every(({ status }) => status === "COMPLETED"), `${engineReport.engine}: action evidence is inconclusive`);
-    assert.equal(engineReport.networkIsolation.probeUrl, "https://f2-gov-09.invalid/network-probe", `${engineReport.engine}: network probe identity is divergent`);
-    assert.equal(engineReport.networkIsolation.probeResult, "BLOCKED", `${engineReport.engine}: external browser access was not blocked`);
-    assert.ok(engineReport.networkIsolation.blockedCount >= 1, `${engineReport.engine}: browser route blocker was not exercised`);
+    exactKeys(engineReport.networkIsolation, ["policy", "cleanContext", "localRequestCount", "localI18nSuccessCount", "localViolations", "flowAttempts", "controls"], `${engineReport.engine}: trusted network isolation report`);
+    assert.equal(engineReport.networkIsolation.policy, "LOCAL_VERIFIED_BLOBS_AND_RUNTIME_EXTERNAL_FAIL", `${engineReport.engine}: runtime network policy is divergent`);
+    assert.deepEqual(engineReport.networkIsolation.cleanContext, { cookies: 0, storageOrigins: 0, serviceWorkers: 0 }, `${engineReport.engine}: browser context did not start clean`);
+    assert.ok(Number.isInteger(engineReport.networkIsolation.localRequestCount) && engineReport.networkIsolation.localRequestCount > 0, `${engineReport.engine}: verified local requests are absent`);
+    assert.ok(Number.isInteger(engineReport.networkIsolation.localI18nSuccessCount) && engineReport.networkIsolation.localI18nSuccessCount > 0, `${engineReport.engine}: local i18n fetch was not verified`);
+    assert.ok(Array.isArray(engineReport.networkIsolation.localViolations), `${engineReport.engine}: local request violations are malformed`);
+    assert.deepEqual(engineReport.networkIsolation.localViolations, [], `${engineReport.engine}: local request violation observed`);
+    assert.ok(Array.isArray(engineReport.networkIsolation.flowAttempts), `${engineReport.engine}: runtime network attempts are malformed`);
+    const externalAttempt = engineReport.networkIsolation.flowAttempts[0];
+    if (externalAttempt) assert.fail(`observed external network attempt: ${externalAttempt.mechanism} ${externalAttempt.engine} ${externalAttempt.action} ${externalAttempt.url}`);
+    assert.deepEqual(
+      engineReport.networkIsolation.controls.map(({ action, status }) => [action, status]),
+      NETWORK_CONTROL_ACTIONS.map((action) => [action, "BLOCKED_AND_RECORDED"]),
+      `${engineReport.engine}: runtime network control vector is incomplete or divergent`,
+    );
+    for (const control of engineReport.networkIsolation.controls) {
+      exactKeys(control, ["action", "status", "probeId", "observed"], `${engineReport.engine}: runtime network control ${control?.action ?? "unknown"}`);
+      const expectedProbeId = sha256(canonicalJson({ baseSha, headSha, payloadDigest, engine: engineReport.engine, action: control.action }));
+      assert.equal(control.probeId, expectedProbeId, `${engineReport.engine}: trusted control probe identity is divergent: ${control.action}`);
+      assert.ok(Array.isArray(control.observed) && control.observed.length === 1, `${engineReport.engine}: trusted control observation cardinality is divergent: ${control.action}`);
+      assert.equal(control.observed[0].probeId, expectedProbeId, `${engineReport.engine}: trusted control observation probe identity is divergent: ${control.action}`);
+      assert.ok(control.observed.every(({ disposition }) => disposition === "BLOCKED_BEFORE_EGRESS"), `${engineReport.engine}: runtime network control escaped before blocking: ${control.action}`);
+    }
     const observedOverflow = engineReport.observations.filter(({ overflow }) => overflow).length;
     const observedSmall = engineReport.observations.filter(({ smallTargets }) => smallTargets.length).length;
     const observedMenu = engineReport.menuResults.filter(({ semanticResult }) => semanticResult !== "PASS").length;
@@ -533,18 +599,21 @@ const F2_GOV_09_EVOLUTION_BASE = "3656d57a78b777b1ff279c2cda01905877611117";
 const F2_GOV_09_EVOLUTION_PATHS = Object.freeze([
   ".github/workflows/gate-integrity-sentinel.yml",
   ".github/workflows/universal-pr-gate.yml",
+  "crm-gestao.html",
   "docs/audit/phase-2/governance/f2-gov-09-design.md",
   "docs/audit/phase-2/governance/f2-gov-09-handoff.md",
   "fixtures/audit/f2-gov-08-authority-manifest.json",
   "fixtures/audit/f2-gov-08-base-only-contract.json",
   "fixtures/audit/f2-gov-08-expectations.json",
   "fixtures/audit/f2-gov-08-matrix.json",
+  "fixtures/audit/f2-01-transition.json",
   "scripts/governance/f2-gov-08-consumer.mjs",
   "scripts/governance/f2-gov-08-static-server.mjs",
   "scripts/governance/validate-f2-gov-08.mjs",
   "tests/audit/f2-gov-02a.test.mjs",
   "tests/audit/f2-gov-02c.test.mjs",
   "tests/audit/f2-gov-08.test.mjs",
+  "tests/audit/site-audit.test.mjs",
 ]);
 
 function runBaseOnlyGitHarness(input, executionMode, authorityMode = "BASE_ONLY") {
@@ -598,6 +667,8 @@ function runBaseOnlyGitHarness(input, executionMode, authorityMode = "BASE_ONLY"
       baseSha,
       headSha,
       candidateRoot,
+      candidatePayload: candidate.payload,
+      capabilityInventory: candidate.capabilityInventory,
       matrixPath: materialized.get("matrix"),
       expectationsPath: materialized.get("expectations"),
       runtimePath: materialized.get("runtime"),
@@ -618,8 +689,8 @@ function runBaseOnlyGitHarness(input, executionMode, authorityMode = "BASE_ONLY"
     }
     const report = parseJson(readFileSync(responsePath), "trusted consumer response");
     const evidence = executionMode === "OPERATIONAL"
-      ? validateOperationalReport(report, authority, baseSha, headSha, candidate.payloadDigest)
-      : validateSimulationReport(report, authority, baseSha, headSha, candidate.payloadDigest);
+      ? validateOperationalReport(report, authority, baseSha, headSha, candidate.payloadDigest, candidate.capabilityInventory)
+      : validateSimulationReport(report, authority, baseSha, headSha, candidate.payloadDigest, candidate.capabilityInventory);
     return {
       decision: "PASS",
       executionMode,
@@ -633,6 +704,7 @@ function runBaseOnlyGitHarness(input, executionMode, authorityMode = "BASE_ONLY"
         authoritySha,
         origins: Object.fromEntries([...authority.files].map(([role, file]) => [role, { authoritySha, path: file.pin.path, oid: file.oid, sha256: file.pin.sha256 }])),
         payloadDigest: candidate.payloadDigest,
+        capabilityInventory: candidate.capabilityInventory,
       },
       evidence,
     };

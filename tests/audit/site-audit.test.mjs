@@ -1016,7 +1016,22 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
   }
 });
 
-test("the audited diff cannot mutate live pages or deployment", async () => {
+function validateOneShotLiveTransition(transition, diffBase, changed, allowed) {
+  const live = changed.filter((path) => !allowed.test(path));
+  if (live.length === 0) return;
+  assert.deepEqual(transition.liveChangeTransition, {
+    schemaVersion: 1,
+    mission: "F2-GOV-09-F3-CONSENT-HARDENING",
+    status: "AUTHORIZED_UNINTEGRATED",
+    baseSha: "3656d57a78b777b1ff279c2cda01905877611117",
+    paths: ["crm-gestao.html"],
+    productionAuthorized: false,
+  }, "one-shot live transition is absent, divergent or permissive");
+  assert.equal(diffBase, transition.liveChangeTransition.baseSha, "one-shot live transition base is divergent or has already been consumed");
+  assert.deepEqual(live, transition.liveChangeTransition.paths, "live diff is outside the exact one-shot transition");
+}
+
+test("the audited diff cannot mutate live pages or deployment except the exact one-shot transition", async () => {
   const contract = await readJson(contractPath);
   const transition = await readJson(f201TransitionPath);
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
@@ -1026,8 +1041,26 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
     .trim().split(/\r?\n/).filter(Boolean);
   const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
-  assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
+  validateOneShotLiveTransition(transition, diffBase, changed, allowed);
   assert.ok(!changed.includes(".github/workflows/deploy.yml"));
+});
+
+test("F2-GOV-09 consent hardening is a one-shot exact live transition", async () => {
+  const transition = await readJson(f201TransitionPath);
+  assert.deepEqual(transition.liveChangeTransition, {
+    schemaVersion: 1,
+    mission: "F2-GOV-09-F3-CONSENT-HARDENING",
+    status: "AUTHORIZED_UNINTEGRATED",
+    baseSha: "3656d57a78b777b1ff279c2cda01905877611117",
+    paths: ["crm-gestao.html"],
+    productionAuthorized: false,
+  });
+  const allowed = /^(docs\/audit\/|fixtures\/audit\/|tests\/audit\/|scripts\/governance\/)/;
+  for (const [label, base, changed, expected] of [
+    ["generic live page", transition.liveChangeTransition.baseSha, ["index.html"], /outside the exact one-shot/i],
+    ["extra live page", transition.liveChangeTransition.baseSha, ["crm-gestao.html", "index.html"], /outside the exact one-shot/i],
+    ["different base", "f".repeat(40), ["crm-gestao.html"], /base is divergent|consumed/i],
+  ]) assert.throws(() => validateOneShotLiveTransition(transition, base, changed, allowed), expected, label);
 });
 
 await import("./phase-2-governance.test.mjs");

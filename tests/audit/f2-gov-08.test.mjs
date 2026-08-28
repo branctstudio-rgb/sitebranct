@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import vm from "node:vm";
 
 import {
   CANONICAL_AUTHORITY_PATHS,
@@ -14,13 +16,60 @@ import {
   verifyMaterializedAuthoritySnapshot,
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 import * as portableGuard from "../../scripts/governance/validate-f2-gov-08.mjs";
+import * as trustedServer from "../../scripts/governance/f2-gov-08-static-server.mjs";
 
 const root = new URL("../../", import.meta.url);
 const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$1").replace(/\/$/, "");
 const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
-const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `HEAD:${path}`], { cwd: sourceRepository, encoding: null, stdio: ["ignore", "pipe", "pipe"] });
+const canonicalBlob = (path) => readFileSync(join(sourceRepository, ...path.split("/")));
 const publishedPaths = JSON.parse(canonicalBlob("deploy/publish-manifest.json").toString("utf8")).files;
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
+
+const crmPixelScripts = (crmSource = canonicalBlob("crm-gestao.html").toString("utf8")) => [...crmSource.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+  .map((match) => match[1])
+  .filter((source) => source.includes("__BRANCT_PIXEL_ID") || source.includes("CONSENT_KEY"));
+
+function runCrmConsentPage(storage = new Map(), action = null, crmSource = undefined) {
+  const attempts = [];
+  const listeners = new Map();
+  const element = (id) => ({
+    hidden: true,
+    classList: { add() {}, remove() {} },
+    addEventListener(type, listener) { listeners.set(`${id}:${type}`, listener); },
+  });
+  const elements = new Map([
+    ["consent-banner", element("consent-banner")],
+    ["consent-accept", element("consent-accept")],
+    ["consent-reject", element("consent-reject")],
+  ]);
+  const document = {
+    createElement: () => ({ async: false, src: "" }),
+    getElementsByTagName: () => [{ parentNode: { insertBefore(node) { attempts.push({ mechanism: "script", url: node.src }); } } }],
+    getElementById: (id) => elements.get(id) ?? null,
+    querySelectorAll: () => [],
+  };
+  const sandbox = {
+    document,
+    localStorage: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, String(value)),
+      removeItem: (key) => storage.delete(key),
+    },
+    requestAnimationFrame: (callback) => callback(),
+    setTimeout: (callback) => callback(),
+    matchMedia: () => ({ matches: false }),
+    console,
+  };
+  sandbox.window = sandbox;
+  const context = vm.createContext(sandbox);
+  for (const source of crmPixelScripts(crmSource)) vm.runInContext(source, context, { filename: "crm-gestao.html" });
+  if (action) {
+    const listener = listeners.get(`${action}:click`);
+    assert.equal(typeof listener, "function", `consent action is absent: ${action}`);
+    listener();
+  }
+  return { attempts, storage };
+}
 
 async function write(repository, path, bytes) {
   const target = join(repository, ...path.split("/"));
@@ -119,6 +168,12 @@ const canonicalJsonForTest = (value) => {
   return JSON.stringify(value);
 };
 const sha256ForTest = (value) => createHash("sha256").update(value).digest("hex");
+const networkControlActionsForTest = [
+  "fetch", "fetch-computed", "XMLHttpRequest", "WebSocket", "EventSource", "sendBeacon",
+  "serviceWorker.register", "script", "dynamic-import", "frame", "image", "window.open",
+  "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
+  "resource-hint-dns-prefetch", "consent-loader", "form-submit",
+];
 
 function canonicalOperationalFixture() {
   const matrixBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.matrix);
@@ -165,13 +220,24 @@ function canonicalOperationalFixture() {
       menuResults,
       actions: Array.from({ length: matrix.actionCountPerEngine }, (_, index) => ({ id: index, status: "COMPLETED" })),
       reducedMotion: { matches: true, maxDurationMs: 0 },
-      networkIsolation: { probeUrl: "https://f2-gov-09.invalid/network-probe", probeResult: "BLOCKED", blockedCount: 1 },
+      networkIsolation: {
+        policy: "LOCAL_VERIFIED_BLOBS_AND_RUNTIME_EXTERNAL_FAIL",
+        cleanContext: { cookies: 0, storageOrigins: 0, serviceWorkers: 0 },
+        localRequestCount: 1,
+        localI18nSuccessCount: 1,
+        localViolations: [],
+        flowAttempts: [],
+        controls: networkControlActionsForTest.map((action) => {
+          const probeId = sha256ForTest(canonicalJsonForTest({ baseSha, headSha, payloadDigest, engine, action }));
+          return { action, status: "BLOCKED_AND_RECORDED", probeId, observed: [{ mechanism: action, url: `https://example.invalid/${encodeURIComponent(action)}`, disposition: "BLOCKED_BEFORE_EGRESS", probeId }] };
+        }),
+      },
       consoleIssues: [],
       summary: { overflowCount: engineIndex === 0 ? 1 : 0, smallTargetObservationCount: engineIndex === 0 ? 1 : 0, menuFailureCount: engineIndex === 0 ? 1 : 0, reducedMotionDurationMs: 0, consoleIssueCount: 0 },
       evidence: [],
     };
   });
-  return { authority, baseSha, headSha, payloadDigest, report: { complete: true, executionMode: "OPERATIONAL", conclusion: "EXPECTED_SEMANTIC_RED", reports, evidence } };
+  return { authority, baseSha, headSha, payloadDigest, report: { complete: true, executionMode: "OPERATIONAL", conclusion: "EXPECTED_SEMANTIC_RED", capabilityInventory: [], reports, evidence } };
 }
 
 async function publishFixtureHead(fixture, message) {
@@ -247,7 +313,9 @@ test("F2-GOV-08 rejects alternate imports in the consumer authority", async () =
   const source = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const localImports = [...source.matchAll(/from\s+["'](\.\/[^"']+)["']/g)].map((match) => match[1]);
   assert.deepEqual(localImports, ["./f2-gov-08-static-server.mjs"]);
-  assert.doesNotMatch(source, /import\s*\(/);
+  const dynamicImports = [...source.matchAll(/\bimport\s*\(([^)]+)\)/g)].map((match) => match[1].trim());
+  assert.deepEqual(dynamicImports, ["target"], "trusted consumer may use dynamic import only for the isolated runtime network control");
+  assert.match(source, /else if \(control === "dynamic-import"\) await import\(target\);/);
   assert.match(source, /const require = createRequire\(join\(modules, "\.\.", "package\.json"\)\);\s*const playwright = require\("playwright"\);/);
   assert.equal((source.match(/\brequire\(/g) ?? []).length, 1, "trusted consumer may require only the pinned Playwright package");
 });
@@ -607,8 +675,26 @@ for (const [label, mode, oidFactory] of [
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
+test("F2-GOV-08 inventories an external capability without treating static presence as an observed attempt", async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, "src/js/branct.js", "fetch('https://example.invalid/exfiltrate');\n");
+    fixture.git("add", "src/js/branct.js");
+    fixture.git("commit", "--quiet", "-m", "external capability inventory");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    const result = run(fixture);
+    assert.equal(result.decision, "PASS");
+    assert.ok(result.authority.capabilityInventory.some(({ path, category, mechanism, reference }) =>
+      path === "src/js/branct.js" && category === "ACTIVE_API" && mechanism === "fetch" && reference === null));
+    assert.ok(result.authority.capabilityInventory.some(({ path, category, mechanism, reference }) =>
+      path === "src/js/branct.js" && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference === "https://example.invalid/exfiltrate"));
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
 for (const [label, path, content, expected] of [
-  ["external network attempt", "src/js/branct.js", "fetch('https://example.invalid/exfiltrate');\n", /external network intent/i],
   ["KEYED_PRODUCER_TRANSPLANT", "index.html", `${html("candidate").replace("<html ", "<html data-authority-key=\"producer\" ")}`, /KEYED_PRODUCER_TRANSPLANT/i],
 ]) test(`F2-GOV-08 rejects ${label} from candidate content`, async () => {
   const fixture = await createRepository();
@@ -656,10 +742,24 @@ test("F2-GOV-09 browser network boundary blocks workers, sockets, RTC and extern
   assert.match(consumer, /newContext\(\{ serviceWorkers: "block" \}\)/);
   assert.match(consumer, /context\.routeWebSocket\("\*\*"/);
   assert.match(consumer, /Object\.defineProperty\(globalThis, "RTCPeerConnection"/);
-  assert.match(consumer, /probePage\.goto\("about:blank"\)/);
+  assert.match(consumer, /installRuntimeNetworkPolicy/);
+  assert.match(consumer, /runNetworkControl/);
+  assert.match(consumer, /assertNoObservedExternalAttempts/);
+  assert.match(consumer, /NETWORK_CONTROL_ACTIONS/);
   assert.match(server, /connect-src 'self'/);
   assert.match(server, /worker-src 'none'/);
   assert.match(server, /frame-src 'none'/);
+});
+
+test("F2-GOV-09 consumer uses the menu authority's fixed-order digest contract", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const menuAuthority = JSON.parse(canonicalBlob("fixtures/audit/f2-01-menu-evidence-matrix.json").toString("utf8"));
+  const payload = menuAuthority.entries.map(({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }) => ({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }));
+  assert.equal(createHash("sha256").update(JSON.stringify(payload)).digest("hex"), menuAuthority.sha256);
+  assert.match(consumer, /sha256\(JSON\.stringify\(menuEvidencePayload\)\)/);
+  assert.match(consumer, /page\.evaluate\(\(opened\) => \{/);
+  assert.match(consumer, /\}, openInvoked\)\);/);
+  assert.match(consumer, /phase === "after-open"/);
 });
 
 test("F2-GOV-09 operational validator accepts the exact complete semantic RED vector", () => {
@@ -671,10 +771,253 @@ for (const [label, mutate, expected] of [
   ["missing browser engine", (report) => report.reports.splice(1, 1), /engine report set is missing/i],
   ["partial evidence", (report) => report.evidence.pop(), /evidence report is partial/i],
   ["inconclusive browser action", (report) => { report.reports[0].actions[0].status = "TIMEOUT"; }, /action evidence is inconclusive/i],
-  ["unblocked external network", (report) => { report.reports[0].networkIsolation.probeResult = "ALLOWED"; }, /external browser access was not blocked/i],
-  ["unexercised browser route blocker", (report) => { report.reports[0].networkIsolation.blockedCount = 0; }, /route blocker was not exercised/i],
+  ["unblocked external network", (report) => { report.reports[0].networkIsolation.controls[0].status = "ALLOWED"; }, /control vector is incomplete|divergent/i],
+  ["unexercised browser route blocker", (report) => { report.reports[0].networkIsolation.controls[0].observed = []; }, /control observation cardinality/i],
   ["producer-selected conclusion", (report) => { report.conclusion = "READY_GREEN"; }, /operational conclusion is divergent/i],
 ]) test(`F2-GOV-09 operational validator rejects ${label}`, () => {
+  const fixture = canonicalOperationalFixture();
+  mutate(fixture.report);
+  assert.throws(() => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest), expected);
+});
+
+test("F2-GOV-09 rejects a candidate attempt transplanted into a trusted control probe", () => {
+  const fixture = canonicalOperationalFixture();
+  fixture.report.reports[0].networkIsolation.controls[0].observed.push({
+    mechanism: "fetch",
+    url: "https://candidate-delayed.invalid/late",
+    disposition: "BLOCKED_BEFORE_EGRESS",
+  });
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control observation cardinality|probe identity|candidate attempt/i,
+  );
+});
+
+test("F2-GOV-09 rejects every local request violation even when i18n succeeds", () => {
+  const fixture = canonicalOperationalFixture();
+  fixture.report.reports[0].networkIsolation.localViolations = [{
+    url: "http://127.0.0.1:4173/not-allowlisted.json",
+    reason: "trusted static request is not an expected candidate blob",
+  }];
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /local request violation/i,
+  );
+});
+
+test("F2-GOV-09 runtime policy observes generic preconnect and dns-prefetch hints", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /preconnect/);
+  assert.match(consumer, /dns-prefetch/);
+  assert.match(consumer, /MutationObserver/);
+  assert.match(consumer, /resource-hint/);
+});
+
+test("F2-GOV-09 isolates measured content from every trusted control context", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /await context\.close\(\);\s*measuredContextClosed = true;/);
+  assert.match(consumer, /const probeContext = await browser\.newContext/);
+  assert.match(consumer, /finally \{ await probeContext\.close\(\); \}/);
+  assert.doesNotMatch(consumer, /installRuntimeNetworkPolicy\(context, server, engine\)(?:;|\))/);
+});
+
+test("F2-GOV-09 validates a same-origin request against the authoritative blob allowlist before continuing", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /server\.validateRequest\(url\.href\)/);
+  assert.match(consumer, /localViolations\.push/);
+  assert.match(consumer, /route\.abort\("blockedbyclient"\)/);
+});
+
+for (const [rel, href] of [
+  ["preconnect", "https://tracker-one.invalid"],
+  ["dns-prefetch", "//tracker-two.invalid"],
+]) test(`F2-GOV-09 rejects a static external ${rel} hint before consent`, () => {
+  assert.throws(
+    () => trustedServer.assertNoExternalResourceHints(Buffer.from(`<link rel="${rel}" href="${href}">`), "probe.html"),
+    /external resource hint before consent/i,
+  );
+});
+
+test("F2-GOV-09 accepts local resource hints without granting an external domain allowlist", () => {
+  assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="/src/">'), "probe.html"));
+});
+
+test("F2-GOV-09 accepts the real branct.js as inventoried capability rather than executed intent", async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, "src/js/branct.js", canonicalBlob("src/js/branct.js"));
+    fixture.git("add", "src/js/branct.js");
+    await publishFixtureHead(fixture, "real branct.js capability inventory");
+    assert.equal(run(fixture).decision, "PASS");
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F3 has no unconditional Meta preconnect or script insertion", () => {
+  const crm = canonicalBlob("crm-gestao.html").toString("utf8");
+  assert.doesNotMatch(crm, /<link\s+rel=["']preconnect["'][^>]+connect\.facebook\.net/i);
+  const withoutConsentGate = crm.replace(/<!-- ===== JS: Consent gate \+ Pixel[\s\S]*?<\/script>/, "");
+  assert.doesNotMatch(withoutConsentGate, /fbevents\.js|connect\.facebook\.net/i);
+});
+
+test("F2-GOV-09-F3 does not load Meta without a decision or after refusal", () => {
+  assert.deepEqual(runCrmConsentPage().attempts, []);
+  assert.deepEqual(runCrmConsentPage(new Map(), "consent-reject").attempts, []);
+});
+
+test("F2-GOV-09-F3 loads Meta only after explicit or persisted valid consent", () => {
+  const accepted = runCrmConsentPage(new Map(), "consent-accept");
+  assert.deepEqual(accepted.attempts, [{ mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js" }]);
+  const persisted = new Map([["branct_consent", JSON.stringify({ status: "granted", version: "v1", ts: 1 })]]);
+  assert.deepEqual(runCrmConsentPage(persisted).attempts, [{ mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js" }]);
+});
+
+test("F2-GOV-09-F3 withdrawal prevents Meta on the next page load", () => {
+  const storage = new Map([["branct_consent", JSON.stringify({ status: "granted", version: "v1", ts: 1 })]]);
+  assert.equal(runCrmConsentPage(storage).attempts.length, 1);
+  storage.delete("branct_consent");
+  assert.deepEqual(runCrmConsentPage(storage).attempts, []);
+});
+
+test("F2-GOV-09-F3 mutation controls prove consent guards are load-bearing", () => {
+  const crm = canonicalBlob("crm-gestao.html").toString("utf8");
+  const forcedPersistedConsent = crm.replace(
+    "if (stored && stored.status === 'granted' && stored.version === CONSENT_VER)",
+    "if (true)",
+  );
+  assert.notEqual(forcedPersistedConsent, crm, "persisted-consent mutation was a no-op");
+  assert.equal(runCrmConsentPage(new Map(), null, forcedPersistedConsent).attempts.length, 1, "missing persisted-consent guard escaped detection");
+
+  const acceptWithoutLoad = crm.replace(
+    "saveConsent('granted');\n        loadPixelAndInit();",
+    "saveConsent('granted');",
+  );
+  assert.notEqual(acceptWithoutLoad, crm, "accept-handler mutation was a no-op");
+  assert.equal(runCrmConsentPage(new Map(), "consent-accept", acceptWithoutLoad).attempts.length, 0, "accept path passed without exercising the loader");
+});
+
+test("F2-GOV-09-F3 seals crm-gestao.html as the only added live evolution path", () => {
+  const validator = canonicalBlob("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const sealed = validator.match(/const F2_GOV_09_EVOLUTION_PATHS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1]
+    .match(/"[^"]+"/g)?.map((entry) => JSON.parse(entry));
+  assert.ok(sealed, "candidate evolution path set is absent");
+  assert.equal(sealed.length, 17, "candidate evolution path set is not exact");
+  assert.equal(sealed.filter((path) => path === "crm-gestao.html").length, 1, "consent-hardened live path is not sealed exactly once");
+  assert.equal(sealed.filter((path) => path.endsWith(".html") && !path.startsWith("docs/")).length, 1, "an unrelated live HTML path entered the evolution set");
+  assert.ok(sealed.includes("fixtures/audit/f2-01-transition.json"), "one-shot live transition authority is not sealed");
+  assert.ok(sealed.includes("tests/audit/site-audit.test.mjs"), "one-shot live transition validator is not sealed");
+});
+
+test("F2-GOV-09-F3 exercises browser-only network capabilities from the controlled origin", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /action === "serviceWorker\.register"\) await page\.goto\(`\$\{origin\}\/index\.html`, \{ waitUntil: "load" \}\);/);
+  assert.match(consumer, /else await page\.goto\("about:blank"\);/);
+});
+
+test("F2-GOV-09-F3 isolates every runtime network control in a fresh page", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.doesNotMatch(consumer, /const probePage = await context\.newPage\(\);\s*const controls = \[\];/);
+  assert.match(consumer, /for \(const action of NETWORK_CONTROL_ACTIONS\) \{[\s\S]*?const probeContext = await browser\.newContext[\s\S]*?const probePage = await probeContext\.newPage\(\);[\s\S]*?finally \{ await probeContext\.close\(\); \}[\s\S]*?\}/);
+});
+
+test("F2-GOV-09 inventories dormant external capability without granting runtime execution", () => {
+  assert.equal(typeof portableGuard.inventoryNetworkCapabilities, "function", "trusted static inventory is absent");
+  const inventory = portableGuard.inventoryNetworkCapabilities(
+    "src/js/dormant.js",
+    Buffer.from("const endpoint='https://example.invalid'; function dormant(){ return fetch(endpoint); }\n"),
+  );
+  assert.ok(inventory.some(({ line, category, mechanism }) => line === 1 && category === "ACTIVE_API" && mechanism === "fetch"));
+  assert.ok(inventory.some(({ line, category, mechanism }) => line === 1 && category === "EXTERNAL_LITERAL" && mechanism === "https-url"));
+});
+
+test("F2-GOV-09 inventories the real branct.js capabilities with canonical file and lines", () => {
+  const inventory = portableGuard.inventoryNetworkCapabilities("src/js/branct.js", canonicalBlob("src/js/branct.js"));
+  assert.ok(inventory.some(({ path, line, category, mechanism }) => path === "src/js/branct.js" && line === 124 && category === "ACTIVE_API" && mechanism === "fetch"));
+  assert.ok(inventory.some(({ path, line, category, mechanism }) => path === "src/js/branct.js" && line === 397 && category === "ACTIVE_API" && mechanism === "fetch"));
+  assert.ok(inventory.some(({ path, line, category, mechanism, reference }) => path === "src/js/branct.js" && line === 43 && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference.startsWith("https://connect.facebook.net/")));
+  assert.ok(inventory.some(({ path, line, category, mechanism, reference }) => path === "src/js/branct.js" && line === 393 && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference.startsWith("https://n8n.branct.com/")));
+});
+
+for (const [mechanism, url] of [
+  ["fetch", "https://example.invalid/direct"],
+  ["fetch-computed", "https://example.invalid/computed"],
+  ["XMLHttpRequest", "https://example.invalid/xhr"],
+  ["WebSocket", "wss://example.invalid/socket"],
+  ["EventSource", "https://example.invalid/events"],
+  ["sendBeacon", "https://example.invalid/beacon"],
+  ["serviceWorker.register", "https://example.invalid/sw.js"],
+  ["script", "https://example.invalid/script.js"],
+  ["dynamic-import", "https://example.invalid/module.js"],
+  ["frame", "https://example.invalid/frame"],
+  ["image", "https://example.invalid/image.png"],
+  ["window.open", "https://example.invalid/popup"],
+  ["location.assign", "https://example.invalid/assign"],
+  ["location.replace", "https://example.invalid/replace"],
+  ["location.href", "https://example.invalid/href"],
+  ["consent-loader", "https://connect.facebook.invalid/pixel.js"],
+  ["form-submit", "https://webhook.invalid/lead"],
+]) test(`F2-GOV-09 rejects a blocked ${mechanism} attempt as a runtime finding`, () => {
+  const fixture = canonicalOperationalFixture();
+  fixture.report.reports[0].networkIsolation.flowAttempts = [{
+    mechanism,
+    url,
+    origin: new URL(url).origin,
+    phase: "measured-flow",
+    engine: "chromium",
+    action: "measure-responsive",
+    route: "index.html",
+    viewport: "390x844",
+    disposition: "BLOCKED_BEFORE_EGRESS",
+  }];
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    new RegExp(`observed external network attempt.*${mechanism.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*chromium.*measure-responsive`, "i"),
+  );
+});
+
+test("F2-GOV-09 local request policy accepts only an exact verified candidate blob", () => {
+  assert.equal(typeof trustedServer.validateTrustedStaticRequest, "function", "trusted local request validator is absent");
+  const expected = new Map([["src/i18n/pt.json", { sha256: sha256ForTest(Buffer.from('{"ok":true}')), bytes: Buffer.from('{"ok":true}') }]]);
+  assert.equal(trustedServer.validateTrustedStaticRequest("http://127.0.0.1:4173/src/i18n/pt.json", "http://127.0.0.1:4173", expected).route, "src/i18n/pt.json");
+});
+
+for (const [label, url, expected] of [
+  ["traversal", "http://127.0.0.1:4173/../escape.html", /canonical path|unsafe|traversal/i],
+  ["encoded path", "http://127.0.0.1:4173/src%2fi18n%2fpt.json", /encoded|canonical path/i],
+  ["similar origin", "http://127.0.0.1.invalid:4173/src/i18n/pt.json", /origin/i],
+  ["missing file", "http://127.0.0.1:4173/src/i18n/missing.json", /not an expected candidate blob/i],
+]) test(`F2-GOV-09 local request policy rejects ${label}`, () => {
+  assert.equal(typeof trustedServer.validateTrustedStaticRequest, "function", "trusted local request validator is absent");
+  const expectedFiles = new Map([["src/i18n/pt.json", { sha256: "1".repeat(64) }]]);
+  assert.throws(() => trustedServer.validateTrustedStaticRequest(url, "http://127.0.0.1:4173", expectedFiles), expected);
+});
+
+test("F2-GOV-09 trusted server serves verified local i18n without redirect and detects later tampering", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-server-"));
+  const bytes = Buffer.from('{"ok":true}');
+  await write(directory, "src/i18n/pt.json", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "src/i18n/pt.json", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const response = await fetch(`${server.origin}/src/i18n/pt.json?cache=busted`, { redirect: "manual" });
+    assert.equal(response.status, 200);
+    assert.equal(response.redirected, false);
+    assert.deepEqual(await response.json(), { ok: true });
+    await writeFile(join(directory, "src", "i18n", "pt.json"), '{"ok":false}');
+    const tampered = await fetch(`${server.origin}/src/i18n/pt.json`, { redirect: "manual" });
+    assert.equal(tampered.status, 404);
+    assert.match(await tampered.text(), /changed after materialization/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+for (const [label, mutate, expected] of [
+  ["blocked attempt treated as harmless", (report) => { report.reports[0].networkIsolation.flowAttempts.push({ mechanism: "fetch", url: "https://example.invalid", origin: "https://example.invalid", phase: "measured-flow", engine: "chromium", action: "measure-responsive", route: "index.html", viewport: "390x844", disposition: "BLOCKED_BEFORE_EGRESS" }); }, /observed external network attempt/i],
+  ["WebSocket interceptor removed", (report) => { report.reports[0].networkIsolation.controls = report.reports[0].networkIsolation.controls.filter(({ action }) => action !== "WebSocket"); }, /control vector is incomplete/i],
+  ["Service Worker interceptor removed", (report) => { report.reports[0].networkIsolation.controls = report.reports[0].networkIsolation.controls.filter(({ action }) => action !== "serviceWorker.register"); }, /control vector is incomplete/i],
+  ["HTTP control reported without observation", (report) => { report.reports[0].networkIsolation.controls.find(({ action }) => action === "fetch").observed = []; }, /control observation cardinality/i],
+  ["local i18n confinement weakened", (report) => { report.reports[0].networkIsolation.localI18nSuccessCount = 0; }, /local i18n fetch was not verified/i],
+]) test(`F2-GOV-09 mutation control rejects ${label}`, () => {
   const fixture = canonicalOperationalFixture();
   mutate(fixture.report);
   assert.throws(() => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest), expected);
