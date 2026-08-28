@@ -197,6 +197,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
   const localRequests = [];
   const localResponses = [];
   const localViolations = [];
+  const recordedRequests = new WeakSet();
   let scope = { phase: "initialization", action: "context-start", route: null, viewport: null };
   const setScope = (next) => { scope = { ...scope, ...next }; };
   const record = (detail, disposition = "BLOCKED_BEFORE_EGRESS") => {
@@ -225,6 +226,27 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     assert.equal(url, expected.url, `${engine}: trusted browser-rejected control URL is divergent`);
     return record({ mechanism: expected.mechanism, url });
   };
+  const recordExternalRequest = (request) => {
+    if (recordedRequests.has(request)) return;
+    recordedRequests.add(request);
+    const url = new URL(request.url());
+    if (url.origin === server.origin) return;
+    const expected = channel === "control-probe" ? expectedNetworkControl(scope.action) : null;
+    record({ mechanism: expected?.mechanism ?? (request.resourceType() === "document" ? "navigation" : request.resourceType()), url: url.href });
+  };
+  const auditExternalResourceHints = async (page) => {
+    const hints = await page.locator("link[rel]").evaluateAll((nodes) => nodes.flatMap((node) => {
+      const rel = (node.getAttribute("rel") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+      if (!rel.some((value) => value === "preconnect" || value === "dns-prefetch")) return [];
+      return [node.href];
+    }));
+    for (const href of hints) {
+      const url = new URL(href);
+      if (url.origin !== server.origin) recordTrustedControl(scope.action, url.href);
+    }
+  };
+
+  context.on("request", recordExternalRequest);
 
   await context.route("**", async (route) => {
     const request = route.request();
@@ -239,8 +261,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
         return route.abort("blockedbyclient");
       }
     }
-    const expected = channel === "control-probe" ? expectedNetworkControl(scope.action) : null;
-    record({ mechanism: expected?.mechanism ?? (request.resourceType() === "document" ? "navigation" : request.resourceType()), url: url.href });
+    recordExternalRequest(request);
     return route.abort("blockedbyclient");
   });
   assert.equal(typeof context.routeWebSocket, "function", `${engine}: trusted WebSocket blocker is unavailable`);
@@ -257,7 +278,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     }
   });
 
-  return { flowAttempts, controlAttempts, localRequests, localResponses, localViolations, setScope, recordTrustedControl };
+  return { flowAttempts, controlAttempts, localRequests, localResponses, localViolations, setScope, recordTrustedControl, auditExternalResourceHints };
 }
 
 async function waitForControlAttempt(policy, action, before) {
@@ -342,6 +363,7 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
     } catch {}
   }, { action, url }).catch(() => {});
   if (action === "serviceWorker.register" && policy.controlAttempts.length === before) policy.recordTrustedControl(action, url);
+  if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) await policy.auditExternalResourceHints(page);
   const observed = await waitForControlAttempt(policy, action, before);
   assertExpectedNetworkControl(observed, engine, action, probeId);
   return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
@@ -377,6 +399,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
       for (const route of matrix.routes) {
         networkPolicy.setScope({ phase: "measured-flow", action: "measure-responsive", route, viewport });
         await navigate(page, server.origin, route, viewport, dimensions);
+        await networkPolicy.auditExternalResourceHints(page);
         const raw = await page.evaluate(selectorMetrics);
         const observation = { route, viewport, conclusion: "CONCLUSIVE", ...raw };
         observations.push(observation);
@@ -386,6 +409,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
     for (const entry of menuAuthority.entries) {
       networkPolicy.setScope({ phase: "measured-flow", action: "menu-sequence", route: entry.route, viewport: entry.viewport });
       const result = await measureMenuCase(page, server.origin, entry, matrix.viewports[entry.viewport], actions, networkPolicy.setScope);
+      await networkPolicy.auditExternalResourceHints(page);
       const semanticResult = menuPass(result) ? "PASS" : "FAIL";
       menuResults.push({ evidenceId: entry.evidenceId, route: entry.route, viewport: entry.viewport, actionSequence: entry.actionPhases, semanticResult, measuredResult: result });
       evidence.push(evidenceEnvelope(request, request.matrixDigest, engine, "menu", entry.route, entry.viewport, entry.actionPhases.join("+"), { actionSequence: entry.actionPhases, measuredResult: result }, semanticResult));
@@ -393,6 +417,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
     await page.emulateMedia({ reducedMotion: "reduce" });
     networkPolicy.setScope({ phase: "measured-flow", action: "reduced-motion", route: "index.html", viewport: "390x844" });
     await navigate(page, server.origin, "index.html", "390x844", matrix.viewports["390x844"]);
+    await networkPolicy.auditExternalResourceHints(page);
     const reducedMotion = await page.evaluate(() => {
       const element=document.querySelector('.mobile-drawer,.mobile-toggle'), style=element?getComputedStyle(element):null;
       const durations=(style?.transitionDuration||'0s').split(',').map((value)=>value.trim().endsWith('ms')?parseFloat(value):parseFloat(value)*1000);

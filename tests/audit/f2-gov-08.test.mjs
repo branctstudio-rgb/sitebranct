@@ -991,10 +991,13 @@ test("F2-GOV-09-F6 executes the real CRM consent lifecycle under host intercepti
   try {
     const context = await browser.newContext({ serviceWorkers: "block" });
     const attempts = [];
+    context.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.origin !== server.origin && !attempts.some((attempt) => attempt.url === url.href)) attempts.push({ mechanism: request.resourceType(), url: url.href });
+    });
     await context.route("**", async (route) => {
       const url = new URL(route.request().url());
       if (url.origin === server.origin) return route.continue();
-      attempts.push({ mechanism: route.request().resourceType(), url: url.href });
       return route.abort("blockedbyclient");
     });
     const page = await context.newPage();
@@ -1022,12 +1025,13 @@ test("F2-GOV-09-F6 executes the real CRM consent lifecycle under host intercepti
   }
 });
 
-test("F2-GOV-09-F6 keeps CSP as report-only so host interception remains the decision authority", () => {
+test("F2-GOV-09-F6 keeps blocking CSP while host request events remain the decision authority", () => {
   const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
-  assert.match(server, /"content-security-policy-report-only"/);
-  assert.doesNotMatch(server, /"content-security-policy":/);
+  assert.match(server, /"content-security-policy":/);
   assert.match(server, /connect-src 'self'/);
   assert.match(server, /script-src 'self' 'unsafe-inline'/);
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /context\.on\("request", recordExternalRequest\)/);
 });
 
 test("F2-GOV-09-F6 mutation controls keep page-realm authority and CRM routing guards load-bearing", () => {
@@ -1038,10 +1042,9 @@ test("F2-GOV-09-F6 mutation controls keep page-realm authority and CRM routing g
   const wrongRoute = consumer.replaceAll('route: "crm-gestao.html"', 'route: "index.html"').replaceAll("${origin}/crm-gestao.html", "${origin}/index.html");
   assert.notEqual(wrongRoute, consumer, "consent route mutation was a no-op");
   assert.throws(() => assertCanonicalConsentProbe(wrongRoute), /input did not match|crm-gestao/i);
-  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
-  const blockingCsp = server.replace('"content-security-policy-report-only"', '"content-security-policy"');
-  assert.notEqual(blockingCsp, server, "blocking CSP mutation was a no-op");
-  assert.match(blockingCsp, /"content-security-policy":/);
+  const withoutHostEvents = consumer.replace('context.on("request", recordExternalRequest);', "");
+  assert.notEqual(withoutHostEvents, consumer, "host request observation mutation was a no-op");
+  assert.doesNotMatch(withoutHostEvents, /context\.on\("request", recordExternalRequest\)/);
 });
 
 test("F2-GOV-09 mutation control proves the structural resource-hint parser is load-bearing", async () => {
