@@ -23,6 +23,13 @@ const NETWORK_CONTROL_ACTIONS = Object.freeze([
   "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
   "resource-hint-dns-prefetch", "consent-loader", "form-submit",
 ]);
+const RESOURCE_HINT_ACTIONS = new Set(["resource-hint-preconnect", "resource-hint-dns-prefetch"]);
+const networkControlStatus = (action) => RESOURCE_HINT_ACTIONS.has(action)
+  ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
+  : "BLOCKED_AND_RECORDED";
+const networkControlDisposition = (action) => RESOURCE_HINT_ACTIONS.has(action)
+  ? "DETECTED_AFTER_DOM_INSERTION"
+  : "BLOCKED_BEFORE_EGRESS";
 const readJson = (path, label) => {
   try { return JSON.parse(readFileSync(path, "utf8")); }
   catch { assert.fail(`${label} is absent, unreadable or malformed`); }
@@ -224,7 +231,7 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     assert.equal(scope.action, action, `${engine}: trusted browser-rejected control action is divergent`);
     const expected = expectedNetworkControl(action);
     assert.equal(url, expected.url, `${engine}: trusted browser-rejected control URL is divergent`);
-    return record({ mechanism: expected.mechanism, url });
+    return record({ mechanism: expected.mechanism, url }, networkControlDisposition(action));
   };
   const recordExternalRequest = (request) => {
     if (recordedRequests.has(request)) return;
@@ -339,7 +346,7 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
       await assertNoControlAttempt(policy, action, before + 1, "consent withdrawal after valid consent");
     }
     await page.goto("about:blank");
-    return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
+    return { action, status: networkControlStatus(action), probeId, observed };
   }
   await page.evaluate(async ({ action: control, url: target }) => {
     try {
@@ -366,7 +373,7 @@ async function runNetworkControl(page, policy, engine, action, origin, probeId) 
   if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) await policy.auditExternalResourceHints(page);
   const observed = await waitForControlAttempt(policy, action, before);
   assertExpectedNetworkControl(observed, engine, action, probeId);
-  return { action, status: "BLOCKED_AND_RECORDED", probeId, observed };
+  return { action, status: networkControlStatus(action), probeId, observed };
 }
 
 async function measureEngine(request, matrix, menuAuthority, playwright, engine) {

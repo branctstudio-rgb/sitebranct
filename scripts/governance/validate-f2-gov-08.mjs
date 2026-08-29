@@ -23,6 +23,13 @@ const NETWORK_CONTROL_ACTIONS = Object.freeze([
   "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
   "resource-hint-dns-prefetch", "consent-loader", "form-submit",
 ]);
+const RESOURCE_HINT_ACTIONS = new Set(["resource-hint-preconnect", "resource-hint-dns-prefetch"]);
+const networkControlStatus = (action) => RESOURCE_HINT_ACTIONS.has(action)
+  ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
+  : "BLOCKED_AND_RECORDED";
+const networkControlDisposition = (action) => RESOURCE_HINT_ACTIONS.has(action)
+  ? "DETECTED_AFTER_DOM_INSERTION"
+  : "BLOCKED_BEFORE_EGRESS";
 
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
@@ -401,6 +408,7 @@ function validateContract(contract) {
   assert.equal(contract.limitations.workflowEnforcement, "CANDIDATE_PENDING_PROTECTED_MERGE", "workflow enforcement state is divergent");
   assert.equal(contract.limitations.operationalIsolation, "VERIFIED_IN_CI", "operational isolation evidence is divergent");
   assert.equal(contract.limitations.browserNetworkIsolation, "VERIFIED_IN_CI", "browser network isolation evidence is divergent");
+  assert.equal(contract.limitations.resourceHintPreEgress, "NOT_VERIFIED_DYNAMIC_HINTS_DETECTED_AND_REJECTED", "dynamic resource-hint pre-egress limitation is absent or overstated");
 }
 
 function loadAuthority(repository, baseSha) {
@@ -573,7 +581,7 @@ export function validateOperationalReport(report, authority, baseSha, headSha, p
     if (externalAttempt) assert.fail(`observed external network attempt: ${externalAttempt.mechanism} ${externalAttempt.engine} ${externalAttempt.action} ${externalAttempt.url}`);
     assert.deepEqual(
       engineReport.networkIsolation.controls.map(({ action, status }) => [action, status]),
-      NETWORK_CONTROL_ACTIONS.map((action) => [action, "BLOCKED_AND_RECORDED"]),
+      NETWORK_CONTROL_ACTIONS.map((action) => [action, networkControlStatus(action)]),
       `${engineReport.engine}: runtime network control vector is incomplete or divergent`,
     );
     for (const control of engineReport.networkIsolation.controls) {
@@ -589,7 +597,7 @@ export function validateOperationalReport(report, authority, baseSha, headSha, p
         engine: engineReport.engine,
         action: control.action,
         viewport: "control",
-        disposition: "BLOCKED_BEFORE_EGRESS",
+        disposition: networkControlDisposition(control.action),
         probeId: expectedProbeId,
       };
       const observed = control.observed[0];

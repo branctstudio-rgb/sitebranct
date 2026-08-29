@@ -191,6 +191,13 @@ const networkControlActionsForTest = [
   "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
   "resource-hint-dns-prefetch", "consent-loader", "form-submit",
 ];
+const resourceHintActionsForTest = new Set(["resource-hint-preconnect", "resource-hint-dns-prefetch"]);
+const expectedControlStatusForTest = (action) => resourceHintActionsForTest.has(action)
+  ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
+  : "BLOCKED_AND_RECORDED";
+const expectedControlDispositionForTest = (action) => resourceHintActionsForTest.has(action)
+  ? "DETECTED_AFTER_DOM_INSERTION"
+  : "BLOCKED_BEFORE_EGRESS";
 const expectedControlObservationForTest = (action) => {
   const target = action === "WebSocket" ? "wss://f2-gov-09.invalid/socket" : `https://f2-gov-09.invalid/${encodeURIComponent(action)}`;
   if (action === "fetch-computed") return { mechanism: "fetch", url: "https://f2-gov-09.invalid/computed", route: "about:blank" };
@@ -257,7 +264,7 @@ function canonicalOperationalFixture() {
         controls: networkControlActionsForTest.map((action) => {
           const probeId = sha256ForTest(canonicalJsonForTest({ baseSha, headSha, payloadDigest, engine, action }));
           const expected = expectedControlObservationForTest(action);
-          return { action, status: "BLOCKED_AND_RECORDED", probeId, observed: [{ ...expected, origin: new URL(expected.url).origin, phase: "control-probe", engine, action, viewport: "control", disposition: "BLOCKED_BEFORE_EGRESS", probeId }] };
+          return { action, status: expectedControlStatusForTest(action), probeId, observed: [{ ...expected, origin: new URL(expected.url).origin, phase: "control-probe", engine, action, viewport: "control", disposition: expectedControlDispositionForTest(action), probeId }] };
         }),
       },
       consoleIssues: [],
@@ -839,6 +846,55 @@ test("F2-GOV-09 runtime policy observes generic preconnect and dns-prefetch hint
   assert.match(consumer, /dns-prefetch/);
   assert.match(consumer, /context\.route\("\*\*"/);
   assert.doesNotMatch(consumer, /__branctReportExternalAttempt/);
+});
+
+test("F2-GOV-09-F7 never presents dynamic resource-hint detection as proven pre-egress blocking", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const contract = JSON.parse(workingFile(CANONICAL_AUTHORITY_PATHS.contract).toString("utf8"));
+  const design = workingFile("docs/audit/phase-2/governance/f2-gov-09-design.md").toString("utf8");
+  assert.match(consumer, /DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN/);
+  assert.match(consumer, /DETECTED_AFTER_DOM_INSERTION/);
+  assert.match(validator, /DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN/);
+  assert.match(validator, /contract\.limitations\.resourceHintPreEgress, "NOT_VERIFIED_DYNAMIC_HINTS_DETECTED_AND_REJECTED"/);
+  assert.equal(contract.limitations.resourceHintPreEgress, "NOT_VERIFIED_DYNAMIC_HINTS_DETECTED_AND_REJECTED");
+  assert.doesNotMatch(design, /Hints criados dinamicamente são bloqueados/);
+  assert.match(design, /não comprova bloqueio pré-egress/i);
+});
+
+test("F2-GOV-09-F7 rejects reports and contracts that overstate dynamic resource-hint pre-egress blocking", () => {
+  const fixture = canonicalOperationalFixture();
+  const hint = fixture.report.reports[0].networkIsolation.controls.find(({ action }) => action === "resource-hint-preconnect");
+  hint.status = "BLOCKED_AND_RECORDED";
+  hint.observed[0].disposition = "BLOCKED_BEFORE_EGRESS";
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control vector is incomplete|divergent/i,
+  );
+});
+
+test("F2-GOV-09-F7 mutation control keeps resource-hint status and disposition guards load-bearing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-hint-claim-mutation-"));
+  try {
+    const source = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+    const weakened = source
+      .replace(/const networkControlStatus = \(action\) => RESOURCE_HINT_ACTIONS\.has\(action\)\s*\? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"\s*:\s*"BLOCKED_AND_RECORDED";/, 'const networkControlStatus = () => "BLOCKED_AND_RECORDED";')
+      .replace(/const networkControlDisposition = \(action\) => RESOURCE_HINT_ACTIONS\.has\(action\)\s*\? "DETECTED_AFTER_DOM_INSERTION"\s*:\s*"BLOCKED_BEFORE_EGRESS";/, 'const networkControlDisposition = () => "BLOCKED_BEFORE_EGRESS";');
+    assert.notEqual(weakened, source, "resource-hint claim mutation was a no-op");
+    assert.doesNotMatch(weakened, /DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN/);
+    assert.doesNotMatch(weakened, /DETECTED_AFTER_DOM_INSERTION/);
+    const target = join(directory, "weakened-validator.mjs");
+    await writeFile(target, weakened);
+    const module = await import(`${pathToFileURL(target).href}?mutation=${Date.now()}`);
+    const fixture = canonicalOperationalFixture();
+    for (const report of fixture.report.reports) {
+      for (const hint of report.networkIsolation.controls.filter(({ action }) => resourceHintActionsForTest.has(action))) {
+        hint.status = "BLOCKED_AND_RECORDED";
+        hint.observed[0].disposition = "BLOCKED_BEFORE_EGRESS";
+      }
+    }
+    assert.doesNotThrow(() => module.validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest));
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 test("F2-GOV-09 isolates measured content from every trusted control context", () => {
