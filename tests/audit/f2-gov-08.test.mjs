@@ -1025,9 +1025,43 @@ test("F2-GOV-09-F6 executes the real CRM consent lifecycle under host intercepti
   }
 });
 
-test("F2-GOV-09-F6 keeps blocking CSP while host request events remain the decision authority", () => {
+test("F2-GOV-09-F6 keeps the real contact submission inside the trusted host blocker", async () => {
+  const { chromium } = await import("playwright");
+  const expectedPayload = publishedPaths.map((path) => {
+    const bytes = workingFile(path);
+    return { path, sha256: createHash("sha256").update(bytes).digest("hex") };
+  });
+  const server = await trustedServer.startTrustedStaticServer(sourceRepository, expectedPayload, 0);
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ serviceWorkers: "block" });
+    const attempts = [];
+    await context.route("**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === server.origin) return route.continue();
+      attempts.push({ mechanism: route.request().resourceType(), url: url.href });
+      return route.abort("blockedbyclient");
+    });
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/contactos.html`, { waitUntil: "load" });
+    await page.locator("#ct-nome").fill("Offline probe");
+    await page.locator("#ct-email").fill("test@example.invalid");
+    await page.locator("#ct-interesse").selectOption("website-premium");
+    await page.locator("#ct-mensagem").fill("Offline probe");
+    await page.locator('form[data-lead-form] button[type="submit"]').click();
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [{ mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead" }], "contact submission must be observed and blocked exactly once by the trusted host");
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("F2-GOV-09-F6 keeps CSP diagnostic while host interception remains the blocking authority", () => {
   const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
-  assert.match(server, /"content-security-policy":/);
+  assert.match(server, /"content-security-policy-report-only":/);
+  assert.doesNotMatch(server, /"content-security-policy":/);
   assert.match(server, /connect-src 'self'/);
   assert.match(server, /script-src 'self' 'unsafe-inline'/);
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");

@@ -139,7 +139,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         "content-type": MIME.get(extname(target).toLowerCase()) ?? "application/octet-stream",
         "content-length": body.length,
         "cache-control": "no-store",
-        "content-security-policy": "default-src 'self' data:; connect-src 'self'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+        "content-security-policy-report-only": "default-src 'self' data:; connect-src 'self'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
       });
       response.end(body);
     } catch (error) {
