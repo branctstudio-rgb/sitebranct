@@ -1179,7 +1179,8 @@ test("F2-GOV-09-F3 seals crm-gestao.html as the only added live evolution path",
 
 test("F2-GOV-09-F3 exercises browser-only network capabilities from the controlled origin", () => {
   const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
-  assert.match(consumer, /action === "serviceWorker\.register"\) \{\s*policy\.setScope\(\{ phase: "control-probe", action, route: "index\.html", viewport: "control" \}\);\s*await page\.goto\(`\$\{origin\}\/index\.html`, \{ waitUntil: "load" \}\);\s*\}/);
+  assert.match(consumer, /action === "serviceWorker\.register"\) \{\s*policy\.setScope\(\{ phase: "control-probe", action, route: "src\/i18n\/pt\.json", viewport: "control" \}\);\s*await page\.goto\(`\$\{origin\}\/src\/i18n\/pt\.json`, \{ waitUntil: "load" \}\);\s*\}/);
+  assert.match(consumer, /action === "serviceWorker\.register" && policy\.controlAttempts\.length === before\) policy\.recordTrustedControl\(action, url\);/);
   assert.match(consumer, /else await page\.goto\("about:blank"\);/);
 });
 
