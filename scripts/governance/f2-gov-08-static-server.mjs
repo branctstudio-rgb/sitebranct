@@ -145,11 +145,26 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
   }
   const requestLog = [];
   const server = createServer((request, response) => {
-    const record = { method: request.method, url: request.url, range: request.headers.range ?? null, route: null, status: null, bytes: 0, finished: false };
+    const record = {
+      sequence: requestLog.length,
+      requestId: request.headers["x-branct-trusted-request-id"] ?? null,
+      method: request.method,
+      url: request.url,
+      absoluteUrl: null,
+      range: request.headers.range ?? null,
+      rangeStart: null,
+      rangeEnd: null,
+      totalBytes: null,
+      route: null,
+      status: null,
+      bytes: 0,
+      finished: false,
+    };
     requestLog.push(record);
     try {
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
       const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
+      record.absoluteUrl = absolute;
       const origin = `http://127.0.0.1:${server.address().port}`;
       const { route, expected } = validateTrustedStaticRequest(absolute, origin, expectedFiles);
       record.route = route;
@@ -159,6 +174,9 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       if (extname(target).toLowerCase() === ".html") assertNoExternalResourceHints(body, route);
       const range = resolveTrustedByteRange(request.headers.range, body.length);
       const payload = range ? body.subarray(range.start, range.end + 1) : body;
+      record.rangeStart = range?.start ?? null;
+      record.rangeEnd = range?.end ?? null;
+      record.totalBytes = body.length;
       record.status = range ? 206 : 200;
       record.bytes = payload.length;
       response.once("finish", () => { record.finished = true; });

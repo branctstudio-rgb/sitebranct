@@ -236,7 +236,47 @@ export function assertTrustedLocalResponseStatus(status, url) {
   assert.ok(status === 200 || status === 206, `trusted local response status ${status}: ${url}`);
 }
 
-async function installRuntimeNetworkPolicy(context, server, engine, channel, probeId = null) {
+export function assertTrustedLocalFailureCorrelations({ engine, failures, responses, journal, journalWindow }) {
+  assert.ok(Array.isArray(failures), `${engine}: trusted local failures are malformed`);
+  assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
+  assert.ok(Array.isArray(journal), `${engine}: trusted server journal is malformed`);
+  assert.ok(Number.isSafeInteger(journalWindow?.start) && Number.isSafeInteger(journalWindow?.end), `${engine}: trusted server journal window is malformed`);
+  const seen = new Set();
+  for (const failure of failures) {
+    assert.match(failure.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: failed local request identity is absent`);
+    assert.equal(seen.has(failure.requestId), false, `${engine}: failed local request identity is duplicated`);
+    seen.add(failure.requestId);
+    assert.equal(engine, "webkit", `${engine}: local request failure is not an authorized WebKit cancellation`);
+    assert.equal(failure.reason, "Load request cancelled", `${engine}: local failure reason is not the known benign WebKit cancellation`);
+    const matchingResponses = responses.filter(({ requestId }) => requestId === failure.requestId);
+    assert.equal(matchingResponses.length, 1, `${engine}: trusted local response cardinality is not exactly one for ${failure.requestId}`);
+    const [response] = matchingResponses;
+    assertTrustedLocalResponseStatus(response.status, response.url);
+    assert.equal(response.status, 206, `${engine}: cancelled local request did not receive a verified 206 response`);
+    assert.equal(response.url, failure.url, `${engine}: trusted local response URL is divergent`);
+    assert.equal(response.route, failure.route, `${engine}: trusted local response route is divergent`);
+    assert.equal(response.range, failure.range, `${engine}: trusted local response range is divergent`);
+    const allJournalMatches = journal.filter(({ requestId }) => requestId === failure.requestId);
+    assert.equal(allJournalMatches.length, 1, `${engine}: trusted server journal cardinality is not exactly one for ${failure.requestId}`);
+    const [record] = allJournalMatches;
+    assert.ok(record.sequence >= journalWindow.start && record.sequence <= journalWindow.end, `${engine}: trusted server journal record is outside the measurement window`);
+    assert.equal(record.absoluteUrl, failure.url, `${engine}: trusted server journal URL is divergent`);
+    assert.equal(record.route, failure.route, `${engine}: trusted server journal route is divergent`);
+    assert.equal(record.range, failure.range, `${engine}: trusted server journal range is divergent`);
+    assert.equal(record.status, 206, `${engine}: trusted server journal status is not 206`);
+    assert.equal(record.finished, true, `${engine}: trusted server journal response is incomplete`);
+    assert.ok(Number.isSafeInteger(record.rangeStart) && Number.isSafeInteger(record.rangeEnd) && Number.isSafeInteger(record.totalBytes), `${engine}: trusted server journal byte range is malformed`);
+    assert.ok(record.rangeStart >= 0 && record.rangeEnd >= record.rangeStart && record.rangeEnd < record.totalBytes, `${engine}: trusted server journal byte range is invalid`);
+    assert.equal(record.bytes, record.rangeEnd - record.rangeStart + 1, `${engine}: trusted server journal byte count is divergent`);
+    const requested = /^bytes=([0-9]+)-([0-9]*)$/.exec(failure.range ?? "");
+    assert.ok(requested, `${engine}: failed local request byte range is malformed`);
+    assert.equal(record.rangeStart, Number(requested[1]), `${engine}: trusted server journal range start is divergent`);
+    assert.equal(record.rangeEnd, requested[2] === "" ? record.totalBytes - 1 : Number(requested[2]), `${engine}: trusted server journal range end is divergent`);
+  }
+  return { correlatedFailures: failures.length };
+}
+
+export async function installRuntimeNetworkPolicy(context, server, engine, channel, probeId = null) {
   assert.ok(["candidate-flow", "control-probe"].includes(channel), `${engine}: trusted network channel is invalid`);
   if (channel === "control-probe") assert.match(probeId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted control probe identity is absent`);
   else assert.equal(probeId, null, `${engine}: candidate flow cannot carry a control probe identity`);
@@ -244,8 +284,12 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
   const controlAttempts = [];
   const localRequests = [];
   const localResponses = [];
+  const localFailures = [];
   const localViolations = [];
   const recordedRequests = new WeakSet();
+  const requestMetadata = new WeakMap();
+  const journalStart = server.getRequestLog().length;
+  let localSequence = 0;
   let scope = { phase: "initialization", action: "context-start", route: null, viewport: null };
   const setScope = (next) => { scope = { ...scope, ...next }; };
   const record = (detail, disposition = "BLOCKED_BEFORE_EGRESS") => {
@@ -302,8 +346,15 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     if (url.origin === server.origin) {
       try {
         const validated = server.validateRequest(url.href);
-        localRequests.push({ url: url.href, route: validated.route, resourceType: request.resourceType(), phase: scope.phase, action: scope.action });
-        return route.continue();
+        const headers = await request.allHeaders();
+        for (const name of Object.keys(headers)) if (name.toLowerCase() === "x-branct-trusted-request-id") delete headers[name];
+        const range = headers.range ?? null;
+        const requestId = sha256(canonicalJson({ engine, channel, probeId, sequence: localSequence++, url: url.href, range, phase: scope.phase, action: scope.action }));
+        const metadata = { requestId, url: url.href, route: validated.route, range, resourceType: request.resourceType(), phase: scope.phase, action: scope.action };
+        requestMetadata.set(request, metadata);
+        localRequests.push(metadata);
+        headers["x-branct-trusted-request-id"] = requestId;
+        return route.continue({ headers });
       } catch (error) {
         localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action });
         return route.abort("blockedbyclient");
@@ -320,14 +371,45 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
   context.on("response", (response) => {
     const url = new URL(response.url());
     if (url.origin === server.origin) {
-      const route = url.pathname.replace(/^\/+/, "") || "index.html";
-      localResponses.push({ url: url.href, route, status: response.status() });
+      const metadata = requestMetadata.get(response.request());
+      if (!metadata) {
+        localViolations.push({ url: url.href, reason: "trusted local response has no consumer-owned request identity", phase: scope.phase, action: scope.action });
+        return;
+      }
+      localResponses.push({ requestId: metadata.requestId, url: url.href, route: metadata.route, range: metadata.range, status: response.status() });
       try { assertTrustedLocalResponseStatus(response.status(), url.href); }
       catch (error) { localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action }); }
     }
   });
+  context.on("requestfailed", (request) => {
+    const url = new URL(request.url());
+    if (url.origin !== server.origin) return;
+    const metadata = requestMetadata.get(request);
+    if (!metadata) {
+      localViolations.push({ url: url.href, reason: "failed local request has no consumer-owned identity", phase: scope.phase, action: scope.action });
+      return;
+    }
+    localFailures.push({ ...metadata, reason: request.failure()?.errorText ?? "UNKNOWN_LOCAL_REQUEST_FAILURE" });
+  });
 
-  return { flowAttempts, controlAttempts, localRequests, localResponses, localViolations, setScope, recordTrustedControl, auditExternalResourceHints };
+  const finalizeLocalFailureCorrelations = async () => {
+    const deadline = Date.now() + 1500;
+    while (localFailures.length > 0 && Date.now() < deadline) {
+      const journal = server.getRequestLog();
+      if (localFailures.every(({ requestId }) => journal.some((record) => record.requestId === requestId && record.finished === true))) break;
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 10));
+    }
+    const journal = server.getRequestLog();
+    return assertTrustedLocalFailureCorrelations({
+      engine,
+      failures: localFailures,
+      responses: localResponses,
+      journal,
+      journalWindow: { start: journalStart, end: journal.length - 1 },
+    });
+  };
+
+  return { flowAttempts, controlAttempts, localRequests, localResponses, localFailures, localViolations, setScope, recordTrustedControl, auditExternalResourceHints, finalizeLocalFailureCorrelations };
 }
 
 async function waitForControlAttempt(policy, action, before) {
@@ -473,8 +555,9 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
       return { matches:matchMedia('(prefers-reduced-motion: reduce)').matches, maxDurationMs:Math.max(0,...durations.filter(Number.isFinite)) };
     });
     assertNoObservedExternalAttempts([{ engine, networkIsolation: { flowAttempts: networkPolicy.flowAttempts } }]);
+    await page.close();
+    await networkPolicy.finalizeLocalFailureCorrelations();
     assert.deepEqual(networkPolicy.localViolations, [], `${engine}: trusted local request violation observed`);
-    await page.goto("about:blank");
     await context.close();
     measuredContextClosed = true;
     const controls = [];
@@ -485,6 +568,8 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
         const probePolicy = await installRuntimeNetworkPolicy(probeContext, server, engine, "control-probe", probeId);
         const probePage = await probeContext.newPage();
         controls.push(await runNetworkControl(probePage, probePolicy, engine, action, server.origin, probeId));
+        await probePage.close();
+        await probePolicy.finalizeLocalFailureCorrelations();
         assert.deepEqual(probePolicy.localViolations, [], `${engine}: trusted control local request violation observed: ${action}`);
       } finally { await probeContext.close(); }
     }

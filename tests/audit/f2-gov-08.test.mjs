@@ -1484,6 +1484,72 @@ test("F2-GOV-09-F11 WebKit correlates a cancelled local media load with a comple
   }
 });
 
+test("F2-GOV-09-F11-F1 rejects every unproven local request failure and accepts only the exact completed WebKit range", () => {
+  assert.equal(typeof trustedConsumer.assertTrustedLocalFailureCorrelations, "function", "operational local failure correlator is absent");
+  const requestId = "1".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const failure = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", reason: "Load request cancelled" };
+  const response = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", status: 206 };
+  const journal = { sequence: 4, requestId, url: "/media/fixture.webm", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const accept = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
+    engine: "webkit",
+    failures: [failure],
+    responses: [response],
+    journal: [journal],
+    journalWindow: { start: 4, end: 4 },
+    ...overrides,
+  });
+  assert.doesNotThrow(() => accept());
+  assert.throws(() => accept({ responses: [] }), /response.*absent|response cardinality/i);
+  assert.throws(() => accept({ journal: [] }), /journal.*absent|journal cardinality/i);
+  assert.throws(() => accept({ journal: [{ ...journal, finished: false }] }), /journal.*incomplete|finished/i);
+  assert.throws(() => accept({ journal: [{ ...journal, absoluteUrl: `${url}?forged=1` }] }), /URL.*divergent/i);
+  assert.throws(() => accept({ journal: [{ ...journal, route: "media/other.webm" }] }), /route.*divergent/i);
+  assert.throws(() => accept({ journal: [{ ...journal, range: "bytes=1-" }] }), /range.*divergent/i);
+  assert.throws(() => accept({ journal: [journal, { ...journal }] }), /journal.*cardinality|duplicated/i);
+  assert.throws(() => accept({ journalWindow: { start: 5, end: 9 } }), /journal.*window|journal.*absent/i);
+  assert.throws(() => accept({ failures: [{ ...failure, reason: "net::ERR_FAILED" }] }), /failure reason|cancel/i);
+  assert.throws(() => accept({ responses: [{ ...response, status: 0 }] }), /status 0/i);
+});
+
+test("F2-GOV-09-F11-F1 wires the operational policy to request failures and the trusted server journal", async () => {
+  assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));
+  const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
+  const mediaBytes = workingFile("src/img/crm-demo.webm");
+  await write(directory, "index.html", htmlBytes);
+  await write(directory, "media/fixture.webm", mediaBytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [
+    { path: "index.html", sha256: sha256ForTest(htmlBytes) },
+    { path: "media/fixture.webm", sha256: sha256ForTest(mediaBytes) },
+  ], 0);
+  const { webkit } = await import("playwright");
+  const browser = await webkit.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const policy = await trustedConsumer.installRuntimeNetworkPolicy(context, server, "webkit", "candidate-flow");
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
+    await page.waitForTimeout(750);
+    await page.close();
+    const correlation = await policy.finalizeLocalFailureCorrelations();
+    assert.equal(correlation.correlatedFailures, 1);
+    assert.equal(policy.localFailures.length, 1);
+    assert.equal(policy.localFailures[0].reason, "Load request cancelled");
+    assert.equal(policy.localResponses.filter(({ route }) => route === "media/fixture.webm")[0].status, 206);
+    const mediaJournal = server.getRequestLog().filter(({ route }) => route === "media/fixture.webm");
+    const record = mediaJournal.find(({ requestId }) => requestId === policy.localFailures[0].requestId);
+    assert.ok(record, "trusted server journal did not retain the consumer-owned request identity");
+    assert.equal(record.finished, true);
+    assert.equal(policy.localFailures[0].requestId, record.requestId);
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 for (const [label, mutate, expected] of [
   ["blocked attempt treated as harmless", (report) => { report.reports[0].networkIsolation.flowAttempts.push({ mechanism: "fetch", url: "https://example.invalid", origin: "https://example.invalid", phase: "measured-flow", engine: "chromium", action: "measure-responsive", route: "index.html", viewport: "390x844", disposition: "BLOCKED_BEFORE_EGRESS" }); }, /observed external network attempt/i],
   ["WebSocket interceptor removed", (report) => { report.reports[0].networkIsolation.controls = report.reports[0].networkIsolation.controls.filter(({ action }) => action !== "WebSocket"); }, /control vector is incomplete/i],
