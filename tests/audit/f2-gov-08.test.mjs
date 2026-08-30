@@ -1412,6 +1412,78 @@ test("F2-GOV-09 trusted server serves verified local i18n without redirect and d
   }
 });
 
+test("F2-GOV-09-F11 serves a verified local byte range without accepting indeterminate browser status", async () => {
+  assert.equal(typeof trustedConsumer.assertTrustedLocalResponseStatus, "function", "trusted local response status guard is absent");
+  assert.doesNotThrow(() => trustedConsumer.assertTrustedLocalResponseStatus(200, "http://127.0.0.1/full"));
+  assert.doesNotThrow(() => trustedConsumer.assertTrustedLocalResponseStatus(206, "http://127.0.0.1/range"));
+  assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(0, "http://127.0.0.1/indeterminate"), /status 0/i);
+  assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(404, "http://127.0.0.1/missing"), /status 404/i);
+
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-range-"));
+  const bytes = Buffer.from(Array.from({ length: 32 }, (_, index) => index));
+  await write(directory, "media/fixture.webm", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "media/fixture.webm", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const response = await fetch(`${server.origin}/media/fixture.webm`, { headers: { range: "bytes=4-11" }, redirect: "manual" });
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get("accept-ranges"), "bytes");
+    assert.equal(response.headers.get("content-range"), "bytes 4-11/32");
+    assert.equal(response.headers.get("content-length"), "8");
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes.subarray(4, 12));
+    assert.deepEqual(server.getRequestLog().filter(({ route }) => route === "media/fixture.webm").map(({ range, status, bytes, finished }) => ({ range, status, bytes, finished })), [
+      { range: "bytes=4-11", status: 206, bytes: 8, finished: true },
+    ]);
+
+    const invalid = await fetch(`${server.origin}/media/fixture.webm`, { headers: { range: "bytes=99-100" }, redirect: "manual" });
+    assert.equal(invalid.status, 416);
+    assert.match(await invalid.text(), /range/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F11 WebKit correlates a cancelled local media load with a completed verified range", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-webkit-"));
+  const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
+  const mediaBytes = workingFile("src/img/crm-demo.webm");
+  await write(directory, "index.html", htmlBytes);
+  await write(directory, "media/fixture.webm", mediaBytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [
+    { path: "index.html", sha256: sha256ForTest(htmlBytes) },
+    { path: "media/fixture.webm", sha256: sha256ForTest(mediaBytes) },
+  ], 0);
+  const { webkit } = await import("playwright");
+  const browser = await webkit.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const responses = [];
+    const failures = [];
+    context.on("response", (response) => {
+      if (response.url().endsWith("/media/fixture.webm")) responses.push(response.status());
+    });
+    context.on("requestfailed", (request) => {
+      if (request.url().endsWith("/media/fixture.webm")) failures.push(request.failure()?.errorText ?? "unknown");
+    });
+    await context.route("**", (route) => route.continue());
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
+    await page.waitForTimeout(750);
+    const mediaState = await page.locator("#media").evaluate((media) => ({ readyState: media.readyState, networkState: media.networkState, errorCode: media.error?.code ?? null }));
+    assert.deepEqual(responses, [206]);
+    assert.deepEqual(failures, ["Load request cancelled"]);
+    assert.deepEqual(mediaState, { readyState: 0, networkState: 3, errorCode: 4 });
+    const ranges = server.getRequestLog().filter(({ route, range }) => route === "media/fixture.webm" && range !== null);
+    assert.ok(ranges.length > 0, "trusted server did not observe the WebKit byte-range request");
+    assert.ok(ranges.every(({ status, finished }) => status === 206 && finished), "trusted server did not complete every verified WebKit byte range");
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 for (const [label, mutate, expected] of [
   ["blocked attempt treated as harmless", (report) => { report.reports[0].networkIsolation.flowAttempts.push({ mechanism: "fetch", url: "https://example.invalid", origin: "https://example.invalid", phase: "measured-flow", engine: "chromium", action: "measure-responsive", route: "index.html", viewport: "390x844", disposition: "BLOCKED_BEFORE_EGRESS" }); }, /observed external network attempt/i],
   ["WebSocket interceptor removed", (report) => { report.reports[0].networkIsolation.controls = report.reports[0].networkIsolation.controls.filter(({ action }) => action !== "WebSocket"); }, /control vector is incomplete/i],

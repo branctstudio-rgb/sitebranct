@@ -231,6 +231,11 @@ export function assertNoObservedExternalAttempts(reports) {
   }
 }
 
+export function assertTrustedLocalResponseStatus(status, url) {
+  assert.ok(Number.isInteger(status), `trusted local response status is malformed: ${url}`);
+  assert.ok(status === 200 || status === 206, `trusted local response status ${status}: ${url}`);
+}
+
 async function installRuntimeNetworkPolicy(context, server, engine, channel, probeId = null) {
   assert.ok(["candidate-flow", "control-probe"].includes(channel), `${engine}: trusted network channel is invalid`);
   if (channel === "control-probe") assert.match(probeId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted control probe identity is absent`);
@@ -317,7 +322,8 @@ async function installRuntimeNetworkPolicy(context, server, engine, channel, pro
     if (url.origin === server.origin) {
       const route = url.pathname.replace(/^\/+/, "") || "index.html";
       localResponses.push({ url: url.href, route, status: response.status() });
-      if (response.status() !== 200) localViolations.push({ url: url.href, reason: `trusted local response status ${response.status()}`, phase: scope.phase, action: scope.action });
+      try { assertTrustedLocalResponseStatus(response.status(), url.href); }
+      catch (error) { localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action }); }
     }
   });
 

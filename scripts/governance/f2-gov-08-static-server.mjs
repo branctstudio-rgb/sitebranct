@@ -24,6 +24,24 @@ const MIME = new Map([
 ]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
+function trustedRangeError(message) {
+  const error = new Error(`trusted byte range ${message}`);
+  error.code = "ERR_TRUSTED_BYTE_RANGE";
+  throw error;
+}
+
+export function resolveTrustedByteRange(header, size) {
+  assert.ok(Number.isSafeInteger(size) && size > 0, "trusted byte range size is invalid");
+  if (header === undefined) return null;
+  if (typeof header !== "string") trustedRangeError("header is malformed");
+  const match = /^bytes=([0-9]+)-([0-9]*)$/.exec(header);
+  if (!match) trustedRangeError("syntax is invalid");
+  const start = Number(match[1]);
+  const end = match[2] === "" ? size - 1 : Number(match[2]);
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start >= size || end < start || end >= size) trustedRangeError("is outside the verified blob");
+  return { start, end, length: end - start + 1 };
+}
+
 function parseLinkAttributes(tag, route) {
   const opening = tag.match(/^<link\b/i);
   assert.ok(opening, `resource hint tag is malformed: ${route}`);
@@ -125,25 +143,38 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     assert.equal(expectedFiles.has(entry.path), false, `trusted candidate payload path is duplicated: ${entry.path}`);
     expectedFiles.set(entry.path, { sha256: entry.sha256 });
   }
+  const requestLog = [];
   const server = createServer((request, response) => {
+    const record = { method: request.method, url: request.url, range: request.headers.range ?? null, route: null, status: null, bytes: 0, finished: false };
+    requestLog.push(record);
     try {
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
       const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
       const origin = `http://127.0.0.1:${server.address().port}`;
       const { route, expected } = validateTrustedStaticRequest(absolute, origin, expectedFiles);
+      record.route = route;
       const target = trustedTarget(canonicalRoot, route);
       const body = readFileSync(target);
       assert.equal(sha256(body), expected.sha256, `trusted static candidate blob changed after materialization: ${route}`);
       if (extname(target).toLowerCase() === ".html") assertNoExternalResourceHints(body, route);
-      response.writeHead(200, {
+      const range = resolveTrustedByteRange(request.headers.range, body.length);
+      const payload = range ? body.subarray(range.start, range.end + 1) : body;
+      record.status = range ? 206 : 200;
+      record.bytes = payload.length;
+      response.once("finish", () => { record.finished = true; });
+      response.writeHead(record.status, {
         "content-type": MIME.get(extname(target).toLowerCase()) ?? "application/octet-stream",
-        "content-length": body.length,
+        "content-length": payload.length,
+        "accept-ranges": "bytes",
+        ...(range ? { "content-range": `bytes ${range.start}-${range.end}/${body.length}` } : {}),
         "cache-control": "no-store",
         "content-security-policy-report-only": "default-src 'self' data:; connect-src 'self'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
       });
-      response.end(body);
+      response.end(payload);
     } catch (error) {
-      response.writeHead(404, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+      record.status = error?.code === "ERR_TRUSTED_BYTE_RANGE" ? 416 : 404;
+      response.once("finish", () => { record.finished = true; });
+      response.writeHead(record.status, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
       response.end(`blocked: ${error.message}`);
     }
   });
@@ -157,6 +188,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
   return {
     origin,
     validateRequest: (requestUrl) => validateTrustedStaticRequest(requestUrl, origin, expectedFiles),
+    getRequestLog: () => structuredClone(requestLog),
     close: () => new Promise((resolvePromise, reject) => server.close((error) => error ? reject(error) : resolvePromise())),
   };
 }
