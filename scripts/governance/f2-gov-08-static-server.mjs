@@ -146,7 +146,8 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
   const requestLog = [];
   let activeWindow = null;
   const journalDigest = (records) => sha256(Buffer.from(JSON.stringify(records)));
-  const windowRecords = (window) => requestLog.filter(({ windowId }) => windowId === window.windowId);
+  const windowRecords = (window) => requestLog.filter(({ windowId, authorized }) => windowId === window.windowId && authorized === true);
+  const windowRejections = (window) => requestLog.filter(({ windowId, authorized }) => windowId === window.windowId && authorized === false);
   const server = createServer((request, response) => {
     const window = activeWindow;
     const record = {
@@ -165,6 +166,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       status: null,
       bytes: 0,
       finished: false,
+      authorized: window ? request.headers["x-branct-trusted-window-capability"] === window.capability : true,
     };
     requestLog.push(record);
     try {
@@ -175,6 +177,13 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         response.once("finish", () => { record.finished = true; });
         response.writeHead(409, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
         response.end("blocked: trusted server journal is sealed");
+        return;
+      }
+      if (window && record.authorized !== true) {
+        record.status = 403;
+        response.once("finish", () => { record.finished = true; });
+        response.writeHead(403, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+        response.end("blocked: trusted server request capability is absent or invalid");
         return;
       }
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
@@ -201,6 +210,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         "accept-ranges": "bytes",
         ...(range ? { "content-range": `bytes ${range.start}-${range.end}/${body.length}` } : {}),
         "cache-control": "no-store",
+        ...(record.journalId ? { "x-branct-trusted-journal-id": record.journalId } : {}),
         "content-security-policy-report-only": "default-src 'self' data:; connect-src 'self'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
       });
       response.end(payload);
@@ -224,6 +234,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     const window = {
       windowId: sha256(randomBytes(32)),
       secret: randomBytes(32).toString("hex"),
+      capability: randomBytes(32).toString("hex"),
       state: "OPEN",
       violation: null,
       sealedCount: null,
@@ -235,9 +246,11 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       state: window.state,
       violation: window.violation,
       records: structuredClone(windowRecords(window)),
+      rejections: structuredClone(windowRejections(window)),
     });
     return {
       get windowId() { return window.windowId; },
+      authorizeHeaders: (headers = {}) => ({ ...headers, "x-branct-trusted-window-capability": window.capability }),
       snapshot,
       beginQuiescence: () => {
         assert.equal(window.state, "OPEN", "trusted server journal cannot enter quiescence from its current state");

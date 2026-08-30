@@ -301,6 +301,7 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
     requestById.set(request.requestId, request);
   }
   const journalByRequest = new Map();
+  const journalById = new Map();
   const journalIds = new Set();
   const journalSequences = new Set();
   for (const record of journal) {
@@ -308,6 +309,7 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
     assert.match(record.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal identity is absent or malformed`);
     assert.equal(journalIds.has(record.journalId), false, `${engine}: trusted journal identity is duplicated`);
     journalIds.add(record.journalId);
+    journalById.set(record.journalId, record);
     assert.ok(Number.isSafeInteger(record.sequence) && record.sequence >= 0, `${engine}: trusted journal sequence is malformed`);
     assert.equal(journalSequences.has(record.sequence), false, `${engine}: trusted journal sequence is duplicated`);
     journalSequences.add(record.sequence);
@@ -319,39 +321,42 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
       assert.ok(Number.isSafeInteger(record.rangeStart) && Number.isSafeInteger(record.rangeEnd) && Number.isSafeInteger(record.totalBytes), `${engine}: trusted journal byte range is malformed`);
       assert.equal(record.bytes, record.rangeEnd - record.rangeStart + 1, `${engine}: trusted journal byte count is divergent`);
     }
-    if (record.requestId === null) continue;
-    assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal request identity is malformed`);
-    const request = requestById.get(record.requestId);
-    assert.ok(request, `${engine}: trusted journal has an unknown request identity: ${record.requestId}`);
-    assert.equal(journalByRequest.has(record.requestId), false, `${engine}: trusted journal request binding is duplicated`);
-    assert.equal(record.absoluteUrl, request.url, `${engine}: trusted journal request URL is divergent`);
-    assert.equal(record.route, request.route, `${engine}: trusted journal request route is divergent`);
-    assert.equal(record.range, request.range, `${engine}: trusted journal request range is divergent`);
-    journalByRequest.set(record.requestId, record);
+    if (record.requestId !== null) {
+      assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal request identity is malformed`);
+      const request = requestById.get(record.requestId);
+      assert.ok(request, `${engine}: trusted journal has an unknown request identity: ${record.requestId}`);
+      assert.equal(journalByRequest.has(record.requestId), false, `${engine}: trusted journal request binding is duplicated`);
+      journalByRequest.set(record.requestId, record);
+    }
   }
-  for (const request of localRequests) assert.ok(journalByRequest.has(request.requestId), `${engine}: bound journal record is absent for trusted request: ${request.requestId}`);
+  const responseByRequest = new Map();
+  const responseByJournal = new Map();
   for (const response of localResponses) {
     const request = requestById.get(response.requestId);
     assert.ok(request, `${engine}: trusted local response has an unknown request identity`);
-    const record = journalByRequest.get(response.requestId);
+    assert.equal(responseByRequest.has(response.requestId), false, `${engine}: trusted local response cardinality is not exactly one for ${response.requestId}`);
+    assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);
+    assert.equal(responseByJournal.has(response.journalId), false, `${engine}: trusted local response journal identity is duplicated`);
+    const record = journalById.get(response.journalId);
     assert.ok(record, `${engine}: trusted local response has no bound journal record`);
     assert.equal(response.url, request.url, `${engine}: trusted local response URL is divergent`);
     assert.equal(response.route, request.route, `${engine}: trusted local response route is divergent`);
     assert.equal(response.range, request.range, `${engine}: trusted local response range is divergent`);
+    assert.equal(record.absoluteUrl, request.url, `${engine}: trusted journal request URL is divergent`);
+    assert.equal(record.route, request.route, `${engine}: trusted journal request route is divergent`);
+    assert.equal(record.range, request.range, `${engine}: trusted journal request range is divergent`);
     assert.equal(response.status, record.status, `${engine}: trusted local response status is divergent from the journal`);
-    if (response.journalId !== undefined) assert.equal(response.journalId, record.journalId, `${engine}: trusted local response journal identity is divergent`);
+    if (record.requestId !== null) assert.equal(record.requestId, response.requestId, `${engine}: trusted journal request identity is divergent from its response`);
+    responseByRequest.set(response.requestId, response);
+    responseByJournal.set(response.journalId, response);
   }
-  for (const request of localRequests) {
-    const responses = localResponses.filter(({ requestId }) => requestId === request.requestId);
-    assert.equal(responses.length, 1, `${engine}: trusted local response cardinality is not exactly one for ${request.requestId}`);
-  }
+  for (const request of localRequests) assert.ok(responseByRequest.has(request.requestId), `${engine}: trusted local response cardinality is not exactly one for ${request.requestId}`);
+  for (const record of journal) assert.ok(responseByJournal.has(record.journalId), `${engine}: trusted journal contains an extra or unattributed record: ${record.route}`);
   for (const failure of localFailures) {
     assert.ok(requestById.has(failure.requestId), `${engine}: trusted local failure has an unknown request identity`);
-    if (failure.journalId !== undefined) assert.equal(failure.journalId, journalByRequest.get(failure.requestId)?.journalId, `${engine}: trusted local failure journal identity is divergent`);
-  }
-  const failedResources = new Set(localFailures.map(({ url, route }) => `${url}\0${route}`));
-  for (const record of journal.filter(({ requestId }) => requestId === null)) {
-    assert.ok(failedResources.has(`${record.absoluteUrl}\0${record.route}`), `${engine}: trusted journal contains an extra or unattributed internal record: ${record.route}`);
+    const response = responseByRequest.get(failure.requestId);
+    assert.ok(response, `${engine}: trusted local failure has no bound response`);
+    if (failure.journalId !== undefined) assert.equal(failure.journalId, response.journalId, `${engine}: trusted local failure journal identity is divergent`);
   }
   const sequences = journal.map(({ sequence }) => sequence);
   const journalWindow = { start: Math.min(...sequences), end: Math.max(...sequences) };
@@ -383,9 +388,11 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
     assert.equal(response.url, failure.url, `${engine}: trusted local response URL is divergent`);
     assert.equal(response.route, failure.route, `${engine}: trusted local response route is divergent`);
     assert.equal(response.range, failure.range, `${engine}: trusted local response range is divergent`);
-    const allJournalMatches = journal.filter(({ requestId }) => requestId === failure.requestId);
+    assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: failed local response journal identity is absent`);
+    const allJournalMatches = journal.filter(({ journalId }) => journalId === response.journalId);
     assert.equal(allJournalMatches.length, 1, `${engine}: trusted server journal cardinality is not exactly one for ${failure.requestId}`);
     const [record] = allJournalMatches;
+    if (record.requestId !== null) assert.equal(record.requestId, failure.requestId, `${engine}: trusted server journal request identity is divergent`);
     assert.ok(record.sequence >= journalWindow.start && record.sequence <= journalWindow.end, `${engine}: trusted server journal record is outside the measurement window`);
     assert.equal(record.absoluteUrl, failure.url, `${engine}: trusted server journal URL is divergent`);
     assert.equal(record.route, failure.route, `${engine}: trusted server journal route is divergent`);
@@ -490,7 +497,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         requestMetadata.set(request, metadata);
         localRequests.push(metadata);
         headers["x-branct-trusted-request-id"] = requestId;
-        return route.continue({ headers });
+        return route.continue({ headers: journalWindow.authorizeHeaders(headers) });
       } catch (error) {
         localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action });
         return route.abort("blockedbyclient");
@@ -513,7 +520,12 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         localViolations.push({ url: url.href, reason: "trusted local response has no consumer-owned request identity", phase: scope.phase, action: scope.action });
         return;
       }
-      localResponses.push({ requestId: metadata.requestId, url: url.href, route: metadata.route, range: metadata.range, status: response.status() });
+      const journalId = response.headers()["x-branct-trusted-journal-id"] ?? null;
+      if (!/^[0-9a-f]{64}$/.test(journalId ?? "")) {
+        localViolations.push({ url: url.href, reason: "trusted local response has no server-owned journal identity", phase: scope.phase, action: scope.action });
+        return;
+      }
+      localResponses.push({ requestId: metadata.requestId, url: url.href, route: metadata.route, range: metadata.range, status: response.status(), journalId });
       try { assertTrustedLocalResponseStatus(response.status(), url.href); }
       catch (error) { localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action }); }
     }
@@ -546,6 +558,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         failures: localFailures,
         violations: localViolations,
         journal: snapshot.records,
+        journalRejections: snapshot.rejections,
       }));
       const observed = collection.observeQuiescence(next);
       fingerprint = next;
@@ -564,6 +577,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       failures: localFailures,
       violations: localViolations,
       journal: sealedSnapshot.records,
+      journalRejections: sealedSnapshot.rejections,
     }));
     assert.equal(sealedFingerprint, fingerprint, `${engine}: trusted collection changed after seal`);
     assert.notEqual(sealedSnapshot.state, "REJECTED", sealedSnapshot.violation ?? `${engine}: trusted server journal was rejected`);

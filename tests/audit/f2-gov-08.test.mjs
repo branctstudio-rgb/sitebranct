@@ -1490,8 +1490,9 @@ test("F2-GOV-09-F11-F1 rejects every unproven local request failure and accepts 
   const requestId = "1".repeat(64);
   const url = "http://127.0.0.1:4173/media/fixture.webm";
   const failure = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", reason: "Load request cancelled" };
-  const response = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", status: 206 };
-  const journal = { sequence: 4, requestId, url: "/media/fixture.webm", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const journalId = "a".repeat(64);
+  const response = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", status: 206, journalId };
+  const journal = { sequence: 4, journalId, requestId, url: "/media/fixture.webm", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
   const accept = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
     engine: "webkit",
     failures: [failure],
@@ -1513,7 +1514,7 @@ test("F2-GOV-09-F11-F1 rejects every unproven local request failure and accepts 
   assert.throws(() => accept({ responses: [{ ...response, status: 0 }] }), /status 0/i);
 });
 
-test("F2-GOV-09-F11-F1 wires the operational policy to request failures and the trusted server journal", async () => {
+test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journal and refuses headerless WebKit internals", async () => {
   assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));
   const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
@@ -1535,15 +1536,12 @@ test("F2-GOV-09-F11-F1 wires the operational policy to request failures and the 
     await page.close();
     await context.close();
     const correlation = await policy.finalizeLocalFailureCorrelations();
-    assert.equal(correlation.correlatedFailures, 1);
-    assert.equal(policy.localFailures.length, 1);
-    assert.equal(policy.localFailures[0].reason, "Load request cancelled");
-    assert.equal(policy.localResponses.filter(({ route }) => route === "media/fixture.webm")[0].status, 206);
-    const mediaJournal = server.getRequestLog().filter(({ route }) => route === "media/fixture.webm");
-    const record = mediaJournal.find(({ requestId }) => requestId === policy.localFailures[0].requestId);
-    assert.ok(record, "trusted server journal did not retain the consumer-owned request identity");
-    assert.equal(record.finished, true);
-    assert.equal(policy.localFailures[0].requestId, record.requestId);
+    assert.equal(correlation.correlatedFailures, 0);
+    assert.equal(policy.localFailures.length, 0);
+    assert.equal(policy.localResponses.filter(({ route }) => route === "media/fixture.webm").length, 0, "an unobservable WebKit internal request must not be promoted to an observed response");
+    const refusedInternals = server.getRequestLog().filter(({ authorized, url, status }) => authorized === false && url === "/media/fixture.webm" && status === 403);
+    assert.ok(refusedInternals.length >= 1, "headerless WebKit media requests were not explicitly refused");
+    assert.ok(refusedInternals.every(({ bytes, finished }) => bytes === 0 && finished === true));
   } finally {
     await browser.close();
     await server.close();
@@ -1583,28 +1581,36 @@ test("F2-GOV-09-F12 enforces a closed server-owned journal bijection", () => {
   const windowId = "window-1";
   const url = "http://127.0.0.1:4173/media/fixture.webm";
   const requestId = "1".repeat(64);
+  const internalRequestId = "2".repeat(64);
   const boundJournalId = "a".repeat(64);
   const internalJournalId = "b".repeat(64);
   const localRequest = { requestId, url, route: "media/fixture.webm", range: "bytes=0-31" };
+  const internalRequest = { requestId: internalRequestId, url, route: "media/fixture.webm", range: "bytes=0-" };
   const localResponse = { ...localRequest, status: 206, journalId: boundJournalId };
+  const internalResponse = { ...internalRequest, status: 206, journalId: internalJournalId };
   const failure = { ...localRequest, reason: "Load request cancelled", journalId: boundJournalId };
   const bound = { sequence: 4, windowId, journalId: boundJournalId, requestId, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-31", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
   const internal = { sequence: 3, windowId, journalId: internalJournalId, requestId: null, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
   const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
     engine: "webkit",
     windowId,
-    localRequests: [localRequest],
-    localResponses: [localResponse],
+    localRequests: [localRequest, internalRequest],
+    localResponses: [localResponse, internalResponse],
     localFailures: [failure],
     journal: [internal, bound],
     ...overrides,
   });
   assert.doesNotThrow(() => verify(), "server-owned internal media records for a known resource must remain attributable");
   assert.doesNotThrow(() => verify({ journal: [bound, internal] }), "journal verification must be order-independent");
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64) }] }), /extra|bijection|unattributed|cardinality/i, "an extra internal record for the same resource must not escape the closed bijection");
+  assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: undefined }, internalResponse] }), /journal identity.*absent|malformed|bijection/i, "a response without its server-owned journal identity must fail closed");
+  assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: "not-a-journal-id" }, internalResponse] }), /journal identity.*absent|malformed/i);
+  assert.throws(() => verify({ localResponses: [localResponse, { ...internalResponse, journalId: boundJournalId }] }), /journal identity is duplicated|cardinality/i);
+  assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: internalJournalId }, { ...internalResponse, journalId: boundJournalId }] }), /URL is divergent|range is divergent|request identity is divergent/i, "journal identities transplanted between valid responses must fail closed");
   assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64), absoluteUrl: "http://127.0.0.1:4173/unknown.bin", route: "unknown.bin", status: 404 }] }), /extra|unknown|unattributed|status/i);
   assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "d".repeat(64), requestId: "2".repeat(64) }] }), /unknown.*request|unattributed/i);
   assert.throws(() => verify({ journal: [internal, bound, { ...bound, sequence: 5 }] }), /journal.*duplicated|journal.*identity/i);
-  assert.throws(() => verify({ journal: [internal] }), /failure.*journal|bound.*absent|bijection/i);
+  assert.throws(() => verify({ journal: [internal] }), /failure.*journal|bound.*absent|bijection|no bound journal/i);
   assert.throws(() => verify({ localFailures: [{ ...failure, requestId: "2".repeat(64) }] }), /failure.*request|identity|bijection/i);
   assert.throws(() => verify({ journal: [{ ...internal, windowId: "other-window" }, bound] }), /window.*divergent/i);
 
@@ -1619,12 +1625,16 @@ test("F2-GOV-09-F12 trusted server owns journal identities and rejects post-seal
   try {
     assert.equal(typeof server.openJournalWindow, "function", "server-owned journal window is absent");
     const window = server.openJournalWindow();
-    const response = await fetch(`${server.origin}/fixture.txt`);
+    const refused = await fetch(`${server.origin}/fixture.txt`);
+    assert.equal(refused.status, 403, "a request without the consumer-only capability must be refused before entering the authoritative journal");
+    const response = await fetch(`${server.origin}/fixture.txt`, { headers: window.authorizeHeaders() });
     assert.equal(response.status, 200);
     const openSnapshot = window.snapshot();
     assert.equal(openSnapshot.state, "OPEN");
     assert.equal(openSnapshot.records.length, 1);
+    assert.equal(openSnapshot.rejections.length, 1);
     assert.match(openSnapshot.records[0].journalId, /^[0-9a-f]{64}$/);
+    assert.equal(response.headers.get("x-branct-trusted-journal-id"), openSnapshot.records[0].journalId);
     assert.equal(openSnapshot.records[0].windowId, openSnapshot.windowId);
     window.beginQuiescence();
     window.seal();
@@ -1666,27 +1676,45 @@ test("F2-GOV-09-F12 operational finalization rejects an event immediately after 
 
 test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijection load-bearing", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
   const assertGuards = (source) => {
     assert.match(source, /collection\.beginQuiescence\(\);/);
     assert.match(source, /journalWindow\.beginQuiescence\(\);/);
     assert.match(source, /stable < 4/);
     assert.match(source, /collection\.seal\(fingerprint\);/);
     assert.match(source, /journalWindow\.seal\(\);/);
-    assert.match(source, /failedResources\.has\(`\$\{record\.absoluteUrl\}\\0\$\{record\.route\}`\)/);
+    assert.match(source, /responseByJournal\.has\(record\.journalId\)/);
+    assert.match(source, /response\.headers\(\)\["x-branct-trusted-journal-id"\]/);
+    assert.match(source, /journalWindow\.authorizeHeaders\(headers\)/);
     assert.match(source, /const correlation = assertTrustedJournalBijection\(\{/);
   };
   assert.doesNotThrow(() => assertGuards(consumer));
+  assert.match(staticServer, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
+  assert.match(staticServer, /record\.authorized !== true/);
   for (const [label, pattern] of [
     ["consumer quiescence", "    collection.beginQuiescence();"],
     ["server quiescence", "    journalWindow.beginQuiescence();"],
     ["consumer seal", "    collection.seal(fingerprint);"],
     ["server seal", "    journalWindow.seal();"],
-    ["extra journal rejection", "failedResources.has(`${record.absoluteUrl}\\0${record.route}`)"],
+    ["extra journal rejection", "responseByJournal.has(record.journalId)"],
+    ["server-owned response binding", "response.headers()[\"x-branct-trusted-journal-id\"]"],
+    ["consumer-only request capability", "journalWindow.authorizeHeaders(headers)"],
     ["closed bijection", "const correlation = assertTrustedJournalBijection({"],
   ]) {
     const mutated = consumer.replace(pattern, label === "extra journal rejection" ? "true" : "");
     assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
     assert.throws(() => assertGuards(mutated), /input did not match/i, `${label} mutation escaped the structural guard`);
+  }
+  for (const pattern of [
+    'request.headers["x-branct-trusted-window-capability"] === window.capability',
+    "record.authorized !== true",
+  ]) {
+    const mutated = staticServer.replace(pattern, "false");
+    assert.notEqual(mutated, staticServer, "server capability mutation did not alter bytes");
+    assert.throws(() => {
+      assert.match(mutated, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
+      assert.match(mutated, /record\.authorized !== true/);
+    }, /input did not match/i, "server capability mutation escaped the structural guard");
   }
 });
 
