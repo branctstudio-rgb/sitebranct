@@ -332,6 +332,7 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
   const validObservationByRequest = new Map();
   const validObservationByJournal = new Map();
   const indeterminateObservations = [];
+  const indeterminateObservationByRequest = new Map();
   const refusalObservationByRejection = new Map();
   for (const response of localResponses) {
     if (response.rejectionId !== undefined || response.status === 403) {
@@ -349,6 +350,8 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
     assert.equal(response.range, request.range, `${engine}: trusted local response range is divergent`);
     if (response.status === 0) {
       assert.equal(response.journalId ?? null, null, `${engine}: indeterminate local response must not claim a trusted journal identity`);
+      assert.equal(indeterminateObservationByRequest.has(response.requestId), false, `${engine}: indeterminate local response cardinality is duplicated for ${response.requestId}`);
+      indeterminateObservationByRequest.set(response.requestId, response);
       indeterminateObservations.push(response);
       continue;
     }
@@ -364,7 +367,7 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
   const boundRequestByJournal = new Map();
   for (const record of journal) {
     const observation = validObservationByJournal.get(record.journalId);
-    const requestId = record.requestId ?? observation?.requestId ?? null;
+    const requestId = record.requestId;
     assert.match(requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal contains an extra or unattributed record: ${record.route}`);
     const request = requestById.get(requestId);
     assert.ok(request, `${engine}: trusted journal has an unknown request identity: ${requestId}`);

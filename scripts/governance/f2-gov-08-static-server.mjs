@@ -171,11 +171,6 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     };
     requestLog.push(record);
     try {
-      const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
-      record.absoluteUrl = absolute;
-      const origin = `http://127.0.0.1:${server.address().port}`;
-      const { route, expected } = validateTrustedStaticRequest(absolute, origin, expectedFiles);
-      record.route = route;
       if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state)) {
         window.state = "REJECTED";
         window.violation = `trusted server journal received a late request after seal: ${request.url}`;
@@ -185,6 +180,11 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         response.end("blocked: trusted server journal is sealed");
         return;
       }
+      const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
+      record.absoluteUrl = absolute;
+      const origin = `http://127.0.0.1:${server.address().port}`;
+      const { route, expected } = validateTrustedStaticRequest(absolute, origin, expectedFiles);
+      record.route = route;
       if (window && record.authorized !== true) {
         record.status = 403;
         response.once("finish", () => { record.finished = true; });

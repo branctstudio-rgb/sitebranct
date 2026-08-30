@@ -1727,11 +1727,81 @@ test("F2-GOV-09-F13 keeps identity, cardinality and sealing fail-closed under ad
   assert.throws(() => lifecycle.recordEvent("late-response"), /late event after seal/i);
 });
 
+test("F2-GOV-09-F13 rejects a late invalid route after the trusted server window is verified", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f13-late-invalid-"));
+  const bytes = Buffer.from("<!doctype html><title>sealed</title>");
+  await write(directory, "index.html", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "index.html", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    window.beginQuiescence();
+    window.seal();
+    window.verify();
+    const response = await fetch(`${server.origin}/not-allowlisted`);
+    assert.equal(response.status, 409, "every request after seal must be rejected before route classification");
+    const snapshot = window.snapshot();
+    assert.equal(snapshot.state, "REJECTED");
+    assert.match(snapshot.violation ?? "", /late request after seal/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F13 never lets a browser observation supply a missing journal identity", () => {
+  const windowId = "window-f13-browser-not-authority";
+  const requestId = "7".repeat(64);
+  const journalId = "8".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "chromium",
+    windowId,
+    localRequests: [request],
+    localResponses: [],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+    ...overrides,
+  });
+  assert.throws(
+    () => verify({ localResponses: [{ ...request, status: 200, journalId }], journal: [{ ...record, requestId: null }] }),
+    /extra or unattributed|identity.*absent|request identity/i,
+    "a browser response must never fill an identity absent from the server journal",
+  );
+});
+
+test("F2-GOV-09-F13 rejects duplicate indeterminate status-zero observations", () => {
+  const windowId = "window-f13-zero-cardinality";
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const zero = { ...request, status: 0, journalId: null };
+  assert.throws(
+    () => trustedConsumer.assertTrustedJournalBijection({
+      engine: "chromium",
+      windowId,
+      localRequests: [request],
+      localResponses: [zero, { ...zero }],
+      localFailures: [],
+      journal: [record],
+      journalRejections: [],
+    }),
+    /indeterminate.*duplicated|cardinality/i,
+    "duplicate status-zero observations must fail closed",
+  );
+});
+
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
   const assertConsumerGuards = (source) => {
     assert.match(source, /response\.status === 0/);
+    assert.match(source, /indeterminateObservationByRequest\.has\(response\.requestId\)/);
+    assert.match(source, /const requestId = record\.requestId;/);
     assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
     assert.match(source, /rejection\.status, 403/);
     assert.match(source, /refusalObservationByRejection\.get\(rejection\.rejectionId\)/);
@@ -1741,11 +1811,16 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /rejectionId: window \? sha256/);
     assert.match(source, /"x-branct-trusted-rejection-id": record\.rejectionId/);
     assert.match(source, /record\.authorized !== true/);
+    const lateGuard = source.indexOf('if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))');
+    const routeValidation = source.indexOf("validateTrustedStaticRequest(absolute, origin, expectedFiles)");
+    assert.ok(lateGuard >= 0 && routeValidation >= 0 && lateGuard < routeValidation, "late-request guard must precede route classification");
   };
   assert.doesNotThrow(() => assertConsumerGuards(consumer));
   assert.doesNotThrow(() => assertServerGuards(staticServer));
   for (const pattern of [
     "response.status === 0",
+    "indeterminateObservationByRequest.has(response.requestId)",
+    "const requestId = record.requestId;",
     "trustedResponseByRequest.has(request.requestId)",
     "rejection.status, 403",
     "refusalObservationByRejection.get(rejection.rejectionId)",
@@ -1759,10 +1834,11 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "rejectionId: window ? sha256",
     '"x-branct-trusted-rejection-id": record.rejectionId',
     "record.authorized !== true",
+    'if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))',
   ]) {
     const mutated = staticServer.replace(pattern, "false");
     assert.notEqual(mutated, staticServer, `server mutation did not alter bytes: ${pattern}`);
-    assert.throws(() => assertServerGuards(mutated), /input did not match/i, `server mutation escaped: ${pattern}`);
+    assert.throws(() => assertServerGuards(mutated), /input did not match|late-request guard/i, `server mutation escaped: ${pattern}`);
   }
 });
 
