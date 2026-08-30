@@ -855,6 +855,39 @@ test("F2-GOV-09 runtime policy observes generic preconnect and dns-prefetch hint
   assert.doesNotMatch(consumer, /__branctReportExternalAttempt/);
 });
 
+test("F2-GOV-09-F10 keeps external preconnect detection distinct from proven pre-egress blocking", () => {
+  const probeId = "a".repeat(64);
+  const observed = [{
+    mechanism: "resource-hint",
+    url: "https://f2-gov-09.invalid/resource-hint-preconnect",
+    origin: "https://f2-gov-09.invalid",
+    phase: "control-probe",
+    engine: "chromium",
+    action: "resource-hint-preconnect",
+    route: "about:blank",
+    viewport: "control",
+    disposition: "DETECTED_AFTER_DOM_INSERTION",
+    probeId,
+  }];
+  assert.doesNotThrow(() => trustedConsumer.assertExpectedNetworkControl(observed, "chromium", "resource-hint-preconnect", probeId));
+  assert.throws(
+    () => trustedConsumer.assertExpectedNetworkControl([{ ...observed[0], disposition: "BLOCKED_BEFORE_EGRESS" }], "chromium", "resource-hint-preconnect", probeId),
+    /trusted control observation is divergent/i,
+  );
+  const controls = networkControlActionsForTest.map((action) => ({ action, status: expectedControlStatusForTest(action) }));
+  assert.doesNotThrow(() => trustedConsumer.assertExpectedNetworkControlVector(controls, "chromium"));
+  assert.throws(
+    () => trustedConsumer.assertExpectedNetworkControlVector(controls.map(({ action }) => ({ action, status: "BLOCKED_AND_RECORDED" })), "chromium"),
+    /runtime network controls are incomplete/i,
+  );
+  assert.throws(
+    () => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="https://tracker.invalid">'), "external.html"),
+    /external resource hint before consent/i,
+  );
+  assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="/src/">'), "local.html"));
+  assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from("<title>no hint</title>"), "absent.html"));
+});
+
 test("F2-GOV-09-F7 never presents dynamic resource-hint detection as proven pre-egress blocking", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");

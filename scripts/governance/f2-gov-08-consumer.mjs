@@ -201,7 +201,7 @@ function expectedNetworkControl(action) {
   return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "src/i18n/pt.json" : "about:blank" };
 }
 
-function assertExpectedNetworkControl(observed, engine, action, probeId) {
+export function assertExpectedNetworkControl(observed, engine, action, probeId) {
   assert.equal(observed.length, 1, `${engine}: trusted control observation cardinality is divergent: ${action}`);
   const expected = expectedNetworkControl(action);
   assert.deepEqual(observed[0], {
@@ -211,9 +211,17 @@ function assertExpectedNetworkControl(observed, engine, action, probeId) {
     engine,
     action,
     viewport: "control",
-    disposition: "BLOCKED_BEFORE_EGRESS",
+    disposition: networkControlDisposition(action),
     probeId,
   }, `${engine}: trusted control observation is divergent: ${action}`);
+}
+
+export function assertExpectedNetworkControlVector(controls, engine) {
+  assert.deepEqual(
+    controls.map(({ action, status }) => [action, status]),
+    NETWORK_CONTROL_ACTIONS.map((action) => [action, networkControlStatus(action)]),
+    `${engine}: trusted runtime network controls are incomplete`,
+  );
 }
 
 export function assertNoObservedExternalAttempts(reports) {
@@ -474,7 +482,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
         assert.deepEqual(probePolicy.localViolations, [], `${engine}: trusted control local request violation observed: ${action}`);
       } finally { await probeContext.close(); }
     }
-    assert.deepEqual(controls.map(({ action, status }) => [action, status]), NETWORK_CONTROL_ACTIONS.map((action) => [action, "BLOCKED_AND_RECORDED"]), `${engine}: trusted runtime network controls are incomplete`);
+    assertExpectedNetworkControlVector(controls, engine);
     assert.ok(networkPolicy.localResponses.some(({ route, status }) => route.startsWith("src/i18n/") && status === 200), `${engine}: local i18n fetch was not served from a verified candidate blob`);
     const summary = {
       overflowCount: observations.filter(({ overflow }) => overflow).length,
@@ -514,7 +522,8 @@ function operationalConclusion(expectations, reports) {
   const total = (key) => reports.reduce((sum, report) => sum + report.summary[key], 0);
   const reducedPass = reports.every((report) => report.reducedMotion.matches === true && report.summary.reducedMotionDurationMs <= expectations.operational.readyMaximums.reducedMotionDurationMs);
   assertNoObservedExternalAttempts(reports);
-  const networkPass = reports.every((report) => report.networkIsolation.controls.length === NETWORK_CONTROL_ACTIONS.length && report.networkIsolation.controls.every(({ status }) => status === "BLOCKED_AND_RECORDED") && report.networkIsolation.localI18nSuccessCount > 0);
+  for (const report of reports) assertExpectedNetworkControlVector(report.networkIsolation.controls, report.engine);
+  const networkPass = reports.every((report) => report.networkIsolation.localI18nSuccessCount > 0);
   const ready = total("overflowCount") === 0 && total("smallTargetObservationCount") === 0 && total("menuFailureCount") === 0 && reducedPass && networkPass;
   const development = total("overflowCount") >= expectations.operational.developmentMinimums.overflowCount && total("smallTargetObservationCount") >= expectations.operational.developmentMinimums.smallTargetObservationCount && total("menuFailureCount") >= expectations.operational.developmentMinimums.menuFailureCount && reducedPass && networkPass;
   assert.ok(ready || development, "trusted measurement is neither the exact READY GREEN nor contracted semantic RED");
