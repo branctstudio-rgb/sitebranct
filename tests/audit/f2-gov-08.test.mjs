@@ -1229,11 +1229,45 @@ test("F2-GOV-09-F3 mutation controls prove consent guards are load-bearing", () 
 });
 
 test("F2-GOV-09-F3 seals crm-gestao.html as the only added live evolution path", () => {
-  const validator = canonicalBlob("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
-  const sealed = validator.match(/const F2_GOV_09_EVOLUTION_PATHS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1]
-    .match(/"[^"]+"/g)?.map((entry) => JSON.parse(entry));
-  assert.ok(sealed, "candidate evolution path set is absent");
-  assert.equal(sealed.length, 17, "candidate evolution path set is not exact");
+  const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const expected = [
+    ".github/workflows/gate-integrity-sentinel.yml",
+    ".github/workflows/universal-pr-gate.yml",
+    "crm-gestao.html",
+    "docs/audit/phase-2/governance/f2-gov-09-design.md",
+    "docs/audit/phase-2/governance/f2-gov-09-handoff.md",
+    "fixtures/audit/f2-01-ci-runtime.json",
+    "fixtures/audit/f2-01-transition.json",
+    "fixtures/audit/f2-gov-08-authority-manifest.json",
+    "fixtures/audit/f2-gov-08-base-only-contract.json",
+    "fixtures/audit/f2-gov-08-expectations.json",
+    "fixtures/audit/f2-gov-08-matrix.json",
+    "scripts/governance/f2-gov-08-consumer.mjs",
+    "scripts/governance/f2-gov-08-static-server.mjs",
+    "scripts/governance/validate-f2-gov-08.mjs",
+    "tests/audit/f2-gov-02a.test.mjs",
+    "tests/audit/f2-gov-02c.test.mjs",
+    "tests/audit/f2-gov-08.test.mjs",
+    "tests/audit/site-audit.test.mjs",
+  ];
+  const assertExactEvolutionSet = (source) => {
+    const sealed = source.match(/const F2_GOV_09_EVOLUTION_PATHS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1]
+      .match(/"[^"]+"/g)?.map((entry) => JSON.parse(entry));
+    assert.ok(sealed, "candidate evolution path set is absent");
+    assert.deepEqual(sealed, expected, "candidate evolution path set is not the exact sealed F2-GOV-09 set");
+    return sealed;
+  };
+  const sealed = assertExactEvolutionSet(validator);
+  assert.equal(sealed.filter((path) => path === "fixtures/audit/f2-01-ci-runtime.json").length, 1, "canonical runtime authority is not sealed exactly once");
+  for (const path of ["fixtures/audit/f2-01-ci-runtime-copy.json", "fixtures/audit/f2-01-ci-runtime.yml", "fixtures/audit/runtime.json"])
+    assert.equal(sealed.includes(path), false, `similar runtime path entered the sealed evolution set: ${path}`);
+  const runtimeLine = /  "fixtures\/audit\/f2-01-ci-runtime\.json",\r?\n/;
+  const withoutRuntime = validator.replace(runtimeLine, "");
+  assert.notEqual(withoutRuntime, validator, "missing-runtime mutation was a no-op");
+  assert.throws(() => assertExactEvolutionSet(withoutRuntime), /exact sealed F2-GOV-09 set/, "runtime authority removal escaped the closed set");
+  const withSimilarRuntime = validator.replace(runtimeLine, (line) => `${line}  "fixtures/audit/f2-01-ci-runtime-copy.json",${line.endsWith("\r\n") ? "\r\n" : "\n"}`);
+  assert.notEqual(withSimilarRuntime, validator, "similar-runtime mutation was a no-op");
+  assert.throws(() => assertExactEvolutionSet(withSimilarRuntime), /exact sealed F2-GOV-09 set/, "similar runtime path escaped the closed set");
   assert.equal(sealed.filter((path) => path === "crm-gestao.html").length, 1, "consent-hardened live path is not sealed exactly once");
   assert.equal(sealed.filter((path) => path.endsWith(".html") && !path.startsWith("docs/")).length, 1, "an unrelated live HTML path entered the evolution set");
   assert.ok(sealed.includes("fixtures/audit/f2-01-transition.json"), "one-shot live transition authority is not sealed");

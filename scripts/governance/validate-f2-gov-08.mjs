@@ -633,6 +633,7 @@ const F2_GOV_09_EVOLUTION_PATHS = Object.freeze([
   "crm-gestao.html",
   "docs/audit/phase-2/governance/f2-gov-09-design.md",
   "docs/audit/phase-2/governance/f2-gov-09-handoff.md",
+  "fixtures/audit/f2-01-ci-runtime.json",
   "fixtures/audit/f2-01-transition.json",
   "fixtures/audit/f2-gov-08-authority-manifest.json",
   "fixtures/audit/f2-gov-08-base-only-contract.json",
