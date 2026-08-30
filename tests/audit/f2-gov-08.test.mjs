@@ -941,7 +941,8 @@ test("F2-GOV-09 isolates measured content from every trusted control context", (
   const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   assert.match(consumer, /await context\.close\(\);\s*measuredContextClosed = true;/);
   assert.match(consumer, /const probeContext = await browser\.newContext/);
-  assert.match(consumer, /finally \{ await probeContext\.close\(\); \}/);
+  assert.match(consumer, /await probeContext\.close\(\);\s*probeContextClosed = true;\s*await probePolicy\.finalizeLocalFailureCorrelations\(\);/);
+  assert.match(consumer, /finally \{ if \(!probeContextClosed\) await probeContext\.close\(\); \}/);
   assert.doesNotMatch(consumer, /installRuntimeNetworkPolicy\(context, server, engine\)(?:;|\))/);
 });
 
@@ -1317,7 +1318,7 @@ test("F2-GOV-09-F3 exercises browser-only network capabilities from the controll
 test("F2-GOV-09-F3 isolates every runtime network control in a fresh page", () => {
   const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   assert.doesNotMatch(consumer, /const probePage = await context\.newPage\(\);\s*const controls = \[\];/);
-  assert.match(consumer, /for \(const action of NETWORK_CONTROL_ACTIONS\) \{[\s\S]*?const probeContext = await browser\.newContext[\s\S]*?const probePage = await probeContext\.newPage\(\);[\s\S]*?finally \{ await probeContext\.close\(\); \}[\s\S]*?\}/);
+  assert.match(consumer, /for \(const action of NETWORK_CONTROL_ACTIONS\) \{[\s\S]*?const probeContext = await browser\.newContext[\s\S]*?const probePage = await probeContext\.newPage\(\);[\s\S]*?finally \{ if \(!probeContextClosed\) await probeContext\.close\(\); \}[\s\S]*?\}/);
 });
 
 test("F2-GOV-09 inventories dormant external capability without granting runtime execution", () => {
