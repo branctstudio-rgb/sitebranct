@@ -236,6 +236,133 @@ export function assertTrustedLocalResponseStatus(status, url) {
   assert.ok(status === 200 || status === 206, `trusted local response status ${status}: ${url}`);
 }
 
+export function createTrustedCollectionLifecycle(label) {
+  assert.equal(typeof label, "string", "trusted collection lifecycle label is absent");
+  let state = "OPEN";
+  let eventCount = 0;
+  let stableSamples = 0;
+  let lastFingerprint = null;
+  let sealedFingerprint = null;
+  let violation = null;
+  const snapshot = () => ({ label, state, eventCount, stableSamples, fingerprint: lastFingerprint, sealedFingerprint, violation });
+  return {
+    snapshot,
+    recordEvent: (kind) => {
+      assert.equal(typeof kind, "string", `${label}: trusted collection event kind is absent`);
+      if (["SEALED", "VERIFIED", "REJECTED"].includes(state)) {
+        violation = `${label}: late event after seal: ${kind}`;
+        state = "REJECTED";
+        throw new Error(violation);
+      }
+      eventCount += 1;
+      stableSamples = 0;
+      lastFingerprint = null;
+      return snapshot();
+    },
+    beginQuiescence: () => {
+      assert.equal(state, "OPEN", `${label}: collection cannot enter quiescence from ${state}`);
+      state = "QUIESCING";
+      return snapshot();
+    },
+    observeQuiescence: (fingerprint) => {
+      assert.equal(state, "QUIESCING", `${label}: collection is not quiescing`);
+      assert.equal(typeof fingerprint, "string", `${label}: quiescence fingerprint is absent`);
+      stableSamples = fingerprint === lastFingerprint ? stableSamples + 1 : 1;
+      lastFingerprint = fingerprint;
+      return snapshot();
+    },
+    seal: (fingerprint) => {
+      assert.equal(state, "QUIESCING", `${label}: collection cannot seal before quiescence`);
+      assert.equal(fingerprint, lastFingerprint, `${label}: collection changed before seal`);
+      assert.ok(stableSamples >= 1, `${label}: collection has no stable quiescence sample`);
+      sealedFingerprint = fingerprint;
+      state = "SEALED";
+      return snapshot();
+    },
+    verify: (fingerprint) => {
+      assert.notEqual(state, "REJECTED", violation ?? `${label}: collection was rejected`);
+      assert.equal(state, "SEALED", `${label}: collection must be sealed before verification`);
+      assert.equal(fingerprint, sealedFingerprint, `${label}: collection changed after seal`);
+      state = "VERIFIED";
+      return snapshot();
+    },
+  };
+}
+
+export function assertTrustedJournalBijection({ engine, windowId, localRequests, localResponses, localFailures, journal }) {
+  assert.match(windowId ?? "", /^[0-9a-f]{64}$|^window-[A-Za-z0-9._-]+$/, `${engine}: trusted journal window identity is absent`);
+  for (const [value, label] of [[localRequests, "requests"], [localResponses, "responses"], [localFailures, "failures"], [journal, "journal"]]) {
+    assert.ok(Array.isArray(value), `${engine}: trusted local ${label} are malformed`);
+  }
+  const requestById = new Map();
+  for (const request of localRequests) {
+    assert.match(request.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local request identity is absent`);
+    assert.equal(requestById.has(request.requestId), false, `${engine}: trusted local request identity is duplicated`);
+    requestById.set(request.requestId, request);
+  }
+  const journalByRequest = new Map();
+  const journalIds = new Set();
+  const journalSequences = new Set();
+  for (const record of journal) {
+    assert.equal(record.windowId, windowId, `${engine}: trusted journal window is divergent`);
+    assert.match(record.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal identity is absent or malformed`);
+    assert.equal(journalIds.has(record.journalId), false, `${engine}: trusted journal identity is duplicated`);
+    journalIds.add(record.journalId);
+    assert.ok(Number.isSafeInteger(record.sequence) && record.sequence >= 0, `${engine}: trusted journal sequence is malformed`);
+    assert.equal(journalSequences.has(record.sequence), false, `${engine}: trusted journal sequence is duplicated`);
+    journalSequences.add(record.sequence);
+    if (record.method !== undefined) assert.equal(record.method, "GET", `${engine}: trusted journal method is divergent`);
+    assert.equal(record.finished, true, `${engine}: trusted journal response is incomplete`);
+    assertTrustedLocalResponseStatus(record.status, record.absoluteUrl);
+    assert.ok(Number.isSafeInteger(record.bytes) && record.bytes > 0, `${engine}: trusted journal byte count is invalid`);
+    if (record.status === 206) {
+      assert.ok(Number.isSafeInteger(record.rangeStart) && Number.isSafeInteger(record.rangeEnd) && Number.isSafeInteger(record.totalBytes), `${engine}: trusted journal byte range is malformed`);
+      assert.equal(record.bytes, record.rangeEnd - record.rangeStart + 1, `${engine}: trusted journal byte count is divergent`);
+    }
+    if (record.requestId === null) continue;
+    assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal request identity is malformed`);
+    const request = requestById.get(record.requestId);
+    assert.ok(request, `${engine}: trusted journal has an unknown request identity: ${record.requestId}`);
+    assert.equal(journalByRequest.has(record.requestId), false, `${engine}: trusted journal request binding is duplicated`);
+    assert.equal(record.absoluteUrl, request.url, `${engine}: trusted journal request URL is divergent`);
+    assert.equal(record.route, request.route, `${engine}: trusted journal request route is divergent`);
+    assert.equal(record.range, request.range, `${engine}: trusted journal request range is divergent`);
+    journalByRequest.set(record.requestId, record);
+  }
+  for (const request of localRequests) assert.ok(journalByRequest.has(request.requestId), `${engine}: bound journal record is absent for trusted request: ${request.requestId}`);
+  for (const response of localResponses) {
+    const request = requestById.get(response.requestId);
+    assert.ok(request, `${engine}: trusted local response has an unknown request identity`);
+    const record = journalByRequest.get(response.requestId);
+    assert.ok(record, `${engine}: trusted local response has no bound journal record`);
+    assert.equal(response.url, request.url, `${engine}: trusted local response URL is divergent`);
+    assert.equal(response.route, request.route, `${engine}: trusted local response route is divergent`);
+    assert.equal(response.range, request.range, `${engine}: trusted local response range is divergent`);
+    assert.equal(response.status, record.status, `${engine}: trusted local response status is divergent from the journal`);
+    if (response.journalId !== undefined) assert.equal(response.journalId, record.journalId, `${engine}: trusted local response journal identity is divergent`);
+  }
+  for (const request of localRequests) {
+    const responses = localResponses.filter(({ requestId }) => requestId === request.requestId);
+    assert.equal(responses.length, 1, `${engine}: trusted local response cardinality is not exactly one for ${request.requestId}`);
+  }
+  for (const failure of localFailures) {
+    assert.ok(requestById.has(failure.requestId), `${engine}: trusted local failure has an unknown request identity`);
+    if (failure.journalId !== undefined) assert.equal(failure.journalId, journalByRequest.get(failure.requestId)?.journalId, `${engine}: trusted local failure journal identity is divergent`);
+  }
+  const failedResources = new Set(localFailures.map(({ url, route }) => `${url}\0${route}`));
+  for (const record of journal.filter(({ requestId }) => requestId === null)) {
+    assert.ok(failedResources.has(`${record.absoluteUrl}\0${record.route}`), `${engine}: trusted journal contains an extra or unattributed internal record: ${record.route}`);
+  }
+  const sequences = journal.map(({ sequence }) => sequence);
+  const journalWindow = { start: Math.min(...sequences), end: Math.max(...sequences) };
+  if (journal.length === 0) {
+    journalWindow.start = 0;
+    journalWindow.end = -1;
+  }
+  assertTrustedLocalFailureCorrelations({ engine, failures: localFailures, responses: localResponses, journal, journalWindow });
+  return { correlatedFailures: localFailures.length, boundRequests: localRequests.length, journalRecords: journal.length, internalRecords: journal.filter(({ requestId }) => requestId === null).length };
+}
+
 export function assertTrustedLocalFailureCorrelations({ engine, failures, responses, journal, journalWindow }) {
   assert.ok(Array.isArray(failures), `${engine}: trusted local failures are malformed`);
   assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
@@ -288,10 +415,16 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
   const localViolations = [];
   const recordedRequests = new WeakSet();
   const requestMetadata = new WeakMap();
-  const journalStart = server.getRequestLog().length;
+  const journalWindow = server.openJournalWindow();
+  const collection = createTrustedCollectionLifecycle(`${engine} ${channel}`);
   let localSequence = 0;
+  let finalized = null;
   let scope = { phase: "initialization", action: "context-start", route: null, viewport: null };
   const setScope = (next) => { scope = { ...scope, ...next }; };
+  const recordLifecycleEvent = (kind) => {
+    try { collection.recordEvent(kind); }
+    catch (error) { localViolations.push({ url: null, reason: error.message, phase: scope.phase, action: scope.action }); }
+  };
   const record = (detail, disposition = "BLOCKED_BEFORE_EGRESS") => {
     let parsed;
     try { parsed = new URL(detail.url); }
@@ -338,7 +471,10 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     }
   };
 
-  context.on("request", recordExternalRequest);
+  context.on("request", (request) => {
+    recordLifecycleEvent(`request:${request.resourceType()}`);
+    recordExternalRequest(request);
+  });
 
   await context.route("**", async (route) => {
     const request = route.request();
@@ -369,6 +505,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     socket.close({ code: 1008, reason: "external network blocked" });
   });
   context.on("response", (response) => {
+    recordLifecycleEvent("response");
     const url = new URL(response.url());
     if (url.origin === server.origin) {
       const metadata = requestMetadata.get(response.request());
@@ -382,6 +519,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     }
   });
   context.on("requestfailed", (request) => {
+    recordLifecycleEvent("requestfailed");
     const url = new URL(request.url());
     if (url.origin !== server.origin) return;
     const metadata = requestMetadata.get(request);
@@ -393,23 +531,66 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
   });
 
   const finalizeLocalFailureCorrelations = async () => {
+    assert.equal(finalized, null, `${engine}: trusted collection was finalized more than once`);
+    collection.beginQuiescence();
+    journalWindow.beginQuiescence();
     const deadline = Date.now() + 1500;
-    while (localFailures.length > 0 && Date.now() < deadline) {
-      const journal = server.getRequestLog();
-      if (localFailures.every(({ requestId }) => journal.some((record) => record.requestId === requestId && record.finished === true))) break;
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 10));
+    let stable = 0;
+    let fingerprint = null;
+    while (Date.now() < deadline && stable < 4) {
+      const snapshot = journalWindow.snapshot();
+      const next = sha256(canonicalJson({
+        events: collection.snapshot().eventCount,
+        requests: localRequests,
+        responses: localResponses,
+        failures: localFailures,
+        violations: localViolations,
+        journal: snapshot.records,
+      }));
+      const observed = collection.observeQuiescence(next);
+      fingerprint = next;
+      stable = observed.stableSamples;
+      if (stable < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25));
     }
-    const journal = server.getRequestLog();
-    return assertTrustedLocalFailureCorrelations({
-      engine,
-      failures: localFailures,
+    assert.equal(stable, 4, `${engine}: trusted collection did not reach deterministic quiescence`);
+    collection.seal(fingerprint);
+    journalWindow.seal();
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 75));
+    const sealedSnapshot = journalWindow.snapshot();
+    const sealedFingerprint = sha256(canonicalJson({
+      events: collection.snapshot().eventCount,
+      requests: localRequests,
       responses: localResponses,
-      journal,
-      journalWindow: { start: journalStart, end: journal.length - 1 },
+      failures: localFailures,
+      violations: localViolations,
+      journal: sealedSnapshot.records,
+    }));
+    assert.equal(sealedFingerprint, fingerprint, `${engine}: trusted collection changed after seal`);
+    assert.notEqual(sealedSnapshot.state, "REJECTED", sealedSnapshot.violation ?? `${engine}: trusted server journal was rejected`);
+    assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed`);
+    const correlation = assertTrustedJournalBijection({
+      engine,
+      windowId: journalWindow.windowId,
+      localRequests,
+      localResponses,
+      localFailures,
+      journal: sealedSnapshot.records,
     });
+    journalWindow.verify();
+    collection.verify(fingerprint);
+    finalized = { ...correlation, fingerprint, windowId: journalWindow.windowId };
+    return structuredClone(finalized);
   };
 
-  return { flowAttempts, controlAttempts, localRequests, localResponses, localFailures, localViolations, setScope, recordTrustedControl, auditExternalResourceHints, finalizeLocalFailureCorrelations };
+  const assertStillVerified = () => {
+    assert.ok(finalized, `${engine}: trusted collection has not been finalized`);
+    assert.equal(collection.snapshot().state, "VERIFIED", `${engine}: trusted collection is no longer verified`);
+    assert.equal(journalWindow.snapshot().state, "VERIFIED", `${engine}: trusted server journal is no longer verified`);
+    assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed after finalization`);
+    return true;
+  };
+
+  return { flowAttempts, controlAttempts, localRequests, localResponses, localFailures, localViolations, setScope, recordTrustedControl, auditExternalResourceHints, finalizeLocalFailureCorrelations, assertStillVerified };
 }
 
 async function waitForControlAttempt(policy, action, before) {
@@ -556,23 +737,29 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
     });
     assertNoObservedExternalAttempts([{ engine, networkIsolation: { flowAttempts: networkPolicy.flowAttempts } }]);
     await page.close();
-    await networkPolicy.finalizeLocalFailureCorrelations();
-    assert.deepEqual(networkPolicy.localViolations, [], `${engine}: trusted local request violation observed`);
     await context.close();
     measuredContextClosed = true;
+    await networkPolicy.finalizeLocalFailureCorrelations();
+    networkPolicy.assertStillVerified();
+    assert.deepEqual(networkPolicy.localViolations, [], `${engine}: trusted local request violation observed`);
     const controls = [];
     for (const action of NETWORK_CONTROL_ACTIONS) {
       const probeId = sha256(canonicalJson({ baseSha: request.baseSha, headSha: request.headSha, payloadDigest: request.payloadDigest, engine, action }));
       const probeContext = await browser.newContext({ serviceWorkers: "block" });
+      let probeContextClosed = false;
       try {
         const probePolicy = await installRuntimeNetworkPolicy(probeContext, server, engine, "control-probe", probeId);
         const probePage = await probeContext.newPage();
         controls.push(await runNetworkControl(probePage, probePolicy, engine, action, server.origin, probeId));
         await probePage.close();
+        await probeContext.close();
+        probeContextClosed = true;
         await probePolicy.finalizeLocalFailureCorrelations();
+        probePolicy.assertStillVerified();
         assert.deepEqual(probePolicy.localViolations, [], `${engine}: trusted control local request violation observed: ${action}`);
-      } finally { await probeContext.close(); }
+      } finally { if (!probeContextClosed) await probeContext.close(); }
     }
+    networkPolicy.assertStillVerified();
     assertExpectedNetworkControlVector(controls, engine);
     assert.ok(networkPolicy.localResponses.some(({ route, status }) => route.startsWith("src/i18n/") && status === 200), `${engine}: local i18n fetch was not served from a verified candidate blob`);
     const summary = {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
@@ -144,9 +144,15 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     expectedFiles.set(entry.path, { sha256: entry.sha256 });
   }
   const requestLog = [];
+  let activeWindow = null;
+  const journalDigest = (records) => sha256(Buffer.from(JSON.stringify(records)));
+  const windowRecords = (window) => requestLog.filter(({ windowId }) => windowId === window.windowId);
   const server = createServer((request, response) => {
+    const window = activeWindow;
     const record = {
       sequence: requestLog.length,
+      windowId: window?.windowId ?? null,
+      journalId: window ? sha256(Buffer.from(`${window.secret}:${requestLog.length}`)) : null,
       requestId: request.headers["x-branct-trusted-request-id"] ?? null,
       method: request.method,
       url: request.url,
@@ -162,6 +168,15 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     };
     requestLog.push(record);
     try {
+      if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state)) {
+        window.state = "REJECTED";
+        window.violation = `trusted server journal received a late request after seal: ${request.url}`;
+        record.status = 409;
+        response.once("finish", () => { record.finished = true; });
+        response.writeHead(409, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+        response.end("blocked: trusted server journal is sealed");
+        return;
+      }
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
       const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
       record.absoluteUrl = absolute;
@@ -203,10 +218,56 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
   const address = server.address();
   assert.ok(address && typeof address === "object", "trusted static server address is unavailable");
   const origin = `http://127.0.0.1:${address.port}`;
+  const openJournalWindow = () => {
+    if (activeWindow?.state === "VERIFIED") activeWindow = null;
+    assert.equal(activeWindow, null, "trusted server journal window is already active");
+    const window = {
+      windowId: sha256(randomBytes(32)),
+      secret: randomBytes(32).toString("hex"),
+      state: "OPEN",
+      violation: null,
+      sealedCount: null,
+      sealedDigest: null,
+    };
+    activeWindow = window;
+    const snapshot = () => ({
+      windowId: window.windowId,
+      state: window.state,
+      violation: window.violation,
+      records: structuredClone(windowRecords(window)),
+    });
+    return {
+      get windowId() { return window.windowId; },
+      snapshot,
+      beginQuiescence: () => {
+        assert.equal(window.state, "OPEN", "trusted server journal cannot enter quiescence from its current state");
+        window.state = "QUIESCING";
+        return snapshot();
+      },
+      seal: () => {
+        assert.equal(window.state, "QUIESCING", "trusted server journal cannot seal before quiescence");
+        const records = windowRecords(window);
+        window.sealedCount = records.length;
+        window.sealedDigest = journalDigest(records);
+        window.state = "SEALED";
+        return snapshot();
+      },
+      verify: () => {
+        assert.notEqual(window.state, "REJECTED", window.violation ?? "trusted server journal was rejected");
+        assert.equal(window.state, "SEALED", "trusted server journal must be sealed before verification");
+        const records = windowRecords(window);
+        assert.equal(records.length, window.sealedCount, "trusted server journal changed after seal");
+        assert.equal(journalDigest(records), window.sealedDigest, "trusted server journal content changed after seal");
+        window.state = "VERIFIED";
+        return snapshot();
+      },
+    };
+  };
   return {
     origin,
     validateRequest: (requestUrl) => validateTrustedStaticRequest(requestUrl, origin, expectedFiles),
     getRequestLog: () => structuredClone(requestLog),
+    openJournalWindow,
     close: () => new Promise((resolvePromise, reject) => server.close((error) => error ? reject(error) : resolvePromise())),
   };
 }

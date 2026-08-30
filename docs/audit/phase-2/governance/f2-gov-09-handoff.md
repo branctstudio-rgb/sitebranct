@@ -29,6 +29,7 @@ O primeiro ensaio comportamental revelou também uma tentativa real em `crm-gest
 - fluxo candidato e probes usam contextos separados; cada probe tem identidade canónica e uma única observação produzida fora do realm da página por interceptores de host, sem binding ou token acessível ao candidato, e vinculada por igualdade estrutural de mecanismo, URL/origem, ação, fase, rota, viewport, engine, disposição e identidade;
 - `consent-loader` percorre `crm-gestao.html` e prova ausência antes da decisão, na recusa e após retirada, além da única tentativa canónica após aceitação válida; a tentativa autorizada continua bloqueada e nunca é convertida em `PASS`;
 - qualquer pedido loopback fora da allowlist autoritativa causa FAIL, mesmo com resposta 404;
+- cada execução usa journal server-owned com ciclo `OPEN → QUIESCING → SEALED → VERIFIED/REJECTED`, estabilidade determinística antes do selo e rejeição de qualquer evento tardio; pedidos, respostas, falhas e registos são comparados por vínculo fechado, sem confiar apenas no header do browser;
 - `preconnect` e `dns-prefetch` externos estáticos são analisados estruturalmente em atributos cotados/não cotados, qualquer ordem, espaçamento e capitalização, e recusados antes da entrega. Hints dinâmicos detetados após inserção reprovam, mas o bloqueio pré-egress desses hints permanece `NOT_VERIFIED` e não é inferido da deteção;
 - `fetch` i18n local real deve concluir; contextos começam sem storage, cookies, permissões, workers ou consentimento;
 - Universal Gate preserva identidade estável e termina explicitamente;
