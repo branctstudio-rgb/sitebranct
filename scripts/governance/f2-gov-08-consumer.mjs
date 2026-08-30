@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { readTrustedStaticRoute, startTrustedStaticServer } from "./f2-gov-08-static-server.mjs";
@@ -34,6 +34,34 @@ const readJson = (path, label) => {
   try { return JSON.parse(readFileSync(path, "utf8")); }
   catch { assert.fail(`${label} is absent, unreadable or malformed`); }
 };
+
+export function validateTrustedPlaywrightInstallation(runtime, installedVersion, executablePaths) {
+  assert.equal(installedVersion, runtime.playwright?.version, "trusted Playwright package version is divergent");
+  assert.deepEqual(runtime.playwright?.engines, ["chromium", "firefox", "webkit"], "trusted Playwright engine set is divergent");
+  const configuredCache = runtime.container?.browsersPath;
+  assert.equal(typeof configuredCache, "string", "trusted Playwright browser cache path is absent");
+  assert.equal(isAbsolute(configuredCache), true, "trusted Playwright browser cache path is not absolute");
+  let cacheRoot;
+  try { cacheRoot = realpathSync(configuredCache); }
+  catch { assert.fail("trusted Playwright browser cache is absent or unreadable"); }
+  assert.deepEqual(Object.keys(executablePaths).sort(), [...runtime.playwright.engines].sort(), "trusted Playwright executable set is incomplete or divergent");
+  for (const engine of runtime.playwright.engines) {
+    const executable = executablePaths[engine];
+    assert.equal(typeof executable, "string", `${engine}: trusted Playwright executable path is absent`);
+    let metadata;
+    let resolved;
+    try {
+      metadata = lstatSync(executable);
+      resolved = realpathSync(executable);
+    } catch {
+      assert.fail(`${engine}: trusted Playwright executable is absent from the canonical cache`);
+    }
+    assert.equal(metadata.isSymbolicLink(), false, `${engine}: trusted Playwright executable is a symlink`);
+    assert.equal(metadata.isFile(), true, `${engine}: trusted Playwright executable is not a regular file`);
+    const displacement = relative(cacheRoot, resolved);
+    assert.ok(displacement && displacement !== ".." && !displacement.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) && !isAbsolute(displacement), `${engine}: trusted Playwright executable escapes the canonical cache`);
+  }
+}
 
 function measuredSimulationObservation(candidateRoot, canonicalCase) {
   const html = readTrustedStaticRoute(candidateRoot, canonicalCase.route);
@@ -504,9 +532,13 @@ async function consumeOperational(request, matrix, expectations) {
   const modules = realpathSync(request.trustedNodeModules);
   const metadata = lstatSync(modules);
   assert.equal(metadata.isDirectory(), true, "trusted node_modules root is not a directory");
+  const runtime = readJson(request.runtimePath, "trusted Playwright runtime");
+  process.env.PLAYWRIGHT_BROWSERS_PATH = runtime.container.browsersPath;
   const require = createRequire(join(modules, "..", "package.json"));
   const playwright = require("playwright");
-  const runtime = readJson(request.runtimePath, "trusted Playwright runtime");
+  const installedVersion = readJson(join(modules, "playwright", "package.json"), "trusted Playwright package").version;
+  const executablePaths = Object.fromEntries(runtime.playwright.engines.map((engine) => [engine, playwright[engine]?.executablePath?.()]));
+  validateTrustedPlaywrightInstallation(runtime, installedVersion, executablePaths);
   assert.deepEqual(runtime.playwright.engines, matrix.engines, "trusted Playwright runtime engine set is divergent");
   const reports = [];
   for (const engine of matrix.engines) reports.push(await bounded(`engine ${engine}`, request.perEngineTimeoutMs, () => measureEngine(request, matrix, menuAuthority, playwright, engine)));

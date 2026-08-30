@@ -18,6 +18,7 @@ import {
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 import * as portableGuard from "../../scripts/governance/validate-f2-gov-08.mjs";
 import * as trustedServer from "../../scripts/governance/f2-gov-08-static-server.mjs";
+import * as trustedConsumer from "../../scripts/governance/f2-gov-08-consumer.mjs";
 
 const root = new URL("../../", import.meta.url);
 const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$1").replace(/\/$/, "");
@@ -27,6 +28,12 @@ const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `${cano
 const workingFile = (path) => readFileSync(join(sourceRepository, ...path.split("/")));
 const publishedPaths = JSON.parse(canonicalBlob("deploy/publish-manifest.json").toString("utf8")).files;
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
+
+function assertCanonicalPlaywrightCacheBinding(consumer, runtime) {
+  assert.equal(runtime.container.browsersPath, "/ms-playwright", "canonical Playwright browser cache path is absent or divergent");
+  assert.match(consumer, /process\.env\.PLAYWRIGHT_BROWSERS_PATH\s*=\s*runtime\.container\.browsersPath[\s\S]*?require\("playwright"\)/, "trusted browser cache is not bound before Playwright loads");
+  assert.doesNotMatch(consumer, /PLAYWRIGHT_BROWSERS_PATH\s*\|\||PLAYWRIGHT_BROWSERS_PATH\s*\?\?/, "trusted browser cache uses a fallback");
+}
 
 function assertHostOnlyObservationAuthority(consumer) {
   assert.doesNotMatch(consumer, /exposeBinding\(/, "candidate page must not receive an observation binding");
@@ -1348,4 +1355,45 @@ for (const [label, mutate, expected] of [
   const fixture = canonicalOperationalFixture();
   mutate(fixture.report);
   assert.throws(() => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest), expected);
+});
+
+test("F2-GOV-09-F8 binds the canonical Playwright cache before loading the trusted package", () => {
+  const runtime = JSON.parse(workingFile(CANONICAL_AUTHORITY_PATHS.runtime).toString("utf8"));
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assertCanonicalPlaywrightCacheBinding(consumer, runtime);
+});
+
+test("F2-GOV-09-F8 rejects an absent browser cache and a divergent Playwright version", async () => {
+  assert.equal(typeof trustedConsumer.validateTrustedPlaywrightInstallation, "function", "trusted Playwright installation validator is absent");
+  const cache = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f8-cache-"));
+  try {
+    const runtime = {
+      playwright: { version: "1.62.0", engines: ["chromium", "firefox", "webkit"] },
+      container: { browsersPath: cache },
+    };
+    const executables = Object.fromEntries(runtime.playwright.engines.map((engine) => [engine, join(cache, engine, `${engine}.bin`)]));
+    for (const path of Object.values(executables)) {
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, "trusted-browser");
+    }
+    assert.doesNotThrow(() => trustedConsumer.validateTrustedPlaywrightInstallation(runtime, "1.62.0", executables));
+    const missingCacheRuntime = structuredClone(runtime);
+    missingCacheRuntime.container.browsersPath = join(cache, "absent");
+    assert.throws(() => trustedConsumer.validateTrustedPlaywrightInstallation(missingCacheRuntime, "1.62.0", executables), /cache is absent/i);
+    await rm(executables.chromium);
+    assert.throws(() => trustedConsumer.validateTrustedPlaywrightInstallation(runtime, "1.62.0", executables), /chromium.*executable.*absent|cache.*incomplete/i);
+    await writeFile(executables.chromium, "trusted-browser");
+    assert.throws(() => trustedConsumer.validateTrustedPlaywrightInstallation(runtime, "1.61.1", executables), /version.*divergent/i);
+  } finally {
+    await rm(cache, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F8 mutation proves the exact cache binding is load-bearing", () => {
+  const runtime = JSON.parse(workingFile(CANONICAL_AUTHORITY_PATHS.runtime).toString("utf8"));
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assertCanonicalPlaywrightCacheBinding(consumer, runtime);
+  const weakened = consumer.replace("process.env.PLAYWRIGHT_BROWSERS_PATH = runtime.container.browsersPath;", "");
+  assert.notEqual(weakened, consumer, "cache-binding mutation did not alter bytes");
+  assert.throws(() => assertCanonicalPlaywrightCacheBinding(weakened, runtime), /not bound before Playwright loads/i);
 });
