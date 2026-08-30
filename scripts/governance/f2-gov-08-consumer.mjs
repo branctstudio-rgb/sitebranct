@@ -289,9 +289,9 @@ export function createTrustedCollectionLifecycle(label) {
   };
 }
 
-export function assertTrustedJournalBijection({ engine, windowId, localRequests, localResponses, localFailures, journal }) {
+export function assertTrustedJournalBijection({ engine, windowId, localRequests, localResponses, localFailures, journal, journalRejections = [] }) {
   assert.match(windowId ?? "", /^[0-9a-f]{64}$|^window-[A-Za-z0-9._-]+$/, `${engine}: trusted journal window identity is absent`);
-  for (const [value, label] of [[localRequests, "requests"], [localResponses, "responses"], [localFailures, "failures"], [journal, "journal"]]) {
+  for (const [value, label] of [[localRequests, "requests"], [localResponses, "responses"], [localFailures, "failures"], [journal, "journal"], [journalRejections, "journal rejections"]]) {
     assert.ok(Array.isArray(value), `${engine}: trusted local ${label} are malformed`);
   }
   const requestById = new Map();
@@ -329,32 +329,88 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
       journalByRequest.set(record.requestId, record);
     }
   }
-  const responseByRequest = new Map();
-  const responseByJournal = new Map();
+  const validObservationByRequest = new Map();
+  const validObservationByJournal = new Map();
+  const indeterminateObservations = [];
+  const refusalObservationByRejection = new Map();
   for (const response of localResponses) {
+    if (response.rejectionId !== undefined || response.status === 403) {
+      assert.equal(response.status, 403, `${engine}: trusted refused local response status is divergent`);
+      assert.equal(response.requestId, null, `${engine}: trusted refused local response unexpectedly carries a consumer identity`);
+      assert.match(response.rejectionId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local refusal identity is absent or malformed`);
+      assert.equal(refusalObservationByRejection.has(response.rejectionId), false, `${engine}: trusted local refusal identity is duplicated`);
+      refusalObservationByRejection.set(response.rejectionId, response);
+      continue;
+    }
     const request = requestById.get(response.requestId);
     assert.ok(request, `${engine}: trusted local response has an unknown request identity`);
-    assert.equal(responseByRequest.has(response.requestId), false, `${engine}: trusted local response cardinality is not exactly one for ${response.requestId}`);
-    assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);
-    assert.equal(responseByJournal.has(response.journalId), false, `${engine}: trusted local response journal identity is duplicated`);
-    const record = journalById.get(response.journalId);
-    assert.ok(record, `${engine}: trusted local response has no bound journal record`);
     assert.equal(response.url, request.url, `${engine}: trusted local response URL is divergent`);
     assert.equal(response.route, request.route, `${engine}: trusted local response route is divergent`);
     assert.equal(response.range, request.range, `${engine}: trusted local response range is divergent`);
+    if (response.status === 0) {
+      assert.equal(response.journalId ?? null, null, `${engine}: indeterminate local response must not claim a trusted journal identity`);
+      indeterminateObservations.push(response);
+      continue;
+    }
+    assertTrustedLocalResponseStatus(response.status, response.url);
+    assert.equal(validObservationByRequest.has(response.requestId), false, `${engine}: trusted local response cardinality is not exactly one for ${response.requestId}`);
+    assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);
+    assert.equal(validObservationByJournal.has(response.journalId), false, `${engine}: trusted local response journal identity is duplicated`);
+    validObservationByRequest.set(response.requestId, response);
+    validObservationByJournal.set(response.journalId, response);
+  }
+
+  const trustedResponseByRequest = new Map();
+  const boundRequestByJournal = new Map();
+  for (const record of journal) {
+    const observation = validObservationByJournal.get(record.journalId);
+    const requestId = record.requestId ?? observation?.requestId ?? null;
+    assert.match(requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted journal contains an extra or unattributed record: ${record.route}`);
+    const request = requestById.get(requestId);
+    assert.ok(request, `${engine}: trusted journal has an unknown request identity: ${requestId}`);
+    assert.equal(trustedResponseByRequest.has(requestId), false, `${engine}: trusted server response cardinality is not exactly one for ${requestId}`);
+    assert.equal(boundRequestByJournal.has(record.journalId), false, `${engine}: trusted journal response binding is duplicated`);
     assert.equal(record.absoluteUrl, request.url, `${engine}: trusted journal request URL is divergent`);
     assert.equal(record.route, request.route, `${engine}: trusted journal request route is divergent`);
     assert.equal(record.range, request.range, `${engine}: trusted journal request range is divergent`);
-    assert.equal(response.status, record.status, `${engine}: trusted local response status is divergent from the journal`);
-    if (record.requestId !== null) assert.equal(record.requestId, response.requestId, `${engine}: trusted journal request identity is divergent from its response`);
-    responseByRequest.set(response.requestId, response);
-    responseByJournal.set(response.journalId, response);
+    if (observation) {
+      assert.equal(observation.requestId, requestId, `${engine}: trusted journal request identity is divergent from its response`);
+      assert.equal(observation.status, record.status, `${engine}: trusted local response status is divergent from the journal`);
+    }
+    const trusted = { requestId, url: record.absoluteUrl, route: record.route, range: record.range, status: record.status, journalId: record.journalId };
+    trustedResponseByRequest.set(requestId, trusted);
+    boundRequestByJournal.set(record.journalId, requestId);
   }
-  for (const request of localRequests) assert.ok(responseByRequest.has(request.requestId), `${engine}: trusted local response cardinality is not exactly one for ${request.requestId}`);
-  for (const record of journal) assert.ok(responseByJournal.has(record.journalId), `${engine}: trusted journal contains an extra or unattributed record: ${record.route}`);
+  for (const request of localRequests) assert.ok(trustedResponseByRequest.has(request.requestId), `${engine}: trusted server response cardinality is not exactly one for ${request.requestId}`);
+  for (const response of validObservationByRequest.values()) assert.ok(boundRequestByJournal.has(response.journalId), `${engine}: trusted local response has no bound journal record`);
+  for (const response of indeterminateObservations) assert.ok(trustedResponseByRequest.has(response.requestId), `${engine}: indeterminate local response has no completed server-owned record`);
+
+  const rejectionIds = new Set();
+  for (const rejection of journalRejections) {
+    assert.equal(rejection.windowId, windowId, `${engine}: trusted refusal window is divergent`);
+    assert.match(rejection.rejectionId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted refusal identity is absent or malformed`);
+    assert.equal(rejectionIds.has(rejection.rejectionId), false, `${engine}: trusted refusal identity is duplicated`);
+    rejectionIds.add(rejection.rejectionId);
+    assert.equal(rejection.authorized, false, `${engine}: trusted refusal was not denied by the server`);
+    assert.equal(rejection.requestId, null, `${engine}: trusted refusal unexpectedly carries a consumer identity`);
+    assert.equal(rejection.status, 403, `${engine}: trusted refusal status is divergent`);
+    assert.equal(rejection.finished, true, `${engine}: trusted refusal response is incomplete`);
+    assert.equal(rejection.bytes, 0, `${engine}: trusted refusal transferred candidate bytes`);
+    assert.match(rejection.absoluteUrl ?? "", /^http:\/\/127\.0\.0\.1:[0-9]+\//, `${engine}: trusted refusal URL is absent or non-local`);
+    assert.equal(typeof rejection.route, "string", `${engine}: trusted refusal route is absent`);
+    const observation = refusalObservationByRejection.get(rejection.rejectionId);
+    if (observation) {
+      assert.equal(observation.url, rejection.absoluteUrl, `${engine}: trusted refusal URL is divergent`);
+      assert.equal(observation.route, rejection.route, `${engine}: trusted refusal route is divergent`);
+      assert.equal(observation.range, rejection.range, `${engine}: trusted refusal range is divergent`);
+    }
+  }
+  for (const [rejectionId] of refusalObservationByRejection) assert.ok(rejectionIds.has(rejectionId), `${engine}: trusted local refusal has no server-owned rejection record`);
+
+  const trustedResponses = [...trustedResponseByRequest.values()];
   for (const failure of localFailures) {
     assert.ok(requestById.has(failure.requestId), `${engine}: trusted local failure has an unknown request identity`);
-    const response = responseByRequest.get(failure.requestId);
+    const response = trustedResponseByRequest.get(failure.requestId);
     assert.ok(response, `${engine}: trusted local failure has no bound response`);
     if (failure.journalId !== undefined) assert.equal(failure.journalId, response.journalId, `${engine}: trusted local failure journal identity is divergent`);
   }
@@ -364,8 +420,16 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
     journalWindow.start = 0;
     journalWindow.end = -1;
   }
-  assertTrustedLocalFailureCorrelations({ engine, failures: localFailures, responses: localResponses, journal, journalWindow });
-  return { correlatedFailures: localFailures.length, boundRequests: localRequests.length, journalRecords: journal.length, internalRecords: journal.filter(({ requestId }) => requestId === null).length };
+  assertTrustedLocalFailureCorrelations({ engine, failures: localFailures, responses: trustedResponses, journal, journalWindow });
+  return {
+    correlatedFailures: localFailures.length,
+    boundRequests: localRequests.length,
+    journalRecords: journal.length,
+    internalRecords: journal.filter(({ requestId }) => requestId === null).length,
+    trustedResponses: trustedResponses.length,
+    indeterminateBrowserResponses: indeterminateObservations.length,
+    refusedInternalRequests: journalRejections.length,
+  };
 }
 
 export function assertTrustedLocalFailureCorrelations({ engine, failures, responses, journal, journalWindow }) {
@@ -516,18 +580,18 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     const url = new URL(response.url());
     if (url.origin === server.origin) {
       const metadata = requestMetadata.get(response.request());
-      if (!metadata) {
-        localViolations.push({ url: url.href, reason: "trusted local response has no consumer-owned request identity", phase: scope.phase, action: scope.action });
-        return;
-      }
       const journalId = response.headers()["x-branct-trusted-journal-id"] ?? null;
-      if (!/^[0-9a-f]{64}$/.test(journalId ?? "")) {
-        localViolations.push({ url: url.href, reason: "trusted local response has no server-owned journal identity", phase: scope.phase, action: scope.action });
+      const rejectionId = response.headers()["x-branct-trusted-rejection-id"] ?? undefined;
+      let validated;
+      try { validated = server.validateRequest(url.href); }
+      catch (error) {
+        localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action });
         return;
       }
-      localResponses.push({ requestId: metadata.requestId, url: url.href, route: metadata.route, range: metadata.range, status: response.status(), journalId });
-      try { assertTrustedLocalResponseStatus(response.status(), url.href); }
-      catch (error) { localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action }); }
+      const range = metadata?.range ?? response.request().headers().range ?? null;
+      const observation = { requestId: metadata?.requestId ?? null, url: url.href, route: metadata?.route ?? validated.route, range, status: response.status(), journalId, rejectionId, resourceType: response.request().resourceType() };
+      localResponses.push(observation);
+      if (![0, 200, 206, 403].includes(response.status())) localViolations.push({ url: url.href, reason: `trusted local response status ${response.status()}`, phase: scope.phase, action: scope.action });
     }
   });
   context.on("requestfailed", (request) => {
@@ -589,6 +653,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       localResponses,
       localFailures,
       journal: sealedSnapshot.records,
+      journalRejections: sealedSnapshot.rejections,
     });
     journalWindow.verify();
     collection.verify(fingerprint);

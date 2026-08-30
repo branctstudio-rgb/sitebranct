@@ -17,6 +17,8 @@ Na base integrada da F2-GOV-08, o contrato declarava `OFFLINE_SIMULATOR_ONLY`, a
 
 O primeiro ensaio comportamental revelou também uma tentativa real em `crm-gestao.html`: `fbevents.js` era inserido incondicionalmente no `<head>`. O RED permanente cobre ausência de decisão, recusa e retirada; o caminho autorizado cobre aceitação explícita e recarga com consentimento válido.
 
+O CI do head `22e4f421d50f86980a6b8d0bf2f48172d1f09220` expôs três variações portáteis da mesma fronteira: Chromium teve um pedido com registo completo no servidor mas sem evento de resposta observável; WebKit produziu o vetor browser `[0, 200]` em vez de `[206]`; e uma recusa interna de `media/fixture.webm` chegou sem a identidade injetada pelo Playwright. O F2-GOV-09-F13 fixa estes casos como RED, sem aceitar `status 0` e sem tornar a observação do browser autoridade.
+
 ## GREEN esperado
 
 - contrato `OPERATIONAL_CANDIDATE`;
@@ -29,7 +31,7 @@ O primeiro ensaio comportamental revelou também uma tentativa real em `crm-gest
 - fluxo candidato e probes usam contextos separados; cada probe tem identidade canónica e uma única observação produzida fora do realm da página por interceptores de host, sem binding ou token acessível ao candidato, e vinculada por igualdade estrutural de mecanismo, URL/origem, ação, fase, rota, viewport, engine, disposição e identidade;
 - `consent-loader` percorre `crm-gestao.html` e prova ausência antes da decisão, na recusa e após retirada, além da única tentativa canónica após aceitação válida; a tentativa autorizada continua bloqueada e nunca é convertida em `PASS`;
 - qualquer pedido loopback fora da allowlist autoritativa causa FAIL, mesmo com resposta 404;
-- cada execução usa journal server-owned com ciclo `OPEN → QUIESCING → SEALED → VERIFIED/REJECTED`, estabilidade determinística antes do selo e rejeição de qualquer evento tardio; pedidos, respostas, falhas e registos são comparados por identidade server-owned da resposta, e pedidos internos sem a capacidade efémera do consumidor são recusados antes de entrarem no journal autoritativo;
+- cada execução usa journal server-owned com ciclo `OPEN → QUIESCING → SEALED → VERIFIED/REJECTED`, estabilidade determinística antes do selo e rejeição de qualquer evento tardio; cada pedido autorizado exige exatamente um registo server-owned completo, enquanto eventos de resposta do browser são corroborantes e nunca substituem o journal. `status 0` é indeterminado e não promovido; pedidos internos sem a capacidade efémera recebem recusa identificada pelo servidor, zero bytes e correspondência fechada quando observados;
 - `preconnect` e `dns-prefetch` externos estáticos são analisados estruturalmente em atributos cotados/não cotados, qualquer ordem, espaçamento e capitalização, e recusados antes da entrega. Hints dinâmicos detetados após inserção reprovam, mas o bloqueio pré-egress desses hints permanece `NOT_VERIFIED` e não é inferido da deteção;
 - `fetch` i18n local real deve concluir; contextos começam sem storage, cookies, permissões, workers ou consentimento;
 - Universal Gate preserva identidade estável e termina explicitamente;

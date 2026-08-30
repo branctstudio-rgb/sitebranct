@@ -1608,13 +1608,157 @@ test("F2-GOV-09-F12 enforces a closed server-owned journal bijection", () => {
   assert.throws(() => verify({ localResponses: [localResponse, { ...internalResponse, journalId: boundJournalId }] }), /journal identity is duplicated|cardinality/i);
   assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: internalJournalId }, { ...internalResponse, journalId: boundJournalId }] }), /URL is divergent|range is divergent|request identity is divergent/i, "journal identities transplanted between valid responses must fail closed");
   assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64), absoluteUrl: "http://127.0.0.1:4173/unknown.bin", route: "unknown.bin", status: 404 }] }), /extra|unknown|unattributed|status/i);
-  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "d".repeat(64), requestId: "2".repeat(64) }] }), /unknown.*request|unattributed/i);
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "d".repeat(64), requestId: "2".repeat(64) }] }), /unknown.*request|unattributed|cardinality/i);
   assert.throws(() => verify({ journal: [internal, bound, { ...bound, sequence: 5 }] }), /journal.*duplicated|journal.*identity/i);
-  assert.throws(() => verify({ journal: [internal] }), /failure.*journal|bound.*absent|bijection|no bound journal/i);
+  assert.throws(() => verify({ journal: [internal] }), /failure.*journal|bound.*absent|bijection|no bound journal|cardinality/i);
   assert.throws(() => verify({ localFailures: [{ ...failure, requestId: "2".repeat(64) }] }), /failure.*request|identity|bijection/i);
   assert.throws(() => verify({ journal: [{ ...internal, windowId: "other-window" }, bound] }), /window.*divergent/i);
 
   function verifyJournal() { return [internal, bound]; }
+});
+
+test("F2-GOV-09-F13 derives a missing browser response from exactly one completed server-owned record", () => {
+  const windowId = "window-f13-missing-response";
+  const requestId = "1".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: "bytes=0-31", resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: request.range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const result = trustedConsumer.assertTrustedJournalBijection({
+    engine: "chromium",
+    windowId,
+    localRequests: [request],
+    localResponses: [],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+  });
+  assert.equal(result.boundRequests, 1);
+  assert.equal(result.trustedResponses, 1);
+  assert.equal(result.indeterminateBrowserResponses, 0);
+});
+
+test("F2-GOV-09-F13 never promotes status zero while reconciling the CI 0/200 observation vector", () => {
+  const windowId = "window-f13-zero-two-hundred";
+  const requestId = "2".repeat(64);
+  const journalId = "b".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const result = trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [request],
+    localResponses: [
+      { ...request, status: 0, journalId: null },
+      { ...request, status: 200, journalId },
+    ],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+  });
+  assert.equal(result.trustedResponses, 1);
+  assert.equal(result.indeterminateBrowserResponses, 1);
+  assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(0, url), /status 0/i);
+});
+
+test("F2-GOV-09-F13 attributes a headerless internal media refusal to one server-owned rejection identity", () => {
+  const windowId = "window-f13-internal-refusal";
+  const rejectionId = "c".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const rejection = { sequence: 0, windowId, rejectionId, requestId: null, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", status: 403, bytes: 0, finished: true, authorized: false };
+  const result = trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [],
+    localResponses: [{ requestId: null, rejectionId, url, route: rejection.route, range: rejection.range, status: 403, resourceType: "media" }],
+    localFailures: [],
+    journal: [],
+    journalRejections: [rejection],
+  });
+  assert.equal(result.refusedInternalRequests, 1);
+  assert.equal(result.trustedResponses, 0);
+});
+
+test("F2-GOV-09-F13 keeps identity, cardinality and sealing fail-closed under adversarial ordering", () => {
+  const windowId = "window-f13-adversarial";
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const requestA = { requestId: "1".repeat(64), url, route: "media/fixture.webm", range: "bytes=0-15", resourceType: "media" };
+  const requestB = { requestId: "2".repeat(64), url, route: "media/fixture.webm", range: "bytes=16-31", resourceType: "media" };
+  const recordA = { sequence: 0, windowId, journalId: "a".repeat(64), requestId: requestA.requestId, method: "GET", absoluteUrl: url, route: requestA.route, range: requestA.range, rangeStart: 0, rangeEnd: 15, totalBytes: 32, status: 206, bytes: 16, finished: true };
+  const recordB = { sequence: 1, windowId, journalId: "b".repeat(64), requestId: requestB.requestId, method: "GET", absoluteUrl: url, route: requestB.route, range: requestB.range, rangeStart: 16, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 16, finished: true };
+  const observationA = { ...requestA, status: 206, journalId: recordA.journalId };
+  const observationB = { ...requestB, status: 206, journalId: recordB.journalId };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "chromium",
+    windowId,
+    localRequests: [requestA, requestB],
+    localResponses: [observationA, observationB],
+    localFailures: [],
+    journal: [recordA, recordB],
+    journalRejections: [],
+    ...overrides,
+  });
+  assert.equal(verify({ localRequests: [requestB, requestA], localResponses: [observationB, observationA], journal: [recordB, recordA] }).trustedResponses, 2, "the closed bijection must be order-independent");
+  assert.throws(() => verify({ journal: [recordA, { ...recordB, requestId: requestA.requestId }] }), /cardinality|divergent|binding is duplicated/i, "duplicate request binding must fail");
+  assert.throws(() => verify({ localResponses: [observationA, { ...observationA }] }), /cardinality|duplicated/i, "duplicate browser observation must fail");
+  assert.throws(() => verify({ localResponses: [{ ...observationA, status: 0, journalId: null }], journal: [recordB] }), /cardinality|completed server-owned record|unknown/i, "status zero without its exact completed record must fail");
+  assert.throws(() => verify({ localRequests: [{ ...requestA, requestId: null }, requestB] }), /request identity is absent/i);
+  assert.throws(() => verify({ journal: [{ ...recordA, requestId: requestB.requestId }, recordB] }), /cardinality|binding is duplicated|URL.*divergent|range.*divergent/i, "a swapped identity must fail");
+  assert.throws(() => verify({ journal: [{ ...recordA, absoluteUrl: `${url}?forged=1` }, recordB] }), /URL.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...recordA, range: "bytes=1-15" }, recordB] }), /range.*divergent/i);
+  assert.throws(() => verify({ journal: [recordA, recordB, { ...recordA, sequence: 2, journalId: "c".repeat(64), requestId: null }] }), /extra|unattributed|cardinality/i, "an extra journal record must fail");
+
+  const rejection = { sequence: 2, windowId, rejectionId: "d".repeat(64), requestId: null, method: "GET", absoluteUrl: url, route: requestA.route, range: "bytes=0-", status: 403, bytes: 0, finished: true, authorized: false };
+  const refusal = { requestId: null, rejectionId: rejection.rejectionId, url, route: rejection.route, range: rejection.range, status: 403, resourceType: "media" };
+  assert.throws(() => verify({ journalRejections: [{ ...rejection, rejectionId: null }], localResponses: [observationA, observationB, refusal] }), /refusal identity is absent|malformed/i);
+  assert.throws(() => verify({ journalRejections: [rejection, { ...rejection }], localResponses: [observationA, observationB, refusal] }), /refusal identity is duplicated/i);
+  assert.throws(() => verify({ journalRejections: [rejection], localResponses: [observationA, observationB, { ...refusal, rejectionId: "e".repeat(64) }] }), /no server-owned rejection record/i);
+
+  const lifecycle = trustedConsumer.createTrustedCollectionLifecycle("F13 late event");
+  lifecycle.beginQuiescence();
+  lifecycle.observeQuiescence("stable");
+  lifecycle.seal("stable");
+  assert.throws(() => lifecycle.recordEvent("late-response"), /late event after seal/i);
+});
+
+test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  const assertConsumerGuards = (source) => {
+    assert.match(source, /response\.status === 0/);
+    assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
+    assert.match(source, /rejection\.status, 403/);
+    assert.match(source, /refusalObservationByRejection\.get\(rejection\.rejectionId\)/);
+    assert.match(source, /journalRejections: sealedSnapshot\.rejections/);
+  };
+  const assertServerGuards = (source) => {
+    assert.match(source, /rejectionId: window \? sha256/);
+    assert.match(source, /"x-branct-trusted-rejection-id": record\.rejectionId/);
+    assert.match(source, /record\.authorized !== true/);
+  };
+  assert.doesNotThrow(() => assertConsumerGuards(consumer));
+  assert.doesNotThrow(() => assertServerGuards(staticServer));
+  for (const pattern of [
+    "response.status === 0",
+    "trustedResponseByRequest.has(request.requestId)",
+    "rejection.status, 403",
+    "refusalObservationByRejection.get(rejection.rejectionId)",
+    "journalRejections: sealedSnapshot.rejections",
+  ]) {
+    const mutated = consumer.replaceAll(pattern, "false");
+    assert.notEqual(mutated, consumer, `consumer mutation did not alter bytes: ${pattern}`);
+    assert.throws(() => assertConsumerGuards(mutated), /input did not match/i, `consumer mutation escaped: ${pattern}`);
+  }
+  for (const pattern of [
+    "rejectionId: window ? sha256",
+    '"x-branct-trusted-rejection-id": record.rejectionId',
+    "record.authorized !== true",
+  ]) {
+    const mutated = staticServer.replace(pattern, "false");
+    assert.notEqual(mutated, staticServer, `server mutation did not alter bytes: ${pattern}`);
+    assert.throws(() => assertServerGuards(mutated), /input did not match/i, `server mutation escaped: ${pattern}`);
+  }
 });
 
 test("F2-GOV-09-F12 trusted server owns journal identities and rejects post-seal records", async () => {
@@ -1683,7 +1827,8 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     assert.match(source, /stable < 4/);
     assert.match(source, /collection\.seal\(fingerprint\);/);
     assert.match(source, /journalWindow\.seal\(\);/);
-    assert.match(source, /responseByJournal\.has\(record\.journalId\)/);
+    assert.match(source, /boundRequestByJournal\.has\(record\.journalId\)/);
+    assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
     assert.match(source, /response\.headers\(\)\["x-branct-trusted-journal-id"\]/);
     assert.match(source, /journalWindow\.authorizeHeaders\(headers\)/);
     assert.match(source, /const correlation = assertTrustedJournalBijection\(\{/);
@@ -1696,7 +1841,8 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     ["server quiescence", "    journalWindow.beginQuiescence();"],
     ["consumer seal", "    collection.seal(fingerprint);"],
     ["server seal", "    journalWindow.seal();"],
-    ["extra journal rejection", "responseByJournal.has(record.journalId)"],
+    ["extra journal rejection", "boundRequestByJournal.has(record.journalId)"],
+    ["server response cardinality", "trustedResponseByRequest.has(request.requestId)"],
     ["server-owned response binding", "response.headers()[\"x-branct-trusted-journal-id\"]"],
     ["consumer-only request capability", "journalWindow.authorizeHeaders(headers)"],
     ["closed bijection", "const correlation = assertTrustedJournalBijection({"],

@@ -154,6 +154,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       sequence: requestLog.length,
       windowId: window?.windowId ?? null,
       journalId: window ? sha256(Buffer.from(`${window.secret}:${requestLog.length}`)) : null,
+      rejectionId: window ? sha256(Buffer.from(`${window.secret}:rejection:${requestLog.length}`)) : null,
       requestId: request.headers["x-branct-trusted-request-id"] ?? null,
       method: request.method,
       url: request.url,
@@ -170,6 +171,11 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     };
     requestLog.push(record);
     try {
+      const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
+      record.absoluteUrl = absolute;
+      const origin = `http://127.0.0.1:${server.address().port}`;
+      const { route, expected } = validateTrustedStaticRequest(absolute, origin, expectedFiles);
+      record.route = route;
       if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state)) {
         window.state = "REJECTED";
         window.violation = `trusted server journal received a late request after seal: ${request.url}`;
@@ -182,16 +188,15 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       if (window && record.authorized !== true) {
         record.status = 403;
         response.once("finish", () => { record.finished = true; });
-        response.writeHead(403, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+        response.writeHead(403, {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-branct-trusted-rejection-id": record.rejectionId,
+        });
         response.end("blocked: trusted server request capability is absent or invalid");
         return;
       }
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
-      const absolute = new URL(request.url, `http://${request.headers.host ?? "127.0.0.1"}`).href;
-      record.absoluteUrl = absolute;
-      const origin = `http://127.0.0.1:${server.address().port}`;
-      const { route, expected } = validateTrustedStaticRequest(absolute, origin, expectedFiles);
-      record.route = route;
       const target = trustedTarget(canonicalRoot, route);
       const body = readFileSync(target);
       assert.equal(sha256(body), expected.sha256, `trusted static candidate blob changed after materialization: ${route}`);
