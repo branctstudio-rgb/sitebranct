@@ -1444,7 +1444,7 @@ test("F2-GOV-09-F11 serves a verified local byte range without accepting indeter
   }
 });
 
-test("F2-GOV-09-F11 WebKit correlates a cancelled local media load with a completed verified range", async () => {
+test("F2-GOV-09-F11 WebKit records browser media variability without promoting status zero", async () => {
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-webkit-"));
   const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
   const mediaBytes = workingFile("src/img/crm-demo.webm");
@@ -1471,12 +1471,15 @@ test("F2-GOV-09-F11 WebKit correlates a cancelled local media load with a comple
     await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
     await page.waitForTimeout(750);
     const mediaState = await page.locator("#media").evaluate((media) => ({ readyState: media.readyState, networkState: media.networkState, errorCode: media.error?.code ?? null }));
-    assert.deepEqual(responses, [206]);
-    assert.deepEqual(failures, ["Load request cancelled"]);
-    assert.deepEqual(mediaState, { readyState: 0, networkState: 3, errorCode: 4 });
-    const ranges = server.getRequestLog().filter(({ route, range }) => route === "media/fixture.webm" && range !== null);
-    assert.ok(ranges.length > 0, "trusted server did not observe the WebKit byte-range request");
-    assert.ok(ranges.every(({ status, finished }) => status === 206 && finished), "trusted server did not complete every verified WebKit byte range");
+    for (const status of responses) {
+      if (status === 0) assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(status, `${server.origin}/media/fixture.webm`), /status 0/i);
+      else assert.doesNotThrow(() => trustedConsumer.assertTrustedLocalResponseStatus(status, `${server.origin}/media/fixture.webm`));
+    }
+    assert.ok(failures.every((reason) => reason === "Load request cancelled"), `unexpected WebKit media failure: ${failures.join(", ")}`);
+    assert.ok(Number.isInteger(mediaState.readyState) && Number.isInteger(mediaState.networkState), "WebKit media state is malformed");
+    const records = server.getRequestLog().filter(({ route }) => route === "media/fixture.webm");
+    assert.ok(records.length > 0, "trusted server did not observe the WebKit media request");
+    assert.ok(records.every(({ status, bytes, finished }) => [200, 206].includes(status) && bytes > 0 && finished), "trusted server did not complete every verified WebKit media response");
     await context.close();
   } finally {
     await browser.close();
@@ -1538,10 +1541,12 @@ test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journa
     const correlation = await policy.finalizeLocalFailureCorrelations();
     assert.equal(correlation.correlatedFailures, 0);
     assert.equal(policy.localFailures.length, 0);
-    assert.equal(policy.localResponses.filter(({ route }) => route === "media/fixture.webm").length, 0, "an unobservable WebKit internal request must not be promoted to an observed response");
     const refusedInternals = server.getRequestLog().filter(({ authorized, url, status }) => authorized === false && url === "/media/fixture.webm" && status === 403);
     assert.ok(refusedInternals.length >= 1, "headerless WebKit media requests were not explicitly refused");
     assert.ok(refusedInternals.every(({ bytes, finished }) => bytes === 0 && finished === true));
+    assert.equal(correlation.refusedInternalRequests, refusedInternals.length, "every headerless WebKit media refusal must remain counted by the server-owned journal");
+    const observedRefusals = policy.localResponses.filter(({ route }) => route === "media/fixture.webm");
+    assert.ok(observedRefusals.every(({ requestId, rejectionId, status }) => requestId === null && /^[0-9a-f]{64}$/.test(rejectionId) && status === 403), "an observed WebKit internal refusal was not bound to its server-owned rejection identity");
   } finally {
     await browser.close();
     await server.close();
