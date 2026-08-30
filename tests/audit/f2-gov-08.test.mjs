@@ -1595,7 +1595,7 @@ test("F2-GOV-09-F12 enforces a closed server-owned journal bijection", () => {
   const internalResponse = { ...internalRequest, status: 206, journalId: internalJournalId };
   const failure = { ...localRequest, reason: "Load request cancelled", journalId: boundJournalId };
   const bound = { sequence: 4, windowId, journalId: boundJournalId, requestId, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-31", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
-  const internal = { sequence: 3, windowId, journalId: internalJournalId, requestId: null, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const internal = { sequence: 3, windowId, journalId: internalJournalId, requestId: internalRequestId, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
   const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
     engine: "webkit",
     windowId,
@@ -1605,15 +1605,16 @@ test("F2-GOV-09-F12 enforces a closed server-owned journal bijection", () => {
     journal: [internal, bound],
     ...overrides,
   });
-  assert.doesNotThrow(() => verify(), "server-owned internal media records for a known resource must remain attributable");
+  assert.doesNotThrow(() => verify(), "server journal media records with an explicit request identity must remain attributable");
   assert.doesNotThrow(() => verify({ journal: [bound, internal] }), "journal verification must be order-independent");
-  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64) }] }), /extra|bijection|unattributed|cardinality/i, "an extra internal record for the same resource must not escape the closed bijection");
+  assert.throws(() => verify({ journal: [{ ...internal, requestId: null }, bound] }), /extra|unattributed|identity.*absent/i, "browser evidence must not supply an identity absent from the server journal");
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64) }] }), /extra|bijection|unattributed|cardinality|binding is duplicated/i, "an extra internal record for the same resource must not escape the closed bijection");
   assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: undefined }, internalResponse] }), /journal identity.*absent|malformed|bijection/i, "a response without its server-owned journal identity must fail closed");
   assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: "not-a-journal-id" }, internalResponse] }), /journal identity.*absent|malformed/i);
   assert.throws(() => verify({ localResponses: [localResponse, { ...internalResponse, journalId: boundJournalId }] }), /journal identity is duplicated|cardinality/i);
   assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: internalJournalId }, { ...internalResponse, journalId: boundJournalId }] }), /URL is divergent|range is divergent|request identity is divergent/i, "journal identities transplanted between valid responses must fail closed");
-  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64), absoluteUrl: "http://127.0.0.1:4173/unknown.bin", route: "unknown.bin", status: 404 }] }), /extra|unknown|unattributed|status/i);
-  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "d".repeat(64), requestId: "2".repeat(64) }] }), /unknown.*request|unattributed|cardinality/i);
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64), absoluteUrl: "http://127.0.0.1:4173/unknown.bin", route: "unknown.bin", status: 404 }] }), /extra|unknown|unattributed|status|binding is duplicated/i);
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "d".repeat(64), requestId: "2".repeat(64) }] }), /unknown.*request|unattributed|cardinality|binding is duplicated/i);
   assert.throws(() => verify({ journal: [internal, bound, { ...bound, sequence: 5 }] }), /journal.*duplicated|journal.*identity/i);
   assert.throws(() => verify({ journal: [internal] }), /failure.*journal|bound.*absent|bijection|no bound journal|cardinality/i);
   assert.throws(() => verify({ localFailures: [{ ...failure, requestId: "2".repeat(64) }] }), /failure.*request|identity|bijection/i);
