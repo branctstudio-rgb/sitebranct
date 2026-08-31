@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0-dev-shell",
+  "source": {
+    "repository": "branct-tech/branct-ai-operations",
+    "commit": "0e072a778bd6718d23340a5d576669fef78ae73b",
+    "gateway_contract": "tests/chat-ia/fatia-p0/contrato-envelope-p0.json",
+    "gateway_design": "architecture/proposed/chat-ia-gateway-p0.md"
+  },
+  "feature_flag": { "name": "chat_ia_dev", "default": "OFF", "allowed_hosts": ["localhost", "127.0.0.1", "::1"] },
+  "adapter": { "transport": "mock-local-only", "request_authority": "P0-D2", "response_results": ["resposta", "recusa_seguranca", "entrada_inconclusiva", "timeout", "falha_provedor", "cancelado", "replay"] },
+  "storage": { "session_memory": "ALLOWED", "persistent": "FORBIDDEN" },
+  "integrations": { "crm": "FORBIDDEN", "database": "FORBIDDEN", "paid_api": "FORBIDDEN", "production": "FORBIDDEN", "secrets": "FORBIDDEN" },
+  "lead_draft": { "decision": "PROPOSTA_LEAD", "destination": "edi-fronteira-simulada", "nenhum_lead_real_criado": true, "compatibilidade_edi": "NOT_VERIFIED" }
+}
