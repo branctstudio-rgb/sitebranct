@@ -1538,6 +1538,104 @@ test("F2-GOV-09-F14 exposes the observed requestfailed reason before classifying
   );
 });
 
+test("F2-GOV-09-F14 accepts the measured Chromium cancellation only through complete server-owned proof", () => {
+  const requestId = "1".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-";
+  const failure = { requestId, url, route, range, reason: "net::ERR_ABORTED" };
+  const response = { requestId, url, route, range, status: 206, journalId };
+  const journal = { sequence: 4, journalId, requestId, absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
+    engine: "chromium",
+    failures: [failure],
+    responses: [response],
+    journal: [journal],
+    journalWindow: { start: 4, end: 4 },
+    ...overrides,
+  });
+  assert.doesNotThrow(() => verify(), "the measured Chromium cancellation must be classified by structural proof rather than engine name");
+  assert.throws(() => verify({ failures: [{ ...failure, reason: "net::ERR_FAILED" }] }), /reason.*not.*authorized|cancellation.*reason/i);
+  assert.throws(() => verify({ failures: [{ ...failure, reason: "UNKNOWN_LOCAL_REQUEST_FAILURE" }] }), /reason.*not.*authorized|cancellation.*reason/i);
+  assert.throws(() => verify({ responses: [] }), /response.*cardinality/i);
+  assert.throws(() => verify({ responses: [{ ...response, status: 0, journalId: null }] }), /status 0/i);
+  assert.throws(() => verify({ responses: [{ ...response, status: 200 }] }), /206/i);
+  assert.throws(() => verify({ journal: [] }), /journal.*cardinality/i);
+  assert.throws(() => verify({ journal: [journal, { ...journal }] }), /journal.*cardinality/i);
+  assert.throws(() => verify({ journal: [{ ...journal, journalId: "b".repeat(64) }] }), /journal.*cardinality/i);
+  assert.throws(() => verify({ journal: [{ ...journal, requestId: "2".repeat(64) }] }), /identity.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, absoluteUrl: `${url}?forged=1` }] }), /URL.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, route: "media/other.webm" }] }), /route.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, range: "bytes=1-" }] }), /range.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, status: 200 }] }), /status.*206/i);
+  assert.throws(() => verify({ journal: [{ ...journal, finished: false }] }), /incomplete/i);
+  assert.throws(() => verify({ journalWindow: { start: 5, end: 5 } }), /outside.*window/i);
+});
+
+test("F2-GOV-09-F14 binds a WebKit response without Playwright identity only through its unique server journal", () => {
+  const windowId = "window-f14-journal-only";
+  const requestId = "2".repeat(64);
+  const journalId = "b".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-";
+  const request = { requestId, url, route, range, resourceType: "media" };
+  const observation = { requestId: null, url, route, range, status: 206, journalId, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [request],
+    localResponses: [observation],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+    ...overrides,
+  });
+  assert.equal(verify().trustedResponses, 1, "the server journal must remain the sole identity authority");
+  assert.throws(() => verify({ localResponses: [{ ...observation, journalId: null }] }), /journal identity.*absent|malformed/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, journalId: "c".repeat(64) }] }), /no bound journal|journal.*record|binding/i);
+  assert.throws(() => verify({ localResponses: [observation, { ...observation }] }), /journal identity is duplicated|cardinality/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, requestId: "3".repeat(64) }] }), /unknown request identity/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, url: `${url}?forged=1` }] }), /URL.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, route: "media/other.webm" }] }), /route.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, range: "bytes=1-" }] }), /range.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, status: 200 }] }), /status.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, status: 0 }] }), /status 0|indeterminate.*journal/i);
+  assert.throws(() => verify({ journal: [{ ...record, requestId: null }] }), /extra|unattributed|identity.*absent/i);
+  assert.throws(() => verify({ journal: [{ ...record, finished: false }] }), /incomplete/i);
+  assert.throws(() => verify({ journal: [record, { ...record, sequence: 1, journalId: "d".repeat(64) }] }), /cardinality|duplicated|extra/i);
+});
+
+test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journal binding load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\)/);
+    assert.doesNotMatch(source, /assert\.equal\(engine,\s*["']webkit["']/);
+    assert.match(source, /validObservationByJournal\.get\(record\.journalId\)/);
+    assert.match(source, /observation\.requestId !== null/);
+    assert.match(source, /trusted local response journal identity is absent or malformed/);
+    assert.match(source, /response\.status === 0/);
+    assert.match(source, /collection\.seal\(fingerprint\)/);
+    assert.match(source, /boundRequestByJournal\.has\(record\.journalId\)/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  for (const [label, pattern, replacement] of [
+    ["accept any reason", "TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason)", "true"],
+    ["reinstate engine gate", "TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason)", 'engine === "webkit"'],
+    ["trust browser request identity", "validObservationByJournal.get(record.journalId)", "validObservationByRequest.get(record.requestId)"],
+    ["accept observation without journal", 'assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);', ""],
+    ["promote status zero", "response.status === 0", "false"],
+    ["remove seal", "collection.seal(fingerprint)", "void fingerprint"],
+    ["relax journal cardinality", "boundRequestByJournal.has(record.journalId)", "false"],
+  ]) {
+    const mutated = consumer.replace(pattern, replacement);
+    assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
+    assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression/i, `${label} mutation escaped`);
+  }
+});
+
 test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journal and refuses headerless WebKit internals", async () => {
   assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));

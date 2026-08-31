@@ -24,6 +24,7 @@ const NETWORK_CONTROL_ACTIONS = Object.freeze([
   "resource-hint-dns-prefetch", "consent-loader", "form-submit",
 ]);
 const RESOURCE_HINT_ACTIONS = new Set(["resource-hint-preconnect", "resource-hint-dns-prefetch"]);
+const TRUSTED_LOCAL_CANCELLATION_REASONS = new Set(["Load request cancelled", "net::ERR_ABORTED"]);
 const networkControlStatus = (action) => RESOURCE_HINT_ACTIONS.has(action)
   ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
   : "BLOCKED_AND_RECORDED";
@@ -343,24 +344,31 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
       refusalObservationByRejection.set(response.rejectionId, response);
       continue;
     }
-    const request = requestById.get(response.requestId);
-    assert.ok(request, `${engine}: trusted local response has an unknown request identity`);
-    assert.equal(response.url, request.url, `${engine}: trusted local response URL is divergent`);
-    assert.equal(response.route, request.route, `${engine}: trusted local response route is divergent`);
-    assert.equal(response.range, request.range, `${engine}: trusted local response range is divergent`);
     if (response.status === 0) {
       assert.equal(response.journalId ?? null, null, `${engine}: indeterminate local response must not claim a trusted journal identity`);
+      const request = requestById.get(response.requestId);
+      assert.ok(request, `${engine}: indeterminate local response has an unknown request identity`);
+      assert.equal(response.url, request.url, `${engine}: indeterminate local response URL is divergent`);
+      assert.equal(response.route, request.route, `${engine}: indeterminate local response route is divergent`);
+      assert.equal(response.range, request.range, `${engine}: indeterminate local response range is divergent`);
       assert.equal(indeterminateObservationByRequest.has(response.requestId), false, `${engine}: indeterminate local response cardinality is duplicated for ${response.requestId}`);
       indeterminateObservationByRequest.set(response.requestId, response);
       indeterminateObservations.push(response);
       continue;
     }
     assertTrustedLocalResponseStatus(response.status, response.url);
-    assert.equal(validObservationByRequest.has(response.requestId), false, `${engine}: trusted local response cardinality is not exactly one for ${response.requestId}`);
     assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);
     assert.equal(validObservationByJournal.has(response.journalId), false, `${engine}: trusted local response journal identity is duplicated`);
-    validObservationByRequest.set(response.requestId, response);
     validObservationByJournal.set(response.journalId, response);
+    if (response.requestId !== null) {
+      const request = requestById.get(response.requestId);
+      assert.ok(request, `${engine}: trusted local response has an unknown request identity`);
+      assert.equal(response.url, request.url, `${engine}: trusted local response URL is divergent`);
+      assert.equal(response.route, request.route, `${engine}: trusted local response route is divergent`);
+      assert.equal(response.range, request.range, `${engine}: trusted local response range is divergent`);
+      assert.equal(validObservationByRequest.has(response.requestId), false, `${engine}: trusted local response cardinality is not exactly one for ${response.requestId}`);
+      validObservationByRequest.set(response.requestId, response);
+    }
   }
 
   const trustedResponseByRequest = new Map();
@@ -377,7 +385,10 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
     assert.equal(record.route, request.route, `${engine}: trusted journal request route is divergent`);
     assert.equal(record.range, request.range, `${engine}: trusted journal request range is divergent`);
     if (observation) {
-      assert.equal(observation.requestId, requestId, `${engine}: trusted journal request identity is divergent from its response`);
+      if (observation.requestId !== null) assert.equal(observation.requestId, requestId, `${engine}: trusted journal request identity is divergent from its response`);
+      assert.equal(observation.url, record.absoluteUrl, `${engine}: trusted local response URL is divergent from the journal`);
+      assert.equal(observation.route, record.route, `${engine}: trusted local response route is divergent from the journal`);
+      assert.equal(observation.range, record.range, `${engine}: trusted local response range is divergent from the journal`);
       assert.equal(observation.status, record.status, `${engine}: trusted local response status is divergent from the journal`);
     }
     const trusted = { requestId, url: record.absoluteUrl, route: record.route, range: record.range, status: record.status, journalId: record.journalId };
@@ -385,7 +396,7 @@ export function assertTrustedJournalBijection({ engine, windowId, localRequests,
     boundRequestByJournal.set(record.journalId, requestId);
   }
   for (const request of localRequests) assert.ok(trustedResponseByRequest.has(request.requestId), `${engine}: trusted server response cardinality is not exactly one for ${request.requestId}`);
-  for (const response of validObservationByRequest.values()) assert.ok(boundRequestByJournal.has(response.journalId), `${engine}: trusted local response has no bound journal record`);
+  for (const response of validObservationByJournal.values()) assert.ok(boundRequestByJournal.has(response.journalId), `${engine}: trusted local response has no bound journal record`);
   for (const response of indeterminateObservations) assert.ok(trustedResponseByRequest.has(response.requestId), `${engine}: indeterminate local response has no completed server-owned record`);
 
   const rejectionIds = new Set();
@@ -445,8 +456,7 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
     assert.match(failure.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: failed local request identity is absent`);
     assert.equal(seen.has(failure.requestId), false, `${engine}: failed local request identity is duplicated`);
     seen.add(failure.requestId);
-    assert.equal(engine, "webkit", `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized WebKit cancellation`);
-    assert.equal(failure.reason, "Load request cancelled", `${engine}: local failure reason is not the known benign WebKit cancellation`);
+    assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);
     const matchingResponses = responses.filter(({ requestId }) => requestId === failure.requestId);
     assert.equal(matchingResponses.length, 1, `${engine}: trusted local response cardinality is not exactly one for ${failure.requestId}`);
     const [response] = matchingResponses;
