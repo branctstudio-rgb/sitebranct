@@ -585,8 +585,10 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     const url = new URL(response.url());
     if (url.origin === server.origin) {
       const metadata = requestMetadata.get(response.request());
-      const journalId = response.headers()["x-branct-trusted-journal-id"] ?? null;
-      const rejectionId = response.headers()["x-branct-trusted-rejection-id"] ?? undefined;
+      const responseHeaders = response.headers();
+      const journalId = responseHeaders["x-branct-trusted-journal-id"] ?? null;
+      const rejectionId = responseHeaders["x-branct-trusted-rejection-id"] ?? undefined;
+      const serverRequestId = responseHeaders["x-branct-trusted-request-id"] ?? null;
       const status = response.status();
       let validated;
       try { validated = server.validateRequest(url.href); }
@@ -595,7 +597,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         return;
       }
       const range = metadata?.range ?? response.request().headers().range ?? null;
-      const observation = { requestId: metadata?.requestId ?? null, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
+      if (!metadata && serverRequestId) localRequests.push({ requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: scope.phase, action: scope.action, identityOwner: "server" });
+      const observation = { requestId: metadata?.requestId ?? serverRequestId, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
       localResponses.push(observation);
       if (![200, 206, 403].includes(status)) localViolations.push({ url: url.href, reason: `trusted local response status ${status}`, phase: scope.phase, action: scope.action });
     }
@@ -676,6 +679,11 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
   };
 
   return { flowAttempts, controlAttempts, localRequests, localResponses, localFailures, localViolations, setScope, recordTrustedControl, auditExternalResourceHints, finalizeLocalFailureCorrelations, assertStillVerified };
+}
+
+export async function drainTrustedPage(page) {
+  assert.ok(page && typeof page.evaluate === "function", "trusted drain page is absent");
+  await page.evaluate(() => globalThis.stop());
 }
 
 async function waitForControlAttempt(policy, action, before) {
@@ -822,7 +830,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
     });
     assertNoObservedExternalAttempts([{ engine, networkIsolation: { flowAttempts: networkPolicy.flowAttempts } }]);
     networkPolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });
-    await page.goto("about:blank", { waitUntil: "load" });
+    await drainTrustedPage(page);
     await networkPolicy.finalizeLocalFailureCorrelations();
     await page.close();
     await context.close();
@@ -839,7 +847,7 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
         const probePage = await probeContext.newPage();
         controls.push(await runNetworkControl(probePage, probePolicy, engine, action, server.origin, probeId));
         probePolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });
-        await probePage.goto("about:blank", { waitUntil: "load" });
+        await drainTrustedPage(probePage);
         await probePolicy.finalizeLocalFailureCorrelations();
         await probePage.close();
         await probeContext.close();

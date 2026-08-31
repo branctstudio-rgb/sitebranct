@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "files": [
-    { "role": "consumer", "path": "scripts/governance/f2-gov-08-consumer.mjs", "gitMode": "100644", "gitType": "blob", "size": 63979, "sha256": "380f64642c1f153f12e892db6e13ffd202559f4f9a0b13865f4467ade26d9c06" },
+    { "role": "consumer", "path": "scripts/governance/f2-gov-08-consumer.mjs", "gitMode": "100644", "gitType": "blob", "size": 64512, "sha256": "3d1b91b7c68f9afeeb7971583215edd15672b94183c8631b0e9b42a98297b8a4" },
     { "role": "matrix", "path": "fixtures/audit/f2-gov-08-matrix.json", "gitMode": "100644", "gitType": "blob", "size": 1319, "sha256": "1b46c80037735b1f0e8c2913fdc8d5f4c4f71514e2a425446356e9eaf5a4fde3" },
     { "role": "expectations", "path": "fixtures/audit/f2-gov-08-expectations.json", "gitMode": "100644", "gitType": "blob", "size": 1415, "sha256": "c9aa21ffe8c7c99e5b56047cac95a0f0c7900d3492e32abb7799a1f175190850" },
-    { "role": "staticServer", "path": "scripts/governance/f2-gov-08-static-server.mjs", "gitMode": "100644", "gitType": "blob", "size": 14864, "sha256": "9b90be15fa07069fd60071cb2f5a2bbad8493f31c1ca8829e8b58ba69895e0f1" },
+    { "role": "staticServer", "path": "scripts/governance/f2-gov-08-static-server.mjs", "gitMode": "100644", "gitType": "blob", "size": 15832, "sha256": "0291145ca4a356cac7f548870e36eda0fc53c6b8d9923fcbe4d11d1aa6744df3" },
     { "role": "runtime", "path": "fixtures/audit/f2-01-ci-runtime.json", "gitMode": "100644", "gitType": "blob", "size": 950, "sha256": "dfaa812b256458e184373b42ec3da9ebd6528e2fd3c1974db193c51470698e7e" },
     { "role": "menuEvidence", "path": "fixtures/audit/f2-01-menu-evidence-matrix.json", "gitMode": "100644", "gitType": "blob", "size": 44174, "sha256": "a6f9c4f19f1ba4b222c5112ee5568c7f7b9c8b695f64b6ef568e195a83241a0c" },
     { "role": "targetBaseline", "path": "fixtures/audit/f2-01-baseline-results.json", "gitMode": "100644", "gitType": "blob", "size": 133884, "sha256": "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }

@@ -146,10 +146,14 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
   const requestLog = [];
   let activeWindow = null;
   const journalDigest = (records) => sha256(Buffer.from(JSON.stringify(records)));
+  const continuationCookieName = "branct_trusted_continuation";
+  const cookieValue = (header, name) => (header ?? "").split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
   const windowRecords = (window) => requestLog.filter(({ windowId, authorized }) => windowId === window.windowId && authorized === true);
   const windowRejections = (window) => requestLog.filter(({ windowId, authorized }) => windowId === window.windowId && authorized === false);
   const server = createServer((request, response) => {
     const window = activeWindow;
+    const headerAuthorized = window ? request.headers["x-branct-trusted-window-capability"] === window.capability : true;
+    const continuationAuthorized = Boolean(window && !headerAuthorized && cookieValue(request.headers.cookie, continuationCookieName) === window.continuationCapability);
     const record = {
       sequence: requestLog.length,
       windowId: window?.windowId ?? null,
@@ -167,7 +171,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       status: null,
       bytes: 0,
       finished: false,
-      authorized: window ? request.headers["x-branct-trusted-window-capability"] === window.capability : true,
+      authorized: headerAuthorized || continuationAuthorized,
     };
     requestLog.push(record);
     try {
@@ -196,6 +200,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         response.end("blocked: trusted server request capability is absent or invalid");
         return;
       }
+      if (window && (continuationAuthorized || record.requestId === null)) record.requestId = sha256(Buffer.from(`${window.secret}:request:${record.sequence}:${absolute}:${record.range ?? ""}`));
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
       const target = trustedTarget(canonicalRoot, route);
       const body = readFileSync(target);
@@ -216,6 +221,8 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         ...(range ? { "content-range": `bytes ${range.start}-${range.end}/${body.length}` } : {}),
         "cache-control": "no-store",
         ...(record.journalId ? { "x-branct-trusted-journal-id": record.journalId } : {}),
+        ...(record.requestId ? { "x-branct-trusted-request-id": record.requestId } : {}),
+        ...(window ? { "set-cookie": `${continuationCookieName}=${window.continuationCapability}; Path=/; HttpOnly; SameSite=Strict` } : {}),
         "content-security-policy-report-only": "default-src 'self' data:; connect-src 'self'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
       });
       response.end(payload);
@@ -240,6 +247,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       windowId: sha256(randomBytes(32)),
       secret: randomBytes(32).toString("hex"),
       capability: randomBytes(32).toString("hex"),
+      continuationCapability: randomBytes(32).toString("hex"),
       state: "OPEN",
       violation: null,
       sealedCount: null,

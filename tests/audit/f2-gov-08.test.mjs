@@ -1924,6 +1924,57 @@ test("F2-GOV-09-F13 rejects duplicate indeterminate status-zero observations", (
   );
 });
 
+test("F2-GOV-09-F15 server transports a server-owned identity to a headerless continuation", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f15-continuation-"));
+  const bytes = Buffer.from("trusted media continuation");
+  await write(directory, "fixture.webm", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "fixture.webm", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    const firstRequestId = "1".repeat(64);
+    const first = await fetch(`${server.origin}/fixture.webm`, { headers: window.authorizeHeaders({ "x-branct-trusted-request-id": firstRequestId, range: "bytes=0-7" }) });
+    assert.equal(first.status, 206);
+    const cookie = first.headers.get("set-cookie");
+    assert.match(cookie ?? "", /HttpOnly/i, "continuation capability must not be readable by candidate JavaScript");
+    assert.match(cookie ?? "", /SameSite=Strict/i, "continuation capability must remain same-site");
+    const continuation = await fetch(`${server.origin}/fixture.webm`, { headers: { cookie, range: "bytes=8-" } });
+    assert.equal(continuation.status, 206, "a server-authorized internal continuation must never surface as status zero");
+    const continuationRequestId = continuation.headers.get("x-branct-trusted-request-id");
+    const continuationJournalId = continuation.headers.get("x-branct-trusted-journal-id");
+    assert.match(continuationRequestId ?? "", /^[0-9a-f]{64}$/);
+    assert.match(continuationJournalId ?? "", /^[0-9a-f]{64}$/);
+    assert.notEqual(continuationRequestId, firstRequestId);
+    const record = window.snapshot().records.find(({ journalId }) => journalId === continuationJournalId);
+    assert.equal(record?.requestId, continuationRequestId, "transported identity must be owned by the matching journal record");
+    assert.equal(record?.range, "bytes=8-");
+    assert.equal(record?.status, 206);
+    assert.equal(record?.finished, true);
+    const forgedRequestId = "f".repeat(64);
+    const transplanted = await fetch(`${server.origin}/fixture.webm`, { headers: { cookie, range: "bytes=0-", "x-branct-trusted-request-id": forgedRequestId } });
+    const transplantedRequestId = transplanted.headers.get("x-branct-trusted-request-id");
+    assert.equal(transplanted.status, 206);
+    assert.match(transplantedRequestId ?? "", /^[0-9a-f]{64}$/);
+    assert.notEqual(transplantedRequestId, forgedRequestId, "a cookie-only continuation must overwrite a caller-supplied identity");
+    assert.equal(window.snapshot().records.find(({ journalId }) => journalId === transplanted.headers.get("x-branct-trusted-journal-id"))?.requestId, transplantedRequestId);
+    const forged = await fetch(`${server.origin}/fixture.webm`, { headers: { cookie: "branct_trusted_continuation=forged", range: "bytes=0-" } });
+    assert.equal(forged.status, 403, "a forged continuation capability must fail closed");
+    assert.match(forged.headers.get("x-branct-trusted-rejection-id") ?? "", /^[0-9a-f]{64}$/);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F15 drains without starting a competing navigation", async () => {
+  const calls = [];
+  const page = {
+    evaluate: async (callback) => { calls.push("stop"); assert.match(String(callback), /stop/); },
+    goto: async () => { throw new Error('Navigation to "about:blank" is interrupted by another navigation to "chrome-error://chromewebdata/"'); },
+  };
+  await trustedConsumer.drainTrustedPage(page);
+  assert.deepEqual(calls, ["stop"]);
+});
+
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
@@ -1965,7 +2016,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "record.authorized !== true",
     'if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))',
   ]) {
-    const mutated = staticServer.replace(pattern, "false");
+    const mutated = staticServer.replaceAll(pattern, "false");
     assert.notEqual(mutated, staticServer, `server mutation did not alter bytes: ${pattern}`);
     assert.throws(() => assertServerGuards(mutated), /input did not match|late-request guard/i, `server mutation escaped: ${pattern}`);
   }
@@ -2039,13 +2090,19 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     assert.match(source, /journalWindow\.seal\(\);/);
     assert.match(source, /boundRequestByJournal\.has\(record\.journalId\)/);
     assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
-    assert.match(source, /response\.headers\(\)\["x-branct-trusted-journal-id"\]/);
+    assert.match(source, /responseHeaders\["x-branct-trusted-journal-id"\]/);
+    assert.match(source, /responseHeaders\["x-branct-trusted-request-id"\]/);
     assert.match(source, /journalWindow\.authorizeHeaders\(headers\)/);
+    assert.match(source, /await drainTrustedPage\(page\);/);
+    assert.match(source, /await drainTrustedPage\(probePage\);/);
     assert.match(source, /const correlation = assertTrustedJournalBijection\(\{/);
   };
   assert.doesNotThrow(() => assertGuards(consumer));
   assert.match(staticServer, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
   assert.match(staticServer, /record\.authorized !== true/);
+  assert.match(staticServer, /HttpOnly; SameSite=Strict/);
+  assert.match(staticServer, /window\.continuationCapability/);
+  assert.match(staticServer, /continuationAuthorized \|\| record\.requestId === null/);
   for (const [label, pattern] of [
     ["consumer quiescence", "    collection.beginQuiescence();"],
     ["server quiescence", "    journalWindow.beginQuiescence();"],
@@ -2053,8 +2110,11 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     ["server seal", "    journalWindow.seal();"],
     ["extra journal rejection", "boundRequestByJournal.has(record.journalId)"],
     ["server response cardinality", "trustedResponseByRequest.has(request.requestId)"],
-    ["server-owned response binding", "response.headers()[\"x-branct-trusted-journal-id\"]"],
+    ["server-owned response binding", "responseHeaders[\"x-branct-trusted-journal-id\"]"],
+    ["server-owned request identity", "responseHeaders[\"x-branct-trusted-request-id\"]"],
     ["consumer-only request capability", "journalWindow.authorizeHeaders(headers)"],
+    ["measured lifecycle drain", "await drainTrustedPage(page);"],
+    ["control lifecycle drain", "await drainTrustedPage(probePage);"],
     ["closed bijection", "const correlation = assertTrustedJournalBijection({"],
   ]) {
     const mutated = consumer.replace(pattern, label === "extra journal rejection" ? "true" : "");
@@ -2064,12 +2124,18 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
   for (const pattern of [
     'request.headers["x-branct-trusted-window-capability"] === window.capability',
     "record.authorized !== true",
+    "window.continuationCapability",
+    "HttpOnly; SameSite=Strict",
+    "continuationAuthorized || record.requestId === null",
   ]) {
-    const mutated = staticServer.replace(pattern, "false");
+    const mutated = staticServer.replaceAll(pattern, "false");
     assert.notEqual(mutated, staticServer, "server capability mutation did not alter bytes");
     assert.throws(() => {
       assert.match(mutated, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
       assert.match(mutated, /record\.authorized !== true/);
+      assert.match(mutated, /HttpOnly; SameSite=Strict/);
+      assert.match(mutated, /window\.continuationCapability/);
+      assert.match(mutated, /continuationAuthorized \|\| record\.requestId === null/);
     }, /input did not match/i, "server capability mutation escaped the structural guard");
   }
 });
