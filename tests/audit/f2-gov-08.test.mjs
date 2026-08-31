@@ -938,12 +938,19 @@ test("F2-GOV-09-F7 mutation control keeps resource-hint status and disposition g
 });
 
 test("F2-GOV-09 isolates measured content from every trusted control context", () => {
-  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   assert.match(consumer, /await context\.close\(\);\s*measuredContextClosed = true;/);
   assert.match(consumer, /const probeContext = await browser\.newContext/);
-  assert.match(consumer, /await probeContext\.close\(\);\s*probeContextClosed = true;\s*await probePolicy\.finalizeLocalFailureCorrelations\(\);/);
   assert.match(consumer, /finally \{ if \(!probeContextClosed\) await probeContext\.close\(\); \}/);
   assert.doesNotMatch(consumer, /installRuntimeNetworkPolicy\(context, server, engine\)(?:;|\))/);
+  for (const [label, drain, finalize, close, verify] of [
+    ["measured", 'networkPolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await networkPolicy.finalizeLocalFailureCorrelations();", "await context.close();", "networkPolicy.assertStillVerified();"],
+    ["probe", 'probePolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await probePolicy.finalizeLocalFailureCorrelations();", "await probeContext.close();", "probePolicy.assertStillVerified();"],
+  ]) {
+    const positions = [drain, finalize, close, verify].map((fragment) => consumer.indexOf(fragment));
+    assert.ok(positions.every((position) => position >= 0), `${label} context lifecycle is incomplete`);
+    assert.deepEqual([...positions].sort((left, right) => left - right), positions, `${label} context must drain, seal, close and then verify late-event absence`);
+  }
 });
 
 test("F2-GOV-09 validates a same-origin request against the authoritative blob allowlist before continuing", () => {
@@ -1603,6 +1610,7 @@ test("F2-GOV-09-F14 binds a WebKit response without Playwright identity only thr
   assert.throws(() => verify({ localResponses: [{ ...observation, range: "bytes=1-" }] }), /range.*divergent/i);
   assert.throws(() => verify({ localResponses: [{ ...observation, status: 200 }] }), /status.*divergent/i);
   assert.throws(() => verify({ localResponses: [{ ...observation, status: 0 }] }), /status 0|indeterminate.*journal/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, requestId, status: 0, journalId: null }] }), /status 0/i, "status zero must remain invalid even when Playwright supplies a known request identity");
   assert.throws(() => verify({ journal: [{ ...record, requestId: null }] }), /extra|unattributed|identity.*absent/i);
   assert.throws(() => verify({ journal: [{ ...record, finished: false }] }), /incomplete/i);
   assert.throws(() => verify({ journal: [record, { ...record, sequence: 1, journalId: "d".repeat(64) }] }), /cardinality|duplicated|extra/i);
@@ -1655,9 +1663,12 @@ test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journa
     const page = await context.newPage();
     await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
     await page.waitForTimeout(750);
+    policy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });
+    await page.goto("about:blank", { waitUntil: "load" });
+    const correlation = await policy.finalizeLocalFailureCorrelations();
     await page.close();
     await context.close();
-    const correlation = await policy.finalizeLocalFailureCorrelations();
+    policy.assertStillVerified();
     assert.equal(correlation.correlatedFailures, 0);
     assert.equal(policy.localFailures.length, 0);
     const refusedInternals = server.getRequestLog().filter(({ authorized, url, status }) => authorized === false && url === "/media/fixture.webm" && status === 403);
@@ -1770,7 +1781,7 @@ test("F2-GOV-09-F13 never promotes status zero while reconciling the CI 0/200 ob
   const url = "http://127.0.0.1:4173/media/fixture.webm";
   const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
   const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
-  const result = trustedConsumer.assertTrustedJournalBijection({
+  assert.throws(() => trustedConsumer.assertTrustedJournalBijection({
     engine: "webkit",
     windowId,
     localRequests: [request],
@@ -1781,9 +1792,7 @@ test("F2-GOV-09-F13 never promotes status zero while reconciling the CI 0/200 ob
     localFailures: [],
     journal: [record],
     journalRejections: [],
-  });
-  assert.equal(result.trustedResponses, 1);
-  assert.equal(result.indeterminateBrowserResponses, 1);
+  }), /status 0/i);
   assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(0, url), /status 0/i);
 });
 
@@ -1827,7 +1836,7 @@ test("F2-GOV-09-F13 keeps identity, cardinality and sealing fail-closed under ad
   assert.equal(verify({ localRequests: [requestB, requestA], localResponses: [observationB, observationA], journal: [recordB, recordA] }).trustedResponses, 2, "the closed bijection must be order-independent");
   assert.throws(() => verify({ journal: [recordA, { ...recordB, requestId: requestA.requestId }] }), /cardinality|divergent|binding is duplicated/i, "duplicate request binding must fail");
   assert.throws(() => verify({ localResponses: [observationA, { ...observationA }] }), /cardinality|duplicated/i, "duplicate browser observation must fail");
-  assert.throws(() => verify({ localResponses: [{ ...observationA, status: 0, journalId: null }], journal: [recordB] }), /cardinality|completed server-owned record|unknown/i, "status zero without its exact completed record must fail");
+  assert.throws(() => verify({ localResponses: [{ ...observationA, status: 0, journalId: null }], journal: [recordB] }), /status 0/i, "status zero without its exact completed record must fail");
   assert.throws(() => verify({ localRequests: [{ ...requestA, requestId: null }, requestB] }), /request identity is absent/i);
   assert.throws(() => verify({ journal: [{ ...recordA, requestId: requestB.requestId }, recordB] }), /cardinality|binding is duplicated|URL.*divergent|range.*divergent/i, "a swapped identity must fail");
   assert.throws(() => verify({ journal: [{ ...recordA, absoluteUrl: `${url}?forged=1` }, recordB] }), /URL.*divergent/i);
@@ -1910,7 +1919,7 @@ test("F2-GOV-09-F13 rejects duplicate indeterminate status-zero observations", (
       journal: [record],
       journalRejections: [],
     }),
-    /indeterminate.*duplicated|cardinality/i,
+    /status 0/i,
     "duplicate status-zero observations must fail closed",
   );
 });
@@ -1920,7 +1929,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
   const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
   const assertConsumerGuards = (source) => {
     assert.match(source, /response\.status === 0/);
-    assert.match(source, /indeterminateObservationByRequest\.has\(response\.requestId\)/);
+    assert.match(source, /trusted local response status 0 is invalid/);
     assert.match(source, /const requestId = record\.requestId;/);
     assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
     assert.match(source, /rejection\.status, 403/);
@@ -1939,7 +1948,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
   assert.doesNotThrow(() => assertServerGuards(staticServer));
   for (const pattern of [
     "response.status === 0",
-    "indeterminateObservationByRequest.has(response.requestId)",
+    "trusted local response status 0 is invalid",
     "const requestId = record.requestId;",
     "trustedResponseByRequest.has(request.requestId)",
     "rejection.status, 403",
