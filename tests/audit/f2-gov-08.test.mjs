@@ -1517,6 +1517,27 @@ test("F2-GOV-09-F11-F1 rejects every unproven local request failure and accepts 
   assert.throws(() => accept({ responses: [{ ...response, status: 0 }] }), /status 0/i);
 });
 
+test("F2-GOV-09-F14 exposes the observed requestfailed reason before classifying a cancellation", () => {
+  const requestId = "f".repeat(64);
+  const journalId = "e".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-";
+  const response = { requestId, url, route, range, status: 206, journalId };
+  const journal = { sequence: 0, journalId, requestId, absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  assert.throws(
+    () => trustedConsumer.assertTrustedLocalFailureCorrelations({
+      engine: "chromium",
+      failures: [{ requestId, url, route, range, reason: "F14_DIAGNOSTIC_REASON" }],
+      responses: [response],
+      journal: [journal],
+      journalWindow: { start: 0, end: 0 },
+    }),
+    /F14_DIAGNOSTIC_REASON/,
+    "the fail-closed diagnostic must expose the actual requestfailed reason before any reason can be authorized",
+  );
+});
+
 test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journal and refuses headerless WebKit internals", async () => {
   assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));

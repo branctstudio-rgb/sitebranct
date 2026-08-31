@@ -445,7 +445,7 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
     assert.match(failure.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: failed local request identity is absent`);
     assert.equal(seen.has(failure.requestId), false, `${engine}: failed local request identity is duplicated`);
     seen.add(failure.requestId);
-    assert.equal(engine, "webkit", `${engine}: local request failure is not an authorized WebKit cancellation`);
+    assert.equal(engine, "webkit", `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized WebKit cancellation`);
     assert.equal(failure.reason, "Load request cancelled", `${engine}: local failure reason is not the known benign WebKit cancellation`);
     const matchingResponses = responses.filter(({ requestId }) => requestId === failure.requestId);
     assert.equal(matchingResponses.length, 1, `${engine}: trusted local response cardinality is not exactly one for ${failure.requestId}`);
