@@ -5,7 +5,7 @@
   "canonicalAuthority": {
     "source": "exact-base-sha-git-objects",
     "manifestPath": "fixtures/audit/f2-gov-08-authority-manifest.json",
-    "manifestSha256": "ff5972bd8c339dbfd49538093a3a20885f6721a38e4ffaeecffe4308816761f5",
+    "manifestSha256": "233723d4d82ca93fd40ecf901cb1440b4b3f2bb5d58f075b2807966112827c38",
     "consumerPath": "scripts/governance/f2-gov-08-consumer.mjs",
     "matrixPath": "fixtures/audit/f2-gov-08-matrix.json",
     "expectationsPath": "fixtures/audit/f2-gov-08-expectations.json",

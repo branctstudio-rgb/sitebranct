@@ -479,14 +479,17 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
   return { correlatedFailures: failures.length };
 }
 
-export function reconcileQuarantinedStatusZero({ engine, observations, journal }) {
+export function reconcileQuarantinedStatusZero({ engine, observations, journal, responses = [] }) {
   assert.ok(Array.isArray(observations), `${engine}: quarantined status-zero observations are malformed`);
   assert.ok(Array.isArray(journal), `${engine}: trusted server journal is malformed`);
+  assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
   const usedJournalIds = new Set();
   return observations.map((observation) => {
     assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
     assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
     assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
+    const conclusive = responses.filter((response) => response.url === observation.url && response.route === observation.route && response.range === observation.range);
+    assert.equal(conclusive.length, 0, `${engine}: quarantined status-zero response cardinality includes a duplicate conclusive response`);
     const matches = journal.filter((record) => record.absoluteUrl === observation.url && record.route === observation.route && record.range === observation.range);
     assert.equal(matches.length, 1, `${engine}: quarantined status-zero server cardinality is not exactly one`);
     const [record] = matches;
@@ -681,7 +684,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     assert.equal(sealedFingerprint, fingerprint, `${engine}: trusted collection changed after seal`);
     assert.notEqual(sealedSnapshot.state, "REJECTED", sealedSnapshot.violation ?? `${engine}: trusted server journal was rejected`);
     assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed`);
-    const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records });
+    const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses });
     const effectiveRequests = [...localRequests];
     for (const derived of derivedRequests) {
       const existing = effectiveRequests.find(({ requestId }) => requestId === derived.requestId);

@@ -2035,6 +2035,12 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
     identityOwner: "server",
   }]);
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation, { ...observation }], journal: [record] }), /cardinality|duplicate/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...observation, requestId, journalId, status: 206 }],
+  }), /cardinality|duplicate|conclusive/i, "status 0 plus a conclusive response for the same journal must fail closed");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [{ ...record, status: 0 }] }), /completed|status 0|conclusive/i);
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [{ ...observation, journalId }], journal: [record] }), /must not claim|identity/i);
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [] }), /cardinality|completed/i);
@@ -2055,7 +2061,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /Execution context was destroyed/);
     assert.match(source, /if \(!\/Execution context was destroyed\//);
     assert.match(source, /quarantinedStatusZero\.push/);
-    assert.match(source, /reconcileQuarantinedStatusZero\(\{ engine, observations: quarantinedStatusZero, journal: sealedSnapshot\.records \}\)/);
+    assert.match(source, /reconcileQuarantinedStatusZero\(\{ engine, observations: quarantinedStatusZero, journal: sealedSnapshot\.records, responses: localResponses \}\)/);
     assert.match(source, /status !== 0 && !\[200, 206, 403\]\.includes\(status\)/);
   };
   const assertServerGuards = (source) => {
@@ -2081,7 +2087,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "await context.addCookies([journalWindow.continuationCookie]);",
     "Execution context was destroyed",
     "quarantinedStatusZero.push",
-    "reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records })",
+    "reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses })",
     "status !== 0 && ![200, 206, 403].includes(status)",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");
