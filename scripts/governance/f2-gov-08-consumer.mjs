@@ -479,6 +479,27 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
   return { correlatedFailures: failures.length };
 }
 
+export function reconcileQuarantinedStatusZero({ engine, observations, journal }) {
+  assert.ok(Array.isArray(observations), `${engine}: quarantined status-zero observations are malformed`);
+  assert.ok(Array.isArray(journal), `${engine}: trusted server journal is malformed`);
+  const usedJournalIds = new Set();
+  return observations.map((observation) => {
+    assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
+    assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
+    assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
+    const matches = journal.filter((record) => record.absoluteUrl === observation.url && record.route === observation.route && record.range === observation.range);
+    assert.equal(matches.length, 1, `${engine}: quarantined status-zero server cardinality is not exactly one`);
+    const [record] = matches;
+    assert.equal(usedJournalIds.has(record.journalId), false, `${engine}: quarantined status-zero journal identity is duplicated`);
+    usedJournalIds.add(record.journalId);
+    assert.equal(record.finished, true, `${engine}: quarantined status-zero record is not completed`);
+    assertTrustedLocalResponseStatus(record.status, record.absoluteUrl);
+    assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no server-owned identity`);
+    assert.match(record.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no journal identity`);
+    return { requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" };
+  });
+}
+
 export async function installRuntimeNetworkPolicy(context, server, engine, channel, probeId = null) {
   assert.ok(["candidate-flow", "control-probe"].includes(channel), `${engine}: trusted network channel is invalid`);
   if (channel === "control-probe") assert.match(probeId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted control probe identity is absent`);
@@ -489,6 +510,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
   const localResponses = [];
   const localFailures = [];
   const localViolations = [];
+  const quarantinedStatusZero = [];
   const recordedRequests = new WeakSet();
   const requestMetadata = new WeakMap();
   const journalWindow = server.openJournalWindow();
@@ -567,8 +589,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         requestMetadata.set(request, metadata);
         localRequests.push(metadata);
         headers["x-branct-trusted-request-id"] = requestId;
-        const trustedResponse = await route.fetch({ headers: journalWindow.authorizeHeaders(headers) });
-        return route.fulfill({ response: trustedResponse });
+        return route.continue({ headers: journalWindow.authorizeHeaders(headers) });
       } catch (error) {
         localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action });
         return route.abort("blockedbyclient");
@@ -601,8 +622,9 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       const range = metadata?.range ?? response.request().headers().range ?? null;
       if (!metadata && serverRequestId) localRequests.push({ requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: scope.phase, action: scope.action, identityOwner: "server" });
       const observation = { requestId: metadata?.requestId ?? serverRequestId, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
-      localResponses.push(observation);
-      if (![200, 206, 403].includes(status)) localViolations.push({ url: url.href, reason: `trusted local response status ${status}`, phase: scope.phase, action: scope.action });
+      if (status === 0) quarantinedStatusZero.push({ ...observation, requestId: null, journalId: null, rejectionId: undefined });
+      else localResponses.push(observation);
+      if (status !== 0 && ![200, 206, 403].includes(status)) localViolations.push({ url: url.href, reason: `trusted local response status ${status}`, phase: scope.phase, action: scope.action });
     }
   });
   context.on("requestfailed", (request) => {
@@ -632,6 +654,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         responses: localResponses,
         failures: localFailures,
         violations: localViolations,
+        quarantinedStatusZero,
         journal: snapshot.records,
         journalRejections: snapshot.rejections,
       }));
@@ -651,16 +674,27 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       responses: localResponses,
       failures: localFailures,
       violations: localViolations,
+      quarantinedStatusZero,
       journal: sealedSnapshot.records,
       journalRejections: sealedSnapshot.rejections,
     }));
     assert.equal(sealedFingerprint, fingerprint, `${engine}: trusted collection changed after seal`);
     assert.notEqual(sealedSnapshot.state, "REJECTED", sealedSnapshot.violation ?? `${engine}: trusted server journal was rejected`);
     assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed`);
+    const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records });
+    const effectiveRequests = [...localRequests];
+    for (const derived of derivedRequests) {
+      const existing = effectiveRequests.find(({ requestId }) => requestId === derived.requestId);
+      if (existing) {
+        assert.equal(existing.url, derived.url, `${engine}: quarantined status-zero request URL is divergent`);
+        assert.equal(existing.route, derived.route, `${engine}: quarantined status-zero request route is divergent`);
+        assert.equal(existing.range, derived.range, `${engine}: quarantined status-zero request range is divergent`);
+      } else effectiveRequests.push(derived);
+    }
     const correlation = assertTrustedJournalBijection({
       engine,
       windowId: journalWindow.windowId,
-      localRequests,
+      localRequests: effectiveRequests,
       localResponses,
       localFailures,
       journal: sealedSnapshot.records,

@@ -2020,6 +2020,26 @@ test("F2-GOV-09-F16 does not equate a closed target with a destroyed execution c
   await assert.rejects(() => trustedConsumer.drainTrustedPage(page), /unrelated protocol failure/);
 });
 
+test("F2-GOV-09-F16 quarantines status zero and derives identity only from one completed server record", () => {
+  assert.equal(typeof trustedConsumer.reconcileQuarantinedStatusZero, "function");
+  const requestId = "a".repeat(64);
+  const journalId = "b".repeat(64);
+  const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const record = { requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record] }), [{
+    requestId,
+    url: observation.url,
+    route: observation.route,
+    range: observation.range,
+    resourceType: observation.resourceType,
+    identityOwner: "server",
+  }]);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation, { ...observation }], journal: [record] }), /cardinality|duplicate/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [{ ...record, status: 0 }] }), /completed|status 0|conclusive/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [{ ...observation, journalId }], journal: [record] }), /must not claim|identity/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [] }), /cardinality|completed/i);
+});
+
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
@@ -2032,10 +2052,11 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /refusalObservationByRejection\.get\(rejection\.rejectionId\)/);
     assert.match(source, /journalRejections: sealedSnapshot\.rejections/);
     assert.match(source, /await context\.addCookies\(\[journalWindow\.continuationCookie\]\);/);
-    assert.match(source, /await route\.fetch\(\{ headers: journalWindow\.authorizeHeaders\(headers\) \}\);/);
-    assert.match(source, /route\.fulfill\(\{ response: trustedResponse \}\)/);
     assert.match(source, /Execution context was destroyed/);
     assert.match(source, /if \(!\/Execution context was destroyed\//);
+    assert.match(source, /quarantinedStatusZero\.push/);
+    assert.match(source, /reconcileQuarantinedStatusZero\(\{ engine, observations: quarantinedStatusZero, journal: sealedSnapshot\.records \}\)/);
+    assert.match(source, /status !== 0 && !\[200, 206, 403\]\.includes\(status\)/);
   };
   const assertServerGuards = (source) => {
     assert.match(source, /rejectionId: window \? sha256/);
@@ -2058,9 +2079,10 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "refusalObservationByRejection.get(rejection.rejectionId)",
     "journalRejections: sealedSnapshot.rejections",
     "await context.addCookies([journalWindow.continuationCookie]);",
-    "await route.fetch({ headers: journalWindow.authorizeHeaders(headers) });",
-    "route.fulfill({ response: trustedResponse })",
     "Execution context was destroyed",
+    "quarantinedStatusZero.push",
+    "reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records })",
+    "status !== 0 && ![200, 206, 403].includes(status)",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");
     assert.notEqual(mutated, consumer, `consumer mutation did not alter bytes: ${pattern}`);
