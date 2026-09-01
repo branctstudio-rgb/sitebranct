@@ -687,7 +687,7 @@ export async function drainTrustedPage(page) {
   try {
     await page.evaluate(() => globalThis.stop());
   } catch (error) {
-    if (!/Execution context was destroyed|Target page, context or browser has been closed/.test(error?.message ?? "")) throw error;
+    if (!/Execution context was destroyed/.test(error?.message ?? "")) throw error;
   }
 }
 

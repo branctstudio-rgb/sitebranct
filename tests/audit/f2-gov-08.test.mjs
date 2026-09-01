@@ -2013,6 +2013,13 @@ test("F2-GOV-09-F16 keeps unrelated drain failures fail-closed", async () => {
   await assert.rejects(() => trustedConsumer.drainTrustedPage(page), /candidate drain invariant failed/);
 });
 
+test("F2-GOV-09-F16 does not equate a closed target with a destroyed execution context", async () => {
+  const page = {
+    evaluate: async () => { throw new Error("Target page, context or browser has been closed: unrelated protocol failure"); },
+  };
+  await assert.rejects(() => trustedConsumer.drainTrustedPage(page), /unrelated protocol failure/);
+});
+
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
@@ -2026,7 +2033,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /journalRejections: sealedSnapshot\.rejections/);
     assert.match(source, /await context\.addCookies\(\[journalWindow\.continuationCookie\]\);/);
     assert.match(source, /Execution context was destroyed/);
-    assert.match(source, /if \(!\/Execution context was destroyed\|Target page, context or browser has been closed\//);
+    assert.match(source, /if \(!\/Execution context was destroyed\//);
   };
   const assertServerGuards = (source) => {
     assert.match(source, /rejectionId: window \? sha256/);
