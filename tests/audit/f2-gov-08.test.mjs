@@ -2035,15 +2035,69 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
     identityOwner: "server",
   }]);
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation, { ...observation }], journal: [record] }), /cardinality|duplicate/i);
+  const conclusive = { ...observation, requestId, journalId, status: 206 };
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [conclusive],
+  }), [], "one conclusive server-owned response must consume, not duplicate, its indeterminate status-zero observation");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
     engine: "webkit",
     observations: [observation],
     journal: [record],
-    responses: [{ ...observation, requestId, journalId, status: 206 }],
-  }), /cardinality|duplicate|conclusive/i, "status 0 plus a conclusive response for the same journal must fail closed");
+    responses: [conclusive, { ...conclusive }],
+  }), /cardinality|duplicate|conclusive/i, "two conclusive responses for one status-zero observation must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...conclusive, journalId: "c".repeat(64) }],
+  }), /journal|identity|cardinality|conclusive/i, "a forged or transplanted conclusive journal identity must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...conclusive, requestId: "d".repeat(64) }],
+  }), /request identity|divergent/i, "a transplanted conclusive request identity must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...conclusive, status: 200 }],
+  }), /status.*divergent/i, "a conclusive status divergent from the journal must fail closed");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [{ ...record, status: 0 }] }), /completed|status 0|conclusive/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [{ ...record, finished: false }] }), /not completed/i, "a partial server response must fail closed");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [{ ...observation, journalId }], journal: [record] }), /must not claim|identity/i);
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [] }), /cardinality|completed/i);
+});
+
+test("F2-GOV-09-F17 records one server-owned request across indeterminate and conclusive observations", () => {
+  assert.equal(typeof trustedConsumer.recordServerOwnedRequest, "function");
+  const requests = [];
+  const request = {
+    requestId: "e".repeat(64),
+    url: "http://127.0.0.1:4173/media/fixture.webm",
+    route: "media/fixture.webm",
+    range: "bytes=0-1",
+    resourceType: "media",
+    phase: "candidate-flow",
+    action: "navigate",
+    identityOwner: "server",
+  };
+  trustedConsumer.recordServerOwnedRequest(requests, request, "webkit");
+  trustedConsumer.recordServerOwnedRequest(requests, { ...request }, "webkit");
+  assert.deepEqual(requests, [request], "status-zero plus conclusive events must retain exactly one server-owned request identity");
+  assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, url: "http://127.0.0.1:4173/media/transplanted.webm" }, "webkit"),
+    /URL.*divergent|identity.*transplanted/i,
+    "a duplicate identity transplanted to another URL must fail closed",
+  );
+  assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, range: "bytes=2-3" }, "webkit"),
+    /range.*divergent|identity.*transplanted/i,
+    "a duplicate identity transplanted to another range must fail closed",
+  );
 });
 
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
@@ -2062,6 +2116,14 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /if \(!\/Execution context was destroyed\//);
     assert.match(source, /quarantinedStatusZero\.push/);
     assert.match(source, /reconcileQuarantinedStatusZero\(\{ engine, observations: quarantinedStatusZero, journal: sealedSnapshot\.records, responses: localResponses \}\)/);
+    assert.match(source, /conclusive\.length <= 1/);
+    assert.match(source, /response\.requestId, record\.requestId/);
+    assert.match(source, /response\.journalId, record\.journalId/);
+    assert.match(source, /response\.status, record\.status/);
+    assert.match(source, /recordServerOwnedRequest\(localRequests/);
+    assert.match(source, /localRequests\.find\(\(\{ requestId \}\) => requestId === request\.requestId\)/);
+    assert.match(source, /existing\.url, request\.url/);
+    assert.match(source, /existing\.range, request\.range/);
     assert.match(source, /status !== 0 && !\[200, 206, 403\]\.includes\(status\)/);
   };
   const assertServerGuards = (source) => {
@@ -2088,6 +2150,14 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "Execution context was destroyed",
     "quarantinedStatusZero.push",
     "reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses })",
+    "conclusive.length <= 1",
+    "response.requestId, record.requestId",
+    "response.journalId, record.journalId",
+    "response.status, record.status",
+    "recordServerOwnedRequest(localRequests",
+    "localRequests.find(({ requestId }) => requestId === request.requestId)",
+    "existing.url, request.url",
+    "existing.range, request.range",
     "status !== 0 && ![200, 206, 403].includes(status)",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");

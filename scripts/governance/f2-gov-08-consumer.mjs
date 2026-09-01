@@ -484,12 +484,13 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
   assert.ok(Array.isArray(journal), `${engine}: trusted server journal is malformed`);
   assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
   const usedJournalIds = new Set();
-  return observations.map((observation) => {
+  const reconciled = [];
+  for (const observation of observations) {
     assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
     assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
     assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
     const conclusive = responses.filter((response) => response.url === observation.url && response.route === observation.route && response.range === observation.range);
-    assert.equal(conclusive.length, 0, `${engine}: quarantined status-zero response cardinality includes a duplicate conclusive response`);
+    assert.ok(conclusive.length <= 1, `${engine}: quarantined status-zero response cardinality includes duplicate conclusive responses`);
     const matches = journal.filter((record) => record.absoluteUrl === observation.url && record.route === observation.route && record.range === observation.range);
     assert.equal(matches.length, 1, `${engine}: quarantined status-zero server cardinality is not exactly one`);
     const [record] = matches;
@@ -499,8 +500,34 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
     assertTrustedLocalResponseStatus(record.status, record.absoluteUrl);
     assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no server-owned identity`);
     assert.match(record.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no journal identity`);
-    return { requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" };
-  });
+    if (conclusive.length === 1) {
+      const [response] = conclusive;
+      assertTrustedLocalResponseStatus(response.status, response.url);
+      assert.equal(response.requestId, record.requestId, `${engine}: conclusive response request identity is divergent from the journal`);
+      assert.equal(response.journalId, record.journalId, `${engine}: conclusive response journal identity is divergent`);
+      assert.equal(response.status, record.status, `${engine}: conclusive response status is divergent from the journal`);
+      continue;
+    }
+    reconciled.push({ requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" });
+  }
+  return reconciled;
+}
+
+export function recordServerOwnedRequest(localRequests, request, engine) {
+  assert.ok(Array.isArray(localRequests), `${engine}: trusted local request collection is malformed`);
+  assert.match(request?.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: server-owned request identity is absent or malformed`);
+  const existing = localRequests.find(({ requestId }) => requestId === request.requestId);
+  if (!existing) {
+    localRequests.push(request);
+    return;
+  }
+  assert.equal(existing.url, request.url, `${engine}: server-owned request URL is divergent for a duplicate identity`);
+  assert.equal(existing.route, request.route, `${engine}: server-owned request route is divergent for a duplicate identity`);
+  assert.equal(existing.range, request.range, `${engine}: server-owned request range is divergent for a duplicate identity`);
+  assert.equal(existing.resourceType, request.resourceType, `${engine}: server-owned request resource type is divergent for a duplicate identity`);
+  assert.equal(existing.phase, request.phase, `${engine}: server-owned request phase is divergent for a duplicate identity`);
+  assert.equal(existing.action, request.action, `${engine}: server-owned request action is divergent for a duplicate identity`);
+  assert.equal(existing.identityOwner, request.identityOwner, `${engine}: server-owned request ownership is divergent for a duplicate identity`);
 }
 
 export async function installRuntimeNetworkPolicy(context, server, engine, channel, probeId = null) {
@@ -623,7 +650,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         return;
       }
       const range = metadata?.range ?? response.request().headers().range ?? null;
-      if (!metadata && serverRequestId) localRequests.push({ requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: scope.phase, action: scope.action, identityOwner: "server" });
+      if (!metadata && serverRequestId) recordServerOwnedRequest(localRequests, { requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: scope.phase, action: scope.action, identityOwner: "server" }, engine);
       const observation = { requestId: metadata?.requestId ?? serverRequestId, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
       if (status === 0) quarantinedStatusZero.push({ ...observation, requestId: null, journalId: null, rejectionId: undefined });
       else localResponses.push(observation);
