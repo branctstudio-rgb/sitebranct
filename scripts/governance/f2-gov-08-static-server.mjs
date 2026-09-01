@@ -253,6 +253,13 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       sealedCount: null,
       sealedDigest: null,
     };
+    window.continuationCookie = Object.freeze({
+      name: continuationCookieName,
+      value: window.continuationCapability,
+      url: origin,
+      httpOnly: true,
+      sameSite: "Strict",
+    });
     activeWindow = window;
     const snapshot = () => ({
       windowId: window.windowId,
@@ -263,6 +270,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     });
     return {
       get windowId() { return window.windowId; },
+      get continuationCookie() { return window.continuationCookie; },
       authorizeHeaders: (headers = {}) => ({ ...headers, "x-branct-trusted-window-capability": window.capability }),
       snapshot,
       beginQuiescence: () => {

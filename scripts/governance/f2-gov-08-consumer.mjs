@@ -492,6 +492,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
   const recordedRequests = new WeakSet();
   const requestMetadata = new WeakMap();
   const journalWindow = server.openJournalWindow();
+  await context.addCookies([journalWindow.continuationCookie]);
   const collection = createTrustedCollectionLifecycle(`${engine} ${channel}`);
   let localSequence = 0;
   let finalized = null;
@@ -683,7 +684,11 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
 
 export async function drainTrustedPage(page) {
   assert.ok(page && typeof page.evaluate === "function", "trusted drain page is absent");
-  await page.evaluate(() => globalThis.stop());
+  try {
+    await page.evaluate(() => globalThis.stop());
+  } catch (error) {
+    if (!/Execution context was destroyed|Target page, context or browser has been closed/.test(error?.message ?? "")) throw error;
+  }
 }
 
 async function waitForControlAttempt(policy, action, before) {

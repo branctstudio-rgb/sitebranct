@@ -1660,6 +1660,10 @@ test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journa
   try {
     const context = await browser.newContext();
     const policy = await trustedConsumer.installRuntimeNetworkPolicy(context, server, "webkit", "candidate-flow");
+    const continuationCookies = await context.cookies(server.origin);
+    assert.deepEqual(continuationCookies.map(({ name, httpOnly }) => ({ name, httpOnly })), [
+      { name: "branct_trusted_continuation", httpOnly: true },
+    ], "the server-owned continuation capability must be installed before WebKit traffic");
     const page = await context.newPage();
     await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
     await page.waitForTimeout(750);
@@ -1671,6 +1675,7 @@ test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journa
     policy.assertStillVerified();
     assert.equal(correlation.correlatedFailures, 0);
     assert.equal(policy.localFailures.length, 0);
+    assert.equal(policy.localResponses.some(({ status }) => status === 0), false, "status zero must never be accepted or emitted as trusted evidence");
     const refusedInternals = server.getRequestLog().filter(({ authorized, url, status }) => authorized === false && url === "/media/fixture.webm" && status === 403);
     assert.ok(refusedInternals.length >= 1, "headerless WebKit media requests were not explicitly refused");
     assert.ok(refusedInternals.every(({ bytes, finished }) => bytes === 0 && finished === true));
@@ -1975,6 +1980,39 @@ test("F2-GOV-09-F15 drains without starting a competing navigation", async () =>
   assert.deepEqual(calls, ["stop"]);
 });
 
+test("F2-GOV-09-F16 installs the server-owned continuation capability before browser traffic", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f16-cookie-"));
+  const bytes = Buffer.from("trusted continuation cookie");
+  await write(directory, "fixture.webm", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "fixture.webm", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    assert.deepEqual(Object.keys(window.continuationCookie).sort(), ["httpOnly", "name", "sameSite", "url", "value"].sort());
+    assert.equal(window.continuationCookie.name, "branct_trusted_continuation");
+    assert.match(window.continuationCookie.value, /^[0-9a-f]{64}$/);
+    assert.equal(window.continuationCookie.url, server.origin);
+    assert.equal(window.continuationCookie.httpOnly, true);
+    assert.equal(window.continuationCookie.sameSite, "Strict");
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F16 treats an already-destroyed drain context as safely stopped", async () => {
+  const page = {
+    evaluate: async () => { throw new Error("Execution context was destroyed, most likely because of a navigation"); },
+  };
+  await assert.doesNotReject(() => trustedConsumer.drainTrustedPage(page));
+});
+
+test("F2-GOV-09-F16 keeps unrelated drain failures fail-closed", async () => {
+  const page = {
+    evaluate: async () => { throw new Error("candidate drain invariant failed"); },
+  };
+  await assert.rejects(() => trustedConsumer.drainTrustedPage(page), /candidate drain invariant failed/);
+});
+
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
@@ -1986,11 +2024,16 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /rejection\.status, 403/);
     assert.match(source, /refusalObservationByRejection\.get\(rejection\.rejectionId\)/);
     assert.match(source, /journalRejections: sealedSnapshot\.rejections/);
+    assert.match(source, /await context\.addCookies\(\[journalWindow\.continuationCookie\]\);/);
+    assert.match(source, /Execution context was destroyed/);
+    assert.match(source, /if \(!\/Execution context was destroyed\|Target page, context or browser has been closed\//);
   };
   const assertServerGuards = (source) => {
     assert.match(source, /rejectionId: window \? sha256/);
     assert.match(source, /"x-branct-trusted-rejection-id": record\.rejectionId/);
     assert.match(source, /record\.authorized !== true/);
+    assert.match(source, /continuationCookie = Object\.freeze/);
+    assert.match(source, /get continuationCookie\(\)/);
     const lateGuard = source.indexOf('if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))');
     const routeValidation = source.indexOf("validateTrustedStaticRequest(absolute, origin, expectedFiles)");
     assert.ok(lateGuard >= 0 && routeValidation >= 0 && lateGuard < routeValidation, "late-request guard must precede route classification");
@@ -2005,6 +2048,8 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "rejection.status, 403",
     "refusalObservationByRejection.get(rejection.rejectionId)",
     "journalRejections: sealedSnapshot.rejections",
+    "await context.addCookies([journalWindow.continuationCookie]);",
+    "Execution context was destroyed",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");
     assert.notEqual(mutated, consumer, `consumer mutation did not alter bytes: ${pattern}`);
@@ -2015,6 +2060,8 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     '"x-branct-trusted-rejection-id": record.rejectionId',
     "record.authorized !== true",
     'if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))',
+    "continuationCookie = Object.freeze",
+    "get continuationCookie()",
   ]) {
     const mutated = staticServer.replaceAll(pattern, "false");
     assert.notEqual(mutated, staticServer, `server mutation did not alter bytes: ${pattern}`);
