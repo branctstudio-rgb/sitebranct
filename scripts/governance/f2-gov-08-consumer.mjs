@@ -567,7 +567,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         requestMetadata.set(request, metadata);
         localRequests.push(metadata);
         headers["x-branct-trusted-request-id"] = requestId;
-        return route.continue({ headers: journalWindow.authorizeHeaders(headers) });
+        const trustedResponse = await route.fetch({ headers: journalWindow.authorizeHeaders(headers) });
+        return route.fulfill({ response: trustedResponse });
       } catch (error) {
         localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action });
         return route.abort("blockedbyclient");

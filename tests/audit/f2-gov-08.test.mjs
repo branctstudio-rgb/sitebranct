@@ -2032,6 +2032,8 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /refusalObservationByRejection\.get\(rejection\.rejectionId\)/);
     assert.match(source, /journalRejections: sealedSnapshot\.rejections/);
     assert.match(source, /await context\.addCookies\(\[journalWindow\.continuationCookie\]\);/);
+    assert.match(source, /await route\.fetch\(\{ headers: journalWindow\.authorizeHeaders\(headers\) \}\);/);
+    assert.match(source, /route\.fulfill\(\{ response: trustedResponse \}\)/);
     assert.match(source, /Execution context was destroyed/);
     assert.match(source, /if \(!\/Execution context was destroyed\//);
   };
@@ -2056,6 +2058,8 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "refusalObservationByRejection.get(rejection.rejectionId)",
     "journalRejections: sealedSnapshot.rejections",
     "await context.addCookies([journalWindow.continuationCookie]);",
+    "await route.fetch({ headers: journalWindow.authorizeHeaders(headers) });",
+    "route.fulfill({ response: trustedResponse })",
     "Execution context was destroyed",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");
