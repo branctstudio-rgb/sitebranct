@@ -484,15 +484,11 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
   assert.ok(Array.isArray(journal), `${engine}: trusted server journal is malformed`);
   assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
   const usedJournalIds = new Set();
-  const usedObservationKeys = new Set();
   const reconciled = [];
   for (const observation of observations) {
     assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
     assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
     assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
-    const observationKey = canonicalJson([observation.url, observation.route, observation.range, observation.resourceType]);
-    assert.equal(usedObservationKeys.has(observationKey), false, `${engine}: quarantined status-zero observation is duplicated`);
-    usedObservationKeys.add(observationKey);
     const conclusive = responses.filter((response) => response.url === observation.url && response.route === observation.route && response.range === observation.range);
     const matches = journal.filter((record) => record.absoluteUrl === observation.url && record.route === observation.route && record.range === observation.range);
     assert.ok(matches.length >= 1, `${engine}: quarantined status-zero server cardinality is empty`);

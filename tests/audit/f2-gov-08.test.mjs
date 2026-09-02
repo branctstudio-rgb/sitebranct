@@ -2051,6 +2051,12 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
     journal: [record, secondRecord],
     responses: [conclusive, secondConclusive],
   }), [], "distinct conclusive responses must consume status zero only through their exact journals");
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation, { ...observation }],
+    journal: [record, secondRecord],
+    responses: [conclusive, secondConclusive],
+  }), [], "repeated status-zero observations add no evidence when every exact journal is conclusively covered");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
     engine: "webkit",
     observations: [observation],
