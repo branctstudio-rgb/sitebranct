@@ -1644,7 +1644,7 @@ test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journa
   }
 });
 
-test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journal and refuses headerless WebKit internals", async () => {
+test("F2-GOV-09-F18 wires WebKit internals into the disjoint server-owned universe", async () => {
   assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));
   const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
@@ -1676,12 +1676,12 @@ test("F2-GOV-09-F11-F1 wires the operational policy to the trusted server journa
     assert.equal(correlation.correlatedFailures, 0);
     assert.equal(policy.localFailures.length, 0);
     assert.equal(policy.localResponses.some(({ status }) => status === 0), false, "status zero must never be accepted or emitted as trusted evidence");
-    const refusedInternals = server.getRequestLog().filter(({ authorized, url, status }) => authorized === false && url === "/media/fixture.webm" && status === 403);
-    assert.ok(refusedInternals.length >= 1, "headerless WebKit media requests were not explicitly refused");
-    assert.ok(refusedInternals.every(({ bytes, finished }) => bytes === 0 && finished === true));
-    assert.equal(correlation.refusedInternalRequests, refusedInternals.length, "every headerless WebKit media refusal must remain counted by the server-owned journal");
-    const observedRefusals = policy.localResponses.filter(({ route }) => route === "media/fixture.webm");
-    assert.ok(observedRefusals.every(({ requestId, rejectionId, status }) => requestId === null && /^[0-9a-f]{64}$/.test(rejectionId) && status === 403), "an observed WebKit internal refusal was not bound to its server-owned rejection identity");
+    const serverInternals = server.getRequestLog().filter(({ universe }) => universe === "SERVER_INTERNAL");
+    assert.ok(serverInternals.every(({ authorized, identityOwner, requestId, journalId, status, bytes, finished }) => authorized === true && identityOwner === "server" && /^[0-9a-f]{64}$/.test(requestId) && /^[0-9a-f]{64}$/.test(journalId) && [200, 206].includes(status) && bytes > 0 && finished === true), "a WebKit internal request escaped the exact server-owned proof contract");
+    assert.equal(correlation.serverInternal, serverInternals.length, "every headerless WebKit internal must remain counted only in the server-owned universe");
+    const refusedInternals = server.getRequestLog().filter(({ authorized }) => authorized === false);
+    assert.ok(refusedInternals.every(({ bytes, finished, status }) => bytes === 0 && finished === true && status === 403));
+    assert.equal(correlation.refusedInternalRequests, refusedInternals.length, "every capability refusal must remain counted separately from both proof universes");
   } finally {
     await browser.close();
     await server.close();
@@ -2025,8 +2025,9 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
   const requestId = "a".repeat(64);
   const journalId = "b".repeat(64);
   const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
-  const record = { requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
+  const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
   assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record] }), [{
+    universe: "SERVER_INTERNAL",
     requestId,
     url: observation.url,
     route: observation.route,
@@ -2120,11 +2121,11 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /response\.requestId, record\.requestId/);
     assert.match(source, /response\.journalId, record\.journalId/);
     assert.match(source, /response\.status, record\.status/);
-    assert.match(source, /recordServerOwnedRequest\(localRequests/);
+    assert.match(source, /recordServerOwnedRequest\(internalRequests/);
     assert.match(source, /localRequests\.find\(\(\{ requestId \}\) => requestId === request\.requestId\)/);
     assert.match(source, /existing\.url, request\.url/);
     assert.match(source, /existing\.range, request\.range/);
-    assert.match(source, /status !== 0 && !\[200, 206, 403\]\.includes\(status\)/);
+    assert.match(source, /!\[200, 206, 403\]\.includes\(status\)/);
   };
   const assertServerGuards = (source) => {
     assert.match(source, /rejectionId: window \? sha256/);
@@ -2154,11 +2155,11 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "response.requestId, record.requestId",
     "response.journalId, record.journalId",
     "response.status, record.status",
-    "recordServerOwnedRequest(localRequests",
+    "recordServerOwnedRequest(internalRequests",
     "localRequests.find(({ requestId }) => requestId === request.requestId)",
     "existing.url, request.url",
     "existing.range, request.range",
-    "status !== 0 && ![200, 206, 403].includes(status)",
+    "![200, 206, 403].includes(status)",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");
     assert.notEqual(mutated, consumer, `consumer mutation did not alter bytes: ${pattern}`);
@@ -2188,7 +2189,7 @@ test("F2-GOV-09-F12 trusted server owns journal identities and rejects post-seal
     const window = server.openJournalWindow();
     const refused = await fetch(`${server.origin}/fixture.txt`);
     assert.equal(refused.status, 403, "a request without the consumer-only capability must be refused before entering the authoritative journal");
-    const response = await fetch(`${server.origin}/fixture.txt`, { headers: window.authorizeHeaders() });
+    const response = await fetch(`${server.origin}/fixture.txt`, { headers: window.authorizeHeaders({ "x-branct-trusted-request-id": "a".repeat(64) }) });
     assert.equal(response.status, 200);
     const openSnapshot = window.snapshot();
     assert.equal(openSnapshot.state, "OPEN");
@@ -2251,14 +2252,14 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     assert.match(source, /journalWindow\.authorizeHeaders\(headers\)/);
     assert.match(source, /await drainTrustedPage\(page\);/);
     assert.match(source, /await drainTrustedPage\(probePage\);/);
-    assert.match(source, /const correlation = assertTrustedJournalBijection\(\{/);
+    assert.match(source, /const correlation = assertTrustedProofUniverses\(\{/);
   };
   assert.doesNotThrow(() => assertGuards(consumer));
   assert.match(staticServer, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
   assert.match(staticServer, /record\.authorized !== true/);
   assert.match(staticServer, /HttpOnly; SameSite=Strict/);
   assert.match(staticServer, /window\.continuationCapability/);
-  assert.match(staticServer, /continuationAuthorized \|\| record\.requestId === null/);
+  assert.match(staticServer, /universe === "SERVER_INTERNAL"/);
   for (const [label, pattern] of [
     ["consumer quiescence", "    collection.beginQuiescence();"],
     ["server quiescence", "    journalWindow.beginQuiescence();"],
@@ -2271,7 +2272,7 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     ["consumer-only request capability", "journalWindow.authorizeHeaders(headers)"],
     ["measured lifecycle drain", "await drainTrustedPage(page);"],
     ["control lifecycle drain", "await drainTrustedPage(probePage);"],
-    ["closed bijection", "const correlation = assertTrustedJournalBijection({"],
+    ["closed bijection", "const correlation = assertTrustedProofUniverses({"],
   ]) {
     const mutated = consumer.replace(pattern, label === "extra journal rejection" ? "true" : "");
     assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
@@ -2282,7 +2283,7 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
     "record.authorized !== true",
     "window.continuationCapability",
     "HttpOnly; SameSite=Strict",
-    "continuationAuthorized || record.requestId === null",
+    'universe === "SERVER_INTERNAL"',
   ]) {
     const mutated = staticServer.replaceAll(pattern, "false");
     assert.notEqual(mutated, staticServer, "server capability mutation did not alter bytes");
@@ -2291,7 +2292,7 @@ test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijec
       assert.match(mutated, /record\.authorized !== true/);
       assert.match(mutated, /HttpOnly; SameSite=Strict/);
       assert.match(mutated, /window\.continuationCapability/);
-      assert.match(mutated, /continuationAuthorized \|\| record\.requestId === null/);
+      assert.match(mutated, /universe === "SERVER_INTERNAL"/);
     }, /input did not match/i, "server capability mutation escaped the structural guard");
   }
 });
@@ -2347,4 +2348,113 @@ test("F2-GOV-09-F8 mutation proves the exact cache binding is load-bearing", () 
   const weakened = consumer.replace("process.env.PLAYWRIGHT_BROWSERS_PATH = runtime.container.browsersPath;", "");
   assert.notEqual(weakened, consumer, "cache-binding mutation did not alter bytes");
   assert.throws(() => assertCanonicalPlaywrightCacheBinding(weakened, runtime), /not bound before Playwright loads/i);
+});
+
+test("F2-GOV-09-F18 proves exact and disjoint browser-correlated and server-internal universes", () => {
+  assert.equal(typeof trustedConsumer.assertTrustedProofUniverses, "function", "trusted proof-universe verifier is absent");
+  const windowId = "window-f18-universes";
+  const browserRequestId = "1".repeat(64);
+  const internalRequestId = "2".repeat(64);
+  const browserJournalId = "a".repeat(64);
+  const internalJournalId = "b".repeat(64);
+  const browserUrl = "http://127.0.0.1:4173/index.html";
+  const internalUrl = "http://127.0.0.1:4173/media/fixture.webm";
+  const browserRequest = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: browserRequestId, url: browserUrl, route: "index.html", range: null, resourceType: "document" };
+  const internalRequest = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: internalRequestId, url: internalUrl, route: "media/fixture.webm", range: "bytes=0-31", resourceType: "media" };
+  const browserResponse = { ...browserRequest, status: 200, journalId: browserJournalId };
+  const internalObservation = { ...internalRequest, status: 206, journalId: internalJournalId };
+  const browserRecord = { sequence: 0, windowId, universe: "BROWSER_CORRELATED", identityOwner: "consumer", journalId: browserJournalId, requestId: browserRequestId, method: "GET", absoluteUrl: browserUrl, route: "index.html", range: null, rangeStart: null, rangeEnd: null, totalBytes: 64, status: 200, bytes: 64, finished: true };
+  const internalRecord = { sequence: 1, windowId, universe: "SERVER_INTERNAL", identityOwner: "server", journalId: internalJournalId, requestId: internalRequestId, method: "GET", absoluteUrl: internalUrl, route: "media/fixture.webm", range: "bytes=0-31", rangeStart: 0, rangeEnd: 31, totalBytes: 64, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedProofUniverses({
+    engine: "webkit",
+    windowId,
+    browserRequests: [browserRequest],
+    browserResponses: [browserResponse],
+    browserFailures: [],
+    browserJournal: [browserRecord],
+    internalRequests: [internalRequest],
+    internalObservations: [internalObservation],
+    internalJournal: [internalRecord],
+    journalRejections: [],
+    ...overrides,
+  });
+  const result = verify();
+  assert.equal(result.browserCorrelated, 1);
+  assert.equal(result.serverInternal, 1);
+  assert.equal(result.refusedInternalRequests, 0);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, requestId: browserRequestId }] }), /disjoint|transplant|duplicate.*universes/i);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, identityOwner: "consumer" }] }), /ownership|server/i);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, requestId: null }] }), /identity.*absent|malformed/i);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, requestId: "f".repeat(64) }] }), /unknown|identity|bijection|cardinality/i);
+  assert.throws(() => verify({ internalObservations: [{ ...internalObservation, journalId: browserJournalId }] }), /journal|transplant|divergent|unknown/i);
+  assert.throws(() => verify({ internalObservations: [{ ...internalObservation, status: 0, journalId: null }] }), /status 0/i);
+  assert.throws(() => verify({ internalJournal: [internalRecord, { ...internalRecord, sequence: 2, journalId: "c".repeat(64) }] }), /extra|duplicate|cardinality|bijection/i);
+  assert.throws(() => verify({ browserResponses: [browserResponse, { ...internalObservation, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }), /disjoint|promotion|unknown|cardinality/i);
+});
+
+test("F2-GOV-09-F18 server classifies proof universes only from measured capability structure", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f18-server-"));
+  const htmlBytes = Buffer.from("<!doctype html><title>trusted</title>");
+  await write(directory, "index.html", htmlBytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "index.html", sha256: sha256ForTest(htmlBytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    const browserHeaders = window.authorizeHeaders({ "x-branct-trusted-request-id": "1".repeat(64) });
+    const browserResponse = await fetch(`${server.origin}/index.html`, { headers: browserHeaders });
+    assert.equal(browserResponse.status, 200);
+    assert.equal(browserResponse.headers.get("x-branct-trusted-universe"), "BROWSER_CORRELATED");
+    const cookie = browserResponse.headers.get("set-cookie")?.split(";", 1)[0];
+    assert.ok(cookie, "server continuation cookie was not issued");
+    const internalResponse = await fetch(`${server.origin}/index.html`, { headers: { cookie } });
+    assert.equal(internalResponse.status, 200);
+    assert.equal(internalResponse.headers.get("x-branct-trusted-universe"), "SERVER_INTERNAL");
+    window.beginQuiescence();
+    window.seal();
+    const snapshot = window.snapshot();
+    assert.deepEqual(snapshot.records.map(({ universe, identityOwner }) => ({ universe, identityOwner })), [
+      { universe: "BROWSER_CORRELATED", identityOwner: "consumer" },
+      { universe: "SERVER_INTERNAL", identityOwner: "server" },
+    ]);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F18 mutation controls keep separation, status, cardinality and observation authority load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  const guards = (consumerSource, serverSource) => {
+    assert.match(serverSource, /BROWSER_CORRELATED/);
+    assert.match(serverSource, /SERVER_INTERNAL/);
+    assert.match(serverSource, /headerAuthorized\s*\?\s*"BROWSER_CORRELATED"\s*:\s*"SERVER_INTERNAL"/);
+    assert.match(consumerSource, /assertTrustedProofUniverses/);
+    assert.match(consumerSource, /trusted local response status 0 is invalid/);
+    assert.match(consumerSource, /assertTrustedLocalResponseStatus\(entry\.status, entry\.url\)/);
+    assert.match(consumerSource, /proof universes are not disjoint/);
+    assert.match(consumerSource, /identities\.has\(entry\.requestId\)/);
+    assert.match(consumerSource, /journals\.has\(entry\.journalId\)/);
+    assert.match(consumerSource, /browserJournal\.length \+ internalJournal\.length/);
+    assert.match(consumerSource, /universe === "SERVER_INTERNAL"\) internalObservations\.push\(observation\)/);
+    assert.doesNotMatch(consumerSource, /engine\s*===\s*["']webkit["'].*SERVER_INTERNAL/);
+    assert.doesNotMatch(consumerSource, /(?:media|fixture\.webm|\.webm).*SERVER_INTERNAL/);
+  };
+  assert.doesNotThrow(() => guards(consumer, staticServer));
+  for (const [label, pattern, replacement] of [
+    ["remove structural separation", 'headerAuthorized ? "BROWSER_CORRELATED" : "SERVER_INTERNAL"', '"BROWSER_CORRELATED"'],
+    ["accept status zero", "assertTrustedLocalResponseStatus(entry.status, entry.url)", "void entry.status"],
+    ["allow duplicate identity", "identities.has(entry.requestId)", "false"],
+    ["allow duplicate journal", "journals.has(entry.journalId)", "false"],
+    ["accept extra journal record", "browserJournal.length + internalJournal.length", "sealedSnapshot.records.length"],
+    ["fabricate internal observation", 'universe === "SERVER_INTERNAL") internalObservations.push(observation)', 'false) internalObservations.push(observation)'],
+  ]) {
+    const source = label === "remove structural separation" ? staticServer : consumer;
+    const mutated = source.replace(pattern, replacement);
+    assert.notEqual(mutated, source, `${label} mutation did not alter bytes`);
+    assert.throws(() => guards(label === "remove structural separation" ? consumer : mutated, label === "remove structural separation" ? mutated : staticServer), /input did not match/i, `${label} mutation escaped`);
+  }
+  for (const allowlist of ['engine === "webkit" && universe === "SERVER_INTERNAL"', 'route.endsWith(".webm") && universe === "SERVER_INTERNAL"']) {
+    const mutated = `${consumer}\nif (${allowlist}) void 0;`;
+    assert.throws(() => guards(mutated, staticServer), /input was expected to not match/i, "a forbidden engine or media allowlist escaped");
+  }
 });

@@ -508,9 +508,61 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
       assert.equal(response.status, record.status, `${engine}: conclusive response status is divergent from the journal`);
       continue;
     }
-    reconciled.push({ requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" });
+    assert.equal(record.universe, "SERVER_INTERNAL", `${engine}: status 0 cannot promote a browser-correlated request into the server-internal universe`);
+    assert.equal(record.identityOwner, "server", `${engine}: quarantined status-zero record has no server-owned identity`);
+    reconciled.push({ universe: "SERVER_INTERNAL", requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" });
   }
   return reconciled;
+}
+
+export function assertTrustedProofUniverses({ engine, windowId, browserRequests, browserResponses, browserFailures, browserJournal, internalRequests, internalObservations, internalJournal, journalRejections = [] }) {
+  const assertUniverse = (entries, universe, identityOwner, label) => {
+    assert.ok(Array.isArray(entries), `${engine}: trusted ${label} collection is malformed`);
+    const identities = new Set();
+    const journals = new Set();
+    for (const entry of entries) {
+      assert.equal(entry.universe, universe, `${engine}: trusted ${label} universe is divergent`);
+      assert.equal(entry.identityOwner, identityOwner, `${engine}: trusted ${label} ownership is divergent`);
+      if (entry.status !== undefined) assertTrustedLocalResponseStatus(entry.status, entry.url);
+      if (entry.requestId !== undefined) {
+        assert.match(entry.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted ${label} identity is absent or malformed`);
+        assert.equal(identities.has(entry.requestId), false, `${engine}: trusted ${label} identity is duplicated`);
+        identities.add(entry.requestId);
+      }
+      if (entry.journalId !== undefined) {
+        assert.match(entry.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted ${label} journal identity is absent or malformed`);
+        assert.equal(journals.has(entry.journalId), false, `${engine}: trusted ${label} journal identity is duplicated`);
+        journals.add(entry.journalId);
+      }
+    }
+    return { identities, journals };
+  };
+  const browserRequestKeys = assertUniverse(browserRequests, "BROWSER_CORRELATED", "consumer", "browser-correlated requests");
+  const browserResponseKeys = assertUniverse(browserResponses, "BROWSER_CORRELATED", "consumer", "browser-correlated responses");
+  assertUniverse(browserFailures, "BROWSER_CORRELATED", "consumer", "browser-correlated failures");
+  const browserJournalKeys = assertUniverse(browserJournal, "BROWSER_CORRELATED", "consumer", "browser-correlated journal");
+  const internalRequestKeys = assertUniverse(internalRequests, "SERVER_INTERNAL", "server", "server-internal requests");
+  const internalObservationKeys = assertUniverse(internalObservations, "SERVER_INTERNAL", "server", "server-internal observations");
+  const internalJournalKeys = assertUniverse(internalJournal, "SERVER_INTERNAL", "server", "server-internal journal");
+  const browserIdentities = new Set([...browserRequestKeys.identities, ...browserResponseKeys.identities, ...browserJournalKeys.identities]);
+  const internalIdentities = new Set([...internalRequestKeys.identities, ...internalObservationKeys.identities, ...internalJournalKeys.identities]);
+  for (const identity of internalIdentities) assert.equal(browserIdentities.has(identity), false, `${engine}: trusted proof universes are not disjoint; duplicate identity was transplanted between universes`);
+  const browserJournals = new Set([...browserResponseKeys.journals, ...browserJournalKeys.journals]);
+  const internalJournals = new Set([...internalObservationKeys.journals, ...internalJournalKeys.journals]);
+  for (const journalId of internalJournals) assert.equal(browserJournals.has(journalId), false, `${engine}: trusted proof universes are not disjoint; journal identity was transplanted between universes`);
+  const browser = assertTrustedJournalBijection({ engine, windowId, localRequests: browserRequests, localResponses: browserResponses, localFailures: browserFailures, journal: browserJournal, journalRejections });
+  const internal = assertTrustedJournalBijection({ engine, windowId, localRequests: internalRequests, localResponses: internalObservations, localFailures: [], journal: internalJournal, journalRejections: [] });
+  return {
+    browserCorrelated: browser.boundRequests,
+    serverInternal: internal.boundRequests,
+    correlatedFailures: browser.correlatedFailures,
+    boundRequests: browser.boundRequests + internal.boundRequests,
+    journalRecords: browser.journalRecords + internal.journalRecords,
+    internalRecords: internal.journalRecords,
+    trustedResponses: browser.trustedResponses + internal.trustedResponses,
+    indeterminateBrowserResponses: browser.indeterminateBrowserResponses + internal.indeterminateBrowserResponses,
+    refusedInternalRequests: browser.refusedInternalRequests,
+  };
 }
 
 export function recordServerOwnedRequest(localRequests, request, engine) {
@@ -524,9 +576,6 @@ export function recordServerOwnedRequest(localRequests, request, engine) {
   assert.equal(existing.url, request.url, `${engine}: server-owned request URL is divergent for a duplicate identity`);
   assert.equal(existing.route, request.route, `${engine}: server-owned request route is divergent for a duplicate identity`);
   assert.equal(existing.range, request.range, `${engine}: server-owned request range is divergent for a duplicate identity`);
-  assert.equal(existing.resourceType, request.resourceType, `${engine}: server-owned request resource type is divergent for a duplicate identity`);
-  assert.equal(existing.phase, request.phase, `${engine}: server-owned request phase is divergent for a duplicate identity`);
-  assert.equal(existing.action, request.action, `${engine}: server-owned request action is divergent for a duplicate identity`);
   assert.equal(existing.identityOwner, request.identityOwner, `${engine}: server-owned request ownership is divergent for a duplicate identity`);
 }
 
@@ -539,6 +588,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
   const localRequests = [];
   const localResponses = [];
   const localFailures = [];
+  const internalRequests = [];
+  const internalObservations = [];
   const localViolations = [];
   const quarantinedStatusZero = [];
   const recordedRequests = new WeakSet();
@@ -615,7 +666,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         for (const name of Object.keys(headers)) if (name.toLowerCase() === "x-branct-trusted-request-id") delete headers[name];
         const range = headers.range ?? null;
         const requestId = sha256(canonicalJson({ engine, channel, probeId, sequence: localSequence++, url: url.href, range, phase: scope.phase, action: scope.action }));
-        const metadata = { requestId, url: url.href, route: validated.route, range, resourceType: request.resourceType(), phase: scope.phase, action: scope.action };
+        const metadata = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, url: url.href, route: validated.route, range, resourceType: request.resourceType(), phase: scope.phase, action: scope.action };
         requestMetadata.set(request, metadata);
         localRequests.push(metadata);
         headers["x-branct-trusted-request-id"] = requestId;
@@ -642,6 +693,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       const journalId = responseHeaders["x-branct-trusted-journal-id"] ?? null;
       const rejectionId = responseHeaders["x-branct-trusted-rejection-id"] ?? undefined;
       const serverRequestId = responseHeaders["x-branct-trusted-request-id"] ?? null;
+      const universe = responseHeaders["x-branct-trusted-universe"] ?? null;
+      const identityOwner = responseHeaders["x-branct-trusted-identity-owner"] ?? null;
       const status = response.status();
       let validated;
       try { validated = server.validateRequest(url.href); }
@@ -650,11 +703,23 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         return;
       }
       const range = metadata?.range ?? response.request().headers().range ?? null;
-      if (!metadata && serverRequestId) recordServerOwnedRequest(localRequests, { requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: scope.phase, action: scope.action, identityOwner: "server" }, engine);
-      const observation = { requestId: metadata?.requestId ?? serverRequestId, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
-      if (status === 0) quarantinedStatusZero.push({ ...observation, requestId: null, journalId: null, rejectionId: undefined });
+      const observation = { universe, identityOwner, requestId: metadata?.requestId ?? serverRequestId, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
+      if (status === 0) {
+        quarantinedStatusZero.push({ ...observation, requestId: null, journalId: null, rejectionId: undefined });
+        return;
+      }
+      if (metadata) {
+        assert.equal(universe, "BROWSER_CORRELATED", `${engine}: browser-correlated response universe is divergent`);
+        assert.equal(identityOwner, "consumer", `${engine}: browser-correlated response ownership is divergent`);
+        assert.equal(serverRequestId, metadata.requestId, `${engine}: browser-correlated response identity is divergent`);
+      } else if (serverRequestId) {
+        assert.equal(universe, "SERVER_INTERNAL", `${engine}: server-internal response universe is divergent`);
+        assert.equal(identityOwner, "server", `${engine}: server-internal response ownership is divergent`);
+        recordServerOwnedRequest(internalRequests, { universe, requestId: serverRequestId, url: url.href, route: validated.route, range, identityOwner }, engine);
+      }
+      if (universe === "SERVER_INTERNAL") internalObservations.push(observation);
       else localResponses.push(observation);
-      if (status !== 0 && ![200, 206, 403].includes(status)) localViolations.push({ url: url.href, reason: `trusted local response status ${status}`, phase: scope.phase, action: scope.action });
+      if (![200, 206, 403].includes(status)) localViolations.push({ url: url.href, reason: `trusted local response status ${status}`, phase: scope.phase, action: scope.action });
     }
   });
   context.on("requestfailed", (request) => {
@@ -682,6 +747,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         events: collection.snapshot().eventCount,
         requests: localRequests,
         responses: localResponses,
+        internalRequests,
+        internalObservations,
         failures: localFailures,
         violations: localViolations,
         quarantinedStatusZero,
@@ -702,6 +769,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       events: collection.snapshot().eventCount,
       requests: localRequests,
       responses: localResponses,
+      internalRequests,
+      internalObservations,
       failures: localFailures,
       violations: localViolations,
       quarantinedStatusZero,
@@ -712,22 +781,28 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     assert.notEqual(sealedSnapshot.state, "REJECTED", sealedSnapshot.violation ?? `${engine}: trusted server journal was rejected`);
     assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed`);
     const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses });
-    const effectiveRequests = [...localRequests];
+    const effectiveInternalRequests = [...internalRequests];
     for (const derived of derivedRequests) {
-      const existing = effectiveRequests.find(({ requestId }) => requestId === derived.requestId);
+      const existing = effectiveInternalRequests.find(({ requestId }) => requestId === derived.requestId);
       if (existing) {
         assert.equal(existing.url, derived.url, `${engine}: quarantined status-zero request URL is divergent`);
         assert.equal(existing.route, derived.route, `${engine}: quarantined status-zero request route is divergent`);
         assert.equal(existing.range, derived.range, `${engine}: quarantined status-zero request range is divergent`);
-      } else effectiveRequests.push(derived);
+      } else effectiveInternalRequests.push(derived);
     }
-    const correlation = assertTrustedJournalBijection({
+    const browserJournal = sealedSnapshot.records.filter(({ universe }) => universe === "BROWSER_CORRELATED");
+    const internalJournal = sealedSnapshot.records.filter(({ universe }) => universe === "SERVER_INTERNAL");
+    assert.equal(browserJournal.length + internalJournal.length, sealedSnapshot.records.length, `${engine}: trusted journal contains an extra record outside the proof universes`);
+    const correlation = assertTrustedProofUniverses({
       engine,
       windowId: journalWindow.windowId,
-      localRequests: effectiveRequests,
-      localResponses,
-      localFailures,
-      journal: sealedSnapshot.records,
+      browserRequests: localRequests,
+      browserResponses: localResponses,
+      browserFailures: localFailures,
+      browserJournal,
+      internalRequests: effectiveInternalRequests,
+      internalObservations,
+      internalJournal,
       journalRejections: sealedSnapshot.rejections,
     });
     journalWindow.verify();

@@ -154,6 +154,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
     const window = activeWindow;
     const headerAuthorized = window ? request.headers["x-branct-trusted-window-capability"] === window.capability : true;
     const continuationAuthorized = Boolean(window && !headerAuthorized && cookieValue(request.headers.cookie, continuationCookieName) === window.continuationCapability);
+    const universe = window && (headerAuthorized || continuationAuthorized) ? (headerAuthorized ? "BROWSER_CORRELATED" : "SERVER_INTERNAL") : null;
     const record = {
       sequence: requestLog.length,
       windowId: window?.windowId ?? null,
@@ -172,6 +173,8 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
       bytes: 0,
       finished: false,
       authorized: headerAuthorized || continuationAuthorized,
+      universe,
+      identityOwner: universe === "BROWSER_CORRELATED" ? "consumer" : universe === "SERVER_INTERNAL" ? "server" : null,
     };
     requestLog.push(record);
     try {
@@ -200,7 +203,8 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         response.end("blocked: trusted server request capability is absent or invalid");
         return;
       }
-      if (window && (continuationAuthorized || record.requestId === null)) record.requestId = sha256(Buffer.from(`${window.secret}:request:${record.sequence}:${absolute}:${record.range ?? ""}`));
+      if (window && universe === "SERVER_INTERNAL") record.requestId = sha256(Buffer.from(`${window.secret}:request:${record.sequence}:${absolute}:${record.range ?? ""}`));
+      if (window && universe === "BROWSER_CORRELATED") assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, "trusted browser-correlated request identity is absent or malformed");
       assert.equal(request.method, "GET", "trusted static server accepts GET only");
       const target = trustedTarget(canonicalRoot, route);
       const body = readFileSync(target);
@@ -222,6 +226,7 @@ export async function startTrustedStaticServer(root, expectedPayload, requestedP
         "cache-control": "no-store",
         ...(record.journalId ? { "x-branct-trusted-journal-id": record.journalId } : {}),
         ...(record.requestId ? { "x-branct-trusted-request-id": record.requestId } : {}),
+        ...(record.universe ? { "x-branct-trusted-universe": record.universe, "x-branct-trusted-identity-owner": record.identityOwner } : {}),
         ...(window ? { "set-cookie": `${continuationCookieName}=${window.continuationCapability}; Path=/; HttpOnly; SameSite=Strict` } : {}),
         "content-security-policy-report-only": "default-src 'self' data:; connect-src 'self'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
       });
