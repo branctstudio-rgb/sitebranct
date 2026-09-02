@@ -579,6 +579,26 @@ export function recordServerOwnedRequest(localRequests, request, engine) {
   assert.equal(existing.identityOwner, request.identityOwner, `${engine}: server-owned request ownership is divergent for a duplicate identity`);
 }
 
+export function resolveTrustedResponseIdentity({ engine, metadata, serverRequestId, universe, identityOwner, browserRequests }) {
+  if (universe === "BROWSER_CORRELATED") {
+    assert.equal(identityOwner, "consumer", `${engine}: browser-correlated response ownership is divergent`);
+    assert.match(serverRequestId ?? "", /^[0-9a-f]{64}$/, `${engine}: browser-correlated response identity is absent or malformed`);
+    const bound = metadata ?? browserRequests.find(({ requestId }) => requestId === serverRequestId);
+    assert.ok(bound, `${engine}: unknown browser-correlated response identity`);
+    assert.equal(bound.requestId, serverRequestId, `${engine}: browser-correlated response identity is divergent`);
+    return bound;
+  }
+  if (universe === "SERVER_INTERNAL") {
+    assert.equal(metadata, undefined, `${engine}: server-internal response cannot carry consumer metadata`);
+    assert.equal(identityOwner, "server", `${engine}: server-internal response ownership is divergent`);
+    assert.match(serverRequestId ?? "", /^[0-9a-f]{64}$/, `${engine}: server-internal response identity is absent or malformed`);
+    return undefined;
+  }
+  assert.equal(metadata, undefined, `${engine}: consumer-correlated response universe is absent`);
+  assert.equal(serverRequestId, null, `${engine}: classified response universe is absent`);
+  return undefined;
+}
+
 export async function installRuntimeNetworkPolicy(context, server, engine, channel, probeId = null) {
   assert.ok(["candidate-flow", "control-probe"].includes(channel), `${engine}: trusted network channel is invalid`);
   if (channel === "control-probe") assert.match(probeId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted control probe identity is absent`);
@@ -702,19 +722,15 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action });
         return;
       }
-      const range = metadata?.range ?? response.request().headers().range ?? null;
-      const observation = { universe, identityOwner, requestId: metadata?.requestId ?? serverRequestId, url: url.href, route: metadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
+      const observedRange = metadata?.range ?? response.request().headers().range ?? null;
       if (status === 0) {
-        quarantinedStatusZero.push({ ...observation, requestId: null, journalId: null, rejectionId: undefined });
+        quarantinedStatusZero.push({ universe, identityOwner, requestId: null, url: url.href, route: metadata?.route ?? validated.route, range: observedRange, status, journalId: null, rejectionId: undefined, resourceType: response.request().resourceType() });
         return;
       }
-      if (metadata) {
-        assert.equal(universe, "BROWSER_CORRELATED", `${engine}: browser-correlated response universe is divergent`);
-        assert.equal(identityOwner, "consumer", `${engine}: browser-correlated response ownership is divergent`);
-        assert.equal(serverRequestId, metadata.requestId, `${engine}: browser-correlated response identity is divergent`);
-      } else if (serverRequestId) {
-        assert.equal(universe, "SERVER_INTERNAL", `${engine}: server-internal response universe is divergent`);
-        assert.equal(identityOwner, "server", `${engine}: server-internal response ownership is divergent`);
+      const resolvedMetadata = resolveTrustedResponseIdentity({ engine, metadata, serverRequestId, universe, identityOwner, browserRequests: localRequests });
+      const range = resolvedMetadata?.range ?? observedRange;
+      const observation = { universe, identityOwner, requestId: resolvedMetadata?.requestId ?? serverRequestId, url: url.href, route: resolvedMetadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
+      if (universe === "SERVER_INTERNAL") {
         recordServerOwnedRequest(internalRequests, { universe, requestId: serverRequestId, url: url.href, route: validated.route, range, identityOwner }, engine);
       }
       if (universe === "SERVER_INTERNAL") internalObservations.push(observation);

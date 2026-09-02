@@ -2392,6 +2392,27 @@ test("F2-GOV-09-F18 proves exact and disjoint browser-correlated and server-inte
   assert.throws(() => verify({ browserResponses: [browserResponse, { ...internalObservation, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }), /disjoint|promotion|unknown|cardinality/i);
 });
 
+test("F2-GOV-09-F18 binds a WebKit response wrapper to its browser-correlated request identity", () => {
+  assert.equal(typeof trustedConsumer.resolveTrustedResponseIdentity, "function", "response identity resolver is absent");
+  const request = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "1".repeat(64), url: "http://127.0.0.1:4173/index.html", route: "index.html", range: null };
+  assert.equal(trustedConsumer.resolveTrustedResponseIdentity({
+    engine: "webkit",
+    metadata: undefined,
+    serverRequestId: request.requestId,
+    universe: "BROWSER_CORRELATED",
+    identityOwner: "consumer",
+    browserRequests: [request],
+  }), request, "a fresh Playwright response wrapper lost the existing consumer-owned identity");
+  assert.throws(() => trustedConsumer.resolveTrustedResponseIdentity({
+    engine: "webkit",
+    metadata: undefined,
+    serverRequestId: "2".repeat(64),
+    universe: "BROWSER_CORRELATED",
+    identityOwner: "consumer",
+    browserRequests: [request],
+  }), /unknown.*browser-correlated|identity/i);
+});
+
 test("F2-GOV-09-F18 server classifies proof universes only from measured capability structure", async () => {
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f18-server-"));
   const htmlBytes = Buffer.from("<!doctype html><title>trusted</title>");
