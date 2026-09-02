@@ -2043,6 +2043,14 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
     journal: [record],
     responses: [conclusive],
   }), [], "one conclusive server-owned response must consume, not duplicate, its indeterminate status-zero observation");
+  const secondRecord = { ...record, requestId: "c".repeat(64), journalId: "d".repeat(64) };
+  const secondConclusive = { ...conclusive, requestId: secondRecord.requestId, journalId: secondRecord.journalId };
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record, secondRecord],
+    responses: [conclusive, secondConclusive],
+  }), [], "distinct conclusive responses must consume status zero only through their exact journals");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
     engine: "webkit",
     observations: [observation],
@@ -2117,9 +2125,10 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /if \(!\/Execution context was destroyed\//);
     assert.match(source, /quarantinedStatusZero\.push/);
     assert.match(source, /reconcileQuarantinedStatusZero\(\{ engine, observations: quarantinedStatusZero, journal: sealedSnapshot\.records, responses: localResponses \}\)/);
-    assert.match(source, /conclusive\.length <= 1/);
+    assert.match(source, /conclusiveJournalIds\.has\(response\.journalId\)/);
+    assert.match(source, /journalMatches\.length, 1/);
+    assert.match(source, /uncovered\.length, 1/);
     assert.match(source, /response\.requestId, record\.requestId/);
-    assert.match(source, /response\.journalId, record\.journalId/);
     assert.match(source, /response\.status, record\.status/);
     assert.match(source, /recordServerOwnedRequest\(internalRequests/);
     assert.match(source, /localRequests\.find\(\(\{ requestId \}\) => requestId === request\.requestId\)/);
@@ -2151,9 +2160,10 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "Execution context was destroyed",
     "quarantinedStatusZero.push",
     "reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses })",
-    "conclusive.length <= 1",
+    "conclusiveJournalIds.has(response.journalId)",
+    "journalMatches.length, 1",
+    "uncovered.length, 1",
     "response.requestId, record.requestId",
-    "response.journalId, record.journalId",
     "response.status, record.status",
     "recordServerOwnedRequest(internalRequests",
     "localRequests.find(({ requestId }) => requestId === request.requestId)",

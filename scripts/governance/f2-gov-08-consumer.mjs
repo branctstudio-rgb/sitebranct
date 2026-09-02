@@ -484,30 +484,45 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
   assert.ok(Array.isArray(journal), `${engine}: trusted server journal is malformed`);
   assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
   const usedJournalIds = new Set();
+  const usedObservationKeys = new Set();
   const reconciled = [];
   for (const observation of observations) {
     assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
     assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
     assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
+    const observationKey = canonicalJson([observation.url, observation.route, observation.range, observation.resourceType]);
+    assert.equal(usedObservationKeys.has(observationKey), false, `${engine}: quarantined status-zero observation is duplicated`);
+    usedObservationKeys.add(observationKey);
     const conclusive = responses.filter((response) => response.url === observation.url && response.route === observation.route && response.range === observation.range);
-    assert.ok(conclusive.length <= 1, `${engine}: quarantined status-zero response cardinality includes duplicate conclusive responses`);
     const matches = journal.filter((record) => record.absoluteUrl === observation.url && record.route === observation.route && record.range === observation.range);
-    assert.equal(matches.length, 1, `${engine}: quarantined status-zero server cardinality is not exactly one`);
-    const [record] = matches;
+    assert.ok(matches.length >= 1, `${engine}: quarantined status-zero server cardinality is empty`);
+    const conclusiveRequestIds = new Set();
+    const conclusiveJournalIds = new Set();
+    for (const response of conclusive) {
+      assertTrustedLocalResponseStatus(response.status, response.url);
+      assert.match(response.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: conclusive response request identity is absent`);
+      assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: conclusive response journal identity is absent`);
+      assert.equal(conclusiveRequestIds.has(response.requestId), false, `${engine}: duplicate conclusive response request identity`);
+      assert.equal(conclusiveJournalIds.has(response.journalId), false, `${engine}: duplicate conclusive response journal identity`);
+      conclusiveRequestIds.add(response.requestId);
+      conclusiveJournalIds.add(response.journalId);
+      const journalMatches = matches.filter(({ journalId }) => journalId === response.journalId);
+      assert.equal(journalMatches.length, 1, `${engine}: conclusive response journal cardinality is not exactly one`);
+      const [record] = journalMatches;
+      assert.equal(response.requestId, record.requestId, `${engine}: conclusive response request identity is divergent from the journal`);
+      assert.equal(response.status, record.status, `${engine}: conclusive response status is divergent from the journal`);
+      assert.equal(record.finished, true, `${engine}: conclusive response journal record is not completed`);
+    }
+    const uncovered = matches.filter(({ journalId }) => !conclusiveJournalIds.has(journalId));
+    if (uncovered.length === 0) continue;
+    assert.equal(uncovered.length, 1, `${engine}: quarantined status-zero server cardinality remains ambiguous`);
+    const [record] = uncovered;
     assert.equal(usedJournalIds.has(record.journalId), false, `${engine}: quarantined status-zero journal identity is duplicated`);
     usedJournalIds.add(record.journalId);
     assert.equal(record.finished, true, `${engine}: quarantined status-zero record is not completed`);
     assertTrustedLocalResponseStatus(record.status, record.absoluteUrl);
     assert.match(record.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no server-owned identity`);
     assert.match(record.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no journal identity`);
-    if (conclusive.length === 1) {
-      const [response] = conclusive;
-      assertTrustedLocalResponseStatus(response.status, response.url);
-      assert.equal(response.requestId, record.requestId, `${engine}: conclusive response request identity is divergent from the journal`);
-      assert.equal(response.journalId, record.journalId, `${engine}: conclusive response journal identity is divergent`);
-      assert.equal(response.status, record.status, `${engine}: conclusive response status is divergent from the journal`);
-      continue;
-    }
     assert.equal(record.universe, "SERVER_INTERNAL", `${engine}: status 0 cannot promote a browser-correlated request into the server-internal universe`);
     assert.equal(record.identityOwner, "server", `${engine}: quarantined status-zero record has no server-owned identity`);
     reconciled.push({ universe: "SERVER_INTERNAL", requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" });
