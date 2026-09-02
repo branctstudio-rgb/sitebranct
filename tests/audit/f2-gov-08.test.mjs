@@ -2366,6 +2366,18 @@ test("F2-GOV-09-F8 mutation proves the exact cache binding is load-bearing", () 
   assert.throws(() => assertCanonicalPlaywrightCacheBinding(weakened, runtime), /not bound before Playwright loads/i);
 });
 
+test("F2-GOV-09-F18 records one exact browser response across duplicate WebKit events", () => {
+  assert.equal(typeof trustedConsumer.recordBrowserCorrelatedResponse, "function");
+  const responses = [];
+  const response = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "1".repeat(64), journalId: "a".repeat(64), url: "http://127.0.0.1:4173/index.html", route: "index.html", range: null, status: 200, resourceType: "document" };
+  trustedConsumer.recordBrowserCorrelatedResponse(responses, response, "webkit");
+  trustedConsumer.recordBrowserCorrelatedResponse(responses, { ...response }, "webkit");
+  assert.deepEqual(responses, [response], "an exact duplicate observer event must not duplicate trusted evidence");
+  for (const divergent of [
+    { journalId: "b".repeat(64) }, { status: 206 }, { route: "other.html" }, { identityOwner: "server" },
+  ]) assert.throws(() => trustedConsumer.recordBrowserCorrelatedResponse(responses, { ...response, ...divergent }, "webkit"), /divergent|ownership/i);
+});
+
 test("F2-GOV-09-F18 proves exact and disjoint browser-correlated and server-internal universes", () => {
   assert.equal(typeof trustedConsumer.assertTrustedProofUniverses, "function", "trusted proof-universe verifier is absent");
   const windowId = "window-f18-universes";
@@ -2472,6 +2484,7 @@ test("F2-GOV-09-F18 mutation controls keep separation, status, cardinality and o
     assert.match(consumerSource, /identities\.has\(entry\.requestId\)/);
     assert.match(consumerSource, /journals\.has\(entry\.journalId\)/);
     assert.match(consumerSource, /browserJournal\.length \+ internalJournal\.length/);
+    assert.match(consumerSource, /recordBrowserCorrelatedResponse\(localResponses, observation, engine\)/);
     assert.match(consumerSource, /universe === "SERVER_INTERNAL"\) internalObservations\.push\(observation\)/);
     assert.doesNotMatch(consumerSource, /engine\s*===\s*["']webkit["'].*SERVER_INTERNAL/);
     assert.doesNotMatch(consumerSource, /(?:media|fixture\.webm|\.webm).*SERVER_INTERNAL/);
@@ -2483,6 +2496,7 @@ test("F2-GOV-09-F18 mutation controls keep separation, status, cardinality and o
     ["allow duplicate identity", "identities.has(entry.requestId)", "false"],
     ["allow duplicate journal", "journals.has(entry.journalId)", "false"],
     ["accept extra journal record", "browserJournal.length + internalJournal.length", "sealedSnapshot.records.length"],
+    ["duplicate browser evidence", "recordBrowserCorrelatedResponse(localResponses, observation, engine)", "localResponses.push(observation)"],
     ["fabricate internal observation", 'universe === "SERVER_INTERNAL") internalObservations.push(observation)', 'false) internalObservations.push(observation)'],
   ]) {
     const source = label === "remove structural separation" ? staticServer : consumer;
