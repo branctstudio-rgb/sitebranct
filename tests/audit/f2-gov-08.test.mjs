@@ -2369,13 +2369,34 @@ test("F2-GOV-09-F8 mutation proves the exact cache binding is load-bearing", () 
 test("F2-GOV-09-F18 records one exact browser response across duplicate WebKit events", () => {
   assert.equal(typeof trustedConsumer.recordBrowserCorrelatedResponse, "function");
   const responses = [];
-  const response = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "1".repeat(64), journalId: "a".repeat(64), url: "http://127.0.0.1:4173/index.html", route: "index.html", range: null, status: 200, resourceType: "document" };
+  const response = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "1".repeat(64), journalId: "a".repeat(64), rejectionId: undefined, url: "http://127.0.0.1:4173/index.html", route: "index.html", range: null, status: 200, resourceType: "document" };
   trustedConsumer.recordBrowserCorrelatedResponse(responses, response, "webkit");
   trustedConsumer.recordBrowserCorrelatedResponse(responses, { ...response }, "webkit");
   assert.deepEqual(responses, [response], "an exact duplicate observer event must not duplicate trusted evidence");
   for (const divergent of [
-    { journalId: "b".repeat(64) }, { status: 206 }, { route: "other.html" }, { identityOwner: "server" },
+    { journalId: "b".repeat(64) }, { rejectionId: "c".repeat(64) }, { status: 206 }, { route: "other.html" }, { identityOwner: "server" },
   ]) assert.throws(() => trustedConsumer.recordBrowserCorrelatedResponse(responses, { ...response, ...divergent }, "webkit"), /divergent|ownership/i);
+});
+
+test("F2-GOV-09-F18 coalesces only exact server-internal response callbacks", () => {
+  assert.equal(typeof trustedConsumer.recordTrustedResponseObservation, "function");
+  const responses = [];
+  const response = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "2".repeat(64), journalId: "b".repeat(64), rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-", status: 206, resourceType: "media" };
+  trustedConsumer.recordTrustedResponseObservation(responses, response, "webkit");
+  trustedConsumer.recordTrustedResponseObservation(responses, { ...response }, "webkit");
+  assert.deepEqual(responses, [response], "an exact duplicate internal callback must produce one server-owned observation");
+  for (const divergent of [
+    { universe: "BROWSER_CORRELATED" },
+    { identityOwner: "consumer" },
+    { journalId: "c".repeat(64) },
+    { rejectionId: "d".repeat(64) },
+    { url: "http://127.0.0.1:4173/media/other.webm" },
+    { route: "media/other.webm" },
+    { range: "bytes=1-" },
+    { status: 403 },
+    { resourceType: "document" },
+    { unexpectedBinding: "must-not-be-ignored" },
+  ]) assert.throws(() => trustedConsumer.recordTrustedResponseObservation(responses, { ...response, ...divergent }, "webkit"), /divergent|ownership|universe|schema/i);
 });
 
 test("F2-GOV-09-F18 proves exact and disjoint browser-correlated and server-internal universes", () => {
@@ -2484,8 +2505,9 @@ test("F2-GOV-09-F18 mutation controls keep separation, status, cardinality and o
     assert.match(consumerSource, /identities\.has\(entry\.requestId\)/);
     assert.match(consumerSource, /journals\.has\(entry\.journalId\)/);
     assert.match(consumerSource, /browserJournal\.length \+ internalJournal\.length/);
+    assert.match(consumerSource, /for \(const field of \["universe", "identityOwner", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"\]\)/);
     assert.match(consumerSource, /recordBrowserCorrelatedResponse\(localResponses, observation, engine\)/);
-    assert.match(consumerSource, /universe === "SERVER_INTERNAL"\) internalObservations\.push\(observation\)/);
+    assert.match(consumerSource, /universe === "SERVER_INTERNAL"\) recordTrustedResponseObservation\(internalObservations, observation, engine\)/);
     assert.doesNotMatch(consumerSource, /engine\s*===\s*["']webkit["'].*SERVER_INTERNAL/);
     assert.doesNotMatch(consumerSource, /(?:media|fixture\.webm|\.webm).*SERVER_INTERNAL/);
   };
@@ -2496,8 +2518,9 @@ test("F2-GOV-09-F18 mutation controls keep separation, status, cardinality and o
     ["allow duplicate identity", "identities.has(entry.requestId)", "false"],
     ["allow duplicate journal", "journals.has(entry.journalId)", "false"],
     ["accept extra journal record", "browserJournal.length + internalJournal.length", "sealedSnapshot.records.length"],
+    ["ignore divergent rejection identity", 'for (const field of ["universe", "identityOwner", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"])', 'for (const field of ["universe", "identityOwner", "journalId", "url", "route", "range", "status", "resourceType"])'],
     ["duplicate browser evidence", "recordBrowserCorrelatedResponse(localResponses, observation, engine)", "localResponses.push(observation)"],
-    ["fabricate internal observation", 'universe === "SERVER_INTERNAL") internalObservations.push(observation)', 'false) internalObservations.push(observation)'],
+    ["duplicate internal evidence", "recordTrustedResponseObservation(internalObservations, observation, engine)", "internalObservations.push(observation)"],
   ]) {
     const source = label === "remove structural separation" ? staticServer : consumer;
     const mutated = source.replace(pattern, replacement);

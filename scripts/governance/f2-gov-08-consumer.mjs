@@ -590,19 +590,26 @@ export function recordServerOwnedRequest(localRequests, request, engine) {
   assert.equal(existing.identityOwner, request.identityOwner, `${engine}: server-owned request ownership is divergent for a duplicate identity`);
 }
 
-export function recordBrowserCorrelatedResponse(localResponses, response, engine) {
-  assert.ok(Array.isArray(localResponses), `${engine}: trusted browser response collection is malformed`);
-  assert.equal(response?.universe, "BROWSER_CORRELATED", `${engine}: browser response universe is divergent`);
-  assert.equal(response?.identityOwner, "consumer", `${engine}: browser response ownership is divergent`);
-  assert.match(response?.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: browser response identity is absent or malformed`);
-  const existing = localResponses.find(({ requestId }) => requestId === response.requestId);
+export function recordTrustedResponseObservation(responses, response, engine) {
+  assert.ok(Array.isArray(responses), `${engine}: trusted response collection is malformed`);
+  exactKeys(response, ["universe", "identityOwner", "requestId", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"], `${engine}: trusted response observation`);
+  const expectedOwner = { BROWSER_CORRELATED: "consumer", SERVER_INTERNAL: "server" }[response?.universe];
+  assert.ok(expectedOwner, `${engine}: trusted response universe is divergent`);
+  assert.equal(response?.identityOwner, expectedOwner, `${engine}: trusted response ownership is divergent`);
+  assert.match(response?.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted response identity is absent or malformed`);
+  const existing = responses.find(({ requestId }) => requestId === response.requestId);
   if (!existing) {
-    localResponses.push(response);
+    responses.push(response);
     return;
   }
-  for (const field of ["universe", "identityOwner", "journalId", "url", "route", "range", "status", "resourceType"]) {
-    assert.equal(existing[field], response[field], `${engine}: browser response ${field} is divergent for a duplicate identity`);
+  for (const field of ["universe", "identityOwner", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"]) {
+    assert.equal(existing[field], response[field], `${engine}: trusted response ${field} is divergent for a duplicate identity`);
   }
+}
+
+export function recordBrowserCorrelatedResponse(localResponses, response, engine) {
+  assert.equal(response?.universe, "BROWSER_CORRELATED", `${engine}: browser response universe is divergent`);
+  recordTrustedResponseObservation(localResponses, response, engine);
 }
 
 export function resolveTrustedResponseIdentity({ engine, metadata, serverRequestId, universe, identityOwner, browserRequests }) {
@@ -759,7 +766,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       if (universe === "SERVER_INTERNAL") {
         recordServerOwnedRequest(internalRequests, { universe, requestId: serverRequestId, url: url.href, route: validated.route, range, identityOwner }, engine);
       }
-      if (universe === "SERVER_INTERNAL") internalObservations.push(observation);
+      if (universe === "SERVER_INTERNAL") recordTrustedResponseObservation(internalObservations, observation, engine);
       else if (universe === "BROWSER_CORRELATED") recordBrowserCorrelatedResponse(localResponses, observation, engine);
       else localResponses.push(observation);
       if (![200, 206, 403].includes(status)) localViolations.push({ url: url.href, reason: `trusted local response status ${status}`, phase: scope.phase, action: scope.action });
