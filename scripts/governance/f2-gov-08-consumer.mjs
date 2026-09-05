@@ -25,6 +25,7 @@ const NETWORK_CONTROL_ACTIONS = Object.freeze([
 ]);
 const RESOURCE_HINT_ACTIONS = new Set(["resource-hint-preconnect", "resource-hint-dns-prefetch"]);
 const TRUSTED_LOCAL_CANCELLATION_REASONS = new Set(["Load request cancelled", "net::ERR_ABORTED"]);
+const SERVER_INTERNAL_REQUEST_CONTEXT = Object.freeze({ phase: "server-internal", action: "browser-internal-request" });
 const networkControlStatus = (action) => RESOURCE_HINT_ACTIONS.has(action)
   ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
   : "BLOCKED_AND_RECORDED";
@@ -489,12 +490,20 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
     assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
     assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
     assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
-    const conclusive = responses.filter((response) => response.url === observation.url && response.route === observation.route && response.range === observation.range);
+    assert.equal(typeof observation.resourceType === "string" && observation.resourceType.length > 0, true, `${engine}: quarantined status-zero resourceType is absent or malformed`);
     const matches = journal.filter((record) => record.absoluteUrl === observation.url && record.route === observation.route && record.range === observation.range);
     assert.ok(matches.length >= 1, `${engine}: quarantined status-zero server cardinality is empty`);
+    const matchingJournalIds = new Set(matches.map(({ journalId }) => journalId));
+    const matchingRequestIds = new Set(matches.map(({ requestId }) => requestId));
+    const conclusive = responses.filter((response) => matchingJournalIds.has(response.journalId) || matchingRequestIds.has(response.requestId)
+      || (response.url === observation.url && response.route === observation.route && response.range === observation.range));
     const conclusiveRequestIds = new Set();
     const conclusiveJournalIds = new Set();
     for (const response of conclusive) {
+      assert.equal(response.url, observation.url, `${engine}: conclusive response url is divergent`);
+      assert.equal(response.route, observation.route, `${engine}: conclusive response route is divergent`);
+      assert.equal(response.range, observation.range, `${engine}: conclusive response range is divergent`);
+      assert.equal(response.resourceType, observation.resourceType, `${engine}: conclusive response resourceType is divergent`);
       assertTrustedLocalResponseStatus(response.status, response.url);
       assert.match(response.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: conclusive response request identity is absent`);
       assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: conclusive response journal identity is absent`);
@@ -521,7 +530,7 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
     assert.match(record.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: quarantined status-zero record has no journal identity`);
     assert.equal(record.universe, "SERVER_INTERNAL", `${engine}: status 0 cannot promote a browser-correlated request into the server-internal universe`);
     assert.equal(record.identityOwner, "server", `${engine}: quarantined status-zero record has no server-owned identity`);
-    reconciled.push({ universe: "SERVER_INTERNAL", requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, identityOwner: "server" });
+    reconciled.push({ universe: "SERVER_INTERNAL", identityOwner: "server", requestId: record.requestId, url: record.absoluteUrl, route: record.route, range: record.range, resourceType: observation.resourceType, ...SERVER_INTERNAL_REQUEST_CONTEXT });
   }
   return reconciled;
 }
@@ -583,6 +592,8 @@ export function recordServerOwnedRequest(localRequests, request, engine) {
   assert.equal(request.identityOwner, "server", `${engine}: server-owned request identityOwner is divergent`);
   assert.match(request?.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: server-owned request identity is absent or malformed`);
   for (const field of ["url", "route", "resourceType", "phase", "action"]) assert.equal(typeof request[field] === "string" && request[field].length > 0, true, `${engine}: server-owned request ${field} is absent or malformed`);
+  assert.equal(request.phase, SERVER_INTERNAL_REQUEST_CONTEXT.phase, `${engine}: server-owned request phase is divergent`);
+  assert.equal(request.action, SERVER_INTERNAL_REQUEST_CONTEXT.action, `${engine}: server-owned request action is divergent`);
   assert.ok(request.range === null || typeof request.range === "string", `${engine}: server-owned request range is malformed`);
   const existing = localRequests.find(({ requestId }) => requestId === request.requestId);
   if (!existing) {
@@ -592,6 +603,12 @@ export function recordServerOwnedRequest(localRequests, request, engine) {
   for (const field of ["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"]) {
     assert.equal(existing[field], request[field], `${engine}: server-owned request ${field} is divergent for a duplicate identity`);
   }
+}
+
+export function recordReconciledServerOwnedRequests(target, requests, engine) {
+  assert.ok(Array.isArray(target), `${engine}: trusted local request collection is malformed`);
+  assert.ok(Array.isArray(requests), `${engine}: reconciled server-owned requests are malformed`);
+  for (const request of requests) recordServerOwnedRequest(target, request, engine);
 }
 
 export function recordTrustedResponseObservation(responses, response, engine) {
@@ -768,7 +785,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       const range = resolvedMetadata?.range ?? observedRange;
       const observation = { universe, identityOwner, requestId: resolvedMetadata?.requestId ?? serverRequestId, url: url.href, route: resolvedMetadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
       if (universe === "SERVER_INTERNAL") {
-        recordServerOwnedRequest(internalRequests, { universe, identityOwner, requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: "server-internal", action: "browser-internal-request" }, engine);
+        recordServerOwnedRequest(internalRequests, { universe, identityOwner, requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), ...SERVER_INTERNAL_REQUEST_CONTEXT }, engine);
       }
       if (universe === "SERVER_INTERNAL") recordTrustedResponseObservation(internalObservations, observation, engine);
       else if (universe === "BROWSER_CORRELATED") recordBrowserCorrelatedResponse(localResponses, observation, engine);
@@ -836,14 +853,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed`);
     const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses });
     const effectiveInternalRequests = [...internalRequests];
-    for (const derived of derivedRequests) {
-      const existing = effectiveInternalRequests.find(({ requestId }) => requestId === derived.requestId);
-      if (existing) {
-        assert.equal(existing.url, derived.url, `${engine}: quarantined status-zero request URL is divergent`);
-        assert.equal(existing.route, derived.route, `${engine}: quarantined status-zero request route is divergent`);
-        assert.equal(existing.range, derived.range, `${engine}: quarantined status-zero request range is divergent`);
-      } else effectiveInternalRequests.push(derived);
-    }
+    recordReconciledServerOwnedRequests(effectiveInternalRequests, derivedRequests, engine);
     const browserJournal = sealedSnapshot.records.filter(({ universe }) => universe === "BROWSER_CORRELATED");
     const internalJournal = sealedSnapshot.records.filter(({ universe }) => universe === "SERVER_INTERNAL");
     assert.equal(browserJournal.length + internalJournal.length, sealedSnapshot.records.length, `${engine}: trusted journal contains an extra record outside the proof universes`);
