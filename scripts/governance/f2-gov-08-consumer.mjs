@@ -812,7 +812,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       }
       const observedRange = metadata?.range ?? response.request().headers().range ?? null;
       if (status === 0) {
-        quarantinedStatusZero.push({ universe, identityOwner, requestId: null, url: url.href, route: metadata?.route ?? validated.route, range: observedRange, status, journalId: null, rejectionId: undefined, resourceType: response.request().resourceType() });
+        quarantinedStatusZero.push({ universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, url: url.href, route: metadata?.route ?? validated.route, range: observedRange, status, journalId: null, rejectionId: undefined, resourceType: response.request().resourceType() });
         return;
       }
       const resolvedMetadata = resolveTrustedResponseIdentity({ engine, metadata, serverRequestId, universe, identityOwner, browserRequests: localRequests });

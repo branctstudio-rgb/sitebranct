@@ -1786,6 +1786,7 @@ test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journa
 
 test("F2-GOV-09-F18 wires WebKit internals into the disjoint server-owned universe", async () => {
   assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
+  assert.match(workingFile("scripts/governance/f2-gov-08-consumer.mjs").toString("utf8"), /quarantinedStatusZero\.push\(\{ universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null,/, "the trusted consumer must own the authority fields of every quarantined status-zero observation");
   const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));
   const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
   const mediaBytes = workingFile("src/img/crm-demo.webm");
