@@ -2337,7 +2337,7 @@ test("F2-GOV-09-F18-A-F2 enforces the complete reconciliation invariant matrix t
   const url = "http://127.0.0.1:4173/media/fixture.webm";
   const route = "media/fixture.webm";
   const range = "bytes=0-1";
-  const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "1".repeat(64), journalId: "2".repeat(64), absoluteUrl: url, route, range, status: 206, finished: true };
+  const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "1".repeat(64), journalId: "2".repeat(64), absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 1, totalBytes: 2, bytes: 2, status: 206, finished: true };
   const second = { ...first, requestId: "3".repeat(64), journalId: "4".repeat(64) };
   const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
   const conclusive = {
@@ -2562,7 +2562,7 @@ test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority
       const url = "http://127.0.0.1:4173/media/fixture.webm";
       const route = "media/fixture.webm";
       const range = "bytes=0-1";
-      const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "5".repeat(64), journalId: "6".repeat(64), absoluteUrl: url, route, range, status: 206, finished: true };
+      const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "5".repeat(64), journalId: "6".repeat(64), absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 1, totalBytes: 2, bytes: 2, status: 206, finished: true };
       const second = { ...first, requestId: "7".repeat(64), journalId: "8".repeat(64) };
       const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
       const conclusive = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId, rejectionId: undefined, url, route, range, status: 206, resourceType: "media" };
