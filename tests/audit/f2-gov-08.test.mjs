@@ -2530,7 +2530,7 @@ test("F2-GOV-09-F18-A-F4 mutation controls keep pre-egress quarantine disjoint a
     ["accept a response", "assert.equal(responses.length, 0", "assert.equal(responses.length >= 0, true"],
     ["reconcile before producer closure", "assert.equal(producerClosed, true", "assert.ok(producerClosed !== undefined"],
     ["accept unknown cancellation", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: pre-egress cancellation reason is not authorized`)', 'assert.ok(true, `${engine}: pre-egress cancellation reason is not authorized`)'],
-    ["seal before producer closure", "await context.close();\n    measuredContextClosed = true;\n    await networkPolicy.finalizeLocalFailureCorrelations();", "await networkPolicy.finalizeLocalFailureCorrelations();\n    await context.close();\n    measuredContextClosed = true;"],
+    ["seal before producer closure", /await context\.close\(\);\r?\n    measuredContextClosed = true;\r?\n    await networkPolicy\.finalizeLocalFailureCorrelations\(\);/, "await networkPolicy.finalizeLocalFailureCorrelations();\n    await context.close();\n    measuredContextClosed = true;"],
   ]) {
     const mutated = consumer.replace(pattern, replacement);
     assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
