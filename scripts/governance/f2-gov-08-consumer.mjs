@@ -578,16 +578,20 @@ export function assertTrustedProofUniverses({ engine, windowId, browserRequests,
 
 export function recordServerOwnedRequest(localRequests, request, engine) {
   assert.ok(Array.isArray(localRequests), `${engine}: trusted local request collection is malformed`);
+  exactKeys(request, ["universe", "identityOwner", "requestId", "url", "route", "range", "resourceType", "phase", "action"], `${engine}: server-owned request`);
+  assert.equal(request.universe, "SERVER_INTERNAL", `${engine}: server-owned request universe is divergent`);
+  assert.equal(request.identityOwner, "server", `${engine}: server-owned request identityOwner is divergent`);
   assert.match(request?.requestId ?? "", /^[0-9a-f]{64}$/, `${engine}: server-owned request identity is absent or malformed`);
+  for (const field of ["url", "route", "resourceType", "phase", "action"]) assert.equal(typeof request[field] === "string" && request[field].length > 0, true, `${engine}: server-owned request ${field} is absent or malformed`);
+  assert.ok(request.range === null || typeof request.range === "string", `${engine}: server-owned request range is malformed`);
   const existing = localRequests.find(({ requestId }) => requestId === request.requestId);
   if (!existing) {
     localRequests.push(request);
     return;
   }
-  assert.equal(existing.url, request.url, `${engine}: server-owned request URL is divergent for a duplicate identity`);
-  assert.equal(existing.route, request.route, `${engine}: server-owned request route is divergent for a duplicate identity`);
-  assert.equal(existing.range, request.range, `${engine}: server-owned request range is divergent for a duplicate identity`);
-  assert.equal(existing.identityOwner, request.identityOwner, `${engine}: server-owned request ownership is divergent for a duplicate identity`);
+  for (const field of ["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"]) {
+    assert.equal(existing[field], request[field], `${engine}: server-owned request ${field} is divergent for a duplicate identity`);
+  }
 }
 
 export function recordTrustedResponseObservation(responses, response, engine) {
@@ -764,7 +768,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       const range = resolvedMetadata?.range ?? observedRange;
       const observation = { universe, identityOwner, requestId: resolvedMetadata?.requestId ?? serverRequestId, url: url.href, route: resolvedMetadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
       if (universe === "SERVER_INTERNAL") {
-        recordServerOwnedRequest(internalRequests, { universe, requestId: serverRequestId, url: url.href, route: validated.route, range, identityOwner }, engine);
+        recordServerOwnedRequest(internalRequests, { universe, identityOwner, requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), phase: "server-internal", action: "browser-internal-request" }, engine);
       }
       if (universe === "SERVER_INTERNAL") recordTrustedResponseObservation(internalObservations, observation, engine);
       else if (universe === "BROWSER_CORRELATED") recordBrowserCorrelatedResponse(localResponses, observation, engine);

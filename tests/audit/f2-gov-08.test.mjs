@@ -129,13 +129,13 @@ async function publishBinaryRootEntries(fixture, entries, message) {
   await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
 }
 
-async function createRepository() {
+async function createRepository(authorityBlob = canonicalBlob) {
   const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-f1-"));
   const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   git("init", "--quiet", "--initial-branch=main");
   git("config", "user.email", "f2-gov-08@example.invalid");
   git("config", "user.name", "F2-GOV-08 fixture");
-  for (const path of canonicalPaths) await write(repository, path, canonicalBlob(path));
+  for (const path of canonicalPaths) await write(repository, path, authorityBlob(path));
   await write(repository, "index.html", html("base"));
   await write(repository, "politica-privacidade.html", html("privacy"));
   await write(repository, "src/css/branct.css", ".menu{display:block}\n");
@@ -379,6 +379,146 @@ test("F2-GOV-08 rejects event base, head, repository and ref transplantation", a
       assert.throws(() => run(fixture), expected);
     });
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A accepts an exact merge_group checks_requested event", async () => {
+  const fixture = await createRepository(workingFile);
+  try {
+    const queueRef = `gh-readonly-queue/main/pr-63-${fixture.baseSha}`;
+    fixture.git("update-ref", `refs/remotes/origin/${queueRef}`, fixture.headSha);
+    fixture.event = {
+      action: "checks_requested",
+      merge_group: {
+        base_sha: fixture.baseSha,
+        head_sha: fixture.headSha,
+        base_ref: "refs/heads/main",
+        head_ref: `refs/heads/${queueRef}`,
+      },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.equal(run(fixture).decision, "PASS");
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A rejects incomplete or incompatible merge_group events", async (t) => {
+  const fixture = await createRepository(workingFile);
+  try {
+    const queueRef = `gh-readonly-queue/main/pr-63-${fixture.baseSha}`;
+    fixture.git("update-ref", `refs/remotes/origin/${queueRef}`, fixture.headSha);
+    const valid = {
+      action: "checks_requested",
+      merge_group: {
+        base_sha: fixture.baseSha,
+        head_sha: fixture.headSha,
+        base_ref: "refs/heads/main",
+        head_ref: `refs/heads/${queueRef}`,
+      },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    const cases = [
+      ["missing base SHA", (event) => { delete event.merge_group.base_sha; }, /merge group base SHA is malformed/i],
+      ["missing head SHA", (event) => { delete event.merge_group.head_sha; }, /merge group head SHA is malformed/i],
+      ["missing base ref", (event) => { delete event.merge_group.base_ref; }, /merge group base ref is absent or malformed/i],
+      ["missing head ref", (event) => { delete event.merge_group.head_ref; }, /merge group head ref is absent or malformed/i],
+      ["wrong action", (event) => { event.action = "destroyed"; }, /merge group action is divergent/i],
+      ["incompatible base ref", (event) => { event.merge_group.base_ref = "refs/heads/release"; }, /base ref is divergent/i],
+      ["both event bodies", (event) => { event.pull_request = { base: { ref: "main", sha: fixture.baseSha }, head: { ref: "candidate", sha: fixture.headSha } }; }, /event body is ambiguous/i],
+    ];
+    for (const [label, mutate, expected] of cases) await t.test(label, async () => {
+      const event = structuredClone(valid);
+      mutate(event);
+      await writeFile(fixture.eventPath, JSON.stringify(event));
+      assert.throws(() => run(fixture), expected);
+    });
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A binds a stacked merge_group to its exact first parent", async () => {
+  const fixture = await createRepository(workingFile);
+  try {
+    const queueBase = fixture.headSha;
+    await write(fixture.repository, "politica-privacidade.html", html("queued candidate"));
+    fixture.git("add", "politica-privacidade.html");
+    fixture.git("commit", "--quiet", "-m", "synthetic stacked merge group");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    const queueRef = `gh-readonly-queue/main/pr-64-${queueBase}`;
+    fixture.git("update-ref", `refs/remotes/origin/${queueRef}`, fixture.headSha);
+    fixture.event = {
+      action: "checks_requested",
+      merge_group: {
+        base_sha: queueBase,
+        head_sha: fixture.headSha,
+        base_ref: "refs/heads/main",
+        head_ref: `refs/heads/${queueRef}`,
+      },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.equal(run(fixture).decision, "PASS");
+    fixture.event.merge_group.base_sha = fixture.baseSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /base is not the exact first parent/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A mutation controls keep merge_group action and parent binding load-bearing", async () => {
+  const source = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const loadMutation = async (label, pattern, replacement) => {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-merge-group-mutation-"));
+    const mutated = source.replace(pattern, replacement);
+    assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+    const target = join(directory, "validate-f2-gov-08.mjs");
+    await writeFile(target, mutated);
+    return { directory, module: await import(`${pathToFileURL(target).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`) };
+  };
+
+  const actionFixture = await createRepository(workingFile);
+  let actionMutation;
+  try {
+    const queueRef = `gh-readonly-queue/main/pr-65-${actionFixture.baseSha}`;
+    actionFixture.git("update-ref", `refs/remotes/origin/${queueRef}`, actionFixture.headSha);
+    actionFixture.event = {
+      action: "destroyed",
+      merge_group: { base_sha: actionFixture.baseSha, head_sha: actionFixture.headSha, base_ref: "refs/heads/main", head_ref: `refs/heads/${queueRef}` },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(actionFixture.eventPath, JSON.stringify(actionFixture.event));
+    actionMutation = await loadMutation("remove action guard", '    assert.equal(event.action, "checks_requested", "trusted merge group action is divergent");', "");
+    assert.doesNotThrow(
+      () => actionMutation.module.runBaseOnlyGitSimulation({ repository: actionFixture.repository, eventPath: actionFixture.eventPath }),
+      "removing the action guard must demonstrably admit an incompatible event",
+    );
+  } finally {
+    if (actionMutation) await rm(actionMutation.directory, { recursive: true, force: true });
+    await rm(actionFixture.repository, { recursive: true, force: true });
+  }
+
+  const parentFixture = await createRepository(workingFile);
+  let parentMutation;
+  try {
+    const queueBase = parentFixture.headSha;
+    await write(parentFixture.repository, "politica-privacidade.html", html("mutated parent binding"));
+    parentFixture.git("add", "politica-privacidade.html");
+    parentFixture.git("commit", "--quiet", "-m", "synthetic parent mutation");
+    parentFixture.headSha = parentFixture.git("rev-parse", "HEAD");
+    const queueRef = `gh-readonly-queue/main/pr-66-${queueBase}`;
+    parentFixture.git("update-ref", `refs/remotes/origin/${queueRef}`, parentFixture.headSha);
+    parentFixture.event = {
+      action: "checks_requested",
+      merge_group: { base_sha: parentFixture.baseSha, head_sha: parentFixture.headSha, base_ref: "refs/heads/main", head_ref: `refs/heads/${queueRef}` },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(parentFixture.eventPath, JSON.stringify(parentFixture.event));
+    parentMutation = await loadMutation("remove first-parent guard", '    assert.equal(firstParent, baseSha, "trusted merge group base is not the exact first parent of its head");', "");
+    assert.doesNotThrow(
+      () => parentMutation.module.runBaseOnlyGitSimulation({ repository: parentFixture.repository, eventPath: parentFixture.eventPath }),
+      "removing the first-parent guard must demonstrably admit a transplanted merge-group base",
+    );
+  } finally {
+    if (parentMutation) await rm(parentMutation.directory, { recursive: true, force: true });
+    await rm(parentFixture.repository, { recursive: true, force: true });
+  }
 });
 
 test("F2-GOV-08 rejects moved remote refs even when event SHAs remain unchanged", async (t) => {
@@ -2091,14 +2231,15 @@ test("F2-GOV-09-F17 records one server-owned request across indeterminate and co
   assert.equal(typeof trustedConsumer.recordServerOwnedRequest, "function");
   const requests = [];
   const request = {
+    universe: "SERVER_INTERNAL",
+    identityOwner: "server",
     requestId: "e".repeat(64),
     url: "http://127.0.0.1:4173/media/fixture.webm",
     route: "media/fixture.webm",
     range: "bytes=0-1",
     resourceType: "media",
-    phase: "candidate-flow",
-    action: "navigate",
-    identityOwner: "server",
+    phase: "server-internal",
+    action: "browser-internal-request",
   };
   trustedConsumer.recordServerOwnedRequest(requests, request, "webkit");
   trustedConsumer.recordServerOwnedRequest(requests, { ...request }, "webkit");
@@ -2113,6 +2254,58 @@ test("F2-GOV-09-F17 records one server-owned request across indeterminate and co
     /range.*divergent|identity.*transplanted/i,
     "a duplicate identity transplanted to another range must fail closed",
   );
+  for (const [field, value] of [
+    ["universe", "BROWSER_CORRELATED"],
+    ["identityOwner", "consumer"],
+    ["resourceType", "document"],
+    ["phase", "control-probe"],
+    ["action", "transplanted"],
+  ]) assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, [field]: value }, "webkit"),
+    new RegExp(`${field}.*divergent|schema|ownership|universe`, "i"),
+    `a duplicate server-owned identity with divergent ${field} must fail closed`,
+  );
+  assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, unexpectedBinding: "attacker-controlled" }, "webkit"),
+    /schema is not exact/i,
+    "a server-owned request with an undeclared field must fail closed",
+  );
+});
+
+test("F2-GOV-09-F18-A mutation controls keep the exact server-owned request schema load-bearing", async () => {
+  const source = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
+  const request = {
+    universe: "SERVER_INTERNAL",
+    identityOwner: "server",
+    requestId: "f".repeat(64),
+    url: "http://127.0.0.1:4173/media/fixture.webm",
+    route: "media/fixture.webm",
+    range: "bytes=0-1",
+    resourceType: "media",
+    phase: "server-internal",
+    action: "browser-internal-request",
+  };
+  const mutations = [
+    ["remove exact schema", /  exactKeys\(request, \["universe"[^\n]+\n/, ""],
+    ["omit resourceType duplicate comparison", 'for (const field of ["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"]) {', 'for (const field of ["universe", "identityOwner", "url", "route", "range", "phase", "action"]) {'],
+  ];
+  for (const [label, pattern, replacement] of mutations) {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-request-mutation-"));
+    try {
+      const mutated = source.replace(pattern, replacement);
+      assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+      await writeFile(join(directory, "f2-gov-08-consumer.mjs"), mutated);
+      await writeFile(join(directory, "f2-gov-08-static-server.mjs"), server);
+      const module = await import(`${pathToFileURL(join(directory, "f2-gov-08-consumer.mjs")).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`);
+      const records = [];
+      module.recordServerOwnedRequest(records, request, "webkit");
+      assert.doesNotThrow(
+        () => module.recordServerOwnedRequest(records, label === "remove exact schema" ? { ...request, unexpectedBinding: "accepted" } : { ...request, resourceType: "document" }, "webkit"),
+        `${label} must demonstrably let the corresponding negative escape`,
+      );
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  }
 });
 
 test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {

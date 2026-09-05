@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "status": "OPERATIONAL_CANDIDATE",
   "repository": "branctstudio-rgb/sitebranct",
   "canonicalAuthority": {
     "source": "exact-base-sha-git-objects",
     "manifestPath": "fixtures/audit/f2-gov-08-authority-manifest.json",
-    "manifestSha256": "900f2fdc942e47e042d9a866f2ff1dd08b443c72e12819d3060d74efcf3b313c",
+    "manifestSha256": "48be9b7a74793642eddb8b72748aada765525589ce3b197b8c6611c9ddeb7e1e",
     "consumerPath": "scripts/governance/f2-gov-08-consumer.mjs",
     "matrixPath": "fixtures/audit/f2-gov-08-matrix.json",
     "expectationsPath": "fixtures/audit/f2-gov-08-expectations.json",
@@ -15,7 +15,7 @@
     "targetBaselinePath": "fixtures/audit/f2-01-baseline-results.json"
   },
   "trustedEvent": {
-    "eventName": "pull_request",
+    "eventNames": ["pull_request", "merge_group"],
     "baseRef": "main",
     "requireHeadRef": true,
     "requireExactRemoteRefs": true,

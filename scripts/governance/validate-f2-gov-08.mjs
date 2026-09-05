@@ -189,24 +189,44 @@ function parseJson(bytes, label) {
   catch { assert.fail(`${label} is unreadable or malformed`); }
 }
 
-function loadTrustedEvent(eventPath) {
+function normalizeTrustedBranchRef(value, label) {
+  assert.match(value ?? "", /^refs\/heads\/[A-Za-z0-9._/-]+$/, `${label} is absent or malformed`);
+  const branch = value.slice("refs/heads/".length);
+  safeRelativePath(branch, label);
+  return branch;
+}
+
+export function loadTrustedEvent(eventPath) {
   assert.equal(typeof eventPath, "string", "trusted GitHub event path is absent");
   const metadata = lstatSync(eventPath);
   assert.equal(metadata.isSymbolicLink(), false, "trusted GitHub event path is a symlink");
   assert.equal(metadata.isFile(), true, "trusted GitHub event path is not a regular file");
   const event = parseJson(readFileSync(eventPath), "trusted GitHub event");
-  assert.ok(event?.pull_request, "trusted GitHub event is not a pull_request event");
+  const hasPullRequest = event?.pull_request !== undefined;
+  const hasMergeGroup = event?.merge_group !== undefined;
+  assert.equal(Number(hasPullRequest) + Number(hasMergeGroup), 1, "trusted GitHub event body is ambiguous or absent");
+  if (hasMergeGroup) {
+    assert.equal(event.action, "checks_requested", "trusted merge group action is divergent");
+    const baseSha = event.merge_group?.base_sha;
+    const headSha = event.merge_group?.head_sha;
+    const baseRef = normalizeTrustedBranchRef(event.merge_group?.base_ref, "trusted merge group base ref");
+    const headRef = normalizeTrustedBranchRef(event.merge_group?.head_ref, "trusted merge group head ref");
+    validSha(baseSha, "trusted merge group base");
+    validSha(headSha, "trusted merge group head");
+    assert.ok(headRef.startsWith("gh-readonly-queue/"), "trusted merge group head ref is outside the queue namespace");
+    return { event, eventName: "merge_group", baseSha, headSha, baseRef, headRef };
+  }
   const baseSha = event.pull_request?.base?.sha;
   const headSha = event.pull_request?.head?.sha;
   const baseRef = event.pull_request?.base?.ref;
   const headRef = event.pull_request?.head?.ref;
-  validSha(baseSha, "trusted event base");
-  validSha(headSha, "trusted event head");
+  validSha(baseSha, "trusted pull request base");
+  validSha(headSha, "trusted pull request head");
   assert.match(baseRef ?? "", /^[A-Za-z0-9._/-]+$/, "trusted event base ref is absent or malformed");
   assert.match(headRef ?? "", /^[A-Za-z0-9._/-]+$/, "trusted event head ref is absent or malformed");
   safeRelativePath(baseRef, "trusted event base ref");
   safeRelativePath(headRef, "trusted event head ref");
-  return { event, baseSha, headSha, baseRef, headRef };
+  return { event, eventName: "pull_request", baseSha, headSha, baseRef, headRef };
 }
 
 function allowedCandidatePath(path, contract) {
@@ -381,7 +401,7 @@ function validateHeadStructuralIntegrity(repository, baseSha, headSha, authority
 
 function validateContract(contract) {
   exactKeys(contract, ["schemaVersion", "status", "repository", "canonicalAuthority", "trustedEvent", "candidate", "measurement", "environment", "limitations"], "F2-GOV-08 contract");
-  assert.equal(contract.schemaVersion, 3, "F2-GOV-08 contract schema is divergent");
+  assert.equal(contract.schemaVersion, 4, "F2-GOV-08 contract schema is divergent");
   assert.equal(contract.status, "OPERATIONAL_CANDIDATE", "F2-GOV-08 operational candidate status is divergent");
   assert.equal(contract.canonicalAuthority.source, "exact-base-sha-git-objects", "authority source is not exact-base-sha Git objects");
   for (const [role, path] of Object.entries(CANONICAL_AUTHORITY_PATHS)) {
@@ -390,7 +410,8 @@ function validateContract(contract) {
     assert.equal(contract.canonicalAuthority[key], path, `canonical ${role} path is redirected`);
   }
   assert.match(contract.canonicalAuthority.manifestSha256, /^[0-9a-f]{64}$/, "canonical manifest digest is invalid");
-  assert.equal(contract.trustedEvent.eventName, "pull_request", "trusted event identity is divergent");
+  exactKeys(contract.trustedEvent, ["eventNames", "baseRef", "requireHeadRef", "requireExactRemoteRefs", "requireBaseAncestorOfHead"], "trusted event contract");
+  assert.deepEqual(contract.trustedEvent.eventNames, ["pull_request", "merge_group"], "trusted event identities are divergent");
   assert.equal(contract.trustedEvent.baseRef, "main", "trusted base ref is divergent");
   assert.equal(contract.trustedEvent.requireExactRemoteRefs, true, "trusted remote refs must be exact");
   assert.equal(contract.trustedEvent.requireBaseAncestorOfHead, true, "trusted base ancestry must be required");
@@ -652,17 +673,28 @@ function runBaseOnlyGitHarness(input, executionMode, authorityMode = "BASE_ONLY"
   const expectedInputKeys = executionMode === "OPERATIONAL" ? ["repository", "eventPath", "trustedNodeModules"] : ["repository", "eventPath"];
   exactKeys(input, expectedInputKeys, "trusted harness input");
   const repository = realpathSync(input.repository);
-  const { event, baseSha, headSha, baseRef, headRef } = loadTrustedEvent(input.eventPath);
+  const { event, eventName, baseSha, headSha, baseRef, headRef } = loadTrustedEvent(input.eventPath);
   resolveCommit(repository, baseSha, "trusted event base");
   resolveCommit(repository, headSha, "trusted event head");
   assert.ok(["BASE_ONLY", "CANDIDATE_EVOLUTION"].includes(authorityMode), "trusted authority mode is invalid");
   const authoritySha = authorityMode === "CANDIDATE_EVOLUTION" ? headSha : baseSha;
   const authority = loadAuthority(repository, authoritySha);
+  assert.ok(authority.contract.trustedEvent.eventNames.includes(eventName), "trusted event identity is not authorized by the canonical contract");
   assert.equal(event.repository?.full_name, authority.contract.repository, "trusted event repository is divergent");
   assert.equal(baseRef, authority.contract.trustedEvent.baseRef, "trusted event base ref is divergent");
   assert.notEqual(headRef, baseRef, "trusted event head ref cannot equal the base ref");
-  resolveRef(repository, `refs/remotes/origin/${baseRef}`, baseSha, "trusted base");
-  resolveRef(repository, `refs/remotes/origin/${headRef}`, headSha, "trusted head");
+  if (eventName === "pull_request") {
+    resolveRef(repository, `refs/remotes/origin/${baseRef}`, baseSha, "trusted base");
+    resolveRef(repository, `refs/remotes/origin/${headRef}`, headSha, "trusted head");
+  } else {
+    assert.ok(headRef.startsWith(`gh-readonly-queue/${baseRef}/`), "trusted merge group head ref is outside the canonical queue namespace");
+    resolveRef(repository, `refs/remotes/origin/${headRef}`, headSha, "trusted merge group head");
+    const remoteBase = git(repository, ["rev-parse", "--verify", `refs/remotes/origin/${baseRef}^{commit}`]).trim();
+    try { git(repository, ["merge-base", "--is-ancestor", remoteBase, baseSha]); }
+    catch { assert.fail("trusted remote base is not an ancestor of the merge group base"); }
+    const firstParent = git(repository, ["rev-parse", "--verify", `${headSha}^1`]).trim();
+    assert.equal(firstParent, baseSha, "trusted merge group base is not the exact first parent of its head");
+  }
   try { git(repository, ["merge-base", "--is-ancestor", baseSha, headSha]); }
   catch { assert.fail("trusted operational base is not an ancestor of head"); }
 
