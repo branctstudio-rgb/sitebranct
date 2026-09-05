@@ -2372,6 +2372,36 @@ test("F2-GOV-09-F18-A-F2 enforces the complete reconciliation invariant matrix t
   );
 });
 
+test("F2-GOV-09-F18-A-F3 consumes status zero only through an exact conclusive browser-correlated journal", () => {
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-1";
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
+  const record = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, journalId, absoluteUrl: url, route, range, status: 206, finished: true };
+  const conclusive = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, journalId, rejectionId: undefined, url, route, range, status: 206, resourceType: "media" };
+
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit", observations: [observation], journal: [record], responses: [conclusive],
+  }), [], "a conclusive browser-correlated response must consume the matching indeterminate callback without promotion");
+  assert.deepEqual(trustedConsumer.reconcileOperationalStatusZero({
+    engine: "webkit", internalRequests: [], observations: [observation], journal: [record], internalObservations: [], browserResponses: [conclusive],
+  }), [], "the operational path must supply exact browser-correlated responses to the quarantine reconciler");
+  assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [] }),
+    /cannot promote.*browser-correlated/i,
+    "status zero alone must never promote a browser-correlated journal record",
+  );
+  assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({
+      engine: "webkit", observations: [observation], journal: [record], responses: [{ ...conclusive, requestId: "b".repeat(64) }],
+    }),
+    /request identity|cardinality|conclusive|promote/i,
+    "a transplanted browser-correlated identity must remain fail-closed",
+  );
+});
+
 test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority and operational wiring load-bearing", async () => {
   const source = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
@@ -2382,8 +2412,8 @@ test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority
     ["remove status-zero ownership guard", "assert.equal(observation.identityOwner, \"server\", `${engine}: quarantined status-zero observation ownership is divergent`);", "", "observation-owner"],
     ["remove status-zero rejection guard", "assert.equal(observation.rejectionId, undefined, `${engine}: quarantined status zero must not claim a rejection identity`);", "", "observation-rejection"],
     ["remove response schema guard", "recordTrustedResponseObservation(canonicalResponses, response, engine);", "", "response-schema"],
-    ["remove server-owned response authority guards", /\s+assert\.equal\(response\.universe, "SERVER_INTERNAL", `\$\{engine\}: conclusive response universe is divergent`\);\r?\n\s+assert\.equal\(response\.identityOwner, "server", `\$\{engine\}: conclusive response ownership is divergent`\);/, "", "response-authority"],
-    ["drop real internal responses", "responses: internalObservations });", "responses: [] });", "operational-wiring"],
+    ["remove journal-bound response authority guards", /\s+assert\.equal\(response\.universe, record\.universe, `\$\{engine\}: conclusive response universe is divergent from the journal`\);\r?\n\s+assert\.equal\(response\.identityOwner, record\.identityOwner, `\$\{engine\}: conclusive response ownership is divergent from the journal`\);/, "", "response-authority"],
+    ["drop real conclusive responses", "responses: [...internalObservations, ...browserResponses] });", "responses: [] });", "operational-wiring"],
   ];
   for (const [label, pattern, replacement, kind] of mutations) {
     const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-status-zero-operational-mutation-"));

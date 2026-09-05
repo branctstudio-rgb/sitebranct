@@ -504,8 +504,6 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
   const canonicalResponses = [];
   for (const response of responses) {
     recordTrustedResponseObservation(canonicalResponses, response, engine);
-    assert.equal(response.universe, "SERVER_INTERNAL", `${engine}: conclusive response universe is divergent`);
-    assert.equal(response.identityOwner, "server", `${engine}: conclusive response ownership is divergent`);
   }
   const usedJournalIds = new Set();
   const reconciled = [];
@@ -542,6 +540,8 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
       const journalMatches = matches.filter(({ journalId }) => journalId === response.journalId);
       assert.equal(journalMatches.length, 1, `${engine}: conclusive response journal cardinality is not exactly one`);
       const [record] = journalMatches;
+      assert.equal(response.universe, record.universe, `${engine}: conclusive response universe is divergent from the journal`);
+      assert.equal(response.identityOwner, record.identityOwner, `${engine}: conclusive response ownership is divergent from the journal`);
       assert.equal(response.resourceType, record.resourceType, `${engine}: conclusive response resourceType is divergent from the journal`);
       assert.equal(response.requestId, record.requestId, `${engine}: conclusive response request identity is divergent from the journal`);
       assert.equal(response.status, record.status, `${engine}: conclusive response status is divergent from the journal`);
@@ -640,11 +640,11 @@ export function recordReconciledServerOwnedRequests(target, requests, engine) {
   for (const request of requests) recordServerOwnedRequest(target, request, engine);
 }
 
-export function reconcileOperationalStatusZero({ engine, internalRequests, observations, journal, internalObservations }) {
+export function reconcileOperationalStatusZero({ engine, internalRequests, observations, journal, internalObservations, browserResponses = [] }) {
   assert.ok(Array.isArray(internalRequests), `${engine}: server-owned request collection is malformed`);
   assert.ok(Array.isArray(internalObservations), `${engine}: server-owned conclusive observations are malformed`);
   const effectiveInternalRequests = [...internalRequests];
-  const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations, journal, responses: internalObservations });
+  const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations, journal, responses: [...internalObservations, ...browserResponses] });
   recordReconciledServerOwnedRequests(effectiveInternalRequests, derivedRequests, engine);
   return effectiveInternalRequests;
 }
@@ -891,7 +891,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     assert.notEqual(sealedSnapshot.state, "REJECTED", sealedSnapshot.violation ?? `${engine}: trusted server journal was rejected`);
     assert.deepEqual(localViolations, [], `${engine}: trusted local request violation observed`);
     const effectiveInternalRequests = reconcileOperationalStatusZero({
-      engine, internalRequests, observations: quarantinedStatusZero, journal: sealedSnapshot.records, internalObservations,
+      engine, internalRequests, observations: quarantinedStatusZero, journal: sealedSnapshot.records, internalObservations, browserResponses: localResponses,
     });
     const browserJournal = sealedSnapshot.records.filter(({ universe }) => universe === "BROWSER_CORRELATED");
     const internalJournal = sealedSnapshot.records.filter(({ universe }) => universe === "SERVER_INTERNAL");
