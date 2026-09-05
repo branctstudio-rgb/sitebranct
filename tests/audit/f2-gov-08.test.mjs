@@ -1083,13 +1083,13 @@ test("F2-GOV-09 isolates measured content from every trusted control context", (
   assert.match(consumer, /const probeContext = await browser\.newContext/);
   assert.match(consumer, /finally \{ if \(!probeContextClosed\) await probeContext\.close\(\); \}/);
   assert.doesNotMatch(consumer, /installRuntimeNetworkPolicy\(context, server, engine\)(?:;|\))/);
-  for (const [label, drain, finalize, close, verify] of [
-    ["measured", 'networkPolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await networkPolicy.finalizeLocalFailureCorrelations();", "await context.close();", "networkPolicy.assertStillVerified();"],
-    ["probe", 'probePolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await probePolicy.finalizeLocalFailureCorrelations();", "await probeContext.close();", "probePolicy.assertStillVerified();"],
+  for (const [label, drain, close, finalize, verify] of [
+    ["measured", 'networkPolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await context.close();", "await networkPolicy.finalizeLocalFailureCorrelations();", "networkPolicy.assertStillVerified();"],
+    ["probe", 'probePolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await probeContext.close();", "await probePolicy.finalizeLocalFailureCorrelations();", "probePolicy.assertStillVerified();"],
   ]) {
-    const positions = [drain, finalize, close, verify].map((fragment) => consumer.indexOf(fragment));
+    const positions = [drain, close, finalize, verify].map((fragment) => consumer.indexOf(fragment));
     assert.ok(positions.every((position) => position >= 0), `${label} context lifecycle is incomplete`);
-    assert.deepEqual([...positions].sort((left, right) => left - right), positions, `${label} context must drain, seal, close and then verify late-event absence`);
+    assert.deepEqual([...positions].sort((left, right) => left - right), positions, `${label} context must drain, close its producer, seal and then verify late-event absence`);
   }
 });
 
@@ -1707,7 +1707,7 @@ test("F2-GOV-09-F14 accepts the measured Chromium cancellation only through comp
   assert.throws(() => verify({ failures: [{ ...failure, reason: "UNKNOWN_LOCAL_REQUEST_FAILURE" }] }), /reason.*not.*authorized|cancellation.*reason/i);
   assert.throws(() => verify({ responses: [] }), /response.*cardinality/i);
   assert.throws(() => verify({ responses: [{ ...response, status: 0, journalId: null }] }), /status 0/i);
-  assert.throws(() => verify({ responses: [{ ...response, status: 200 }] }), /206/i);
+  assert.throws(() => verify({ responses: [{ ...response, status: 200 }] }), /status.*divergent/i);
   assert.throws(() => verify({ journal: [] }), /journal.*cardinality/i);
   assert.throws(() => verify({ journal: [journal, { ...journal }] }), /journal.*cardinality/i);
   assert.throws(() => verify({ journal: [{ ...journal, journalId: "b".repeat(64) }] }), /journal.*cardinality/i);
@@ -1715,7 +1715,7 @@ test("F2-GOV-09-F14 accepts the measured Chromium cancellation only through comp
   assert.throws(() => verify({ journal: [{ ...journal, absoluteUrl: `${url}?forged=1` }] }), /URL.*divergent/i);
   assert.throws(() => verify({ journal: [{ ...journal, route: "media/other.webm" }] }), /route.*divergent/i);
   assert.throws(() => verify({ journal: [{ ...journal, range: "bytes=1-" }] }), /range.*divergent/i);
-  assert.throws(() => verify({ journal: [{ ...journal, status: 200 }] }), /status.*206/i);
+  assert.throws(() => verify({ journal: [{ ...journal, status: 200 }] }), /status.*divergent/i);
   assert.throws(() => verify({ journal: [{ ...journal, finished: false }] }), /incomplete/i);
   assert.throws(() => verify({ journalWindow: { start: 5, end: 5 } }), /outside.*window/i);
 });
@@ -1760,6 +1760,7 @@ test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journa
   const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const assertGuards = (source) => {
     assert.match(source, /TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\)/);
+    assert.equal([...source.matchAll(/TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\)/g)].length, 2, "both cancellation-reason boundaries must remain closed");
     assert.doesNotMatch(source, /assert\.equal\(engine,\s*["']webkit["']/);
     assert.match(source, /validObservationByJournal\.get\(record\.journalId\)/);
     assert.match(source, /observation\.requestId !== null/);
@@ -1770,8 +1771,8 @@ test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journa
   };
   assert.doesNotThrow(() => assertGuards(consumer));
   for (const [label, pattern, replacement] of [
-    ["accept any reason", "TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason)", "true"],
-    ["reinstate engine gate", "TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason)", 'engine === "webkit"'],
+    ["accept any reason", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);', 'assert.ok(true, `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);'],
+    ["reinstate engine gate", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);', 'assert.ok(engine === "webkit", `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);'],
     ["trust browser request identity", "validObservationByJournal.get(record.journalId)", "validObservationByRequest.get(record.requestId)"],
     ["accept observation without journal", 'assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);', ""],
     ["promote status zero", "response.status === 0", "false"],
@@ -1780,7 +1781,7 @@ test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journa
   ]) {
     const mutated = consumer.replace(pattern, replacement);
     assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
-    assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression/i, `${label} mutation escaped`);
+    assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression|both cancellation-reason boundaries/i, `${label} mutation escaped`);
   }
 });
 
@@ -2400,6 +2401,141 @@ test("F2-GOV-09-F18-A-F3 consumes status zero only through an exact conclusive b
     /request identity|cardinality|conclusive|promote/i,
     "a transplanted browser-correlated identity must remain fail-closed",
   );
+});
+
+test("F2-GOV-09-F18-A-F4 derives trusted response resource type from the canonical route", () => {
+  assert.equal(typeof trustedConsumer.canonicalizeTrustedLocalResourceType, "function", "canonical trusted resource classifier is absent");
+  const browserVariable = {
+    universe: "BROWSER_CORRELATED",
+    identityOwner: "consumer",
+    requestId: "1".repeat(64),
+    journalId: "2".repeat(64),
+    rejectionId: undefined,
+    url: "http://127.0.0.1:4173/media/fixture.webm",
+    route: "media/fixture.webm",
+    range: "bytes=0-",
+    status: 206,
+    resourceType: "other",
+  };
+  assert.equal(trustedConsumer.canonicalizeTrustedLocalResourceType(browserVariable, "webkit").resourceType, "media");
+  assert.throws(
+    () => trustedConsumer.canonicalizeTrustedLocalResourceType({ ...browserVariable, route: "media/fixture.unknown" }, "webkit"),
+    /resourceType classification is absent/i,
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 mutation control keeps canonical route type load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /const observation = canonicalizeTrustedLocalResourceType\(/);
+    assert.match(source, /resourceType: serverOwnedResourceTypeForRoute\(observation\.route, engine\)/);
+    assert.doesNotMatch(source, /const observation = \{[^\n]+resourceType: response\.request\(\)\.resourceType\(\)/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  const mutated = consumer.replace("const observation = canonicalizeTrustedLocalResourceType(", "const observation = (");
+  assert.notEqual(mutated, consumer, "trust browser type mutation did not alter bytes");
+  assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression/i, "trust browser type mutation escaped");
+});
+
+test("F2-GOV-09-F18-A-F4 quarantines only exact pre-egress cancellations outside the server bijection", () => {
+  assert.equal(typeof trustedConsumer.reconcileTrustedPreEgressCancellations, "function", "trusted pre-egress cancellation reconciler is absent");
+  const request = {
+    universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "4".repeat(64),
+    url: "http://127.0.0.1:4173/src/img/crm-dashboard.jpg", route: "src/img/crm-dashboard.jpg", range: null,
+    resourceType: "image", phase: "measured-flow", action: "reduced-motion",
+  };
+  const failure = { ...request, reason: "net::ERR_ABORTED" };
+  const reconcile = (overrides = {}) => trustedConsumer.reconcileTrustedPreEgressCancellations({
+    engine: "chromium", localRequests: [request], localResponses: [], localFailures: [failure], journal: [], producerClosed: true, ...overrides,
+  });
+  assert.deepEqual(reconcile(), { localRequests: [], localFailures: [], preEgressCancellations: 1 });
+  assert.equal(reconcile({ localFailures: [] }).preEgressCancellations, 1, "a closed trusted producer must quarantine an unissued local request without fabricating a response");
+  assert.throws(() => reconcile({ localFailures: [], producerClosed: false }), /closed producer/i);
+  assert.throws(() => reconcile({ localFailures: [{ ...failure, reason: "net::ERR_FAILED" }] }), /reason|cancellation/i);
+  assert.throws(() => reconcile({ localFailures: [failure, { ...failure }] }), /cardinality|duplicated/i);
+  assert.throws(() => reconcile({ localResponses: [{ ...request, status: 200, journalId: "5".repeat(64), rejectionId: undefined }] }), /pre-egress.*response|cardinality/i);
+  assert.equal(reconcile({ journal: [{ requestId: request.requestId, journalId: "6".repeat(64) }] }).preEgressCancellations, 0, "a request observed by the server must remain inside the exact journal bijection");
+});
+
+test("F2-GOV-09-F18-A-F4 accepts a cancellation after one complete server-owned 200 response", () => {
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/src/img/crm-dashboard.jpg";
+  const failure = { requestId, url, route: "src/img/crm-dashboard.jpg", range: null, reason: "net::ERR_ABORTED" };
+  const response = { requestId, url, route: failure.route, range: null, status: 200, journalId };
+  const journal = { sequence: 1, journalId, requestId, absoluteUrl: url, route: failure.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
+    engine: "chromium", failures: [failure], responses: [response], journal: [journal], journalWindow: { start: 1, end: 1 }, ...overrides,
+  });
+  assert.doesNotThrow(() => verify());
+  assert.throws(() => verify({ journal: [{ ...journal, bytes: 31 }] }), /byte count|complete|full/i);
+  assert.throws(() => verify({ journal: [{ ...journal, finished: false }] }), /incomplete/i);
+  assert.throws(() => verify({ journal: [{ ...journal, range: "bytes=0-31", rangeStart: 0, rangeEnd: 31 }] }), /range/i);
+});
+
+test("F2-GOV-09-F18-A-F4 derives a completed response-silent internal request only from the server journal", () => {
+  const record = {
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "b".repeat(64), journalId: "c".repeat(64),
+    absoluteUrl: "http://127.0.0.1:4173/src/img/crm-dashboard.jpg", route: "src/img/crm-dashboard.jpg", range: null,
+    status: 200, rangeStart: null, rangeEnd: null, totalBytes: 32, bytes: 32, finished: true,
+  };
+  assert.deepEqual(trustedConsumer.reconcileOperationalStatusZero({
+    engine: "chromium", internalRequests: [], observations: [], journal: [record], internalObservations: [], browserResponses: [],
+  }), [{
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: record.requestId, url: record.absoluteUrl, route: record.route,
+    range: null, resourceType: "image", phase: "server-internal", action: "browser-internal-request",
+  }]);
+  assert.deepEqual(
+    trustedConsumer.reconcileOperationalStatusZero({ engine: "chromium", internalRequests: [], observations: [], journal: [{ ...record, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }], internalObservations: [], browserResponses: [] }),
+    [],
+    "a response-silent browser-correlated record must never enter the server-owned universe",
+  );
+  assert.throws(
+    () => trustedConsumer.reconcileOperationalStatusZero({ engine: "chromium", internalRequests: [], observations: [], journal: [{ ...record, bytes: 31 }], internalObservations: [], browserResponses: [] }),
+    /byte count.*divergent/i,
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 binds wrapper-divergent failures deterministically to exact pending requests", () => {
+  assert.equal(typeof trustedConsumer.resolveTrustedFailedRequestMetadata, "function", "trusted failed-request resolver is absent");
+  const request = {
+    universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "7".repeat(64),
+    url: "http://127.0.0.1:4173/src/img/crm-dashboard.jpg", route: "src/img/crm-dashboard.jpg", range: null,
+    resourceType: "image", phase: "measured-flow", action: "reduced-motion",
+  };
+  assert.deepEqual(trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: request.url, route: request.route, range: null, localRequests: [request], localFailures: [] }), request);
+  const second = { ...request, requestId: "8".repeat(64) };
+  assert.deepEqual(trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: request.url, route: request.route, range: null, localRequests: [request, second], localFailures: [] }), request);
+  assert.deepEqual(trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: request.url, route: request.route, range: null, localRequests: [request, second], localFailures: [{ ...request, reason: "net::ERR_ABORTED" }] }), second);
+  assert.throws(
+    () => trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: `${request.url}?forged=1`, route: request.route, range: null, localRequests: [request], localFailures: [] }),
+    /identity is absent/i,
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 mutation controls keep pre-egress quarantine disjoint and exact", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /records\.length !== 0\) continue/);
+    assert.match(source, /assert\.equal\(responses\.length, 0/);
+    assert.match(source, /assert\.equal\(producerClosed, true/);
+    assert.match(source, /assert\.ok\(failures\.length <= 1/);
+    assert.match(source, /assert\.ok\(TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\), `\$\{engine\}: pre-egress cancellation reason is not authorized`\)/);
+    assert.match(source, /reconcileTrustedPreEgressCancellations\(\{ engine, localRequests, localResponses, localFailures, journal: browserJournal, producerClosed: true \}\)/);
+    assert.match(source, /await drainTrustedPage\(page\);\s*await page\.close\(\);\s*await context\.close\(\);\s*measuredContextClosed = true;\s*await networkPolicy\.finalizeLocalFailureCorrelations\(\);/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  for (const [label, pattern, replacement] of [
+    ["accept a server-observed request", "records.length !== 0) continue", "false) continue"],
+    ["accept a response", "assert.equal(responses.length, 0", "assert.equal(responses.length >= 0, true"],
+    ["reconcile before producer closure", "assert.equal(producerClosed, true", "assert.ok(producerClosed !== undefined"],
+    ["accept unknown cancellation", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: pre-egress cancellation reason is not authorized`)', 'assert.ok(true, `${engine}: pre-egress cancellation reason is not authorized`)'],
+    ["seal before producer closure", "await context.close();\n    measuredContextClosed = true;\n    await networkPolicy.finalizeLocalFailureCorrelations();", "await networkPolicy.finalizeLocalFailureCorrelations();\n    await context.close();\n    measuredContextClosed = true;"],
+  ]) {
+    const mutated = consumer.replace(pattern, replacement);
+    assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
+    assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression|both cancellation-reason boundaries/i, `${label} mutation escaped`);
+  }
 });
 
 test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority and operational wiring load-bearing", async () => {

@@ -38,6 +38,47 @@ const serverOwnedResourceTypeForRoute = (route, engine) => {
   assert.ok(resourceType, `${engine}: trusted journal resourceType classification is absent for ${route ?? "unknown route"}`);
   return resourceType;
 };
+export function canonicalizeTrustedLocalResourceType(observation, engine) {
+  assert.ok(observation && typeof observation === "object" && !Array.isArray(observation), `${engine}: trusted local observation is absent or malformed`);
+  return { ...observation, resourceType: serverOwnedResourceTypeForRoute(observation.route, engine) };
+}
+
+export function resolveTrustedFailedRequestMetadata({ engine, metadata, url, route, range, localRequests, localResponses = [], localFailures }) {
+  if (metadata) return metadata;
+  const completed = new Set(localResponses.map(({ requestId }) => requestId).filter(Boolean));
+  const failed = new Set(localFailures.map(({ requestId }) => requestId));
+  const matches = localRequests.filter((request) => request.url === url && request.route === route && request.range === range && !completed.has(request.requestId) && !failed.has(request.requestId));
+  assert.ok(matches.length >= 1, `${engine}: failed local request consumer identity is absent`);
+  return matches[0];
+}
+
+export function reconcileTrustedPreEgressCancellations({ engine, localRequests, localResponses, localFailures, journal, producerClosed }) {
+  assert.ok(Array.isArray(localRequests) && Array.isArray(localResponses) && Array.isArray(localFailures) && Array.isArray(journal), `${engine}: trusted pre-egress collections are malformed`);
+  assert.equal(producerClosed, true, `${engine}: trusted pre-egress reconciliation requires a closed producer`);
+  const cancelled = new Set();
+  for (const request of localRequests) {
+    const records = journal.filter(({ requestId }) => requestId === request.requestId);
+    if (records.length !== 0) continue;
+    const responses = localResponses.filter(({ requestId }) => requestId === request.requestId);
+    const failures = localFailures.filter(({ requestId }) => requestId === request.requestId);
+    assert.equal(responses.length, 0, `${engine}: pre-egress cancellation has a trusted response`);
+    assert.ok(failures.length <= 1, `${engine}: pre-egress cancellation failure cardinality exceeds one`);
+    if (failures.length === 1) {
+      const [failure] = failures;
+      assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: pre-egress cancellation reason is not authorized`);
+      for (const field of ["universe", "identityOwner", "requestId", "url", "route", "range", "resourceType", "phase", "action"]) {
+        assert.equal(failure[field], request[field], `${engine}: pre-egress cancellation ${field} is divergent`);
+      }
+    }
+    cancelled.add(request.requestId);
+  }
+  for (const failure of localFailures) assert.ok(localRequests.some(({ requestId }) => requestId === failure.requestId), `${engine}: pre-egress cancellation has an unknown request identity`);
+  return {
+    localRequests: localRequests.filter(({ requestId }) => !cancelled.has(requestId)),
+    localFailures: localFailures.filter(({ requestId }) => !cancelled.has(requestId)),
+    preEgressCancellations: cancelled.size,
+  };
+}
 const networkControlStatus = (action) => RESOURCE_HINT_ACTIONS.has(action)
   ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
   : "BLOCKED_AND_RECORDED";
@@ -466,7 +507,7 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
     assert.equal(matchingResponses.length, 1, `${engine}: trusted local response cardinality is not exactly one for ${failure.requestId}`);
     const [response] = matchingResponses;
     assertTrustedLocalResponseStatus(response.status, response.url);
-    assert.equal(response.status, 206, `${engine}: cancelled local request did not receive a verified 206 response`);
+    assert.ok([200, 206].includes(response.status), `${engine}: cancelled local request did not receive a verified complete response`);
     assert.equal(response.url, failure.url, `${engine}: trusted local response URL is divergent`);
     assert.equal(response.route, failure.route, `${engine}: trusted local response route is divergent`);
     assert.equal(response.range, failure.range, `${engine}: trusted local response range is divergent`);
@@ -479,15 +520,23 @@ export function assertTrustedLocalFailureCorrelations({ engine, failures, respon
     assert.equal(record.absoluteUrl, failure.url, `${engine}: trusted server journal URL is divergent`);
     assert.equal(record.route, failure.route, `${engine}: trusted server journal route is divergent`);
     assert.equal(record.range, failure.range, `${engine}: trusted server journal range is divergent`);
-    assert.equal(record.status, 206, `${engine}: trusted server journal status is not 206`);
+    assert.equal(record.status, response.status, `${engine}: trusted server journal status is divergent from the response`);
     assert.equal(record.finished, true, `${engine}: trusted server journal response is incomplete`);
-    assert.ok(Number.isSafeInteger(record.rangeStart) && Number.isSafeInteger(record.rangeEnd) && Number.isSafeInteger(record.totalBytes), `${engine}: trusted server journal byte range is malformed`);
-    assert.ok(record.rangeStart >= 0 && record.rangeEnd >= record.rangeStart && record.rangeEnd < record.totalBytes, `${engine}: trusted server journal byte range is invalid`);
-    assert.equal(record.bytes, record.rangeEnd - record.rangeStart + 1, `${engine}: trusted server journal byte count is divergent`);
-    const requested = /^bytes=([0-9]+)-([0-9]*)$/.exec(failure.range ?? "");
-    assert.ok(requested, `${engine}: failed local request byte range is malformed`);
-    assert.equal(record.rangeStart, Number(requested[1]), `${engine}: trusted server journal range start is divergent`);
-    assert.equal(record.rangeEnd, requested[2] === "" ? record.totalBytes - 1 : Number(requested[2]), `${engine}: trusted server journal range end is divergent`);
+    assert.ok(Number.isSafeInteger(record.totalBytes) && record.totalBytes > 0, `${engine}: trusted server journal total byte count is malformed`);
+    if (record.status === 200) {
+      assert.equal(record.range, null, `${engine}: complete trusted server response unexpectedly carries a range`);
+      assert.equal(record.rangeStart, null, `${engine}: complete trusted server response unexpectedly carries a range start`);
+      assert.equal(record.rangeEnd, null, `${engine}: complete trusted server response unexpectedly carries a range end`);
+      assert.equal(record.bytes, record.totalBytes, `${engine}: complete trusted server response byte count is divergent`);
+    } else {
+      assert.ok(Number.isSafeInteger(record.rangeStart) && Number.isSafeInteger(record.rangeEnd), `${engine}: trusted server journal byte range is malformed`);
+      assert.ok(record.rangeStart >= 0 && record.rangeEnd >= record.rangeStart && record.rangeEnd < record.totalBytes, `${engine}: trusted server journal byte range is invalid`);
+      assert.equal(record.bytes, record.rangeEnd - record.rangeStart + 1, `${engine}: trusted server journal byte count is divergent`);
+      const requested = /^bytes=([0-9]+)-([0-9]*)$/.exec(failure.range ?? "");
+      assert.ok(requested, `${engine}: failed local request byte range is malformed`);
+      assert.equal(record.rangeStart, Number(requested[1]), `${engine}: trusted server journal range start is divergent`);
+      assert.equal(record.rangeEnd, requested[2] === "" ? record.totalBytes - 1 : Number(requested[2]), `${engine}: trusted server journal range end is divergent`);
+    }
   }
   return { correlatedFailures: failures.length };
 }
@@ -646,6 +695,39 @@ export function reconcileOperationalStatusZero({ engine, internalRequests, obser
   const effectiveInternalRequests = [...internalRequests];
   const derivedRequests = reconcileQuarantinedStatusZero({ engine, observations, journal, responses: [...internalObservations, ...browserResponses] });
   recordReconciledServerOwnedRequests(effectiveInternalRequests, derivedRequests, engine);
+  for (const record of journal) {
+    if (record.universe !== "SERVER_INTERNAL") continue;
+    assert.equal(record.identityOwner, "server", `${engine}: response-silent internal journal ownership is divergent`);
+    assert.equal(record.finished, true, `${engine}: response-silent internal journal record is incomplete`);
+    assertTrustedLocalResponseStatus(record.status, record.absoluteUrl);
+    assert.ok(Number.isSafeInteger(record.totalBytes) && record.totalBytes > 0, `${engine}: response-silent internal journal total byte count is malformed`);
+    if (record.status === 200) {
+      assert.equal(record.range, null, `${engine}: response-silent complete journal unexpectedly carries a range`);
+      assert.equal(record.rangeStart, null, `${engine}: response-silent complete journal unexpectedly carries a range start`);
+      assert.equal(record.rangeEnd, null, `${engine}: response-silent complete journal unexpectedly carries a range end`);
+      assert.equal(record.bytes, record.totalBytes, `${engine}: response-silent complete journal byte count is divergent`);
+    } else {
+      assert.ok(Number.isSafeInteger(record.rangeStart) && Number.isSafeInteger(record.rangeEnd), `${engine}: response-silent internal journal byte range is malformed`);
+      assert.ok(record.rangeStart >= 0 && record.rangeEnd >= record.rangeStart && record.rangeEnd < record.totalBytes, `${engine}: response-silent internal journal byte range is invalid`);
+      assert.equal(record.bytes, record.rangeEnd - record.rangeStart + 1, `${engine}: response-silent internal journal byte count is divergent`);
+      const requested = /^bytes=([0-9]+)-([0-9]*)$/.exec(record.range ?? "");
+      assert.ok(requested, `${engine}: response-silent internal journal requested byte range is malformed`);
+      assert.equal(record.rangeStart, Number(requested[1]), `${engine}: response-silent internal journal range start is divergent`);
+      assert.equal(record.rangeEnd, requested[2] === "" ? record.totalBytes - 1 : Number(requested[2]), `${engine}: response-silent internal journal range end is divergent`);
+    }
+    if (internalObservations.some(({ journalId }) => journalId === record.journalId)) continue;
+    if (effectiveInternalRequests.some(({ requestId }) => requestId === record.requestId)) continue;
+    recordServerOwnedRequest(effectiveInternalRequests, canonicalizeTrustedLocalResourceType({
+      universe: record.universe,
+      identityOwner: record.identityOwner,
+      requestId: record.requestId,
+      url: record.absoluteUrl,
+      route: record.route,
+      range: record.range,
+      resourceType: null,
+      ...SERVER_INTERNAL_REQUEST_CONTEXT,
+    }, engine), engine);
+  }
   return effectiveInternalRequests;
 }
 
@@ -778,7 +860,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
         for (const name of Object.keys(headers)) if (name.toLowerCase() === "x-branct-trusted-request-id") delete headers[name];
         const range = headers.range ?? null;
         const requestId = sha256(canonicalJson({ engine, channel, probeId, sequence: localSequence++, url: url.href, range, phase: scope.phase, action: scope.action }));
-        const metadata = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, url: url.href, route: validated.route, range, resourceType: request.resourceType(), phase: scope.phase, action: scope.action };
+        const metadata = canonicalizeTrustedLocalResourceType({ universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, url: url.href, route: validated.route, range, resourceType: request.resourceType(), phase: scope.phase, action: scope.action }, engine);
         requestMetadata.set(request, metadata);
         localRequests.push(metadata);
         headers["x-branct-trusted-request-id"] = requestId;
@@ -822,9 +904,9 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       }
       const resolvedMetadata = resolveTrustedResponseIdentity({ engine, metadata, serverRequestId, universe, identityOwner, browserRequests: localRequests });
       const range = resolvedMetadata?.range ?? observedRange;
-      const observation = { universe, identityOwner, requestId: resolvedMetadata?.requestId ?? serverRequestId, url: url.href, route: resolvedMetadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() };
+      const observation = canonicalizeTrustedLocalResourceType({ universe, identityOwner, requestId: resolvedMetadata?.requestId ?? serverRequestId, url: url.href, route: resolvedMetadata?.route ?? validated.route, range, status, journalId, rejectionId, resourceType: response.request().resourceType() }, engine);
       if (universe === "SERVER_INTERNAL") {
-        recordServerOwnedRequest(internalRequests, { universe, identityOwner, requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), ...SERVER_INTERNAL_REQUEST_CONTEXT }, engine);
+        recordServerOwnedRequest(internalRequests, canonicalizeTrustedLocalResourceType({ universe, identityOwner, requestId: serverRequestId, url: url.href, route: validated.route, range, resourceType: response.request().resourceType(), ...SERVER_INTERNAL_REQUEST_CONTEXT }, engine), engine);
       }
       if (universe === "SERVER_INTERNAL") recordTrustedResponseObservation(internalObservations, observation, engine);
       else if (universe === "BROWSER_CORRELATED") recordBrowserCorrelatedResponse(localResponses, observation, engine);
@@ -836,11 +918,12 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     recordLifecycleEvent("requestfailed");
     const url = new URL(request.url());
     if (url.origin !== server.origin) return;
-    const metadata = requestMetadata.get(request);
-    if (!metadata) {
-      localViolations.push({ url: url.href, reason: "failed local request has no consumer-owned identity", phase: scope.phase, action: scope.action });
-      return;
-    }
+    let route;
+    try { route = server.validateRequest(url.href).route; }
+    catch (error) { localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action }); return; }
+    let metadata;
+    try { metadata = resolveTrustedFailedRequestMetadata({ engine, metadata: requestMetadata.get(request), url: url.href, route, range: request.headers().range ?? null, localRequests, localResponses, localFailures }); }
+    catch (error) { localViolations.push({ url: url.href, reason: error.message, phase: scope.phase, action: scope.action }); return; }
     localFailures.push({ ...metadata, reason: request.failure()?.errorText ?? "UNKNOWN_LOCAL_REQUEST_FAILURE" });
   });
 
@@ -896,12 +979,13 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     const browserJournal = sealedSnapshot.records.filter(({ universe }) => universe === "BROWSER_CORRELATED");
     const internalJournal = sealedSnapshot.records.filter(({ universe }) => universe === "SERVER_INTERNAL");
     assert.equal(browserJournal.length + internalJournal.length, sealedSnapshot.records.length, `${engine}: trusted journal contains an extra record outside the proof universes`);
+    const reconciledBrowser = reconcileTrustedPreEgressCancellations({ engine, localRequests, localResponses, localFailures, journal: browserJournal, producerClosed: true });
     const correlation = assertTrustedProofUniverses({
       engine,
       windowId: journalWindow.windowId,
-      browserRequests: localRequests,
+      browserRequests: reconciledBrowser.localRequests,
       browserResponses: localResponses,
-      browserFailures: localFailures,
+      browserFailures: reconciledBrowser.localFailures,
       browserJournal,
       internalRequests: effectiveInternalRequests,
       internalObservations,
@@ -910,7 +994,7 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
     });
     journalWindow.verify();
     collection.verify(fingerprint);
-    finalized = { ...correlation, fingerprint, windowId: journalWindow.windowId };
+    finalized = { ...correlation, preEgressCancellations: reconciledBrowser.preEgressCancellations, fingerprint, windowId: journalWindow.windowId };
     return structuredClone(finalized);
   };
 
@@ -1079,10 +1163,10 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
     assertNoObservedExternalAttempts([{ engine, networkIsolation: { flowAttempts: networkPolicy.flowAttempts } }]);
     networkPolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });
     await drainTrustedPage(page);
-    await networkPolicy.finalizeLocalFailureCorrelations();
     await page.close();
     await context.close();
     measuredContextClosed = true;
+    await networkPolicy.finalizeLocalFailureCorrelations();
     networkPolicy.assertStillVerified();
     assert.deepEqual(networkPolicy.localViolations, [], `${engine}: trusted local request violation observed`);
     const controls = [];
@@ -1096,10 +1180,10 @@ async function measureEngine(request, matrix, menuAuthority, playwright, engine)
         controls.push(await runNetworkControl(probePage, probePolicy, engine, action, server.origin, probeId));
         probePolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });
         await drainTrustedPage(probePage);
-        await probePolicy.finalizeLocalFailureCorrelations();
         await probePage.close();
         await probeContext.close();
         probeContextClosed = true;
+        await probePolicy.finalizeLocalFailureCorrelations();
         probePolicy.assertStillVerified();
         assert.deepEqual(probePolicy.localViolations, [], `${engine}: trusted control local request violation observed: ${action}`);
       } finally { if (!probeContextClosed) await probeContext.close(); }
