@@ -2331,8 +2331,8 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /response\.status, record\.status/);
     assert.match(source, /recordServerOwnedRequest\(internalRequests/);
     assert.match(source, /localRequests\.find\(\(\{ requestId \}\) => requestId === request\.requestId\)/);
-    assert.match(source, /existing\.url, request\.url/);
-    assert.match(source, /existing\.range, request\.range/);
+    assert.match(source, /exactKeys\(request, \["universe", "identityOwner", "requestId", "url", "route", "range", "resourceType", "phase", "action"\]/);
+    assert.match(source, /for \(const field of \["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"\]\)/);
     assert.match(source, /!\[200, 206, 403\]\.includes\(status\)/);
   };
   const assertServerGuards = (source) => {
@@ -2366,8 +2366,8 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "response.status, record.status",
     "recordServerOwnedRequest(internalRequests",
     "localRequests.find(({ requestId }) => requestId === request.requestId)",
-    "existing.url, request.url",
-    "existing.range, request.range",
+    'exactKeys(request, ["universe", "identityOwner", "requestId", "url", "route", "range", "resourceType", "phase", "action"]',
+    'for (const field of ["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"])',
     "![200, 206, 403].includes(status)",
   ]) {
     const mutated = consumer.replaceAll(pattern, "false");
