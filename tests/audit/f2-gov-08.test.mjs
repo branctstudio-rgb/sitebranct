@@ -2164,7 +2164,7 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
   assert.equal(typeof trustedConsumer.reconcileQuarantinedStatusZero, "function");
   const requestId = "a".repeat(64);
   const journalId = "b".repeat(64);
-  const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
   const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
   assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record] }), [{
     universe: "SERVER_INTERNAL",
@@ -2232,7 +2232,7 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
 test("F2-GOV-09-F18-A-F1 binds status-zero reconciliation to the complete server-owned request schema", () => {
   const requestId = "7".repeat(64);
   const journalId = "8".repeat(64);
-  const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
   const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
   const [derived] = trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record] });
   assert.deepEqual(derived, {
@@ -2261,7 +2261,7 @@ test("F2-GOV-09-F18-A-F1 binds status-zero reconciliation to the complete server
 test("F2-GOV-09-F18-A-F1 rejects a conclusive response transplanted across resource types", () => {
   const requestId = "9".repeat(64);
   const journalId = "a".repeat(64);
-  const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
   const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
   const transplanted = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206, resourceType: "document" };
   assert.throws(
@@ -2312,7 +2312,7 @@ test("F2-GOV-09-F18-A-F1 mutation controls keep resource binding and guarded der
       const module = await import(`${pathToFileURL(join(directory, "f2-gov-08-consumer.mjs")).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`);
       const requestId = "b".repeat(64);
       const journalId = "c".repeat(64);
-      const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
       const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
       if (kind === "response") {
         const response = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206, [field]: value };
@@ -2335,7 +2335,7 @@ test("F2-GOV-09-F18-A-F2 enforces the complete reconciliation invariant matrix t
   const range = "bytes=0-1";
   const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "1".repeat(64), journalId: "2".repeat(64), absoluteUrl: url, route, range, status: 206, finished: true };
   const second = { ...first, requestId: "3".repeat(64), journalId: "4".repeat(64) };
-  const observation = { requestId: null, journalId: null, url, route, range, status: 0, resourceType: "media" };
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
   const conclusive = {
     universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId,
     rejectionId: undefined, url, route, range, status: 206, resourceType: "media",
@@ -2350,6 +2350,10 @@ test("F2-GOV-09-F18-A-F2 enforces the complete reconciliation invariant matrix t
 
   const invariants = [
     ["observation resourceType is bound to the trusted journal classification", { observations: [{ ...observation, resourceType: "document" }] }, /resourceType.*divergent|classification/i],
+    ["status-zero observation has exact schema", { observations: [{ ...observation, attackerField: true }] }, /schema.*exact/i],
+    ["status-zero observation remains in the server-owned universe", { observations: [{ ...observation, universe: "BROWSER_CORRELATED" }] }, /observation universe.*divergent/i],
+    ["status-zero observation remains server-owned", { observations: [{ ...observation, identityOwner: "attacker" }] }, /observation ownership.*divergent/i],
+    ["status-zero observation cannot claim a rejection", { observations: [{ ...observation, rejectionId: "f".repeat(64) }] }, /must not claim a rejection/i],
     ["conclusive response has canonical authority", { internalObservations: [{ ...conclusive, identityOwner: "attacker" }] }, /ownership|identityOwner|authority|schema/i],
     ["conclusive response remains in the server-owned universe", { internalObservations: [{ ...conclusive, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }, /universe.*divergent|authority/i],
     ["conclusive response has exact schema", { internalObservations: [{ ...conclusive, attackerField: true }] }, /schema.*exact/i],
@@ -2370,6 +2374,10 @@ test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority
   const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
   const mutations = [
     ["remove journal resource binding", "assert.equal(record.resourceType, observation.resourceType, `${engine}: quarantined status-zero journal resourceType is divergent`);", "void record;", "journal-type"],
+    ["remove status-zero schema guard", "exactKeys(observation, [\"universe\", \"identityOwner\", \"requestId\", \"journalId\", \"rejectionId\", \"url\", \"route\", \"range\", \"status\", \"resourceType\"], `${engine}: quarantined status-zero observation`);", "", "observation-schema"],
+    ["remove status-zero universe guard", "assert.equal(observation.universe, \"SERVER_INTERNAL\", `${engine}: quarantined status-zero observation universe is divergent`);", "", "observation-universe"],
+    ["remove status-zero ownership guard", "assert.equal(observation.identityOwner, \"server\", `${engine}: quarantined status-zero observation ownership is divergent`);", "", "observation-owner"],
+    ["remove status-zero rejection guard", "assert.equal(observation.rejectionId, undefined, `${engine}: quarantined status zero must not claim a rejection identity`);", "", "observation-rejection"],
     ["remove response schema guard", "recordTrustedResponseObservation(canonicalResponses, response, engine);", "", "response-schema"],
     ["remove server-owned response authority guards", /\s+assert\.equal\(response\.universe, "SERVER_INTERNAL", `\$\{engine\}: conclusive response universe is divergent`\);\r?\n\s+assert\.equal\(response\.identityOwner, "server", `\$\{engine\}: conclusive response ownership is divergent`\);/, "", "response-authority"],
     ["drop real internal responses", "responses: internalObservations });", "responses: [] });", "operational-wiring"],
@@ -2387,10 +2395,18 @@ test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority
       const range = "bytes=0-1";
       const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "5".repeat(64), journalId: "6".repeat(64), absoluteUrl: url, route, range, status: 206, finished: true };
       const second = { ...first, requestId: "7".repeat(64), journalId: "8".repeat(64) };
-      const observation = { requestId: null, journalId: null, url, route, range, status: 0, resourceType: "media" };
+      const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
       const conclusive = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId, rejectionId: undefined, url, route, range, status: 206, resourceType: "media" };
       if (kind === "journal-type") {
         assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, resourceType: "document" }], journal: [first], internalObservations: [] }), `${label} must let the transplant escape`);
+      } else if (kind === "observation-schema") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, attackerField: true }], journal: [first], internalObservations: [] }), `${label} must let an extra observation field escape`);
+      } else if (kind === "observation-universe") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, universe: "BROWSER_CORRELATED" }], journal: [first], internalObservations: [] }), `${label} must let a transplanted observation universe escape`);
+      } else if (kind === "observation-owner") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, identityOwner: "attacker" }], journal: [first], internalObservations: [] }), `${label} must let transplanted observation ownership escape`);
+      } else if (kind === "observation-rejection") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, rejectionId: "f".repeat(64) }], journal: [first], internalObservations: [] }), `${label} must let a claimed rejection identity escape`);
       } else if (kind === "response-schema") {
         assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first], internalObservations: [{ ...conclusive, attackerField: true }] }), `${label} must let a noncanonical response schema escape`);
       } else if (kind === "response-authority") {

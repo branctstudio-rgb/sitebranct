@@ -506,6 +506,10 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
   const usedJournalIds = new Set();
   const reconciled = [];
   for (const observation of observations) {
+    exactKeys(observation, ["universe", "identityOwner", "requestId", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"], `${engine}: quarantined status-zero observation`);
+    assert.equal(observation.universe, "SERVER_INTERNAL", `${engine}: quarantined status-zero observation universe is divergent`);
+    assert.equal(observation.identityOwner, "server", `${engine}: quarantined status-zero observation ownership is divergent`);
+    assert.equal(observation.rejectionId, undefined, `${engine}: quarantined status zero must not claim a rejection identity`);
     assert.equal(observation.status, 0, `${engine}: quarantined browser observation is not status 0`);
     assert.equal(observation.requestId, null, `${engine}: quarantined status 0 must not claim a request identity`);
     assert.equal(observation.journalId, null, `${engine}: quarantined status 0 must not claim a journal identity`);
