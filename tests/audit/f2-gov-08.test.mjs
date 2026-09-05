@@ -2178,7 +2178,7 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
     action: "browser-internal-request",
   }]);
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation, { ...observation }], journal: [record] }), /cardinality|duplicate/i);
-  const conclusive = { ...observation, requestId, journalId, status: 206 };
+  const conclusive = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206 };
   assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
     engine: "webkit",
     observations: [observation],
@@ -2199,12 +2199,12 @@ test("F2-GOV-09-F16 quarantines status zero and derives identity only from one c
     journal: [record, secondRecord],
     responses: [conclusive, secondConclusive],
   }), [], "repeated status-zero observations add no evidence when every exact journal is conclusively covered");
-  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
     engine: "webkit",
     observations: [observation],
     journal: [record],
     responses: [conclusive, { ...conclusive }],
-  }), /cardinality|duplicate|conclusive/i, "two conclusive responses for one status-zero observation must fail closed");
+  }), [], "an exact duplicate conclusive callback must coalesce without changing cardinality");
   assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
     engine: "webkit",
     observations: [observation],
@@ -2263,7 +2263,7 @@ test("F2-GOV-09-F18-A-F1 rejects a conclusive response transplanted across resou
   const journalId = "a".repeat(64);
   const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
   const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
-  const transplanted = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, status: 206, resourceType: "document" };
+  const transplanted = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206, resourceType: "document" };
   assert.throws(
     () => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [transplanted] }),
     /resourceType.*divergent/i,
@@ -2298,7 +2298,6 @@ test("F2-GOV-09-F18-A-F1 mutation controls keep resource binding and guarded der
     ["remove url binding", /\s+assert\.equal\(response\.url, observation\.url, `\$\{engine\}: conclusive response url is divergent`\);/, "", "response", "url", "http://127.0.0.1:4173/media/transplanted.webm"],
     ["remove route binding", /\s+assert\.equal\(response\.route, observation\.route, `\$\{engine\}: conclusive response route is divergent`\);/, "", "response", "route", "media/transplanted.webm"],
     ["remove range binding", /\s+assert\.equal\(response\.range, observation\.range, `\$\{engine\}: conclusive response range is divergent`\);/, "", "response", "range", "bytes=2-3"],
-    ["remove resourceType binding", /\s+assert\.equal\(response\.resourceType, observation\.resourceType, `\$\{engine\}: conclusive response resourceType is divergent`\);/, "", "response", "resourceType", "document"],
     ["remove canonical phase guard", /\s+assert\.equal\(request\.phase, SERVER_INTERNAL_REQUEST_CONTEXT\.phase, `\$\{engine\}: server-owned request phase is divergent`\);/, "", "request", "phase", "control-probe"],
     ["remove canonical action guard", /\s+assert\.equal\(request\.action, SERVER_INTERNAL_REQUEST_CONTEXT\.action, `\$\{engine\}: server-owned request action is divergent`\);/, "", "request", "action", "transplanted"],
     ["bypass guarded derived insertion", "recordServerOwnedRequest(target, request, engine);", "target.push(request);", "incomplete"],
@@ -2316,7 +2315,7 @@ test("F2-GOV-09-F18-A-F1 mutation controls keep resource binding and guarded der
       const observation = { requestId: null, journalId: null, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
       const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
       if (kind === "response") {
-        const response = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, status: 206, [field]: value };
+        const response = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206, [field]: value };
         assert.doesNotThrow(() => module.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [response] }), `${label} must let the transplanted response escape`);
       } else if (kind === "request") {
         const request = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, url: observation.url, route: observation.route, range: observation.range, resourceType: "media", phase: "server-internal", action: "browser-internal-request", [field]: value };
@@ -2324,6 +2323,80 @@ test("F2-GOV-09-F18-A-F1 mutation controls keep resource binding and guarded der
       } else {
         const incomplete = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, url: observation.url, route: observation.route, range: observation.range, resourceType: "media" };
         assert.doesNotThrow(() => module.recordReconciledServerOwnedRequests([], [incomplete], "webkit"), `${label} must let the incomplete derived request escape`);
+      }
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  }
+});
+
+test("F2-GOV-09-F18-A-F2 enforces the complete reconciliation invariant matrix through the operational path", () => {
+  assert.equal(typeof trustedConsumer.reconcileOperationalStatusZero, "function", "the operational status-zero path is absent");
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-1";
+  const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "1".repeat(64), journalId: "2".repeat(64), absoluteUrl: url, route, range, status: 206, finished: true };
+  const second = { ...first, requestId: "3".repeat(64), journalId: "4".repeat(64) };
+  const observation = { requestId: null, journalId: null, url, route, range, status: 0, resourceType: "media" };
+  const conclusive = {
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId,
+    rejectionId: undefined, url, route, range, status: 206, resourceType: "media",
+  };
+  const expectedSecond = {
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: second.requestId, url, route, range,
+    resourceType: "media", phase: "server-internal", action: "browser-internal-request",
+  };
+  assert.deepEqual(trustedConsumer.reconcileOperationalStatusZero({
+    engine: "webkit", internalRequests: [], observations: [observation], journal: [first, second], internalObservations: [conclusive],
+  }), [expectedSecond], "a real conclusive SERVER_INTERNAL observation must consume exactly its own journal before derivation");
+
+  const invariants = [
+    ["observation resourceType is bound to the trusted journal classification", { observations: [{ ...observation, resourceType: "document" }] }, /resourceType.*divergent|classification/i],
+    ["conclusive response has canonical authority", { internalObservations: [{ ...conclusive, identityOwner: "attacker" }] }, /ownership|identityOwner|authority|schema/i],
+    ["conclusive response remains in the server-owned universe", { internalObservations: [{ ...conclusive, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }, /universe.*divergent|authority/i],
+    ["conclusive response has exact schema", { internalObservations: [{ ...conclusive, attackerField: true }] }, /schema.*exact/i],
+    ["journal cannot inject its own resourceType", { journal: [{ ...first, resourceType: "document" }, second] }, /journal.*schema|resourceType.*authority/i],
+    ["journal route must have a closed resource classification", { journal: [{ ...first, route: "media/fixture.unknown" }, second] }, /resourceType classification is absent/i],
+  ];
+  for (const [label, override, expected] of invariants) assert.throws(
+    () => trustedConsumer.reconcileOperationalStatusZero({
+      engine: "webkit", internalRequests: [], observations: [observation], journal: [first, second], internalObservations: [conclusive], ...override,
+    }),
+    expected,
+    label,
+  );
+});
+
+test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority and operational wiring load-bearing", async () => {
+  const source = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
+  const mutations = [
+    ["remove journal resource binding", "assert.equal(record.resourceType, observation.resourceType, `${engine}: quarantined status-zero journal resourceType is divergent`);", "void record;", "journal-type"],
+    ["remove response schema guard", "recordTrustedResponseObservation(canonicalResponses, response, engine);", "", "response-schema"],
+    ["remove server-owned response authority guards", /\s+assert\.equal\(response\.universe, "SERVER_INTERNAL", `\$\{engine\}: conclusive response universe is divergent`\);\r?\n\s+assert\.equal\(response\.identityOwner, "server", `\$\{engine\}: conclusive response ownership is divergent`\);/, "", "response-authority"],
+    ["drop real internal responses", "responses: internalObservations });", "responses: [] });", "operational-wiring"],
+  ];
+  for (const [label, pattern, replacement, kind] of mutations) {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-status-zero-operational-mutation-"));
+    try {
+      const mutated = source.replace(pattern, replacement);
+      assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+      await writeFile(join(directory, "f2-gov-08-consumer.mjs"), mutated);
+      await writeFile(join(directory, "f2-gov-08-static-server.mjs"), server);
+      const module = await import(`${pathToFileURL(join(directory, "f2-gov-08-consumer.mjs")).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`);
+      const url = "http://127.0.0.1:4173/media/fixture.webm";
+      const route = "media/fixture.webm";
+      const range = "bytes=0-1";
+      const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "5".repeat(64), journalId: "6".repeat(64), absoluteUrl: url, route, range, status: 206, finished: true };
+      const second = { ...first, requestId: "7".repeat(64), journalId: "8".repeat(64) };
+      const observation = { requestId: null, journalId: null, url, route, range, status: 0, resourceType: "media" };
+      const conclusive = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId, rejectionId: undefined, url, route, range, status: 206, resourceType: "media" };
+      if (kind === "journal-type") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, resourceType: "document" }], journal: [first], internalObservations: [] }), `${label} must let the transplant escape`);
+      } else if (kind === "response-schema") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first], internalObservations: [{ ...conclusive, attackerField: true }] }), `${label} must let a noncanonical response schema escape`);
+      } else if (kind === "response-authority") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first], internalObservations: [{ ...conclusive, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }), `${label} must let noncanonical response authority escape`);
+      } else {
+        assert.throws(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first, second], internalObservations: [conclusive] }), /cardinality.*ambiguous/i, `${label} must reopen the operational cardinality failure`);
       }
     } finally { await rm(directory, { recursive: true, force: true }); }
   }
@@ -2425,7 +2498,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     assert.match(source, /Execution context was destroyed/);
     assert.match(source, /if \(!\/Execution context was destroyed\//);
     assert.match(source, /quarantinedStatusZero\.push/);
-    assert.match(source, /reconcileQuarantinedStatusZero\(\{ engine, observations: quarantinedStatusZero, journal: sealedSnapshot\.records, responses: localResponses \}\)/);
+    assert.match(source, /reconcileOperationalStatusZero\(\{\r?\n\s+engine, internalRequests, observations: quarantinedStatusZero, journal: sealedSnapshot\.records, internalObservations,/);
     assert.match(source, /conclusiveJournalIds\.has\(response\.journalId\)/);
     assert.match(source, /journalMatches\.length, 1/);
     assert.match(source, /uncovered\.length, 1/);
@@ -2460,7 +2533,7 @@ test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity
     "await context.addCookies([journalWindow.continuationCookie]);",
     "Execution context was destroyed",
     "quarantinedStatusZero.push",
-    "reconcileQuarantinedStatusZero({ engine, observations: quarantinedStatusZero, journal: sealedSnapshot.records, responses: localResponses })",
+    "engine, internalRequests, observations: quarantinedStatusZero, journal: sealedSnapshot.records, internalObservations,",
     "conclusiveJournalIds.has(response.journalId)",
     "journalMatches.length, 1",
     "uncovered.length, 1",
