@@ -32,6 +32,12 @@ const SERVER_OWNED_RESOURCE_TYPE_BY_EXTENSION = new Map([
   ["otf", "font"], ["ttf", "font"], ["woff", "font"], ["woff2", "font"],
   ["m4a", "media"], ["mp3", "media"], ["mp4", "media"], ["ogg", "media"], ["wav", "media"], ["webm", "media"],
 ]);
+const serverOwnedResourceTypeForRoute = (route, engine) => {
+  const extension = /\.([A-Za-z0-9]+)$/.exec(route ?? "")?.[1]?.toLowerCase();
+  const resourceType = SERVER_OWNED_RESOURCE_TYPE_BY_EXTENSION.get(extension);
+  assert.ok(resourceType, `${engine}: trusted journal resourceType classification is absent for ${route ?? "unknown route"}`);
+  return resourceType;
+};
 const networkControlStatus = (action) => RESOURCE_HINT_ACTIONS.has(action)
   ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
   : "BLOCKED_AND_RECORDED";
@@ -492,9 +498,7 @@ export function reconcileQuarantinedStatusZero({ engine, observations, journal, 
   assert.ok(Array.isArray(responses), `${engine}: trusted local responses are malformed`);
   const boundJournal = journal.map((record) => {
     assert.equal(Object.hasOwn(record, "resourceType"), false, `${engine}: trusted journal resourceType authority must be consumer-derived`);
-    const extension = /\.([A-Za-z0-9]+)$/.exec(record.route ?? "")?.[1]?.toLowerCase();
-    const resourceType = SERVER_OWNED_RESOURCE_TYPE_BY_EXTENSION.get(extension);
-    assert.ok(resourceType, `${engine}: trusted journal resourceType classification is absent for ${record.route ?? "unknown route"}`);
+    const resourceType = serverOwnedResourceTypeForRoute(record.route, engine);
     return { ...record, resourceType };
   });
   const canonicalResponses = [];
@@ -812,7 +816,8 @@ export async function installRuntimeNetworkPolicy(context, server, engine, chann
       }
       const observedRange = metadata?.range ?? response.request().headers().range ?? null;
       if (status === 0) {
-        quarantinedStatusZero.push({ universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, url: url.href, route: metadata?.route ?? validated.route, range: observedRange, status, journalId: null, rejectionId: undefined, resourceType: response.request().resourceType() });
+        const quarantineRoute = metadata?.route ?? validated.route;
+        quarantinedStatusZero.push({ universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, url: url.href, route: quarantineRoute, range: observedRange, status, journalId: null, rejectionId: undefined, resourceType: serverOwnedResourceTypeForRoute(quarantineRoute, engine) });
         return;
       }
       const resolvedMetadata = resolveTrustedResponseIdentity({ engine, metadata, serverRequestId, universe, identityOwner, browserRequests: localRequests });
