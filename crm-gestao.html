@@ -19,7 +19,6 @@
 
 <link rel="icon" href="src/img/favicon.ico" sizes="any">
 
-<link rel="preconnect" href="https://connect.facebook.net">
 <link rel="preload" href="src/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="src/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 
@@ -493,11 +492,6 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 </script>
 
-<!-- ===== Meta Pixel — carregado, mas init/track só após consentimento ===== -->
-<script>
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-window.__BRANCT_PIXEL_ID = '1595310191130205';
-</script>
 </head>
 <body>
 <div class="scroll-progress" aria-hidden="true"></div>
@@ -841,17 +835,22 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 (function () {
     var CONSENT_KEY = 'branct_consent';
     var CONSENT_VER = 'v1'; // bump para re-pedir consentimento se mudar a política
+    var PIXEL_ID = '1595310191130205';
     var stored = null;
     try {
         stored = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');
     } catch (e) { stored = null; }
 
-    function pixelInit() {
-        if (window.fbq && !window.__brancrPixelInited && window.__BRANCT_PIXEL_ID) {
-            window.__brancrPixelInited = true;
-            fbq('init', window.__BRANCT_PIXEL_ID);
-            fbq('track', 'PageView');
-        }
+    function loadPixelAndInit() {
+        if (window.__brancrPixelInited) return;
+        window.__brancrPixelInited = true;
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+        document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', PIXEL_ID);
+        fbq('track', 'PageView');
     }
     function pixelTrack(name, params, options) {
         if (window.fbq && window.__brancrPixelInited) {
@@ -872,7 +871,7 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 
     // Se já consentiu antes (mesma versão), inicia Pixel imediatamente
     if (stored && stored.status === 'granted' && stored.version === CONSENT_VER) {
-        pixelInit();
+        loadPixelAndInit();
     }
 
     // Banner: mostrar se não há decisão guardada para esta versão
@@ -908,14 +907,14 @@ window.__BRANCT_PIXEL_ID = '1595310191130205';
 
     if (acceptBtn) acceptBtn.addEventListener('click', function () {
         saveConsent('granted');
-        pixelInit();
+        loadPixelAndInit();
         dismissBanner();
     });
 
     if (rejectBtn) rejectBtn.addEventListener('click', function () {
         saveConsent('denied');
         dismissBanner();
-        // Sem init do Pixel; sem tracking. fbevents.js carregado mas inerte.
+        // Sem carregar o script, init ou tracking.
     });
 
     // NOTA: Lead NÃO dispara em cliques de CTA. Dispara uma única vez no submit

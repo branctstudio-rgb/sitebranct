@@ -1,18 +1,21 @@
 {
-  "schemaVersion": 2,
-  "status": "OFFLINE_SIMULATOR_ONLY",
+  "schemaVersion": 4,
+  "status": "OPERATIONAL_CANDIDATE",
   "repository": "branctstudio-rgb/sitebranct",
   "canonicalAuthority": {
     "source": "exact-base-sha-git-objects",
     "manifestPath": "fixtures/audit/f2-gov-08-authority-manifest.json",
-    "manifestSha256": "4873cc10f26f5a4bbb8558ca54029ee01f89bc396e9e61aba66a313e30b9ea1b",
+    "manifestSha256": "9ab72fd4c3b7c3a1b1ecf62a73dc9eb3de05d63598064793d3f781dc18cc9dc5",
     "consumerPath": "scripts/governance/f2-gov-08-consumer.mjs",
     "matrixPath": "fixtures/audit/f2-gov-08-matrix.json",
     "expectationsPath": "fixtures/audit/f2-gov-08-expectations.json",
-    "staticServerPath": "scripts/governance/f2-gov-08-static-server.mjs"
+    "staticServerPath": "scripts/governance/f2-gov-08-static-server.mjs",
+    "runtimePath": "fixtures/audit/f2-01-ci-runtime.json",
+    "menuEvidencePath": "fixtures/audit/f2-01-menu-evidence-matrix.json",
+    "targetBaselinePath": "fixtures/audit/f2-01-baseline-results.json"
   },
   "trustedEvent": {
-    "eventName": "pull_request",
+    "eventNames": ["pull_request", "merge_group"],
     "baseRef": "main",
     "requireHeadRef": true,
     "requireExactRemoteRefs": true,
@@ -29,7 +32,13 @@
   "measurement": {
     "origin": "http://127.0.0.1:4173",
     "consumerProducesDecision": true,
-    "producerMaySupplyResults": false
+    "producerMaySupplyResults": false,
+    "requiredEngines": ["chromium", "firefox", "webkit"],
+    "networkPolicy": "verified-local-blobs-runtime-external-attempt-fails",
+    "staticAnalysisRole": "inventory-only-not-proof-of-absence",
+    "blockedAttemptResult": "FAIL",
+    "flowRestrictions": ["no-consent", "no-form-submit", "no-external-navigation"],
+    "perEngineTimeoutMs": 240000
   },
   "environment": {
     "futureJobPermissions": { "contents": "read" },
@@ -37,9 +46,10 @@
     "forbiddenNames": ["GITHUB_TOKEN", "ACTIONS_RUNTIME_TOKEN", "FTP_SERVER", "FTP_USERNAME", "FTP_PASSWORD"]
   },
   "limitations": {
-    "workflowEnforcement": "NOT_VERIFIED",
-    "operationalIsolation": "NOT_VERIFIED",
-    "browserNetworkIsolation": "NOT_VERIFIED",
+    "workflowEnforcement": "CANDIDATE_PENDING_PROTECTED_MERGE",
+    "operationalIsolation": "VERIFIED_IN_CI",
+    "browserNetworkIsolation": "VERIFIED_IN_CI",
+    "resourceHintPreEgress": "NOT_VERIFIED_DYNAMIC_HINTS_DETECTED_AND_REJECTED",
     "requiresFutureProtectedCeremony": true
   }
 }

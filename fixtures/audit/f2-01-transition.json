@@ -28,6 +28,14 @@
   },
   "productionAuthorized": false,
   "liveChangesAllowedInThisGovernancePr": false,
+  "liveChangeTransition": {
+    "schemaVersion": 1,
+    "mission": "F2-GOV-09-F3-CONSENT-HARDENING",
+    "status": "AUTHORIZED_UNINTEGRATED",
+    "baseSha": "3656d57a78b777b1ff279c2cda01905877611117",
+    "paths": ["crm-gestao.html"],
+    "productionAuthorized": false
+  },
   "historicalPhase1": {
     "status": "HISTORICAL_FROZEN",
     "path": "fixtures/audit/baseline-results.json",
