@@ -207,7 +207,7 @@
         }
         // Evita a transição herdada de visibility aplicada pelo modo de movimento reduzido.
         // O ancestral continua a controlar integralmente quando o botão é apresentado.
-        close.style.visibility = 'visible';
+        close.style.visibility = 'inherit';
         close.style.transitionProperty = 'none';
         var background = Array.prototype.filter.call(
             document.querySelectorAll('main, .footer, .consent'),
@@ -240,6 +240,7 @@
             toggle.classList.toggle('is-active', open);
             toggle.setAttribute('aria-expanded', open);
             drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+            drawer.inert = !open;
             if (overlay) {
                 overlay.classList.toggle('is-visible', open);
                 overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
@@ -257,6 +258,7 @@
         }
         toggle.setAttribute('aria-expanded', 'false');
         drawer.setAttribute('aria-hidden', 'true');
+        drawer.inert = true;
         toggle.addEventListener('click', function () { setOpen(!drawer.classList.contains('is-open')); });
         close.addEventListener('click', function () { setOpen(false); });
         if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
@@ -268,7 +270,7 @@
         });
         // Focus trap simples
         drawer.addEventListener('keydown', function (e) {
-            if (e.key !== 'Tab') return;
+            if (e.key !== 'Tab' || !drawer.classList.contains('is-open')) return;
             var focusables = Array.prototype.filter.call(
                 drawer.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])'),
                 function (element) {
