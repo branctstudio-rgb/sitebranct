@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
 import vm from "node:vm";
@@ -1478,12 +1479,101 @@ test("F2-GOV-09 inventories dormant external capability without granting runtime
   assert.ok(inventory.some(({ line, category, mechanism }) => line === 1 && category === "EXTERNAL_LITERAL" && mechanism === "https-url"));
 });
 
-test("F2-GOV-09 inventories the real branct.js capabilities with canonical file and lines", () => {
-  const inventory = portableGuard.inventoryNetworkCapabilities("src/js/branct.js", canonicalBlob("src/js/branct.js"));
+function assertRealBranctInventory(bytes, inventory = portableGuard.inventoryNetworkCapabilities("src/js/branct.js", bytes)) {
+  // Parse canonical source, never the inventory's own claims. The parser is already
+  // shipped by pinned Playwright; absence/incompatible AST fails, without download.
+  const require = createRequire(import.meta.url);
+  const playwrightRoot = dirname(require.resolve("playwright/package.json"));
+  assert.equal(require(join(playwrightRoot, "package.json")).version, "1.62.0");
+  const { babelParse, traverse } = require(join(playwrightRoot, "lib/transform/babelBundle.js"));
+  const source = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  const ast = babelParse(source, "src/js/branct.js");
+  const functions = [], declarations = [], calls = [];
+  traverse(ast, {
+    FunctionDeclaration(path) { if (path.node.id?.name === "sendLead") functions.push(path); },
+    VariableDeclarator(path) { if (path.node.id.name === "WEBHOOK_URL") declarations.push(path); },
+    CallExpression(path) { if (path.node.callee.name === "fetch" && path.node.arguments[0]?.name === "WEBHOOK_URL") calls.push(path); },
+  });
+  assert.equal(functions.length, 1, "sendLead anchor must be unique");
+  assert.equal(declarations.length, 1, "WEBHOOK_URL anchor must be unique");
+  assert.equal(calls.length, 1, "fetch(WEBHOOK_URL) anchor must be unique");
+  const [fn] = functions, [declaration] = declarations, [call] = calls;
+  assert.equal(call.getFunctionParent(), fn, "fetch must belong to sendLead");
+  assert.equal(call.scope.getBinding("WEBHOOK_URL")?.path, declaration, "fetch URL binding is divergent");
+  assert.equal(call.scope.getBinding("fetch"), undefined, "fetch must not be shadowed");
+  const url = "https://n8n.branct.com/webhook/site-lead";
+  assert.equal(declaration.node.init?.type, "StringLiteral", "WEBHOOK_URL must be a literal");
+  assert.equal(declaration.node.init.value, url, "WEBHOOK_URL value is divergent");
+  const expected = babelParse(`function sendLead(payload) {
+    return fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: WEBHOOK_TOKEN,
+        nome: payload.name || payload.nome || '',
+        email: payload.email || '',
+        telefone: payload.phone || payload.telefone || '',
+        empresa: payload.company || payload.empresa || '',
+        interesse: payload.interest || payload.interesse || '',
+        mensagem: payload.message || payload.mensagem || '',
+        source: payload.source || ''
+      })
+    }).then(function (res) {
+      return res.json().then(function (result) {
+        if (!result.success) throw new Error((result.error && result.error.message) || 'HTTP ' + res.status);
+        return result;
+      });
+    });
+  }`, "expected-send-lead.js").program.body[0];
+  const semantic = node => JSON.parse(JSON.stringify(node, (key, value) =>
+    ["start", "end", "loc", "extra", "leadingComments", "trailingComments", "innerComments"].includes(key) ? undefined : value));
+  assert.deepEqual(semantic(fn.node), semantic(expected), "sendLead method/body/function structure is divergent");
+  const expectEntry = (node, category, mechanism, reference) => {
+    const matches = inventory.filter(item => item.line === node.loc.start.line && item.column === node.loc.start.column + 1);
+    assert.deepEqual(matches, [{ path: "src/js/branct.js", line: node.loc.start.line, column: node.loc.start.column + 1, category, mechanism, reference }], "inventory anchor tuple is missing, duplicated or divergent");
+  };
+  expectEntry(call.node.callee, "ACTIVE_API", "fetch", null);
+  // The inventory points to the URL bytes after the opening quote, not the quote.
+  expectEntry({ loc: { start: { line: declaration.node.init.loc.start.line, column: declaration.node.init.loc.start.column + 1 } } }, "EXTERNAL_LITERAL", "https-url", url);
   assert.ok(inventory.some(({ path, line, category, mechanism }) => path === "src/js/branct.js" && line === 124 && category === "ACTIVE_API" && mechanism === "fetch"));
-  assert.ok(inventory.some(({ path, line, category, mechanism }) => path === "src/js/branct.js" && line === 397 && category === "ACTIVE_API" && mechanism === "fetch"));
   assert.ok(inventory.some(({ path, line, category, mechanism, reference }) => path === "src/js/branct.js" && line === 43 && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference.startsWith("https://connect.facebook.net/")));
-  assert.ok(inventory.some(({ path, line, category, mechanism, reference }) => path === "src/js/branct.js" && line === 393 && category === "EXTERNAL_LITERAL" && mechanism === "https-url" && reference.startsWith("https://n8n.branct.com/")));
+}
+
+test("F2-GOV-09 inventories the real branct.js capabilities with canonical file and lines", () => {
+  assertRealBranctInventory(canonicalBlob("src/js/branct.js"));
+});
+
+test("WEBSITE-09 inventory accepts an innocent offset and rejects false factual associations", () => {
+  const source = canonicalBlob("src/js/branct.js").toString("utf8");
+  const shifted = source.replace("    var WEBHOOK_URL", "\n\n    var WEBHOOK_URL").replace("    function sendLead(payload)", "\n\n    function sendLead(payload)");
+  assert.notEqual(shifted, source);
+  assert.doesNotThrow(() => assertRealBranctInventory(Buffer.from(shifted)));
+  assert.doesNotThrow(() => assertRealBranctInventory(Buffer.from(shifted.replace(/\r?\n/g, "\r\n"))));
+  for (const [name, from, to] of [
+    ["function removed", "function sendLead(payload)", "function removedLead(payload)"],
+    ["wrong function", "function sendLead(payload)", "function submitOther(payload)"],
+    ["URL changed", "https://n8n.branct.com/webhook/site-lead", "https://example.invalid/other"],
+    ["fetch removed", "return fetch(WEBHOOK_URL, {", "return otherFetch(WEBHOOK_URL, {"],
+    ["wrong URL binding", "return fetch(WEBHOOK_URL, {", "return fetch(OTHER_URL, {"],
+    ["wrong method", "method: 'POST'", "method: 'GET'"],
+    ["wrong body", "body: JSON.stringify({", "body: String({"],
+    ["duplicate function", "function sendLead(payload)", "function sendLead(payload) {}\n    function sendLead(payload)"],
+    ["duplicate declaration", "var WEBHOOK_URL =", "var WEBHOOK_URL;\n    var WEBHOOK_URL ="],
+  ]) {
+    const changed = source.replace(from, to);
+    assert.notEqual(changed, source, `${name}: mutation must change bytes`);
+    assert.throws(() => assertRealBranctInventory(Buffer.from(changed)), undefined, name);
+  }
+  const bytes = Buffer.from(shifted);
+  const inventory = portableGuard.inventoryNetworkCapabilities("src/js/branct.js", bytes);
+  for (const key of ["path", "line", "column", "category", "mechanism", "reference"]) {
+    const changed = inventory.map(item => item.line > 400 ? { ...item, [key]: key === "line" ? 1 : "forged" } : item);
+    assert.notDeepEqual(changed, inventory, `${key}: mutation must change data`);
+    assert.throws(() => assertRealBranctInventory(bytes, changed), undefined, `wrong ${key}`);
+  }
+  const duplicate = inventory.find(item => item.line > 400 && item.mechanism === "fetch");
+  assert.ok(duplicate);
+  assert.throws(() => assertRealBranctInventory(bytes, [...inventory, duplicate]), /duplicated or divergent/);
 });
 
 for (const [mechanism, url] of [

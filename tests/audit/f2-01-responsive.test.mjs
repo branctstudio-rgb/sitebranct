@@ -76,6 +76,72 @@ const waitFor = async (expression, context, timeout = 3000) => {
   return false;
 };
 class ActionTimeout extends Error {}
+async function waitForDrawerSettled(targetPage) {
+  // The runner owns history and deadline. No page-global previous rect or PASS flag.
+  // Stability is deliberately independent of inside-viewport/focus correctness.
+  const deadline = performance.now() + 2500;
+  let previous;
+  while (performance.now() < deadline) {
+    let timer;
+    const sample = await Promise.race([
+      targetPage.evaluate(() => new Promise(resolve => requestAnimationFrame(() => {
+        const drawer = document.querySelector('.mobile-drawer');
+        if (!drawer) return resolve(null);
+        const rect = drawer.getBoundingClientRect(), style = getComputedStyle(drawer);
+        resolve({
+          rect: [rect.left, rect.right, rect.top, rect.bottom],
+          visible: rect.width > 0 && rect.height > 0 && style.visibility === 'visible' && style.display !== 'none' && Number(style.opacity) > 0,
+          active: drawer.getAnimations({ subtree: true }).some(animation => animation.pending || animation.playState === 'running'),
+        });
+      }))),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new ActionTimeout('drawer did not settle within 2500ms')), Math.max(0, deadline - performance.now())); }),
+    ]).finally(() => clearTimeout(timer));
+    if (performance.now() >= deadline) break;
+    assert.ok(sample && sample.rect.length === 4 && sample.rect.every(Number.isFinite), 'drawer sample is absent or malformed');
+    const stable = previous && sample.rect.every((value, index) => Math.abs(value - previous[index]) < .01);
+    if (sample.visible && !sample.active && stable) return;
+    previous = sample.rect;
+  }
+  throw new ActionTimeout('drawer did not settle within 2500ms');
+}
+
+async function verifyDrawerSynchronization(engine) {
+  const probeBrowser = await engine.launch({ headless: true });
+  const probe = await probeBrowser.newPage({ viewport: { width: 320, height: 568 } });
+  try {
+    await probe.bringToFront();
+    const fixture = async (css) => {
+      await probe.setContent(`<style>.mobile-drawer{position:fixed;left:20px;top:0;width:200px;height:300px;${css}}</style><button id="outside">Outside</button><nav class="mobile-drawer"><button id="inside">Inside</button></nav>`);
+      await probe.locator("#inside").focus();
+    };
+    const measure = () => probe.evaluate(() => {
+      const drawer = document.querySelector(".mobile-drawer"), rect = drawer.getBoundingClientRect();
+      return { inside: rect.left >= -.5 && rect.right <= document.documentElement.clientWidth + .5, focus: drawer.contains(document.activeElement) };
+    });
+    await fixture("transform:translateX(320px);transition:transform 450ms linear");
+    assert.equal((await measure()).inside, false, "fixture must start outside");
+    await probe.evaluate(() => { document.querySelector(".mobile-drawer").style.transform = "translateX(0)"; });
+    await waitForDrawerSettled(probe);
+    assert.deepEqual(await measure(), { inside: true, focus: true }, "settled transition must be measured after completion");
+    await fixture("left:400px");
+    await waitForDrawerSettled(probe);
+    assert.equal((await measure()).inside, false, "stability must not require or fabricate correct geometry");
+    const outsideMeasurement = await measure();
+    assert.throws(() => assert.equal(outsideMeasurement.inside, true), /AssertionError/, "offscreen stable drawer must fail geometry assertion");
+    await fixture("");
+    await probe.locator("#outside").focus();
+    await waitForDrawerSettled(probe);
+    assert.equal((await measure()).focus, false, "stability must not repair wrong focus");
+    const unfocusedMeasurement = await measure();
+    assert.throws(() => assert.equal(unfocusedMeasurement.focus, true), /AssertionError/, "wrong focus must fail independently");
+    await fixture("visibility:hidden");
+    await assert.rejects(() => waitForDrawerSettled(probe), /drawer did not settle/);
+    await fixture("animation:busy 1s infinite; } @keyframes busy { from {opacity:1} to {opacity:.9}");
+    await assert.rejects(() => waitForDrawerSettled(probe), /drawer did not settle/);
+  } finally {
+    await probeBrowser.close();
+  }
+}
 const boundedAction = async ({ phase, route, viewport, timeout = 3000 }, operation) => {
   const evidenceId = evidenceIdentity(route, viewport);
   let timer;
@@ -123,6 +189,7 @@ const captured = new Set();
 if (captureDirectory) await mkdir(captureDirectory, { recursive: true });
 
 try {
+  await page.bringToFront();
   for (const [viewport, [width, height]] of Object.entries(viewports)) {
     await page.setViewportSize({ width, height });
     for (const route of site.routes) {
@@ -146,7 +213,10 @@ try {
           await evaluate(`document.querySelector('.mobile-toggle').click()`);
           if (!await waitFor(`document.querySelector('.mobile-drawer')?.classList.contains('is-open')`, `drawer open ${route} ${viewport}`, 3000)) throw new ActionTimeout(`timeout during open (${route} ${viewport})`);
         });
-        const open = await boundedAction({ phase: "after-open", route, viewport }, () => evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`));
+        const open = await boundedAction({ phase: "after-open", route, viewport }, async () => {
+          await waitForDrawerSettled(page);
+          return evaluate(`(()=>{const d=document.querySelector('.mobile-drawer'),t=document.querySelector('.mobile-toggle'),r=d.getBoundingClientRect(),main=document.querySelector('main'),close=d.querySelector('.drawer-close,[data-drawer-close]');return{expanded:t.getAttribute('aria-expanded'),drawerInside:r.left>=-.5&&r.right<=document.documentElement.clientWidth+.5,focusInside:d.contains(document.activeElement),bodyLocked:getComputedStyle(document.body).overflowY==='hidden'||getComputedStyle(document.body).overflow==='hidden',backgroundInert:!main||main.inert,closeTarget:close?(()=>{const x=close.getBoundingClientRect();return{x:x.width,y:x.height,name:close.getAttribute('aria-label')||close.textContent.trim()}})():null}})()`);
+        });
         if (captureDirectory && route === "index.html" && !captured.has(`${viewport}-open`)) {
           await page.screenshot({ path: join(captureDirectory, `home-${engineName}-${viewport}-open.jpg`), type: "jpeg", quality: 86, fullPage: false });
           captured.add(`${viewport}-open`);
@@ -249,7 +319,7 @@ semanticTest("F2-01 mobile navigation honors reduced motion", () => {
   assert.ok(reducedMotion.durationsMs.every((duration) => duration <= 1), `reduced motion durations exceed 1ms: ${reducedMotion.durationsMs}`);
 });
 
-semanticTest("F2-01 responsive report validator rejects every contracted regression", () => {
+semanticTest("F2-01 responsive report validator rejects every contracted regression", async () => {
   const validate = ({ overflow = false, drawerInside = true, target = 44, focus = true, inert = true, desktop = true }) =>
     !overflow && drawerInside && target >= 44 && focus && inert && desktop;
   assert.equal(validate({}), true);
@@ -259,6 +329,7 @@ semanticTest("F2-01 responsive report validator rejects every contracted regress
   assert.equal(validate({ focus: false }), false, "lost or invisible focus must fail closed");
   assert.equal(validate({ inert: false }), false, "interactive background must fail closed");
   assert.equal(validate({ desktop: false }), false, "desktop regression must fail closed");
+  await verifyDrawerSynchronization(engines[engineName]);
 });
 
 after(async () => {

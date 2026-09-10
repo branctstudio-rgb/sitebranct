@@ -70,8 +70,8 @@
     "responsiveTest": {
       "path": "tests/audit/f2-01-responsive.test.mjs",
       "sourceWorktreeSha256": "af1ab9cbc00ef736941cd0ba9aac4b05bfe5c1709f8d04e7bb4680ff4a4687ce",
-      "gitBlobOid": "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6",
-      "copiedSha256": "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f"
+      "gitBlobOid": "8cc07c7f4c0937677f4f2357d6b8c687e87a41ec",
+      "copiedSha256": "9606d616d3dc132235453e93a7b8a4d4f41953e03803a7382f8aee9f81409118"
     },
     "targetBaseline": {
       "path": "fixtures/audit/f2-01-baseline-results.json",

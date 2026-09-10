@@ -29,7 +29,7 @@ const blobPattern = /^[0-9a-f]{40,64}$/;
 
 const immutableF201Pins = Object.freeze({
   historicalPhase1: Object.freeze({ path: "fixtures/audit/baseline-results.json", authoritySha: "a47abb9a43248320dfef8449b6a65e187913fd24", gitBlobOid: "2831b40a6ff7976c235f2c1d98832186979921fe", sha256: "6e4be577073d0fe7b665559acf371ee279a815f8b407702dcbc9c697d7c71eae" }),
-  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "49a9fc3e5e1a98fc595f4ac6842e29b2e20fb1f6", sha256: "986fc138dda7340031f6e90a4a8b2d3394e943e2a40540cfeb6d06bf379b7a4f" }),
+  responsiveTest: Object.freeze({ path: "tests/audit/f2-01-responsive.test.mjs", gitBlobOid: "8cc07c7f4c0937677f4f2357d6b8c687e87a41ec", sha256: "9606d616d3dc132235453e93a7b8a4d4f41953e03803a7382f8aee9f81409118" }),
   targetBaseline: Object.freeze({ path: "fixtures/audit/f2-01-baseline-results.json", gitBlobOid: "2cb98083ad0fb4a55511d9e2c5114bab4999b8c8", sha256: "5cdbfb290a975c26511479d8d8b28ee793eb83ebe88a47dde4333a5e3e8aafab" }),
   menuEvidenceMatrix: Object.freeze({
     path: "fixtures/audit/f2-01-menu-evidence-matrix.json",
