@@ -1499,7 +1499,7 @@ function assertRealBranctInventory(bytes, inventory = portableGuard.inventoryNet
   assert.equal(calls.length, 1, "fetch(WEBHOOK_URL) anchor must be unique");
   const [fn] = functions, [declaration] = declarations, [call] = calls;
   assert.equal(call.getFunctionParent(), fn, "fetch must belong to sendLead");
-  assert.equal(call.scope.getBinding("WEBHOOK_URL")?.path, declaration, "fetch URL binding is divergent");
+  assert.ok(call.scope.getBinding("WEBHOOK_URL")?.path === declaration, "fetch URL binding is divergent");
   assert.equal(call.scope.getBinding("fetch"), undefined, "fetch must not be shadowed");
   const url = "https://n8n.branct.com/webhook/site-lead";
   assert.equal(declaration.node.init?.type, "StringLiteral", "WEBHOOK_URL must be a literal");
@@ -1541,6 +1541,25 @@ function assertRealBranctInventory(bytes, inventory = portableGuard.inventoryNet
 
 test("F2-GOV-09 inventories the real branct.js capabilities with canonical file and lines", () => {
   assertRealBranctInventory(canonicalBlob("src/js/branct.js"));
+});
+
+test("WEBSITE-11 inventory rejects lexical shadowing with unchanged anchor names and cardinalities", () => {
+  const require = createRequire(import.meta.url);
+  const { babelParse, traverse } = require(join(dirname(require.resolve("playwright/package.json")), "lib/transform/babelBundle.js"));
+  for (const eol of ["\n", "\r\n"]) {
+    const source = canonicalBlob("src/js/branct.js").toString("utf8").replace(/\r?\n/g, eol);
+    let fn;
+    traverse(babelParse(source, "branct.js"), {
+      FunctionDeclaration(path) { if (path.node.id?.name === "sendLead") { assert.equal(fn, undefined); fn = path.node; } },
+    });
+    assert.ok(fn);
+    // Parameter shadowing changes only resolution. The sendLead AST, fetch call
+    // and sole WEBHOOK_URL variable declaration remain intact. Never execute it.
+    const changed = source.slice(0, fn.start) + "function lexicalScope(WEBHOOK_URL) { " + source.slice(fn.start, fn.end) + " }" + source.slice(fn.end);
+    assert.notEqual(changed, source, "lexical mutation must change bytes");
+    assert.doesNotThrow(() => assertRealBranctInventory(Buffer.from(source)));
+    assert.throws(() => assertRealBranctInventory(Buffer.from(changed)), { message: "fetch URL binding is divergent" });
+  }
 });
 
 test("WEBSITE-09 inventory accepts an innocent offset and rejects false factual associations", () => {
