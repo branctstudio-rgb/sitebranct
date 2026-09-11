@@ -1,0 +1,86 @@
+{
+  "at": "2026-09-10T08:48:36.335Z",
+  "tag": {
+    "url": "https://mcr.microsoft.com/v2/playwright/manifests/v1.62.0-noble",
+    "http": 200,
+    "digest": "sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07",
+    "manifest": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "manifests": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "size": 1644,
+          "digest": "sha256:02bbb2155cd7109e3e9c741941097ed1608cf8b6fa44ee2595896da2bdc1f471",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "size": 1644,
+          "digest": "sha256:5361940f845a5077926d54746122f7b68a121cc2aa27df6241087b774203fc44",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          }
+        }
+      ]
+    }
+  },
+  "immutable": {
+    "url": "https://mcr.microsoft.com/v2/playwright/manifests/sha256:02bbb2155cd7109e3e9c741941097ed1608cf8b6fa44ee2595896da2bdc1f471",
+    "http": 200,
+    "digest": "sha256:02bbb2155cd7109e3e9c741941097ed1608cf8b6fa44ee2595896da2bdc1f471",
+    "manifest": {
+      "schemaVersion": 2,
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+        "digest": "sha256:50cbb76d250a50002045a95f484c5f40573cde831adbe40c784052c037e36118",
+        "size": 6710
+      },
+      "layers": [
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:ca2678b20700c15185707964d9211b1a6406196114bf675f568b6025d37b3888",
+          "size": 29735601
+        },
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:5728abb8b7ad23757dde5694ff8dcc612989bf18d3174173c9facbd9ea371256",
+          "size": 104483489
+        },
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:cdb9b5803dd44ce256eefe601444961c291c31133be0922f3e4d451a5c31e5c5",
+          "size": 3062078
+        },
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:088dfc03be9f0ecc53490970fc4c5e8ee7e272094a02695d7460cbe42541fde7",
+          "size": 287089472
+        },
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:a4ea34888997f2ae7937524e824354c439939a394d7520c99903fd9994d5a66d",
+          "size": 296230522
+        },
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:7742ea28d82ee0dfa4b760578d94617e67788a2f62e1b16cebe51a2090cb72c7",
+          "size": 116164403
+        },
+        {
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "digest": "sha256:902b9022abd29874a83810c4be510db56e3d5e9b47c5c92f41d4ce2f356f0c1b",
+          "size": 110241002
+        }
+      ]
+    }
+  },
+  "compressedLayerBytes": 947006567,
+  "runtimeDownloaded": false,
+  "packageDownloaded": false
+}
