@@ -1016,18 +1016,70 @@ test("F2-GOV-06 authoritative blob reader is immutable across checkout EOL and H
   }
 });
 
+const manualDiagnosticPath = ".github/workflows/website-linux-diagnostic-13.yml";
+function assertManualDiagnosticWorkflow(bytes) {
+  // This exception admits exactly the reviewed manual proposal, not arbitrary
+  // commands under a familiar filename. JSON is the closed YAML subset used here.
+  const workflow = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  assert.deepEqual(Object.keys(workflow.on), ["workflow_dispatch"], "diagnostic must be manual-only");
+  assert.deepEqual(workflow.permissions, { contents: "read" }, "diagnostic permissions must remain read-only");
+  assert.deepEqual(Object.keys(workflow.jobs), ["diagnostic"], "diagnostic must not add a deployment job");
+  const job = workflow.jobs.diagnostic;
+  assert.equal(job["runs-on"], "ubuntu-24.04");
+  assert.equal(job["timeout-minutes"], 110);
+  assert.deepEqual(workflow.concurrency, { group: "website-linux-diagnostic-13", "cancel-in-progress": false });
+  assert.equal(job.permissions, undefined, "job cannot override permissions");
+  const uses = job.steps.filter(step => step.uses).map(step => step.uses);
+  assert.deepEqual(uses, ["actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5", "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"], "diagnostic action pins changed");
+  for (const step of job.steps.filter(step => step.uses?.startsWith("actions/checkout@"))) assert.equal(step.with["persist-credentials"], false);
+  assert.doesNotMatch(JSON.stringify(workflow), /secrets\.|github\.token|GITHUB_TOKEN|\blftp\b|ftp:\/\//i, "diagnostic cannot access secrets or deploy");
+  assert.equal(hashBytes(JSON.stringify(workflow)), "b137a51ac4bc2309d1e2f9ae1d1dd4cb0888d078e2bdf30b6b38f8ab4f054531", "diagnostic differs from the reviewed manual program and pins");
+}
+
+function assertAuditedPaths(changed, readBlob) {
+  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
+  assert.ok(changed.length > 0);
+  assert.deepEqual(changed.filter(path => !allowed.test(path) && path !== manualDiagnosticPath), [], "audited diff contains an unauthorized path");
+  assert.ok(!changed.includes(".github/workflows/deploy.yml"));
+  if (changed.includes(manualDiagnosticPath)) assertManualDiagnosticWorkflow(readBlob(manualDiagnosticPath));
+}
+
+test("WEBSITE-15 admits only the exact reviewed manual workflow and rejects privilege, trigger and command changes", async () => {
+  const bytes = await readFile(new URL(`../../${manualDiagnosticPath}`, import.meta.url));
+  for (const text of [bytes.toString(), bytes.toString().replace(/\r?\n/g, "\r\n")]) assert.doesNotThrow(() => assertAuditedPaths([manualDiagnosticPath], () => Buffer.from(text)));
+  for (const path of [".github/workflows/website-linux-diagnostic-14.yml", ".github/workflows/website-linux-diagnostic-13.yml.extra", ".github/workflows/deploy.yml", "index.html"]) assert.throws(() => assertAuditedPaths([path], () => bytes), /unauthorized path/);
+  const mutations = [
+    w => { w.on.push = {}; },
+    w => { w.permissions.contents = "write"; },
+    w => { w.jobs.diagnostic.permissions = { contents: "write" }; },
+    w => { w.jobs.deploy = { "runs-on": "ubuntu-24.04", steps: [] }; },
+    w => { w.jobs.diagnostic.steps[1].uses = "actions/checkout@main"; },
+    w => { w.jobs.diagnostic.steps[1].with["persist-credentials"] = true; },
+    w => { w.jobs.diagnostic.env.TOKEN = "${{ secrets.EXAMPLE }}"; },
+    w => { w.jobs.diagnostic.steps[0].run = "echo unguarded"; },
+    w => { w.jobs.diagnostic.steps[2].with.ref = "main"; },
+    w => { w.jobs.diagnostic.steps[3].run = "echo unexpected command"; },
+  ];
+  for (const mutate of mutations) {
+    const changed = JSON.parse(bytes); mutate(changed);
+    assert.notDeepEqual(changed, JSON.parse(bytes), "workflow mutation must change the program");
+    assert.throws(() => assertAuditedPaths([manualDiagnosticPath], () => Buffer.from(JSON.stringify(changed))));
+  }
+});
+
 test("the audited diff cannot mutate live pages or deployment", async () => {
   const contract = await readJson(contractPath);
   const transition = await readJson(f201TransitionPath);
   const diffBase = process.env.AUDIT_DIFF_BASE ?? contract.baseSha;
   const authoritySha = resolveAuthoritySha(transition);
   const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
-  const changed = execFileSync("git", ["diff", "--name-only", diffBase, authoritySha], { cwd: repository, encoding: "utf8" })
-    .trim().split(/\r?\n/).filter(Boolean);
-  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
-  assert.ok(changed.length > 0);
-  assert.deepEqual(changed.filter((path) => !allowed.test(path)), []);
-  assert.ok(!changed.includes(".github/workflows/deploy.yml"));
+  const raw = execFileSync("git", ["diff", "--name-only", "--no-renames", "-z", diffBase, authoritySha], { cwd: repository, encoding: null });
+  const changed = new TextDecoder("utf-8", { fatal: true }).decode(raw).split("\0").filter(Boolean);
+  assertAuditedPaths(changed, path => {
+    const tree = execFileSync("git", ["ls-tree", "-z", authoritySha, "--", path], { cwd: repository, encoding: null }).toString("utf8");
+    assert.match(tree, /^100644 blob [0-9a-f]{40}\t/, "manual workflow must remain a regular Git blob");
+    return execFileSync("git", ["cat-file", "blob", `${authoritySha}:${path}`], { cwd: repository, encoding: null });
+  });
 });
 
 await import("./phase-2-governance.test.mjs");
