@@ -59,6 +59,7 @@
 /* ===== RESET / BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { overflow-x: clip; }
 body {
     background: var(--bg); color: var(--ink);
     font-family: 'Manrope', system-ui, sans-serif;
@@ -134,9 +135,14 @@ a:focus-visible, button:focus-visible, input:focus-visible {
     border-bottom: 1px solid var(--line);
 }
 .header__inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 13px; }
-.logo { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em; }
+.logo { min-height: 44px; display: inline-flex; align-items: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em; }
 .logo span { color: var(--accent); font-weight: 600; }
-.header__actions { display: flex; align-items: center; gap: 12px; }
+.header__actions { min-width: 0; display: flex; align-items: center; gap: 12px; }
+@media (max-width: 719px) {
+    .header__inner { gap: 8px; }
+    .header__actions { gap: 8px; }
+    .header__actions > .btn { display: none; }
+}
 .btn--sm { padding: 10px 18px; font-size: 0.9rem; }
 
 .nav-desktop { display: none; }
@@ -169,25 +175,35 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 .services-submenu a:hover { background: var(--surface-2); color: var(--ink); }
 
-.mobile-toggle { display: flex; flex-direction: column; gap: 5px; padding: 8px; }
+.mobile-toggle { width: 44px; height: 44px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
 .mobile-toggle span { width: 22px; height: 2px; background: var(--ink); border-radius: 2px; transition: transform 0.25s var(--ease), opacity 0.25s; }
 .mobile-toggle.is-active span:first-child { transform: translateY(7px) rotate(45deg); }
 .mobile-toggle.is-active span:last-child { transform: translateY(-7px) rotate(-45deg); }
 @media (min-width: 940px) { .mobile-toggle { display: none; } }
 
 .mobile-drawer {
-    position: fixed; inset: 0 0 0 auto; width: min(86vw, 380px); z-index: 150;
+    position: fixed; inset: 0 0 0 auto; width: min(86vw, 380px); z-index: 210;
     background: var(--surface); border-left: 1px solid var(--line);
     padding: 88px 24px 32px;
     transform: translateX(100%);
     transition: transform 0.45s var(--ease);
     overflow-y: auto;
     display: flex; flex-direction: column;
+    visibility: hidden; pointer-events: none;
 }
-.mobile-drawer.is-open { transform: translateX(0); box-shadow: var(--sh-3); }
+.mobile-drawer.is-open { transform: translateX(0); box-shadow: var(--sh-3); visibility: visible; pointer-events: auto; }
+.drawer-close {
+    position: absolute; top: 20px; right: 20px;
+    width: 44px; height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--ink);
+    font-size: 1.5rem; line-height: 1;
+}
+.drawer-close:hover { background: var(--surface-2); }
 .mobile-nav-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
 .mobile-nav-list a, .mobile-nav-list .nav-link {
-    display: block; width: 100%; text-align: left;
+    min-height: 44px; display: flex; align-items: center; width: 100%; text-align: left;
     padding: 12px 10px; border-radius: 8px;
     font-size: 1.05rem; font-weight: 700;
 }
@@ -196,12 +212,17 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .mobile-submenu a { font-size: 0.95rem; font-weight: 600; color: var(--ink-2); }
 .mobile-drawer-cta { margin-top: auto; }
 .drawer-overlay {
-    position: fixed; inset: 0; z-index: 140;
+    position: fixed; inset: 0; z-index: 200;
     background: rgba(13,27,36,0.35);
     opacity: 0; visibility: hidden;
     transition: opacity 0.25s var(--ease), visibility 0.25s;
 }
 .drawer-overlay.is-visible { opacity: 1; visibility: visible; }
+@media (max-width: 939px) {
+    a[href] { min-height: 44px; }
+    .btn { min-height: 44px; }
+    .footer a { display: inline-flex; align-items: center; }
+}
 
 /* ===== HERO ===== */
 .hero { padding: clamp(56px, 9vw, 100px) 0 clamp(40px, 6vw, 64px); position: relative; }
@@ -459,6 +480,7 @@ a:focus-visible, button:focus-visible, input:focus-visible {
     .reveal { opacity: 1; translate: none; transition: none; }
     .pulse-dot { animation: none; }
     .btn--accent::after { display: none; }
+    .mobile-drawer, .drawer-overlay { transition-duration: 0.01ms !important; }
     * { scroll-behavior: auto !important; }
 }
 </style>
@@ -1003,21 +1025,94 @@ a:focus-visible, button:focus-visible, input:focus-visible {
     var drawer = document.querySelector('.mobile-drawer');
     var overlay = document.querySelector('.drawer-overlay');
     if (toggle && drawer) {
+        var close = drawer.querySelector('.drawer-close');
+        if (!close) {
+            close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'drawer-close';
+            close.setAttribute('aria-label', 'Fechar menu');
+            close.innerHTML = '<span aria-hidden="true">×</span>';
+            drawer.prepend(close);
+        }
+        // Evita a transição herdada de visibility aplicada pelo modo de movimento reduzido.
+        // O ancestral continua a controlar integralmente quando o botão é apresentado.
+        close.style.visibility = 'inherit';
+        close.style.transitionProperty = 'none';
+        var background = Array.prototype.filter.call(
+            document.querySelectorAll('main, .footer, .consent'),
+            function (element) { return !drawer.contains(element); }
+        );
+        var previousOverflow = '';
+        var focusFrame = 0;
+
+        function focusDrawer(attempts) {
+            if (!drawer.classList.contains('is-open')) return;
+            var first = drawer.querySelector('.drawer-close, a, button');
+            if (first && window.getComputedStyle(first).visibility === 'visible') {
+                focusFrame = 0;
+                first.focus();
+                return;
+            }
+            if (attempts > 0) {
+                focusFrame = window.requestAnimationFrame(function () { focusDrawer(attempts - 1); });
+            } else {
+                focusFrame = 0;
+            }
+        }
+
         var setOpen = function (open) {
+            if (focusFrame) {
+                window.cancelAnimationFrame(focusFrame);
+                focusFrame = 0;
+            }
             drawer.classList.toggle('is-open', open);
             toggle.classList.toggle('is-active', open);
             toggle.setAttribute('aria-expanded', open);
-            if (overlay) overlay.classList.toggle('is-visible', open);
-            document.body.style.overflow = open ? 'hidden' : '';
+            drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+            drawer.inert = !open;
+            if (overlay) {
+                overlay.classList.toggle('is-visible', open);
+                overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+            }
+            if (open) previousOverflow = document.body.style.overflow;
+            document.body.style.overflow = open ? 'hidden' : previousOverflow;
+            background.forEach(function (element) { element.inert = open; });
+            if (open) {
+                // visibility é discreta e pode propagar-se pelos descendentes em frames
+                // distintos; só focar depois de o primeiro controlo estar realmente visível.
+                focusDrawer(8);
+            } else {
+                toggle.focus();
+            }
         };
         toggle.setAttribute('aria-expanded', 'false');
+        drawer.setAttribute('aria-hidden', 'true');
+        drawer.inert = true;
         toggle.addEventListener('click', function () { setOpen(!drawer.classList.contains('is-open')); });
+        close.addEventListener('click', function () { setOpen(false); });
         if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && drawer.classList.contains('is-open')) setOpen(false);
         });
         drawer.querySelectorAll('a').forEach(function (a) {
             a.addEventListener('click', function () { setOpen(false); });
+        });
+        drawer.addEventListener('keydown', function (e) {
+            if (e.key !== 'Tab' || !drawer.classList.contains('is-open')) return;
+            var focusables = Array.prototype.filter.call(
+                drawer.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])'),
+                function (element) {
+                    var style = window.getComputedStyle(element);
+                    return !element.disabled && style.visibility === 'visible' && style.display !== 'none' && element.getClientRects().length > 0;
+                }
+            );
+            if (!focusables.length) return;
+            var current = focusables.indexOf(document.activeElement);
+            var next;
+            if (e.shiftKey) next = current <= 0 ? focusables.length - 1 : current - 1;
+            else next = current < 0 || current >= focusables.length - 1 ? 0 : current + 1;
+            e.preventDefault();
+            focusables[next].focus();
         });
     }
     var dd = document.querySelector('.nav-item--dropdown');

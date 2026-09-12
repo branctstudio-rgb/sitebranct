@@ -58,12 +58,14 @@ a:hover { color: var(--text); }
     max-width: 1120px; margin: 0 auto; width: 92%;
 }
 .logo {
+    min-height: 44px; display: inline-flex; align-items: center;
     font-family: 'Bricolage Grotesque', sans-serif;
     font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em;
     color: var(--text); text-decoration: none;
 }
 .logo span { color: var(--accent); font-weight: 600; }
 .header__back {
+    min-height: 44px; display: inline-flex; align-items: center;
     font-size: 0.9rem; color: var(--muted); text-decoration: none;
     border: 1px solid var(--line); padding: 10px 18px; border-radius: 100px;
     transition: border-color 0.2s ease, color 0.2s ease;
@@ -155,6 +157,10 @@ ul li, ol li { margin-bottom: 6px; }
     color: var(--muted);
     font-size: 0.85rem;
     text-align: center;
+}
+.footer a {
+    min-width: 44px; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
 }
 </style>
 </head>
