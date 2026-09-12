@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 import {runOnce,inspectPackage,regularBytes,projectJson} from './runner.mjs';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {fileURLToPath,pathToFileURL} from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url));
@@ -57,10 +58,38 @@ test('cleanup failure remains rejected and still requests sanitized evidence',as
  const f=fixture();f.io.stopOwned=()=>{f.effects.push('stop-owned');throw Error('synthetic');};
  const r=await runOnce(f.context,f.io);assert.equal(r.code,'CLEANUP_FAILED');assert.equal(r.exitCode,1);assert.equal(f.effects.at(-1),'collect');
 });
+// Build the positive fixture from raw blobs in this distribution's immutable
+// commit, not checkout-transformed bytes. The operational verifier stays strict.
+function canonicalPackage(name){
+ const cwd=path.resolve(here,'../../..');
+ const commit=execFileSync('git',['rev-parse','--verify','HEAD^{commit}'],{cwd,encoding:'utf8'}).trim();
+ assert.match(commit,/^[0-9a-f]{40}$/);
+ const files=JSON.parse(fs.readFileSync(path.join(here,'source-package.json'),'utf8')).packageFiles;
+ assert.equal(files.length,7);
+ const d=path.join(proofs,name);fs.mkdirSync(d);
+ for(const {file} of files){
+  const bytes=execFileSync('git',['cat-file','blob',`${commit}:scripts/governance/website-linux-13/package12/${file}`],{cwd});
+  fs.writeFileSync(path.join(d,file),bytes);
+ }
+ assert.equal(inspectPackage(d),digest);
+ return d;
+}
 test('verified seven files reproduce package12 identity; altered bytes cannot be accepted',()=>{
- assert.equal(inspectPackage(path.join(here,'package12')),digest);
- const d=path.join(proofs,'altered-package');fs.cpSync(path.join(here,'package12'),d,{recursive:true});
+ const d=canonicalPackage('altered-package');
  fs.appendFileSync(path.join(d,'linux-run.mjs'),'\n// synthetic altered byte\n');
+ assert.throws(()=>inspectPackage(d),/PACKAGE_INVALID/);
+});
+for(const [name,change] of [
+ ['actual CRLF bytes',text=>text.replace(/\n/g,'\r\n')],
+ ['same-length space change',text=>text.replace(' ','\t')],
+ ['removed final newline',text=>text.replace(/\n$/,'')],
+ ['reordered lines',text=>{const lines=text.split('\n');[lines[0],lines[1]]=[lines[1],lines[0]];return lines.join('\n');}],
+])test(`package ${name} remains rejected without input normalization`,()=>{
+ const d=canonicalPackage(`tamper-${name.replaceAll(' ','-')}`),file=path.join(d,'linux-run.mjs');
+ const before=fs.readFileSync(file),after=Buffer.from(change(before.toString('utf8')));
+ assert.equal(before.includes(Buffer.from('\r\n')),false);
+ assert.equal(after.equals(before),false,'tampering must really change distributed bytes');
+ fs.writeFileSync(file,after);
  assert.throws(()=>inspectPackage(d),/PACKAGE_INVALID/);
 });
 test('missing package component and directory in place of file are rejected',()=>{
