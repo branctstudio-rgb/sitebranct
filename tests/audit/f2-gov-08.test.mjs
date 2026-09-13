@@ -416,12 +416,35 @@ test("F2-GOV-08 portable grammar accepts every one of the 56 current published p
   );
 });
 
-test("F2-GOV-08 portable trie accepts all 806 current regular Git paths and all 56 manifest paths", () => {
+function assertFactualPortableInventory(current, manifest, validated = portableGuard.validatePortableGitTreeEntries(current)) {
+  assert.ok(current.length > 0, "factual Git inventory is empty");
+  assert.ok(current.every(({ mode, type }) => mode === "100644" && type === "blob"), "factual inventory requires regular blobs");
+  assert.equal(manifest.length, 56, "published manifest cardinality changed");
+  assert.equal(new Set(manifest).size, 56, "published manifest contains duplicates");
+  const tuple = ({ path, pathBytes, mode, type, oid }) => [path, pathBytes.toString("hex"), mode, type, oid];
+  const ordered = entries => entries.map(tuple).sort((a, b) => Buffer.compare(Buffer.from(a[1], "hex"), Buffer.from(b[1], "hex")));
+  assert.deepEqual(ordered(validated.entries), ordered(current), "portable validation dropped, added or changed a Git entry");
+  for (const published of manifest) assert.equal(current.filter(({ path, pathBytes }) => path === published && pathBytes.equals(Buffer.from(published, "utf8"))).length, 1, `published path is absent or ambiguous: ${published}`);
+  portableGuard.validatePortableGitTreeEntries(current.filter(({ path }) => manifest.includes(path)));
+}
+
+test("F2-GOV-08 portable trie accepts the complete factual Git inventory and all 56 manifest paths", () => {
   const current = currentGitTreeEntries();
-  assert.equal(current.length, 806);
-  assert.ok(current.every(({ mode, type }) => mode === "100644" && type === "blob"));
-  assert.equal(portableGuard.validatePortableGitTreeEntries(current).entries.length, 806);
-  assert.equal(portableGuard.validatePortableGitTreeEntries(syntheticTreeEntries(publishedPaths)).entries.length, 56);
+  assertFactualPortableInventory(current, publishedPaths);
+});
+
+test("WEBSITE-15 factual inventory accepts growth but rejects omissions, collisions and false validated tuples", () => {
+  const factual = syntheticTreeEntries([...publishedPaths, "docs/audit/new-legitimate-document.md"]);
+  assert.doesNotThrow(() => assertFactualPortableInventory(factual, publishedPaths));
+  assert.throws(() => assertFactualPortableInventory(factual.slice(1), publishedPaths), /published path is absent/);
+  assert.throws(() => assertFactualPortableInventory(factual, [...publishedPaths.slice(1), publishedPaths[1]]), /duplicates/);
+  assert.throws(() => assertFactualPortableInventory([...factual, ...syntheticTreeEntries(["INDEX.html"])], publishedPaths), /collision|capitalization/);
+  assert.throws(() => assertFactualPortableInventory([...factual, ...syntheticTreeEntries(["src"])], publishedPaths), /collision|prefix/);
+  for (const mode of ["100755", "120000", "160000"]) assert.throws(() => assertFactualPortableInventory(factual.map((entry, i) => i ? entry : { ...entry, mode }), publishedPaths), /regular Git file/);
+  const real = portableGuard.validatePortableGitTreeEntries(factual);
+  for (const entries of [real.entries.slice(1), [...real.entries, real.entries[0]], real.entries.map((entry, i) => i ? entry : { ...entry, oid: "2".repeat(40) })]) {
+    assert.throws(() => assertFactualPortableInventory(factual, publishedPaths, { entries }), /dropped, added or changed/);
+  }
 });
 
 for (const [label, paths] of [

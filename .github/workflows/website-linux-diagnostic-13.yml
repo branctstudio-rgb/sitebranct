@@ -1,0 +1,99 @@
+{
+  "name": "Website Linux diagnostic 13",
+  "run-name": "${{ inputs.authorization_id }}",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "wrapper_sha": {
+          "description": "Exact approved main/merge SHA containing wrapper; not yet known",
+          "required": true,
+          "type": "string"
+        },
+        "authorization_id": {
+          "description": "Unique WEBSITE-LINUX-13-YYYYMMDD-NN",
+          "required": true,
+          "type": "string"
+        },
+        "authorization": {
+          "description": "Exact AUTHORIZE text from nominal approval",
+          "required": true,
+          "type": "string"
+        }
+      }
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "website-linux-diagnostic-13",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "diagnostic": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 110,
+      "env": {
+        "AUTH_WRAPPER_SHA": "${{ inputs.wrapper_sha }}",
+        "AUTH_ID": "${{ inputs.authorization_id }}",
+        "AUTH_TEXT": "${{ inputs.authorization }}"
+      },
+      "steps": [
+        {
+          "name": "Validate nominal envelope before checkout",
+          "shell": "bash",
+          "run": "node --input-type=module <<'NODE'\nimport assert from 'node:assert/strict';\nconst e=process.env;\nassert.ok(Number(process.versions.node.split('.')[0])>=22);\nassert.equal(e.GITHUB_EVENT_NAME,'workflow_dispatch');\nassert.equal(e.GITHUB_REPOSITORY,'branctstudio-rgb/sitebranct');\nassert.equal(e.GITHUB_REF,'refs/heads/main');\nassert.equal(e.GITHUB_WORKFLOW_REF,'branctstudio-rgb/sitebranct/.github/workflows/website-linux-diagnostic-13.yml@refs/heads/main');\nassert.equal(e.GITHUB_RUN_ATTEMPT,'1');\nassert.match(e.GITHUB_SHA,/^[0-9a-f]{40}$/);\nassert.equal(e.AUTH_WRAPPER_SHA,e.GITHUB_SHA);\nassert.match(e.AUTH_ID,/^WEBSITE-LINUX-13-\\d{8}-\\d{2}$/);\nassert.equal(e.AUTH_TEXT,`AUTHORIZE ${e.AUTH_ID} ${e.GITHUB_SHA} 563f3c13665347b2a8578110e519ebaf13f356e8 59c72e2fb8a6043d0a1f68a2a4871a4c385e8611f655d316bc7f0cca728df0f4`);\nNODE\n"
+        },
+        {
+          "name": "Checkout approved wrapper, never candidate commands",
+          "id": "control",
+          "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "path": "control",
+            "fetch-depth": 1,
+            "persist-credentials": false,
+            "submodules": false,
+            "lfs": false
+          }
+        },
+        {
+          "name": "Checkout separately published exact application with ancestors",
+          "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "with": {
+            "ref": "563f3c13665347b2a8578110e519ebaf13f356e8",
+            "path": "application",
+            "fetch-depth": 0,
+            "persist-credentials": false,
+            "submodules": false,
+            "lfs": false
+          }
+        },
+        {
+          "name": "Preflight and one prepare then one isolated measurement",
+          "shell": "bash",
+          "run": "node control/scripts/governance/website-linux-13/runner.mjs"
+        },
+        {
+          "name": "Preserve sanitized evidence and stop only demonstrated owned containers",
+          "if": "${{ always() && steps.control.outcome == 'success' }}",
+          "shell": "bash",
+          "run": "node control/scripts/governance/website-linux-13/runner.mjs --collect-only"
+        },
+        {
+          "name": "Retain explicit sanitized artifacts (never raw workspace)",
+          "if": "${{ always() && steps.control.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "website-linux-13-${{ github.run_id }}",
+            "retention-days": 14,
+            "if-no-files-found": "error",
+            "include-hidden-files": false,
+            "overwrite": false,
+            "path": "${{ github.workspace }}/website-linux-13-artifacts/metadata.json\n${{ github.workspace }}/website-linux-13-artifacts/results.json\n${{ github.workspace }}/website-linux-13-artifacts/hashes.json\n${{ github.workspace }}/website-linux-13-artifacts/technical.log\n"
+          }
+        }
+      ]
+    }
+  }
+}

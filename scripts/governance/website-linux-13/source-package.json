@@ -1,0 +1,60 @@
+{
+  "repository": "branctstudio-rgb/sitebranct",
+  "sourceHead": "563f3c13665347b2a8578110e519ebaf13f356e8",
+  "sourceTree": "ad5f79ab358e7de04d3de52c45f697f7134dc573",
+  "sourceParent": "52479f08b127dc96c4297af0d033ee1508960e24",
+  "packageDigest": "59c72e2fb8a6043d0a1f68a2a4871a4c385e8611f655d316bc7f0cca728df0f4",
+  "image": "mcr.microsoft.com/playwright@sha256:02bbb2155cd7109e3e9c741941097ed1608cf8b6fa44ee2595896da2bdc1f471",
+  "playwright": "1.62.0",
+  "packageFiles": [
+    {
+      "file": "linux-run.mjs",
+      "bytes": 3700,
+      "sha256": "0df8237acf323a116dd70173b10bc43c14afb211b0404fa42ecef2d585ebae63"
+    },
+    {
+      "file": "linux-responsive.mjs",
+      "bytes": 2838,
+      "sha256": "3d5bf8022ac5d7a43c3b05bc7ede7d0a6681cd8248bf88c8e4de9b858893784f"
+    },
+    {
+      "file": "causal-browser.mjs",
+      "bytes": 6374,
+      "sha256": "673075b904836c5575f3687c92b8965278a024ed2829f28266ebb6b648f3eb4a"
+    },
+    {
+      "file": "future-linux.sh",
+      "bytes": 3833,
+      "sha256": "76c2f66271f6d8fe707e70bdab50a5f3c1a3fe75db9fb2905323ba18090ecd5e"
+    },
+    {
+      "file": "prepare-input.ps1",
+      "bytes": 1606,
+      "sha256": "0d928d3dbf4a0d6c3f272ba8bf28edd8399b885bd24e85b7d476ffc0acad2de4"
+    },
+    {
+      "file": "LINUX-PACKAGE.md",
+      "bytes": 7257,
+      "sha256": "eced89477f27695c1e538e80c451eb84a2a7801ccb8067202e95b073a7e51f4e"
+    },
+    {
+      "file": "official-image-metadata.json",
+      "bytes": 3197,
+      "sha256": "e0abd1e578f1f6a57b208d5d93b022ff35043d7b4537ae37241683734bd606a4"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "package.json",
+      "mode": "100644",
+      "blob": "55c1d34f7b6027a42237dcbfa4fd120d3f8cbd1f",
+      "sha256": "4d27b9219c7cf60d4d74b067f4d9497cf1cff4414114381e6d8f04eced7b3534"
+    },
+    {
+      "file": "package-lock.json",
+      "mode": "100644",
+      "blob": "8a4a43790e3ad9e4ebab8150dd923ad148996f55",
+      "sha256": "d4c0fbbde41bf59245bb516e57f53825a7a3a9e5390d9b71aaf1dc25343a65b7"
+    }
+  ]
+}
