@@ -1,0 +1,52 @@
+{
+  "repository": "branctstudio-rgb/sitebranct",
+  "sourceHead": "563f3c13665347b2a8578110e519ebaf13f356e8",
+  "sourceTree": "ad5f79ab358e7de04d3de52c45f697f7134dc573",
+  "sourceParent": "52479f08b127dc96c4297af0d033ee1508960e24",
+  "packageDigest": "630f8bb4099c3e1e8058c45456202aa9900ed62b3dc241c62f320c3b0e75d5b7",
+  "image": "mcr.microsoft.com/playwright@sha256:02bbb2155cd7109e3e9c741941097ed1608cf8b6fa44ee2595896da2bdc1f471",
+  "playwright": "1.62.0",
+  "packageFiles": [
+    {
+      "file": "linux-run.mjs",
+      "bytes": 5081,
+      "sha256": "abb1482a721cad6aab5450547589cc7b647cabd3e9428f9913c481d3020fc51a"
+    },
+    {
+      "file": "linux-responsive.mjs",
+      "bytes": 2808,
+      "sha256": "0369d1af87fac5df0b989ccde8535b2f47bbe229ad60237e98cecdc976c538ec"
+    },
+    {
+      "file": "future-linux.sh",
+      "bytes": 3862,
+      "sha256": "e2678379b3566ea375223058975154f262e23d98706b77f01afef6a76dabd4bf"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "package.json",
+      "mode": "100644",
+      "blob": "55c1d34f7b6027a42237dcbfa4fd120d3f8cbd1f",
+      "sha256": "4d27b9219c7cf60d4d74b067f4d9497cf1cff4414114381e6d8f04eced7b3534"
+    },
+    {
+      "file": "package-lock.json",
+      "mode": "100644",
+      "blob": "8a4a43790e3ad9e4ebab8150dd923ad148996f55",
+      "sha256": "d4c0fbbde41bf59245bb516e57f53825a7a3a9e5390d9b71aaf1dc25343a65b7"
+    },
+    {
+      "file": "tests/audit/f2-01-responsive.test.mjs",
+      "mode": "100644",
+      "blob": "8cc07c7f4c0937677f4f2357d6b8c687e87a41ec",
+      "sha256": "9606d616d3dc132235453e93a7b8a4d4f41953e03803a7382f8aee9f81409118"
+    },
+    {
+      "file": "fixtures/audit/site-contract.json",
+      "mode": "100644",
+      "blob": "b51aa074b054521dbf3e67bd8a682d6bc48b96b7",
+      "sha256": "76fc8242504a98f8d4f6fd6bb4df9a288b9b041a738577f2633add6cbb727539"
+    }
+  ]
+}
