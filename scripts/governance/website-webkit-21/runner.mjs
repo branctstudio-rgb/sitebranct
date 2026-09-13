@@ -102,6 +102,33 @@ export function projectJson(name,raw){
  const diagnostics=['responsive-chromium.json','responsive-firefox.json','responsive-webkit.json'].includes(name)?projectActionDiagnostics(obj):null;
  return {complete:obj.execution?.complete===true,observations:count(obj.observations),menus:count(obj.menuResults),actions:count(obj.execution?.actions),infrastructureErrors:count(obj.execution?.infrastructureErrors),semanticStatuses:Array.isArray(obj.execution?.semanticTests)?obj.execution.semanticTests.map(t=>['PASS','FAIL'].includes(t.status)?t.status:'UNKNOWN'):null,externalAttempts:count(obj.attempts),violations:count(obj.violations),recordCount:count(obj.records),...(diagnostics?{diagnostics,lastRecordedActionPhase:diagnostics.actionOutcomes?.at(-1)?.phase??'UNKNOWN'}:{})};
 }
+// Always attempt a small failure envelope even if an evidence read is rejected.
+// An unwritable sink remains explicit failure; no code can promise files on a failed disk.
+export function finalizeArtifacts(report,io){
+ let data={hashes:[],results:[],technical:[]};
+ try{if(report.code!=='CLEANUP_FAILED')data=io.read();}
+ catch{report.code='COLLECTION_FAILED';report.exitCode=1;}
+ try{io.write(report,data);return true;}
+ catch{report.code='COLLECTION_FAILED';report.exitCode=1;return false;}
+}
+export function recoverEvidence(c,io){
+ authorize(c);
+ const report={code:'INCOMPLETE_NO_CAMPAIGN_REPORT',exitCode:1,stages:[],cleanup:'NOT_STARTED'};
+ try{io.stopOwned();report.cleanup='OWNED_CONTAINERS_STOPPED_OR_ABSENT';}
+ catch{report.cleanup='FAILED';report.code='CLEANUP_FAILED';try{io.collect(report);}catch{report.exitCode=1;}return report;}
+ try{if(io.hasEvidence())return {...report,code:'EXISTING_SANITIZED_EVIDENCE_PRESERVED',exitCode:0};}
+ catch{report.code='COLLECTION_FAILED';}
+ try{io.collect(report);}catch{report.code='COLLECTION_FAILED';report.exitCode=1;}
+ return report;
+}
+export function existingArtifacts(dir,c){
+ const names=['metadata.json','results.json','hashes.json','technical.log'];
+ if(!names.every(n=>fs.existsSync(path.join(dir,n))))return false;
+ const [metadata,results,hashes,technical]=names.map(n=>regularBytes(path.join(dir,n)));
+ const previous=JSON.parse(metadata);
+ requireThat(previous.wrapper===c.sha&&previous.runId===c.runId&&Array.isArray(JSON.parse(results))&&Array.isArray(JSON.parse(hashes)),'COLLECTION_FAILED');
+ requireThat(technical.length<=32*1024*1024,'COLLECTION_FAILED');return true;
+}
 function nativeIO(c){
  const control=path.resolve(here,'../../..'),application=path.join(c.workspace,'application');
  const env={PATH:'/usr/local/bin:/usr/bin:/bin',HOME:c.temp,TMPDIR:c.temp,LANG:'C.UTF-8',GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null',GIT_TERMINAL_PROMPT:'0'};
@@ -159,11 +186,14 @@ function nativeIO(c){
     if(d.State.Running)requireThat(success(execute('docker',['stop','--time','10',id])),'CLEANUP_FAILED');
    }
   },
+  hasEvidence(){
+   return existingArtifacts(path.join(c.workspace,'website-webkit-21-artifacts'),c);
+  },
   collect(report){
    const output=path.join(c.workspace,'website-webkit-21-artifacts');fs.mkdirSync(output,{recursive:true});
+   return finalizeArtifacts(report,{read:()=>{
    const hashes=[],results=[],technical=[];
-   let own=null;try{own=readReceipt();}catch{report.exitCode=1;}
-   if(report.code==='CLEANUP_FAILED')own=null; // never race evidence reads against a container that could still be running
+   const own=readReceipt();
    const dir=path.join(root,'outputs/results');
    if(own){for(const stage of ['prepare','measure']){const file=path.join(root,`${stage}.raw.log`);if(fs.existsSync(file)){const bytes=regularBytes(file);hashes.push({name:`${stage}.raw.log`,bytes:bytes.length,sha256:hash(bytes)});}}}
    if(own&&fs.existsSync(dir)){
@@ -175,10 +205,13 @@ function nativeIO(c){
      else technical.push(...bytes.toString('utf8').split(/\r?\n/).filter(line=>/^# (tests|pass|fail|cancelled|skipped|todo|duration_ms) \d+(?:\.\d+)?$/.test(line)).map(line=>`${name}: ${line}`));
     }
    }
+   return {hashes,results,technical};
+   },write:(report,{hashes,results,technical})=>{
    fs.writeFileSync(path.join(output,'metadata.json'),JSON.stringify({source:pins.sourceHead,packageDigest:pins.packageDigest,wrapper:/^[0-9a-f]{40}$/.test(c.sha||'')?c.sha:null,runId:/^\d+$/.test(c.runId||'')?c.runId:null,actor:/^[A-Za-z0-9-]+$/.test(c.actor||'')?c.actor:null,...report},null,2)+'\n');
    fs.writeFileSync(path.join(output,'results.json'),JSON.stringify(results,null,2)+'\n');
    fs.writeFileSync(path.join(output,'hashes.json'),JSON.stringify(hashes,null,2)+'\n');
    fs.writeFileSync(path.join(output,'technical.log'),technical.join('\n')+'\n');
+   }});
   },
  };
 }
@@ -188,12 +221,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   requireThat(process.platform==='linux'&&path.isAbsolute(c.workspace||'')&&path.isAbsolute(c.temp||''),'HOST_INVALID');
   const io=nativeIO(c);
   if(process.argv[2]==='--collect-only'){
-   authorize(c);io.stopOwned();
-   const metadata=path.join(c.workspace,'website-webkit-21-artifacts/metadata.json');
-   if(fs.existsSync(metadata)){
-    const previous=JSON.parse(regularBytes(metadata,100000));requireThat(previous.wrapper===c.sha&&previous.runId===c.runId,'COLLECTION_FAILED');
-    console.log('EXISTING_SANITIZED_EVIDENCE_PRESERVED');
-   }else io.collect({code:'INCOMPLETE_NO_CAMPAIGN_REPORT',exitCode:1,stages:[]});
+   const report=recoverEvidence(c,io);console.log(report.code);process.exitCode=report.exitCode;
   }else{const r=await runOnce(c,io);console.log(r.code);process.exitCode=r.exitCode;}
  }catch{console.error('DIAGNOSTIC_REJECTED');process.exitCode=1;}
 }

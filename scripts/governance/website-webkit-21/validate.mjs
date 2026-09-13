@@ -1,7 +1,7 @@
 // Offline validator. No browser, Docker, network, Git mutation or workflow event.
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import {spawnSync} from 'node:child_process';import {fileURLToPath} from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url)),repo=path.resolve(here,'../../..');
-const tests=['projector.test.mjs','conductor.test.mjs','runner.test.mjs','invariants.test.mjs'];
+const tests=['projector.test.mjs','conductor.test.mjs','runner.test.mjs','invariants.test.mjs','recovery.test.mjs'];
 const mode=process.argv[2]||'LF';if(!['LF','CRLF'].includes(mode))throw Error('LF or CRLF only');
 // Only use own temporary directory for mechanical EOL copies and synthetic proof files.
 let dir=here;
