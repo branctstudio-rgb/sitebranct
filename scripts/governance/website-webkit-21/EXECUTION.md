@@ -25,7 +25,7 @@ Após registro, obter o SHAreal da main que contém este candidato e seus pins, 
 node scripts/governance/website-webkit-21/propose.mjs SHA_REAL_DA_MAIN_REGISTRADA WEBSITE-WEBKIT-21-20260913-01
 ```
 
-O gerador exige SHA40hex, IDnovo e insere aplicação/digestexatos. Não faz chamada remota. O SHA pós-registro não existe nesta entrega; não será inventado ou substituído pelo head do candidato.
+O gerador valida SHA40hex e o formato do ID, e insere aplicação/digestexatos. A ausência de uso do ID exige a auditoria posterior do histórico; não é verificada pelo gerador offline. Não faz chamada remota. O SHA pós-registro não existe nesta entrega; não será inventado ou substituído pelo head do candidato.
 
 O Conselho deve aprovar nominalmente os três inputs gerados, imagem/downloads, aplicação, tarefa única e efeito workflow_dispatch. Antes do evento, reconfirmar main/ref/workflowid/pins/objetos, Actions disponível, runhistory completo, identificadorsemuso, ausência de execução concorrente e evidência de autorização. O guard aplica somente main/attempt1/workflowexato e o históricoexige exatamente o run corrente com esseID. Incompletude, rate-limit ou drift interrompem sem retry.
 
