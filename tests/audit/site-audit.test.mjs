@@ -1036,12 +1036,30 @@ function assertManualDiagnosticWorkflow(bytes) {
   assert.equal(hashBytes(JSON.stringify(workflow)), "b137a51ac4bc2309d1e2f9ae1d1dd4cb0888d078e2bdf30b6b38f8ab4f054531", "diagnostic differs from the reviewed manual program and pins");
 }
 
+const manualWebkitDiagnosticPath = ".github/workflows/website-webkit-diagnostic-21.yml";
+function assertManualWebkitDiagnosticWorkflow(bytes) {
+  // Admit only the reviewed workflow21 program from head5f05e8ee. Formatting
+  // LF/CRLF is irrelevant; values, ordering and every executable string are pinned.
+  // This admission does not authorize dispatch or replace formal Via A review.
+  const workflow = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  assert.deepEqual(Object.keys(workflow.on), ["workflow_dispatch"], "WebKit diagnostic must be manual-only");
+  assert.deepEqual(workflow.permissions, { contents: "read" }, "WebKit diagnostic permissions must remain read-only");
+  assert.deepEqual(Object.keys(workflow.jobs), ["diagnostic"], "WebKit diagnostic cannot add jobs");
+  assert.deepEqual(workflow.concurrency, { group: "website-webkit-diagnostic-21", "cancel-in-progress": false });
+  const job = workflow.jobs.diagnostic;
+  assert.equal(job["runs-on"], "ubuntu-24.04");
+  assert.equal(job["timeout-minutes"], 110);
+  assert.equal(job.permissions, undefined, "WebKit job cannot override permissions");
+  assert.equal(hashBytes(JSON.stringify(workflow)), "65b8db39d70d1f4e753ee5e611fd051c2edbb420bd3f89290ff938cc7a187292", "WebKit diagnostic differs from the reviewed program and pins");
+}
+
 function assertAuditedPaths(changed, readBlob) {
   const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
   assert.ok(changed.length > 0);
-  assert.deepEqual(changed.filter(path => !allowed.test(path) && path !== manualDiagnosticPath), [], "audited diff contains an unauthorized path");
+  assert.deepEqual(changed.filter(path => !allowed.test(path) && path !== manualDiagnosticPath && path !== manualWebkitDiagnosticPath), [], "audited diff contains an unauthorized path");
   assert.ok(!changed.includes(".github/workflows/deploy.yml"));
   if (changed.includes(manualDiagnosticPath)) assertManualDiagnosticWorkflow(readBlob(manualDiagnosticPath));
+  if (changed.includes(manualWebkitDiagnosticPath)) assertManualWebkitDiagnosticWorkflow(readBlob(manualWebkitDiagnosticPath));
 }
 
 test("WEBSITE-15 admits only the exact reviewed manual workflow and rejects privilege, trigger and command changes", async () => {
@@ -1064,6 +1082,80 @@ test("WEBSITE-15 admits only the exact reviewed manual workflow and rejects priv
     const changed = JSON.parse(bytes); mutate(changed);
     assert.notDeepEqual(changed, JSON.parse(bytes), "workflow mutation must change the program");
     assert.throws(() => assertAuditedPaths([manualDiagnosticPath], () => Buffer.from(JSON.stringify(changed))));
+  }
+});
+
+test("WEBSITE-24 admits the exact reviewed WebKit-only workflow in LF and CRLF", async () => {
+  const path = ".github/workflows/website-webkit-diagnostic-21.yml";
+  const bytes = await readFile(new URL(`../../${path}`, import.meta.url));
+  for (const text of [bytes.toString().replace(/\r\n/g, "\n"), bytes.toString().replace(/\r?\n/g, "\r\n")]) {
+    assert.doesNotThrow(() => assertAuditedPaths([path], () => Buffer.from(text)));
+  }
+});
+
+test("WEBSITE-24 rejects similar paths without reading them or broadening workflow13", async () => {
+  const paths = [
+    ".github/workflows/website-webkit-diagnostic-22.yml",
+    ".github/workflows/website-webkit-diagnostic-21.yml.extra",
+    ".github/workflows/Website-webkit-diagnostic-21.yml",
+    ".github/workflows/website-webkit-diagnostic-21.yaml",
+    ".github/workflows/website-linux-diagnostic-14.yml",
+    ".github/workflows/deploy.yml", "index.html",
+  ];
+  for (const path of paths) {
+    let reads = 0;
+    assert.throws(() => assertAuditedPaths([path], () => { reads += 1; return Buffer.from("{}"); }), /unauthorized path/);
+    assert.equal(reads, 0);
+  }
+  const webkit = ".github/workflows/website-webkit-diagnostic-21.yml";
+  const old = await readFile(new URL(`../../${manualDiagnosticPath}`, import.meta.url));
+  const current = await readFile(new URL(`../../${webkit}`, import.meta.url));
+  assert.doesNotThrow(() => assertAuditedPaths([manualDiagnosticPath, webkit], path => path === webkit ? current : old));
+  assert.throws(() => assertAuditedPaths([manualDiagnosticPath], () => current));
+  assert.throws(() => assertAuditedPaths([webkit], () => old));
+});
+
+test("WEBSITE-24 rejects WebKit workflow privilege trigger command pin and collection changes", async (t) => {
+  const path = ".github/workflows/website-webkit-diagnostic-21.yml";
+  const original = JSON.parse(await readFile(new URL(`../../${path}`, import.meta.url)));
+  const changes = [
+    ["automatic trigger", w => { w.on.push = {}; }],
+    ["target trigger", w => { w.on.pull_request_target = {}; }],
+    ["top privilege", w => { w.permissions.contents = "write"; }],
+    ["job privilege", w => { w.jobs.diagnostic.permissions = { contents: "write" }; }],
+    ["extra job", w => { w.jobs.extra = { "runs-on": "ubuntu-24.04", steps: [] }; }],
+    ["runner", w => { w.jobs.diagnostic["runs-on"] = "self-hosted"; }],
+    ["deadline", w => { w.jobs.diagnostic["timeout-minutes"] = 111; }],
+    ["concurrency", w => { w.concurrency["cancel-in-progress"] = true; }],
+    ["namespace", w => { w.concurrency.group = "website-linux-diagnostic-13"; }],
+    ["action pin", w => { w.jobs.diagnostic.steps[1].uses = "actions/checkout@main"; }],
+    ["credentials", w => { w.jobs.diagnostic.steps[1].with["persist-credentials"] = true; }],
+    ["secret", w => { w.jobs.diagnostic.env.TOKEN = "${{ secrets.EXAMPLE }}"; }],
+    ["envelope bypass", w => { w.jobs.diagnostic.steps[0].run = "echo unguarded"; }],
+    ["application ref", w => { w.jobs.diagnostic.steps[2].with.ref = "main"; }],
+    ["measurement command", w => { w.jobs.diagnostic.steps[3].run = "echo unexpected"; }],
+    ["cleanup removed", w => { w.jobs.diagnostic.steps.splice(4, 1); }],
+    ["cleanup condition", w => { w.jobs.diagnostic.steps[4].if = "${{ success() }}"; }],
+    ["artifact expansion", w => { w.jobs.diagnostic.steps[5].with.path = "${{ github.workspace }}/**"; }],
+    ["retention", w => { w.jobs.diagnostic.steps[5].with["retention-days"] = 90; }],
+    ["content digest", w => { w.name += " altered"; }],
+  ];
+  for (const [name, mutate] of changes) await t.test(name, () => {
+    const changed = structuredClone(original); mutate(changed);
+    assert.notDeepEqual(changed, original, "negative must change the program");
+    for (const eol of ["\n", "\r\n"]) {
+      const text = JSON.stringify(changed, null, 2).replace(/\n/g, eol);
+      assert.notEqual(text, JSON.stringify(original, null, 2).replace(/\n/g, eol));
+      assert.throws(() => assertAuditedPaths([path], () => Buffer.from(text)));
+    }
+  });
+});
+
+test("WEBSITE-24 rejects missing unreadable malformed and truncated workflow content", () => {
+  const path = ".github/workflows/website-webkit-diagnostic-21.yml";
+  assert.throws(() => assertAuditedPaths([path], () => { throw new Error("blob unavailable"); }), /blob unavailable/);
+  for (const bytes of [Buffer.alloc(0), Buffer.from("{"), Buffer.from([0xff]), Buffer.from("null"), Buffer.from("{}")]) {
+    assert.throws(() => assertAuditedPaths([path], () => bytes));
   }
 });
 
