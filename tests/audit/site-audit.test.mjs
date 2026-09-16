@@ -8,6 +8,7 @@ import { join, normalize } from "node:path";
 import test from "node:test";
 
 import "./f2-gov-08.test.mjs";
+import { verifyCandidate as verifyWebsite27Candidate, contract as website27Contract } from "../../scripts/governance/website-candidate-27/admission.mjs";
 
 const contractPath = new URL("../../fixtures/audit/site-contract.json", import.meta.url);
 const auditPath = new URL("../../docs/audit/phase-1-audit.md", import.meta.url);
@@ -1167,6 +1168,12 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
   const repository = normalize(new URL("../../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
   const raw = execFileSync("git", ["diff", "--name-only", "--no-renames", "-z", diffBase, authoritySha], { cwd: repository, encoding: null });
   const changed = new TextDecoder("utf-8", { fatal: true }).decode(raw).split("\0").filter(Boolean);
+  // Separate immutable measurement candidate; WEBSITE15/24 and historical RED
+  // remain unchanged. This is not an event approval, READY transition or release.
+  if (authoritySha === website27Contract().candidate) {
+    verifyWebsite27Candidate(repository, { base: diffBase, head: authoritySha });
+    return;
+  }
   assertAuditedPaths(changed, path => {
     const tree = execFileSync("git", ["ls-tree", "-z", authoritySha, "--", path], { cwd: repository, encoding: null }).toString("utf8");
     assert.match(tree, /^100644 blob [0-9a-f]{40}\t/, "manual workflow must remain a regular Git blob");
