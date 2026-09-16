@@ -1,0 +1,14 @@
+{
+  "purpose": "Local adaptation test only; no customer or operational integration",
+  "clientId": "synthetic-studio",
+  "displayName": "Studio Example",
+  "closeLabel": "Close navigation",
+  "tokens": {
+    "--bg": "#f7f5f0",
+    "--surface": "#ffffff",
+    "--ink": "#221c2d",
+    "--accent": "#59358c"
+  },
+  "bodyFont": "Georgia, serif",
+  "integrationMode": "DISABLED"
+}
