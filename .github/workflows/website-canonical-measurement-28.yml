@@ -1,0 +1,22 @@
+{
+  "name": "Website canonical measurement 28",
+  "run-name": "WEBSITE-MEDICAO-CANONICA-28 / ${{ github.sha }}",
+  "on": {"push": {"branches": ["agent/website-canonical-measurement-28"]}},
+  "permissions": {"contents": "read"},
+  "concurrency": {"group": "website-canonical-measurement-28", "cancel-in-progress": false},
+  "jobs": {
+    "measurement": {
+      "if": "${{ github.event.created == true && github.event.deleted == false && github.event.forced == false && github.run_attempt == 1 }}",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 100,
+      "steps": [
+        {"name": "Checkout the separately authorized exact technical head", "id": "control", "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5", "with": {"ref": "${{ github.sha }}", "path": "control", "fetch-depth": 0, "persist-credentials": false, "submodules": false, "lfs": false}},
+        {"name": "Checkout immutable candidate26 as data only", "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5", "with": {"ref": "2fbce7cdd1ff87f9a54d8c9190ffd1f349a8fe9d", "path": "application", "fetch-depth": 0, "persist-credentials": false, "submodules": false, "lfs": false}},
+        {"name": "Checkout immutable canonical test source563 as data only", "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5", "with": {"ref": "563f3c13665347b2a8578110e519ebaf13f356e8", "path": "test-source", "fetch-depth": 0, "persist-credentials": false, "submodules": false, "lfs": false}},
+        {"name": "One prepare and one network-none three-engine measurement", "timeout-minutes": 85, "shell": "bash", "run": "node control/scripts/governance/website-measurement-28/runner.mjs"},
+        {"name": "Stop only owned containers and preserve bounded evidence", "if": "${{ always() && steps.control.outcome == 'success' }}", "timeout-minutes": 3, "shell": "bash", "run": "node control/scripts/governance/website-measurement-28/runner.mjs recover"},
+        {"name": "Upload only sanitized proof artifacts", "if": "${{ always() && steps.control.outcome == 'success' }}", "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", "with": {"name": "website-measurement-28-${{ github.run_id }}", "retention-days": 7, "if-no-files-found": "error", "include-hidden-files": false, "overwrite": false, "path": "${{ github.workspace }}/website28-artifacts/metadata.json\n${{ github.workspace }}/website28-artifacts/results.json\n${{ github.workspace }}/website28-artifacts/hashes.json\n"}}
+      ]
+    }
+  }
+}
