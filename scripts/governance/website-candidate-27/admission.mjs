@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 export const hash=b=>createHash('sha256').update(b).digest('hex');
 const pinned=JSON.parse(fs.readFileSync(new URL('./contract.json',import.meta.url)));
-assert.equal(hash(JSON.stringify(pinned)),'94dc261e96635f3330712f0b415c7ab2d4f358f6adae5a0c9bd7b10bf7cafdd0','CONTRACT_PIN_MISMATCH');
+assert.equal(hash(JSON.stringify(pinned)),'aa25746798e09a851e451f4b9a45c97fb30956082d3301ca46e979228939d4f4','CONTRACT_PIN_MISMATCH');
 export const contract=()=>structuredClone(pinned);
 export const git=(repo,...args)=>execFileSync('git',['-c','core.quotePath=true','-C',repo,...args],{encoding:null,maxBuffer:128*1024*1024,windowsHide:true});
 const text=b=>new TextDecoder('utf-8',{fatal:true}).decode(b);

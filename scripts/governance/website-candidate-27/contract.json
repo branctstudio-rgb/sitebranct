@@ -540,5 +540,15 @@
     "shmMiB": 1024,
     "tmpfsMiB": 1024
   },
+  "runtimePackages": {
+    "provenance": "Existing npm tarballs verified against canonical lock SRI; installed files compared byte-for-byte; no install or download",
+    "canonicalTreeDigest": "160598f6c3cbeb77da23e5d5aa7bc901ccf22eecae6c84c1574a2393f07cf381",
+    "canonicalization": "sha256(JSON.stringify(files sorted ASCII by file, each {file,bytes,sha256}))",
+    "fileCount": 173,
+    "archives": [
+      { "name": "playwright", "version": "1.62.0", "integrity": "sha512-Z14dG305dgaLu6foB1TXQagFiW8JfSUIUaUuPaKQ6NtBPKF1P/qXcqfh6c6K/icPqdy37JmjbiBXf6JNg6Sylw==", "sha256": "6c727ffdfdfda1b46843f00ccbd04e1b798818a4e44386eb5b003b1c47cc008a" },
+      { "name": "playwright-core", "version": "1.62.0", "integrity": "sha512-nsNRyq0r2zsG8AcRHWknc9QRA5XCueC7gWMrs+Gx2tlZn9hcl8zudfh00lhJPY1DE7NmZ6bDsT9g2yey8mXljA==", "sha256": "257b0e29fb807039d3d67fe7c9188a2b9696403c57821b10cb6c8d635e39789a" }
+    ]
+  },
   "posture": "OFFLINE_PROPOSAL_NOT_EXECUTED"
 }

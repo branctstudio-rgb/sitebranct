@@ -14,8 +14,17 @@ export function inspectRuntime(repo,provider){
   const json=f=>JSON.parse(readRegular(path.join(provider,'node_modules',f)));
   const registry=readRegular(path.join(provider,'node_modules/playwright-core/browsers.json'));
   const lockEntry=c.authorities.find(e=>e.file==='package-lock.json');const lock=JSON.parse(blob(repo,lockEntry.source,lockEntry));
+  for(const archive of c.runtimePackages.archives)assert.equal(lock.packages[`node_modules/${archive.name}`].integrity,archive.integrity,'RUNTIME_LOCK_SRI');
+  const files=[];
+  function inspect(file,relative){const s=fs.lstatSync(file);assert.ok(!s.isSymbolicLink(),'RUNTIME_LINK_REJECTED');
+    if(s.isDirectory()){for(const name of fs.readdirSync(file))inspect(path.join(file,name),relative+'/'+name);}
+    else {const bytes=readRegular(file);files.push({file:relative,bytes:bytes.length,sha256:hash(bytes)});}}
+  for(const name of ['playwright','playwright-core'])inspect(path.join(provider,'node_modules',name),name);
+  files.sort((a,b)=>a.file<b.file?-1:a.file>b.file?1:0);
+  assert.equal(files.length,c.runtimePackages.fileCount,'RUNTIME_TREE_CARDINALITY');
+  const packageTreeDigest=hash(JSON.stringify(files));assert.equal(packageTreeDigest,c.runtimePackages.canonicalTreeDigest,'RUNTIME_TREE_DIGEST');
   const builds=JSON.parse(registry).browsers.filter(b=>engines.includes(b.name)).map(b=>({name:b.name,revision:b.revision,version:b.browserVersion}));
-  const r={version:json('playwright/package.json').version,coreVersion:json('playwright-core/package.json').version,lockVersion:lock.packages['node_modules/playwright'].version,builds,registrySha256:hash(registry),provider:path.resolve(provider),installed:false};
+  const r={version:json('playwright/package.json').version,coreVersion:json('playwright-core/package.json').version,lockVersion:lock.packages['node_modules/playwright'].version,builds,registrySha256:hash(registry),packageTreeDigest,archives:c.runtimePackages.archives,provider:path.resolve(provider),installed:false};
   validateFacts(r);return r;
 }
 export function copyExistingRuntime(repo,provider,destination){
@@ -28,7 +37,7 @@ export function copyExistingRuntime(repo,provider,destination){
   fs.mkdirSync(path.join(destination,'node_modules'),{recursive:true});
   for(const p of ['playwright','playwright-core']){const target=path.join(destination,'node_modules',p);assert.ok(!fs.existsSync(target),'RUNTIME_DESTINATION_EXISTS');copy(path.join(provider,'node_modules',p),target,p);}
   assert.equal(inspectRuntime(repo,destination).registrySha256,facts.registrySha256);
-  return {...facts,copiedFiles:files.length,packageTreeDigest:hash(JSON.stringify(files))};
+  return {...facts,copiedFiles:files.length};
 }
 export function audit(repo,authority,provider,out){
   assert.match(authority??'',/^[0-9a-f]{40}$/,'AUTHORITY_SHA_REQUIRED');

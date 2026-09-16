@@ -26,6 +26,14 @@ uma clone descartável nova; registra digests de todos os173 arquivos. Não inst
 não baixa, não sintetiza registry, não copia revisão de outra versão e não toca na
 worktree original. A cópia local não equivale à imagem Linux nem valida bináriosFirefox.
 
+Após revisão, a verificação também exige o digest canónico dos173 ficheiros executáveis/
+dados dos dois pacotes. Esse digest foi derivado dos tarballs já existentes no cache,
+com SHA512-SRI igual ao lock Git e comparação byte a byte com cada ficheiro instalado:
+`160598f6c3cbeb77da23e5d5aa7bc901ccf22eecae6c84c1574a2393f07cf381`.
+Não é apenas um hash arbitrário calculado durante a cópia. Alteração de JS mantendo
+package.json e browsers.json intactos, ficheiro ausente/extra ou link reprovam.
+Os digests/SRIs autenticados acompanham `provenance.runtime` no envelope da execução.
+
 Reprodução dos quatro contratos no candidato26, sem a proposta27:
 
 ```powershell

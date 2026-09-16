@@ -48,6 +48,14 @@ test('runtime inspection requires the real installed package and exact builds; n
     const value=structuredClone(fact);change(value);assert.throws(()=>runtime.validateFacts(value));
   }
 });
+test('runtime rejects changed executable bytes despite unchanged version/build metadata',()=>{
+  const dest=fs.mkdtempSync(path.join(os.tmpdir(),'website27-runtime-integrity-'));
+  runtime.copyExistingRuntime(repo,process.env.WEBSITE_EXISTING_RUNTIME,dest);
+  assert.doesNotThrow(()=>runtime.inspectRuntime(repo,dest));
+  const file=path.join(dest,'node_modules/playwright/index.js'),before=fs.readFileSync(file);
+  fs.writeFileSync(file,Buffer.concat([before,Buffer.from('\n// benign integrity change\n')]));
+  assert.throws(()=>runtime.inspectRuntime(repo,dest),/RUNTIME_(TREE|INTEGRITY)/);
+});
 test('launcher refuses absent or wrong immutable authority before creating output or spawning',()=>{
   const script=path.join(here,'runtime.mjs');assert.ok(fs.existsSync(script));
   const output=path.join(os.tmpdir(),`website27-absent-${process.pid}`);
@@ -103,6 +111,7 @@ test('load-bearing controls catch relaxed paths, completion, semantic vector and
   const mutations=[
     ['admission.mjs',"assert.deepEqual(entries,pinned.candidateChanges,'closed candidate paths, modes and blobs differ');",'',async m=>assert.throws(()=>m.validateChanges([]))],
     ['runtime.mjs',"assert.equal(r.version,'1.62.0','RUNTIME_VERSION');",'',async m=>{const f=runtime.inspectRuntime(repo,process.env.WEBSITE_EXISTING_RUNTIME);f.version='1.62.1';f.coreVersion=f.version;f.lockVersion=f.version;assert.throws(()=>m.validateFacts(f));}],
+    ['runtime.mjs',"assert.equal(packageTreeDigest,c.runtimePackages.canonicalTreeDigest,'RUNTIME_TREE_DIGEST');",'',async m=>{const d=fs.mkdtempSync(path.join(os.tmpdir(),'website27-runtime-mutation-'));runtime.copyExistingRuntime(repo,process.env.WEBSITE_EXISTING_RUNTIME,d);const f=path.join(d,'node_modules/playwright/index.js');fs.appendFileSync(f,'\n// benign mutation\n');assert.throws(()=>m.inspectRuntime(repo,d));}],
     ['executor.mjs',"assert.equal(r.execution?.complete,true,'EXECUTION_INCOMPLETE');",'',async m=>{const r=c.engines.map(synthetic);r[0].execution.complete=false;assert.throws(()=>m.validateReports(repo,r));}],
     ['executor.mjs',"assert.deepEqual(r.execution.semanticTests,semanticNames.map(name=>({name,status:'PASS'})),'SEMANTIC_VECTOR');",'',async m=>{const r=c.engines.map(synthetic);r[0].execution.semanticTests[0].status='FAIL';assert.throws(()=>m.validateReports(repo,r));}],
   ];

@@ -66,7 +66,7 @@ export function containerEntry(){
   assert.equal(process.env.PLAYWRIGHT_BROWSERS_PATH,'/ms-playwright');
   assert.ok(!fs.existsSync('/outputs/measurement'),'FRESH_OUTPUT');
   const repo='/repository',source='/tmp/website27-candidate',schedule=plan(repo,{candidate:c.candidate,engines:c.engines,image:c.image,limits:c.limits});
-  inspectRuntime(repo,'/deps');const provenance=materialize(repo,source);copyExistingRuntime(repo,'/deps',source);
+  inspectRuntime(repo,'/deps');const provenance=materialize(repo,source);provenance.runtime=copyExistingRuntime(repo,'/deps',source);
   fs.mkdirSync('/outputs/measurement');const reports=[],processes=[];
   for(const t of schedule.tasks){
     const report=`/outputs/measurement/${t.report}`;
