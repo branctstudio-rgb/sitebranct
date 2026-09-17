@@ -50,6 +50,17 @@ export async function runOnce(event,io){
   try{io.collect(r);}catch{r.code='ARTIFACT_FAILED';r.exitCode=1;}}
  return r;
 }
+export function recover(io,{ownedExists,metadataExists,priorCode='UNKNOWN'}){
+ const codes=['INCONCLUSIVE','PREPARE_FAILED','MEASURE_FAILED','PROOF_MISSING','MEASURED_NOT_RELEASED','CLEANUP_FAILED','ARTIFACT_FAILED','INTERRUPTED_NO_PROOF'];
+ const r={code:'INTERRUPTED_NO_PROOF',exitCode:1,cleanup:'NOT_STARTED',priorCode:codes.includes(priorCode)?priorCode:'UNKNOWN'};let failed=false;
+ try{if(ownedExists)io.stopOwned();r.cleanup='STOPPED_OR_ABSENT';}
+ catch{failed=true;r.code='CLEANUP_FAILED';r.cleanup='FAILED';}
+ finally{if(!metadataExists||failed)try{io.collect(r);}catch{r.code='ARTIFACT_FAILED';r.exitCode=1;}}
+ // Existing successful/failed primary evidence is left untouched after normal cleanup.
+ // Cleanup failure always exports what remains, but never reports success.
+ if(metadataExists&&!failed)r.exitCode=0;
+ return r;
+}
 export function verifyEvidence(repo,root){
  const expected=['processes.json','result.json',...c.engines.flatMap(e=>[`responsive-${e}.json`,`responsive-${e}.json.log`,`responsive-${e}.json.isolation.json`,`responsive-${e}.json.diagnostic.json`])].sort();
  assert.deepEqual(fs.readdirSync(root).sort(),expected,'CLOSED_OUTPUT_FILES');
@@ -118,7 +129,7 @@ function nativeIO(e){
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const e=process.env;try{check(process.platform==='linux','LINUX_REQUIRED');const event={event:e.GITHUB_EVENT_NAME,repository:e.GITHUB_REPOSITORY,ref:e.GITHUB_REF,sha:e.GITHUB_SHA,attempt:e.GITHUB_RUN_ATTEMPT,runId:e.GITHUB_RUN_ID,workflowRef:e.GITHUB_WORKFLOW_REF,payload:safeJson(e.GITHUB_EVENT_PATH),workspace:e.GITHUB_WORKSPACE,temp:e.RUNNER_TEMP};authorize(event);assert.ok(path.isAbsolute(event.workspace)&&path.isAbsolute(event.temp));
   const io=nativeIO(event);
-  if(process.argv[2]==='recover'){const root=`/var/tmp/website29-${event.runId}`;if(fs.existsSync(root))io.stopOwned();const meta=path.join(event.workspace,'website29-artifacts/metadata.json');if(!fs.existsSync(meta))io.collect({code:'INTERRUPTED_NO_PROOF',exitCode:1,cleanup:'STOPPED_OR_ABSENT'});}
+  if(process.argv[2]==='recover'){const root=`/var/tmp/website29-${event.runId}`,meta=path.join(event.workspace,'website29-artifacts/metadata.json');let priorCode='UNKNOWN';if(fs.existsSync(meta))try{priorCode=safeJson(meta).code;}catch{}process.exitCode=recover(io,{ownedExists:fs.existsSync(root),metadataExists:fs.existsSync(meta),priorCode}).exitCode;}
   else {assert.equal(process.argv.length,2,'NO_PARAMETERS');const r=await runOnce(event,io);console.log(r.code);process.exitCode=r.exitCode;}
  }catch{console.error('MEASUREMENT_29_REJECTED');process.exitCode=1;}
 }

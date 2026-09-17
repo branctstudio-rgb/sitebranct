@@ -111,6 +111,10 @@ proof recomputation and owned-container cleanup. hashes includes raw report and
 diagnostic hashes, not raw report/log content. Browser absence/hard kill may leave
 unfinished PREPARATION/action diagnostics; it is not a zero-error completion.
 Host disappearance can prevent collection/cleanup; no absolute guarantee is made.
+The separate workflow recovery branch attempts export even if owned-container
+stop/inspect fails, records cleanup FAILED and remains nonzero. Existing primary
+evidence is untouched on normal recovery; on cleanup failure its prior outcome
+is retained as a closed enum while remaining diagnostics are collected.
 
 ## Readback and rollback
 

@@ -4,6 +4,7 @@ import {execFileSync} from 'node:child_process';
 import {contract} from '../website-candidate-27/admission.mjs';
 import {validateReports} from '../website-candidate-27/executor.mjs';
 import {instrument} from './instrument.mjs';
+import vm from 'node:vm';
 const m=await import('./runner.mjs').catch(e=>{if(e.code==='ERR_MODULE_NOT_FOUND')return {};throw e;});
 const good={repository:'branctstudio-rgb/sitebranct',event:'push',ref:'refs/heads/agent/website-diagnostic-measurement-29',sha:'b'.repeat(40),attempt:'1',runId:'123',workflowRef:'branctstudio-rgb/sitebranct/.github/workflows/website-diagnostic-measurement-29.yml@refs/heads/agent/website-diagnostic-measurement-29',payload:{created:true,deleted:false,forced:false,before:'0'.repeat(40),after:'b'.repeat(40),ref:'refs/heads/agent/website-diagnostic-measurement-29'}};
 test('new attempt is distinct from consumed28, initial push only, same image and limits',()=>{
@@ -60,4 +61,18 @@ test('success requires recomputed semantic84/41/184, three engines AND bound dia
  ['result.json',x=>x.approval=true],
  ]){const raw=fs.readFileSync(path.join(dir,file)),x=JSON.parse(raw);change(x);write(file,x);assert.throws(()=>m.verifyEvidence(repo,dir));fs.writeFileSync(path.join(dir,file),raw);}
  fs.renameSync(path.join(dir,'responsive-webkit.json.diagnostic.json'),path.join(dir,'absent.json'));assert.throws(()=>m.verifyEvidence(repo,dir));
+});
+test('actual CLI recovery collects even when Docker stop fails after main interruption',async()=>{
+ const file=path.join(path.dirname(fileURLToPath(import.meta.url)),'runner.mjs'),code=fs.readFileSync(file,'utf8');
+ const branch=code.slice(code.indexOf("  if(process.argv[2]==='recover')"),code.indexOf('\n  else {assert.equal(process.argv.length'));
+ let stopped=0,collected=0,receipt;const io={stopOwned(){stopped++;throw Error('DOCKER_PRIVATE');},collect(r){collected++;receipt=r;}};
+ const context={process:{argv:['node','runner','recover'],exitCode:0},event:{runId:'123',workspace:'/workspace'},io,path,fs:{existsSync:f=>!f.endsWith('metadata.json')},recover:m.recover};
+ try{await vm.runInNewContext(`(async()=>{${branch}})()`,context);}catch{}
+ assert.equal(stopped,1);assert.equal(collected,1,'cleanup failure must not suppress sidecar export');assert.equal(receipt.cleanup,'FAILED');assert.equal(receipt.exitCode,1);assert.ok(!JSON.stringify(receipt).includes('PRIVATE'));
+});
+test('recovery preserves existing evidence unless cleanup fails; collection failure is never success',()=>{
+ let collected=0,last;const io={stopOwned(){},collect:r=>{collected++;last=r;}};
+ assert.equal(m.recover(io,{ownedExists:true,metadataExists:true}).exitCode,0);assert.equal(collected,0);
+ io.stopOwned=()=>{throw Error('PRIVATE');};assert.equal(m.recover(io,{ownedExists:true,metadataExists:true,priorCode:'MEASURE_FAILED'}).exitCode,1);assert.equal(last.priorCode,'MEASURE_FAILED');assert.equal(last.cleanup,'FAILED');assert.equal(collected,1);
+ io.collect=()=>{throw Error('PRIVATE');};const r=m.recover(io,{ownedExists:true,metadataExists:false,priorCode:'PRIVATE'});assert.equal(r.code,'ARTIFACT_FAILED');assert.equal(r.exitCode,1);assert.equal(r.priorCode,'UNKNOWN');
 });
