@@ -32,7 +32,8 @@ returns at/after the canonical deadline. Counters freeze at action termination:
 pending means unresolved **then**, not a claim about process state at export.
 No per-sample disk write is added. Rejection is rethrown unchanged; late completion
 cannot change the action outcome. Times are rounded/bounded at900000ms.
-The existing page callback additionally returns a bounded rAF wait duration and
+The existing page callback additionally returns a bounded rAF wait duration,
+captured at callback entry BEFORE querying DOM/layout/style, and
 closed visibility/focus fields. These are page-reported, supplementary, possibly
 unknown diagnostics; they are never authoritative timing or PASS evidence.
 The host owns action identity and the acceptance predicate remains canonical.

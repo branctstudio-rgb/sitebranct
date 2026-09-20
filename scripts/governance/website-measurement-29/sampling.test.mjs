@@ -3,11 +3,11 @@ import test from 'node:test';import assert from 'node:assert/strict';import vm f
 import {instrument,uninstrument} from './instrument.mjs';import {createTrace,validateDiagnostic} from './diagnostics.mjs';
 const repo=fileURLToPath(new URL('../../../',import.meta.url));
 const raw=execFileSync('git',['-C',repo,'show','563f3c13665347b2a8578110e519ebaf13f356e8:tests/audit/f2-01-responsive.test.mjs']);
-async function schedule(delays,{active=false,hidden=false,moving=false,missing=false,code=instrument(raw).code}={}){
+async function schedule(delays,{active=false,hidden=false,moving=false,missing=false,layoutMs=0,code=instrument(raw).code}={}){
  let now=0,order=0,calls=0,done=false,error;const events=[],cancelled=new Set();
  const later=(fn,ms)=>{const id=++order;events.push({at:now+ms,id,fn});return id;};
  const trace=createTrace('webkit',()=>{},()=>now);
- const drawer={getBoundingClientRect:()=>({left:moving?calls:0,right:moving?calls+200:200,top:0,bottom:300,width:200,height:300}),getAnimations:()=>active?[{pending:false,playState:'running'}]:[]};
+ const drawer={getBoundingClientRect:()=>{now+=layoutMs;return {left:moving?calls:0,right:moving?calls+200:200,top:0,bottom:300,width:200,height:300};},getAnimations:()=>active?[{pending:false,playState:'running'}]:[]};
  const pageRealm=vm.createContext({Promise,performance:{now:()=>now+9000},document:{querySelector:()=>missing?null:drawer,visibilityState:'visible',hasFocus:()=>true},getComputedStyle:()=>({visibility:hidden?'hidden':'visible',display:'flex',opacity:'1'}),requestAnimationFrame:fn=>{const delay=delays[Math.min(calls-1,delays.length-1)];if(Number.isFinite(delay))later(()=>fn(now+9000),delay);}});
  const page={evaluate:fn=>{calls++;return vm.runInContext(`(${fn.toString()})()`,pageRealm);}};
  const context=vm.createContext({assert,Promise,Error,performance:{now:()=>now},diagnostic:trace,setTimeout:later,clearTimeout:id=>cancelled.add(id),evidenceIdentity:()=> 'fixture',actionResults:[]});
@@ -66,4 +66,13 @@ test('sampling30 treats malformed page diagnostic fields as unknown, never as ho
  const result=await trace.observeEvaluation(a,()=>{now=25;return sample;},2500);
  assert.equal(result,sample);assert.equal(a.sampling.lastRoundTripMs,25);assert.equal(a.sampling.lastRafWaitMs,null);assert.equal(a.sampling.lastVisibility,null);assert.equal(a.sampling.lastPageFocused,null);
  trace.end(a,'COMPLETED');validateDiagnostic(trace.snapshot(),'firefox');assert.ok(!JSON.stringify(trace.snapshot()).includes('TOKEN'));
+});
+
+test('sampling30 callback entry timing excludes synchronous layout cost',async()=>{
+ const result=await schedule([10,10],{layoutMs:100});assert.equal(result.error,undefined);
+ const s=result.trace.actions[0].sampling;assert.equal(s.returned,2);assert.equal(s.lastRoundTripMs,110);assert.equal(s.lastRafWaitMs,10,'layout cost must not be called rAF scheduling wait');
+ for(const eol of ['\n','\r\n']){
+  const code=instrument(raw).code.replace(/\r\n|\n/g,eol),mutated=code.replace('rafWaitMs:diagnosticFrameEnd-diagnosticFrameStart','rafWaitMs:performance.now()-diagnosticFrameStart');assert.notEqual(mutated,code);
+  const bad=await schedule([10,10],{layoutMs:100,code:mutated});assert.equal(bad.error,undefined);assert.equal(bad.trace.actions[0].sampling.lastRafWaitMs,110);assert.notEqual(bad.trace.actions[0].sampling.lastRafWaitMs,10);
+ }
 });
