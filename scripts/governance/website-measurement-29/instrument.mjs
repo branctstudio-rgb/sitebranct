@@ -16,6 +16,13 @@ export function instrument(bytes){
  insert('  const response = await page.goto','diagnostic.stage("NAVIGATION");\n','before');
  insert('  const ready = await evaluate(`(async()=>','diagnostic.stage("FONTS");\n','before');
  insert('  const deadline = performance.now() + 2500;','\n  const diagnosticAction=diagnostic.current(); diagnostic.stage("DRAWER_SAMPLE",diagnosticAction);');
+ // Host boundaries are observed before the canonical deadline-discard branch.
+ // Page timing is supplementary diagnostic data, never settlement/PASS authority.
+ insert('targetPage.evaluate(() => new Promise(resolve => requestAnimationFrame(() => {','diagnostic.observeEvaluation(diagnosticAction,()=>','before');
+ insert('      })))',',deadline)');
+ insert('new Promise(resolve => ','{const diagnosticFrameStart=performance.now();');
+ const frameClose='      })))';assert.equal(code.split(frameClose).length-1,1,'FRAME_CLOSE_ANCHOR');code=code.replace(frameClose,'      })'+mark(';}')+'))');
+ insert('        resolve({','\n          diagnosticFrame:{rafWaitMs:performance.now()-diagnosticFrameStart,visibility:document.visibilityState,focused:document.hasFocus()},');
  insert('    if (sample.visible && !sample.active && stable) return;','diagnostic.sample(diagnosticAction,sample,stable);\n','before');
  // Wrap, rather than replace, each existing Error. Deadline and rejection unchanged.
  const wrap=(needle,category,expected)=>{insert(needle,'diagnostic.tag(','before',expected);insert(needle,`,"${category}")`,'after',expected);};

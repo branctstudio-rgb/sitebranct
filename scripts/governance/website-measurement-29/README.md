@@ -1,5 +1,73 @@
 # WEBSITE-DIAGNOSTICO-E-FECHO-29
 
+## Offline delta30 — diagnostic boundary, not a WebKit repair
+
+This section supersedes the publication instructions below **for this branch**.
+Published29 at0ac5802a4a06a8cc75925f9f58a566b1553a60cb and run35506181696
+are immutable historical evidence; attempt29 is consumed. Branch
+agent/website-sampling-boundary-30 is an unpublished diagnostic candidate only.
+Its inherited runner/workflow remain pinned to29 and MUST NOT be reused to run30.
+No new workflow, trigger, browser execution, container, install or external call
+is part of this delta. A separately reviewed/authorized30 admission domain is
+needed before a single future Linux measurement; never rerun29 or update its ref.
+
+Run29 distinguished the inner DRAWER_DEADLINE at DRAWER_SAMPLE (action2,
+after-open,2501ms), not post-settlement measurement. WebKit accepted one sample,
+visible=true,active=false,stable=false; Chromium/Firefox completed84/41/184.
+The code proves `samples` counts accepted samples after the deadline check,
+not evaluate calls, rAF callbacks, compositor frames or actual paint. The first
+sample must be unstable because no previous rectangle exists. It does not prove
+the rectangle moved. rAF itself is not proof that pixels were painted.
+
+Three controlled histories reproduce that same old WebKit summary: first return
+at10ms then pending; first return at2490ms then pending; first return at10ms and
+second return exactly2500ms discarded by the canonical deadline check. These are
+executable counterexamples to inferring a unique cause, **not reproductions of
+WebKit scheduling**. Renderer delay, callback delivery, transport delay, visibility,
+focus and repaint remain unproven. No candidate26 or canonical563 repair is made.
+
+Schema2 adds host-side evaluation started/returned/rejected/pending counts,
+first/last start/return offsets from action start, last round-trip duration, and
+returns at/after the canonical deadline. Counters freeze at action termination:
+pending means unresolved **then**, not a claim about process state at export.
+No per-sample disk write is added. Rejection is rethrown unchanged; late completion
+cannot change the action outcome. Times are rounded/bounded at900000ms.
+The existing page callback additionally returns a bounded rAF wait duration and
+closed visibility/focus fields. These are page-reported, supplementary, possibly
+unknown diagnostics; they are never authoritative timing or PASS evidence.
+The host owns action identity and the acceptance predicate remains canonical.
+
+Removing marked insertions still recovers exact563 bytes. Two samples, visibility,
+animation/stability predicates,2500/3000ms,engines and84/41/184 are unchanged.
+Additional promise/clock work can perturb timing: zero-overhead equivalence is
+NOT claimed. Schema1 historical artifacts must be inspected with historical29;
+schema2 does not rewrite or silently upgrade old evidence. Runtime impact and
+actual Linux/WebKit root cause remain NOT_VERIFIED.
+
+Offline commands (no browser):
+
+    node --test scripts/governance/website-measurement-29/sampling.test.mjs
+    node --test scripts/governance/website-measurement-29/contracts.test.mjs scripts/governance/website-measurement-29/pipeline.test.mjs
+
+The first suite exercises exact instrumented563 functions and its actual callback
+under a controlled VM scheduler. It rejects ambiguous/malformed diagnostics,
+preserves strict settlement, checks late/rejected evaluation and a load-bearing
+observation-hook mutation in LF/CRLF. Other suites cover the affected diagnostic
+consumer/export boundary. Intact27/site/browser suites are not repeated.
+
+Next experiment proposal, only after distinct30 trigger preparation/review and
+nominal authorization: one Linux image-pinned attempt with unchanged26/563/27 and
+these diagnostics. If firstReturn is late, bound the first evaluation; if first
+return is prompt and pending=1, localize to the next outstanding evaluation; if
+afterDeadline>0, identify discarded return. A large page-reported rAF wait suggests
+callback scheduling, while a large host round-trip with small rAF wait suggests
+delay outside the measured callback interval. Neither establishes repaint or
+engine internals; unknown/contradictory results stop for review. No timeout increase,
+automatic retry, geometry correction or acceptance relaxation follows implicitly.
+
+Rollback: leave this isolated local commit unused. No remote/site/protection state
+changed and no historical package/ref needs to be reverted or deleted.
+
 Status: offline preparation; **new publication/measurement NOT AUTHORIZED**.
 This is not BASE_WEBSITE_ACEITA, a production change, or a renewal of attempt28.
 
