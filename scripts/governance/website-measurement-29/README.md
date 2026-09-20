@@ -1,5 +1,83 @@
 # WEBSITE-DIAGNOSTICO-E-FECHO-29
 
+## Current controller30 — offline-ready, future execution not authorized
+
+This section supersedes both historical preparation sections below. Milestone
+425b0f31902fc475817ae4d5cf6dc59b1d146fc6 remains in append-only history. The new
+controller completes the separate admission domain; no further offline permission
+is needed to inspect/test/package it. Publication/browser/CI execution still needs
+one separate nominal authorization bound to the packaged final SHA.
+
+- Exact new ref: refs/heads/agent/website-sampling-boundary-30.
+- Workflow: .github/workflows/website-sampling-boundary-30.yml.
+- Workflow identity: Website sampling boundary measurement 30.
+- Only initial push: created=true,deleted=false,forced=false,before allzero,
+  payload.after=GITHUB_SHA,payload.ref=GITHUB_REF,run_attempt=1.
+- GITHUB_WORKFLOW_SHA must equal GITHUB_SHA and workflow/ref/repository must match.
+- Checkout control uses github.sha,not main or moving branch resolution. Candidate26
+  and test563 have their immutable separate checkouts. Historical27 is loaded
+  from62104c9c2d41aff296643aa4af8e067433a1673f,not controller28/29/30.
+- The host requires main851c1723119b62193623fa24e67090afd18b39f1 and a singleton
+  workflow30 history for this exact run/head/attempt/event/ref/path. Pagination,
+  HTTP errors or unknown identities fail before reserving a measurement.
+
+The source directory still has the29 name for a small auditable delta. Domain,
+workflow,concurrency,container names/labels,owner receipt and artifact directory
+are30. No domain30 call accepts29's ref or workflow. Historical workflow29 remains
+byte-identical and is not a trigger for the new branch. Do not reuse its ref/run.
+
+The host materializes executor/browser/instrument/diagnostics/runner from Git blobs
+of the pushed head into the readonly control mount, enforcing exact100644 entries.
+controller30.json records domain,head,milestone425b,controller29,complement27,
+diagnosticSchema2 and each module's Git blob,size,SHA256. Missing Git objects are
+rejected with GIT_NO_LAZY_FETCH=1; no network fallback is used for controller objects.
+The container recomputes and compares this receipt and all five materialized files
+against refs/heads/control in the host-created object repository before candidate
+execution. Those bytes are the same paths subsequently imported/executed. This is
+provenance of a trusted controller, not a signature or defense against a malicious
+host/runner. The host independently compares child provenance with its event SHA.
+
+Export remains exactly metadata.json,results.json,hashes.json,retention7days.
+Metadata schema2 separates expected controller provenance from observed MATCH,
+MISSING or INVALID. Only a matching process receipt may populate observed; missing
+or invalid never becomes a successful run. Results require diagnostic schema2,
+including the new sampling boundaries. The unchanged27 validator still recomputes
+the complete84/41/184 semantic evidence for all3engines. Counts/diagnostics alone
+do not grant acceptance or release. No raw site content,error text,logs or tokens
+are uploaded. Partial results remain explicitly incomplete.
+
+Image,pinned runtime/lock,limits,semantics and2500/3000ms remain exactly as below.
+Public API/image/package preparation would require network only in a future
+authorized run. Measurement remains network=none,readonly,nonroot,no credentials,
+capdropALL,no-new-privileges. No publication/install/container/browser occurred
+during this offline preparation.
+
+Offline validation (four affected suites only):
+
+    node --test scripts/governance/website-measurement-29/controller30.test.mjs scripts/governance/website-measurement-29/pipeline.test.mjs scripts/governance/website-measurement-29/contracts.test.mjs scripts/governance/website-measurement-29/sampling.test.mjs
+
+Admission tests exercise real functions with events/histories,wrong ref/SHA/rerun,
+Git materialization and substitutions,incomplete export,preparation failure and
+cleanup. VM mutation controls remove workflow-SHA and module-digest guards in
+LF/CRLF. Scheduler tests remain simulations,never WebKit/Linux runtime proof.
+
+Future single act after nominal authorization: preflight exact local SHA/clean
+tree,remote main,absence of new ref and zero history for workflow30,source pins and
+all workflow triggers; then normal nonforced push of only that SHA to the newref.
+That initial push itself can start the one run; it is not staging. Observe attempt1
+without rerun/dispatch/reopen/emptycommit. Readback controller and workflow SHAs,
+domain30,all stages,threeengine results and cleanup. Failure/missing/queue/policy
+issues stop; never adapt/retry automatically. Check launch-policy compatibility
+and Actions availability immediately beforehand; they were not queried offline.
+
+Rollback: before publication,leave candidate unused. After authorized measurement,
+stop only owned domain30 containers,confirm stopped,preserve attempt/artifacts and
+do not change main/protection/site. No content integration is implied. The full
+package includes exact final SHA,normal push command and nominal text; nothing in
+this README authorizes executing them now.
+
+## Historical milestone425b diagnostic-only preparation (superseded above)
+
 ## Offline delta30 — diagnostic boundary, not a WebKit repair
 
 This section supersedes the publication instructions below **for this branch**.

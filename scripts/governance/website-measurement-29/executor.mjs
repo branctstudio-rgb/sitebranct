@@ -1,6 +1,7 @@
-// Version29 orchestration; immutable27 continues to own payload and semantic validation.
+// Controller30 orchestration; immutable27 owns payload and semantic validation.
 import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import {spawnSync} from 'node:child_process';import {fileURLToPath} from 'node:url';
-import {contract,hash} from '../website-candidate-27/admission.mjs';
+import {contract,hash,git} from '../website-candidate-27/admission.mjs';
+import {verifyController} from './runner.mjs';
 import {plan,materialize,validateReports} from '../website-candidate-27/executor.mjs';
 import {inspectRuntime,copyExistingRuntime} from '../website-candidate-27/runtime.mjs';
 import {instrument} from './instrument.mjs';import {createTrace,validateDiagnosticAgainstReport} from './diagnostics.mjs';
@@ -11,7 +12,8 @@ export function containerEntry(){
   assert.equal(process.env.PLAYWRIGHT_BROWSERS_PATH,'/ms-playwright');
   assert.ok(!fs.existsSync('/outputs/measurement'),'FRESH_OUTPUT');
   const repo='/repository',source='/tmp/website27-candidate',schedule=plan(repo,{candidate:c.candidate,engines:c.engines,image:c.image,limits:c.limits});
-  inspectRuntime(repo,'/deps');const provenance=materialize(repo,source);provenance.runtime=copyExistingRuntime(repo,'/deps',source);
+  const controller=verifyController(repo,'/control',git(repo,'rev-parse','refs/heads/control').toString().trim());
+  inspectRuntime(repo,'/deps');const provenance=materialize(repo,source);provenance.runtime=copyExistingRuntime(repo,'/deps',source);provenance.controller=controller;
   const file=path.join(source,c.authorities[0].file),patch=instrument(fs.readFileSync(file));
   fs.writeFileSync(file,patch.code);assert.equal(hash(fs.readFileSync(file)),patch.executedSha256);
   provenance.instrumentation={schemaVersion:1,sourceSha256:patch.sourceSha256,executedSha256:patch.executedSha256};
