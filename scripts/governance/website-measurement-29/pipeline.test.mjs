@@ -76,3 +76,45 @@ test('recovery preserves existing evidence unless cleanup fails; collection fail
  io.stopOwned=()=>{throw Error('PRIVATE');};assert.equal(m.recover(io,{ownedExists:true,metadataExists:true,priorCode:'MEASURE_FAILED'}).exitCode,1);assert.equal(last.priorCode,'MEASURE_FAILED');assert.equal(last.cleanup,'FAILED');assert.equal(collected,1);
  io.collect=()=>{throw Error('PRIVATE');};const r=m.recover(io,{ownedExists:true,metadataExists:false,priorCode:'PRIVATE'});assert.equal(r.code,'ARTIFACT_FAILED');assert.equal(r.exitCode,1);assert.equal(r.priorCode,'UNKNOWN');
 });
+
+// Execute the actual materialization loop and nativeIO.collect body. Only the
+// enclosing Docker/host lifecycle is excluded; Git blobs and artifact IO are real.
+function provenanceRoundTrip(source,receipt={code:'PREPARE_FAILED',exitCode:1}){
+ const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'website29-provenance-'));
+ const destination=path.join(root,'control/website-candidate-27');fs.mkdirSync(destination,{recursive:true});
+ const loop=source.match(/   for\(const name of \['admission\.mjs'[^\r\n]+/)[0];
+ const collect=source.slice(source.indexOf('  collect(r){'),source.indexOf('\n };',source.indexOf('  collect(r){')));
+ const loaded=[];
+ const context={fs,path,root,workspace:root,control:repo,pins:m.pins,c:contract(),e:{sha:'b'.repeat(40),runId:'123'},check:(v,code)=>assert.ok(v,code),collectEvidence:m.collectEvidence,git:(dir,...args)=>{loaded.push(args);return execFileSync('git',['-C',dir,...args]);}};
+ vm.runInNewContext(loop,context);
+ vm.runInNewContext(`({${collect}})`,context).collect(receipt);
+ const metadata=JSON.parse(fs.readFileSync(path.join(root,'website29-artifacts/metadata.json')));
+ return {repo,destination,metadata,loaded};
+}
+const runnerSource=()=>fs.readFileSync(new URL('./runner.mjs',import.meta.url),'utf8');
+function assertProvenance(result){
+ const {repo,destination,metadata,loaded}=result;
+ assert.equal(metadata.complement,'62104c9c2d41aff296643aa4af8e067433a1673f','COMPLEMENT27_PROVENANCE');
+ assert.equal(metadata.controller28,'45e6f084d033f6cbe8c9cf466ebb4236d03dc85b','CONTROLLER28_PROVENANCE');
+ assert.equal(metadata.wrapper,'b'.repeat(40),'WRAPPER29_PROVENANCE');
+ assert.deepEqual(loaded,['admission.mjs','contract.json','runtime.mjs','executor.mjs','browser.mjs'].map(name=>['show',`62104c9c2d41aff296643aa4af8e067433a1673f:scripts/governance/website-candidate-27/${name}`]),'MATERIALIZATION_SOURCE27');
+ for(const name of ['admission.mjs','contract.json','runtime.mjs','executor.mjs','browser.mjs'])
+  assert.deepEqual(fs.readFileSync(path.join(destination,name)),execFileSync('git',['-C',repo,'show',`62104c9c2d41aff296643aa4af8e067433a1673f:scripts/governance/website-candidate-27/${name}`]),`MATERIALIZED27:${name}`);
+}
+test('metadata provenance identifies actual complement27 separately from controller28',()=>{
+ assertProvenance(provenanceRoundTrip(runnerSource()));
+});
+test('metadata provenance cannot be replaced by a receipt field',()=>{
+ assertProvenance(provenanceRoundTrip(runnerSource(),{code:'PREPARE_FAILED',exitCode:1,complement:'0'.repeat(40),controller28:'0'.repeat(40),wrapper:'0'.repeat(40)}));
+});
+test('metadata provenance regression rejects swapped pins in LF and CRLF',()=>{
+ for(const eol of ['\n','\r\n']){
+  const source=runnerSource().replace(/\r\n|\r|\n/g,eol);
+  for(const [before,after,reason]of [['complement:pins.complement','complement:pins.parent',/COMPLEMENT27_PROVENANCE/],['${pins.complement}:scripts/','${pins.parent}:scripts/',/MATERIALIZATION_SOURCE27/]]){
+   const mutated=source.replace(before,after);
+   assert.notEqual(mutated,source,'mutation must change provenance code');
+   assert.throws(()=>assertProvenance(provenanceRoundTrip(mutated)),reason);
+  }
+ }
+});

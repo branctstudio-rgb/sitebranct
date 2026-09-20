@@ -6,7 +6,7 @@ import {validateReports} from '../website-candidate-27/executor.mjs';
 import {instrument} from './instrument.mjs';
 import {validateDiagnostic,validateDiagnosticAgainstReport} from './diagnostics.mjs';
 const c=contract(),here=path.dirname(fileURLToPath(import.meta.url));
-export const pins=Object.freeze({repository:'branctstudio-rgb/sitebranct',branch:'agent/website-diagnostic-measurement-29',parent:'45e6f084d033f6cbe8c9cf466ebb4236d03dc85b',sourceBranch:'measurement/website26-2fbce7c',workflow:'website-diagnostic-measurement-29.yml',base:c.base,candidate:c.candidate,testSource:c.testSource,image:c.image});
+export const pins=Object.freeze({repository:'branctstudio-rgb/sitebranct',branch:'agent/website-diagnostic-measurement-29',parent:'45e6f084d033f6cbe8c9cf466ebb4236d03dc85b',complement:'62104c9c2d41aff296643aa4af8e067433a1673f',sourceBranch:'measurement/website26-2fbce7c',workflow:'website-diagnostic-measurement-29.yml',base:c.base,candidate:c.candidate,testSource:c.testSource,image:c.image});
 const check=(v,code)=>assert.ok(v,code),ok=p=>p?.status===0&&!p.error&&!p.signal;
 export function authorize(e){
  check(e.repository===pins.repository&&e.event==='push'&&e.ref===`refs/heads/${pins.branch}`&&e.workflowRef===`${pins.repository}/.github/workflows/${pins.workflow}@${e.ref}`,'EVENT_IDENTITY');
@@ -101,7 +101,7 @@ function nativeIO(e){
    verifyCandidate(path.join(root,'objects'),{base:c.base,head:c.candidate});
    // Materialize historical27 and exact authorized29 directly from Git; no checkout config.
    for(const dir of ['website-candidate-27','website-measurement-29'])fs.mkdirSync(path.join(root,'control',dir));
-   for(const name of ['admission.mjs','contract.json','runtime.mjs','executor.mjs','browser.mjs'])fs.writeFileSync(path.join(root,'control/website-candidate-27',name),git(control,'show',`62104c9c2d41aff296643aa4af8e067433a1673f:scripts/governance/website-candidate-27/${name}`),{flag:'wx'});
+   for(const name of ['admission.mjs','contract.json','runtime.mjs','executor.mjs','browser.mjs'])fs.writeFileSync(path.join(root,'control/website-candidate-27',name),git(control,'show',`${pins.complement}:scripts/governance/website-candidate-27/${name}`),{flag:'wx'});
    for(const name of ['executor.mjs','browser.mjs','instrument.mjs','diagnostics.mjs'])fs.writeFileSync(path.join(root,'control/website-measurement-29',name),git(control,'show',`${e.sha}:scripts/governance/website-measurement-29/${name}`),{flag:'wx'});
    for(const file of ['package.json','package-lock.json']){const a=c.authorities.find(x=>x.file===file);fs.writeFileSync(path.join(root,'deps',file),blob(path.join(root,'objects'),a.source,a),{flag:'wx'});}
    const pull=exec('docker',['pull','--platform=linux/amd64',c.image],600000);if(!ok(pull))return pull;
@@ -120,7 +120,7 @@ function nativeIO(e){
    const data=path.join(root,'outputs/measurement');
    if(fs.existsSync(data))check(fs.lstatSync(data).isDirectory()&&!fs.lstatSync(data).isSymbolicLink(),'ARTIFACT_DIR');
    const {results,hashes}=collectEvidence(data,r);
-   const metadata={schemaVersion:1,wrapper:e.sha,runId:e.runId,candidate:c.candidate,base:c.base,testSource:c.testSource,complement:pins.parent,image:c.image,...r};
+   const metadata={...r,schemaVersion:1,wrapper:e.sha,runId:e.runId,candidate:c.candidate,base:c.base,testSource:c.testSource,complement:pins.complement,controller28:pins.parent,image:c.image};
    for(const [name,value]of Object.entries({'metadata.json':metadata,'results.json':results,'hashes.json':hashes}))fs.writeFileSync(path.join(dir,name),JSON.stringify(value,null,2)+'\n');
   },
  };

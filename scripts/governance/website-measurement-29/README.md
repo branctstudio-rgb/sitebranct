@@ -85,10 +85,27 @@ Workflow website-diagnostic-measurement-29.yml uses only the initial push event,
 created=true,nonforced,before all-zero,attempt1. No dispatch or merge is required.
 An update/rerun/PR event is ineligible. Host preflight requires this run to be the
 sole workflow history and main still851c1723119b62193623fa24e67090afd18b39f1.
+The push itself publishes/registers the workflow from the pushed ref and can
+start its run; it is not a harmless staging step before a later dispatch.
+GitHub documents push workflows outside the default branch:
+https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push
+Before any future authorization is consumed, check ref absence, workflow history,
+repository Actions policy and the exact tree's other triggers. In this tree,
+Offline/FTP push triggers target main, Universal/Sentinel target PR events,
+28 targets its separate ref, and13/21 require dispatch. None matches this new
+branch push. If remote policy/registration/queue fails, stop without retry,
+registering on main, creating a PR or changing protections.
 
 Inputs remain candidate26 2fbce7cdd1ff87f9a54d8c9190ffd1f349a8fe9d,
 canonical test563f3c13665347b2a8578110e519ebaf13f356e8,
 historical complement62104c9c2d41aff296643aa4af8e067433a1673f.
+The single explicit pins.complement supplies both historical27 materialization
+and metadata.complement. metadata.controller28 separately records the ancestral
+controller45e6f084d033f6cbe8c9cf466ebb4236d03dc85b; metadata.wrapper is the actual
+new authorized controller29 commit, not either historical pin. Receipt fields
+cannot override these provenance fields. The29a regression executes the real
+materialization and collection code with Git blobs and filesystem artifacts,
+and rejects the old swapped-pin mutation in both LF and CRLF.
 No site branch/content/PR63/PR67/main/protection mutation is required.
 
 Runtime remains Playwright1.62.0/core1.62.0; Chromium151.0.7922.34,
