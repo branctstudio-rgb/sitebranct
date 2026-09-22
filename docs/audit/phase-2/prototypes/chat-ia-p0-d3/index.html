@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; img-src 'self' data:; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Chat IA + Edi — protótipo DEV</title>
+    <link rel="stylesheet" href="./chat-shell.css">
+  </head>
+  <body>
+    <main class="demo-page">
+      <p class="eyebrow">BRANCT · ambiente local</p>
+      <h1>Shell de integração Chat IA + Edi</h1>
+      <p>Protótipo sintético, sem endpoint, CRM, persistência ou dados reais.</p>
+    </main>
+    <section data-chat-root hidden aria-label="Chat IA em ambiente DEV">
+      <button class="chat-launcher" type="button" data-chat-open aria-controls="chat-dialog" aria-expanded="false">Abrir Chat IA</button>
+      <div class="chat-backdrop" id="chat-dialog" data-chat-dialog role="dialog" aria-modal="true" aria-labelledby="chat-title" hidden>
+        <article class="chat-panel">
+          <header class="chat-header">
+            <div><span class="eyebrow">DEV · mock local</span><h2 id="chat-title">Converse com Edi</h2></div>
+            <button class="icon-button" type="button" data-chat-close aria-label="Fechar Chat IA">×</button>
+          </header>
+          <ul class="chat-messages" data-chat-messages aria-label="Histórico desta sessão"></ul>
+          <p class="chat-status" data-chat-status aria-live="polite" aria-atomic="true"></p>
+          <button type="button" data-chat-cancel hidden>Cancelar resposta</button>
+          <form class="chat-composer" data-chat-form>
+            <label for="chat-input">Mensagem sintética</label>
+            <div><input id="chat-input" data-chat-input autocomplete="off" required><button type="submit">Enviar</button></div>
+          </form>
+          <section class="consent-card" data-contact-consent>
+            <h3>Quer preparar um rascunho de contacto?</h3>
+            <p>Só pediremos os campos depois da sua escolha. Nada será enviado ou gravado.</p>
+            <div><button type="button" data-contact-accept>Sim, continuar</button><button type="button" data-contact-refuse>Não, obrigado</button></div>
+          </section>
+          <form class="contact-form" data-contact-form hidden>
+            <p>Use apenas dados sintéticos neste protótipo.</p>
+            <button type="submit">Gerar rascunho sintético</button>
+            <button type="button" data-contact-withdraw>Retirar consentimento</button>
+          </form>
+          <p class="lead-draft" data-lead-draft aria-live="polite" hidden></p>
+        </article>
+      </div>
+    </section>
+    <script type="module" src="./chat-shell.mjs"></script>
+  </body>
+</html>
