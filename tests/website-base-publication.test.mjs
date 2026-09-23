@@ -16,7 +16,7 @@ const git=(...args)=>execFileSync('git',['-C',root,...args],{encoding:'utf8'}).t
 function checkPublicationScope(repo,anchor){
   const git=(...args)=>execFileSync('git',['-C',repo,...args],{encoding:'utf8'}).trim();
   const committed=git('diff','--name-only',anchor,'HEAD').split('\n').filter(Boolean);
-  const dirty=git('diff','--name-only','HEAD').split('\n').filter(Boolean);
+  const dirty=[...git('diff','--cached','--name-only').split('\n'),...git('diff','--name-only').split('\n')].filter(Boolean);
   // npm ci rewrites this already-tracked metadata. It is never exempt from
   // the committed diff; only a regular, unstaged modification is setup residue.
   const residue='node_modules/.package-lock.json';
@@ -51,9 +51,11 @@ test('npm ci hidden-lock residue is not a committed candidate path (CI failure 3
 for(const [name,edit] of [
   ['real tracked live edit',f=>f.put('src/live.js','changed\n')],
   ['staged live edit',f=>{f.put('src/live.js','changed\n');f.git('add','src/live.js');}],
+  ['staged live edit cancelled only in worktree',f=>{f.put('src/live.js','changed\n');f.git('add','src/live.js');f.put('src/live.js','baseline\n');assert.equal(f.git('diff','--name-only','HEAD'),'');assert.equal(f.git('diff','--cached','--name-only'),'src/live.js');}],
   ['committed live edit',f=>{f.put('src/live.js','changed\n');f.git('add','.');f.git('commit','-m','live delta');}],
   ['committed hidden lock',f=>{f.put('node_modules/.package-lock.json','changed\n');f.git('add','.');f.git('commit','-m','lock delta');}],
   ['staged hidden lock',f=>{f.put('node_modules/.package-lock.json','changed\n');f.git('add','.');}],
+  ['staged hidden lock cancelled only in worktree',f=>{f.put('node_modules/.package-lock.json','changed\n');f.git('add','.');f.put('node_modules/.package-lock.json','{"lockfileVersion":3}\n');assert.equal(f.git('diff','--name-only','HEAD'),'');assert.equal(f.git('diff','--cached','--name-only'),'node_modules/.package-lock.json');}],
   ['unexpected untracked source',f=>f.put('unexpected.js','new\n')],
   ['other dependency modification',f=>f.put('node_modules/other.js','new\n')],
   ['hidden lock removed',f=>fs.unlinkSync(path.join(f.repo,'node_modules/.package-lock.json'))]
