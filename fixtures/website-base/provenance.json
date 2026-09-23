@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "source34": "1243bc914a6066683676a5d3943abde0715bbc24",
+  "historicalComponentAnchor": "2160bb4baac5d0c3cb388a9ec39eea99ee5dcb68",
+  "publicAssetAnchor": "851c1723119b62193623fa24e67090afd18b39f1",
+  "referenceResources": {
+    "cedro": {
+      "index.html": "25de9c8d705ad096bb0bd7cc53d650acb4c86616f142d8cdc8194ed31e076ea2",
+      "contacto.html": "d44f48a3a01b459710219f1ad0ff0c2bf8ef3afcc6f6ee4e993a9c4577daad6b",
+      "assets/site.css": "9538f4bb06affbec5f12b7fb57b5e34d8514d56af73ee9684c53fe1553a3411a",
+      "assets/navigation.js": "90dc338b5e1810acf80752ef5877099b9132bb7a600fd075e71ce829b5e4aa4f",
+      "assets/project.css": "aa4331c294aae797162f558d9d1fdf373987138b73563de4202b4ec27cc1fd27",
+      "assets/mark.svg": "0958a8c47f055fe07e6c5bab1c6cf4c76bd9840212a8cc54be8da2c8c59e5a52",
+      "assets/social.webp": "c9677ec05cc42205c2851caad3d6fca87fc80b3f035729fa4864b31c15b16f46",
+      "assets/manrope.woff2": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+      "assets/bricolage.woff2": "a79fdb52d4a5c76552452f69202add96e287401fff03d3e8c0e38b4dcb5a99cd",
+      "robots.txt": "331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1",
+      "sitemap.xml": "02416b2e74df2ec23a7f4b9e0e68f4818b0a7d68d6eafec8f3970688e2f3ffc7"
+    },
+    "linha": {
+      "index.html": "f5d2967e8961e77af8ad633458b91b7670395e37e72ada88551f13f5f71967e5",
+      "contacto.html": "be24f5760441425a3148f89e8ad4e3bdcbf8eaa67defdb099435a40ae27c1bbd",
+      "assets/site.css": "9538f4bb06affbec5f12b7fb57b5e34d8514d56af73ee9684c53fe1553a3411a",
+      "assets/navigation.js": "90dc338b5e1810acf80752ef5877099b9132bb7a600fd075e71ce829b5e4aa4f",
+      "assets/project.css": "7c87cc63bec4be70b398ef0efce1ad82eb8997c4f1e6779f553974e996126773",
+      "assets/mark.svg": "c7c34b091e8644d7e9485319203447e75f33e8adadf0d5643c70ae052ef3abc4",
+      "assets/social.webp": "c9677ec05cc42205c2851caad3d6fca87fc80b3f035729fa4864b31c15b16f46",
+      "assets/manrope.woff2": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+      "assets/bricolage.woff2": "a79fdb52d4a5c76552452f69202add96e287401fff03d3e8c0e38b4dcb5a99cd",
+      "robots.txt": "331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1",
+      "sitemap.xml": "7bc1a94e0307bbc5c9b89b881a8c5c3813fa891a07c1e38e9a64bb830d9fcce8"
+    }
+  }
+}

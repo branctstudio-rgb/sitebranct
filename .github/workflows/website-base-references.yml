@@ -1,0 +1,90 @@
+{
+  "name": "Website base reference validation",
+  "on": {
+    "pull_request": {
+      "paths": [
+        "fixtures/website-base/**",
+        "tests/website-base*.mjs",
+        "docs/website-base/**",
+        "package.json",
+        "package-lock.json",
+        "fixtures/audit/f2-01-ci-runtime.json",
+        ".github/workflows/website-base-references.yml"
+      ],
+      "types": [
+        "opened",
+        "synchronize"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "website-base-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "references": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 20,
+      "container": {
+        "image": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
+      },
+      "env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "with": {
+            "fetch-depth": 0,
+            "persist-credentials": false,
+            "submodules": false,
+            "lfs": false,
+            "ref": "${{ github.event.pull_request.head.sha }}"
+          }
+        },
+        {
+          "name": "Trust the single container checkout",
+          "shell": "bash",
+          "run": "set -euo pipefail\ntest -n \"$GITHUB_WORKSPACE\"\ngit config --global --add safe.directory \"$GITHUB_WORKSPACE\"\ntest \"$(git rev-parse --show-toplevel)\" = \"$GITHUB_WORKSPACE\"\ngit cat-file -e 851c1723119b62193623fa24e67090afd18b39f1^{commit}"
+        },
+        {
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Install the existing lockfile, no lifecycle scripts or browser downloads",
+          "run": "npm ci --ignore-scripts"
+        },
+        {
+          "name": "Generator and orchestration contracts (no browser proof)",
+          "run": "node --test tests/website-base-generator.test.mjs tests/website-base-verification.test.mjs tests/website-base-publication.test.mjs"
+        },
+        {
+          "name": "Execute the existing harness in all three engines",
+          "env": {
+            "WEBSITE_PLAYWRIGHT_ROOT": "${{ github.workspace }}"
+          },
+          "run": "node fixtures/website-base/verify.mjs \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\""
+        },
+        {
+          "name": "Retain successes and failures without relabeling",
+          "if": "${{ always() }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "website-base-${{ github.run_id }}-${{ github.run_attempt }}",
+            "path": "${{ runner.temp }}/website-base-${{ github.run_id }}-${{ github.run_attempt }}",
+            "if-no-files-found": "error",
+            "retention-days": 14
+          }
+        }
+      ],
+      "if": "${{ github.run_attempt == 1 && (github.event.action == 'opened' || github.event.before != github.event.pull_request.head.sha) }}"
+    }
+  }
+}
