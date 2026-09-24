@@ -78,10 +78,17 @@
           "run": "set -euo pipefail\nnode --test --test-reporter=tap tests/website-base-generator.test.mjs tests/website-base-verification.test.mjs tests/website-base-publication.test.mjs 2>&1 | tee \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/contracts.tap\""
         },
         {
+          "name": "Resolve an existing browser home owned by the effective account",
+          "id": "browser-home",
+          "shell": "bash",
+          "run": "node <<'NODE'\nconst fs = require('node:fs'), os = require('node:os'), path = require('node:path');\nconst {homedir,uid} = os.userInfo();\nif (typeof process.geteuid !== 'function' || uid !== process.geteuid() || !path.isAbsolute(homedir) || /[\\r\\n]/.test(homedir)) throw Error('invalid effective account home');\nconst stat = fs.lstatSync(homedir);\nif (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== uid) throw Error('invalid browser home ownership/type');\nfs.appendFileSync(process.env.GITHUB_OUTPUT, `home=${homedir}\\n`);\nNODE"
+        },
+        {
           "name": "Execute the existing harness in all three engines",
           "id": "measurement",
           "env": {
-            "WEBSITE_PLAYWRIGHT_ROOT": "${{ github.workspace }}"
+            "WEBSITE_PLAYWRIGHT_ROOT": "${{ github.workspace }}",
+            "HOME": "${{ steps.browser-home.outputs.home }}"
           },
           "run": "node fixtures/website-base/verify.mjs \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/measurement\""
         },

@@ -122,3 +122,63 @@ test('local event-policy model schedules one campaign for push/open/ready and re
   assert.equal(schedules('pull_request','reopened',1),false);
   assert.equal(schedules('workflow_dispatch','',1),false);
 });
+
+// Execute the real workflow inline program and output wiring. Only POSIX account
+// identity/ownership are modelled on Windows; directories and output writes are real.
+function browserHomeFixture({uid=0,accountUid=uid,ownerUid=uid,kind='directory'}={}){
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'website36-home-'));
+  const accountHome=path.join(temp,'account-home'),inheritedHome=path.join(temp,'github-home');
+  fs.mkdirSync(inheritedHome);
+  if(kind==='directory')fs.mkdirSync(accountHome);
+  if(kind==='file')fs.writeFileSync(accountHome,'not a home');
+  const output=path.join(temp,'github-output');fs.writeFileSync(output,'');
+  const account={uid:accountUid,homedir:accountHome};
+  const posixFs={...fs,lstatSync(p){const st=fs.lstatSync(p);st.uid=path.resolve(p)===accountHome?ownerUid:uid+1001;return st;}};
+  return {uid,accountHome,inheritedHome,output,account,posixFs};
+}
+function measuredBrowserHome(w,f){
+  const steps=w.jobs.references.steps,prepare=steps.find(s=>s.id==='browser-home'),measurement=steps.find(s=>s.id==='measurement');
+  let outputs={};
+  if(prepare){
+    assert.ok(steps.indexOf(prepare)<steps.indexOf(measurement),'home must be verified before launch');
+    const body=prepare.run.match(/^node <<'NODE'\n([\s\S]+)\nNODE$/)?.[1];assert.ok(body,'auditable home preparation required');
+    runInNewContext(body,{require(name){if(name==='node:fs')return f.posixFs;if(name==='node:os')return {userInfo:()=>f.account};if(name==='node:path')return path;throw Error('unexpected home dependency');},process:{geteuid:()=>f.uid,env:{HOME:f.inheritedHome,GITHUB_OUTPUT:f.output}}});
+    outputs=Object.fromEntries(fs.readFileSync(f.output,'utf8').trim().split('\n').filter(Boolean).map(line=>line.split('=')));
+  }
+  const setting=measurement.env?.HOME;
+  return setting==='${{ steps.browser-home.outputs.home }}'?outputs.home:(setting||f.inheritedHome);
+}
+const websiteWorkflow=()=>JSON.parse(fs.readFileSync(path.join(root,'.github/workflows/website-base-references.yml')));
+for(const uid of [0,1001])test(`browser workflow uses OS-owned home for effective UID ${uid}, not foreign inherited HOME (36030948840)`,()=>{
+  const f=browserHomeFixture({uid});const selected=measuredBrowserHome(websiteWorkflow(),f);
+  assert.equal(selected,f.accountHome,'root with HOME owned by another user must not reach Firefox launch');
+  assert.equal(f.posixFs.lstatSync(selected).uid,uid);assert.equal(fs.readFileSync(f.output,'utf8'),`home=${f.accountHome}\n`);
+  assert.equal(fs.existsSync(f.inheritedHome),true,'inherited home is not modified or removed');
+});
+for(const [name,options,reason]of [
+  ['foreign owner',{ownerUid:1001},/browser home ownership\/type/],
+  ['account different from effective UID',{accountUid:1001,ownerUid:1001},/effective account/],
+  ['missing home',{kind:'missing'},/ENOENT/],
+  ['regular file instead of home',{kind:'file'},/browser home ownership\/type/]
+])test(`browser home fails closed for ${name}`,()=>{
+  const f=browserHomeFixture(options);assert.throws(()=>measuredBrowserHome(websiteWorkflow(),f),reason);assert.equal(fs.readFileSync(f.output,'utf8'),'');
+});
+test('browser home rejects multiline account path before publishing a step output',()=>{
+  const f=browserHomeFixture();f.account.homedir+='\nextra=forged';
+  assert.throws(()=>measuredBrowserHome(websiteWorkflow(),f),/effective account/);assert.equal(fs.readFileSync(f.output,'utf8'),'');
+});
+for(const [name,remove,options]of [
+  ['owner guard',' || stat.uid !== uid',{ownerUid:1001}],
+  ['effective UID guard','uid !== process.geteuid() || ',{accountUid:1001,ownerUid:1001}]
+])test(`home mutation control: removing ${name} admits the rejected account`,()=>{
+  const original=websiteWorkflow();assert.throws(()=>measuredBrowserHome(original,browserHomeFixture(options)),/effective account|ownership\/type/);
+  const mutated=structuredClone(original),step=mutated.jobs.references.steps.find(s=>s.id==='browser-home');
+  const before=step.run;step.run=before.replace(remove,'');assert.notEqual(step.run,before,'mutation must change bytes');
+  const f=browserHomeFixture(options);assert.equal(measuredBrowserHome(mutated,f),f.accountHome,'removed guard must expose the negative');
+});
+test('home mutation control: removing launch wiring restores foreign inherited HOME',()=>{
+  const original=websiteWorkflow(),f=browserHomeFixture();assert.equal(measuredBrowserHome(original,f),f.accountHome);
+  const mutated=structuredClone(original);delete mutated.jobs.references.steps.find(s=>s.id==='measurement').env.HOME;
+  assert.notEqual(JSON.stringify(mutated),JSON.stringify(original));const other=browserHomeFixture();
+  assert.equal(measuredBrowserHome(mutated,other),other.inheritedHome);assert.notEqual(other.inheritedHome,other.accountHome);
+});
