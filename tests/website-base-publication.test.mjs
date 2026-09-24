@@ -182,3 +182,17 @@ test('home mutation control: removing launch wiring restores foreign inherited H
   assert.notEqual(JSON.stringify(mutated),JSON.stringify(original));const other=browserHomeFixture();
   assert.equal(measuredBrowserHome(mutated,other),other.inheritedHome);assert.notEqual(other.inheritedHome,other.accountHome);
 });
+test('browser HOME change retains Git trust only for the mounted workspace, without relying on the old global config',()=>{
+  const f=scopeFixture(),sibling=scopeFixture(),newConfig=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'website36-git-home-')),'.gitconfig');
+  fs.writeFileSync(newConfig,'');
+  // Git's own test switch exercises the real ownership check without chown or host changes.
+  const isolated={...process.env,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:newConfig,GIT_CONFIG_COUNT:'0',GIT_TEST_ASSUME_DIFFERENT_OWNER:'1'};
+  const probe=(repo,env)=>spawnSync('git',['-C',repo,'rev-parse','--show-toplevel'],{env,encoding:'utf8'});
+  const red=probe(f.repo,isolated);assert.notEqual(red.status,0);assert.match(red.stderr,/dubious ownership/);
+  const settings=websiteWorkflow().jobs.references.steps.find(s=>s.id==='measurement').env;
+  const configured={...isolated,...Object.fromEntries(Object.entries(settings).filter(([k])=>k.startsWith('GIT_CONFIG_')).map(([k,v])=>[k,v==='${{ github.workspace }}'?f.repo:v]))};
+  const accepted=probe(f.repo,configured);assert.equal(accepted.status,0,accepted.stderr);
+  assert.equal(path.resolve(accepted.stdout.trim()),path.resolve(f.repo));
+  const other=probe(sibling.repo,configured);assert.notEqual(other.status,0);assert.match(other.stderr,/dubious ownership/);
+  assert.equal(fs.readFileSync(newConfig,'utf8'),'','no global config mutation');
+});

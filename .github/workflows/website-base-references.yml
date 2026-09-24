@@ -88,7 +88,10 @@
           "id": "measurement",
           "env": {
             "WEBSITE_PLAYWRIGHT_ROOT": "${{ github.workspace }}",
-            "HOME": "${{ steps.browser-home.outputs.home }}"
+            "HOME": "${{ steps.browser-home.outputs.home }}",
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "safe.directory",
+            "GIT_CONFIG_VALUE_0": "${{ github.workspace }}"
           },
           "run": "node fixtures/website-base/verify.mjs \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/measurement\""
         },
