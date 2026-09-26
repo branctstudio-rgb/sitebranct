@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "linha",
+  "synthetic": true,
+  "name": "Estúdio Linha",
+  "mark": "EL",
+  "origin": "https://linha.example.invalid",
+  "locale": "pt-PT",
+  "palette": {"bg":"#eef3fa","surface":"#ffffff","ink":"#142442","accent":"#233faf"},
+  "fonts": {"body":"bricolage","display":"manrope"},
+  "heroAsset": "none",
+  "eyebrow": "Laboratório de identidade / Referência B",
+  "headline": "Dar direção ao que ainda é ideia.",
+  "description": "Uma referência sintética de estúdio: organização de informação e composição visual, sem serviços operacionais ligados.",
+  "imageAlt": "Composição de trabalho digital ilustrativa",
+  "imageCaption": "Elementos gráficos demonstrativos; não são prova de resultados.",
+  "approachTitle": "Clareza antes de complexidade.",
+  "steps": ["Definir o essencial.","Organizar o percurso.","Testar a leitura."],
+  "contactTitle": "Uma conversa começa com uma pergunta.",
+  "contactText": "Esta página demonstra um ponto de contacto. Nenhuma mensagem é enviada e nenhum dado fica guardado.",
+  "navigation": {"home":"Estúdio","approach":"Método","contact":"Contacto demonstrativo","open":"Abrir menu","close":"Fechar menu"}
+}

@@ -1,0 +1,125 @@
+{
+  "name": "Website base reference validation",
+  "on": {
+    "pull_request": {
+      "paths": [
+        "fixtures/website-base/**",
+        "tests/website-base*.mjs",
+        "docs/website-base/**",
+        "package.json",
+        "package-lock.json",
+        "fixtures/audit/f2-01-ci-runtime.json",
+        ".github/workflows/website-base-references.yml"
+      ],
+      "types": [
+        "opened",
+        "synchronize"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "website-base-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "references": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 20,
+      "container": {
+        "image": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07"
+      },
+      "env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "with": {
+            "fetch-depth": 0,
+            "persist-credentials": false,
+            "submodules": false,
+            "lfs": false,
+            "ref": "${{ github.event.pull_request.head.sha }}"
+          }
+        },
+        {
+          "name": "Trust the single container checkout",
+          "shell": "bash",
+          "run": "set -euo pipefail\ntest -n \"$GITHUB_WORKSPACE\"\ngit config --global --add safe.directory \"$GITHUB_WORKSPACE\"\ntest \"$(git rev-parse --show-toplevel)\" = \"$GITHUB_WORKSPACE\"\ngit cat-file -e 851c1723119b62193623fa24e67090afd18b39f1^{commit}"
+        },
+        {
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Initialize pre-browser evidence without claiming measurement",
+          "id": "evidence",
+          "shell": "bash",
+          "env": {
+            "WEBSITE35_HEAD": "${{ github.event.pull_request.head.sha }}"
+          },
+          "run": "node <<'NODE'\nconst fs = require('node:fs'), path = require('node:path');\nconst {RUNNER_TEMP,GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT,WEBSITE35_HEAD} = process.env;\nif (!path.isAbsolute(RUNNER_TEMP || '') || !/^\\d+$/.test(GITHUB_RUN_ID || '') || !/^\\d+$/.test(GITHUB_RUN_ATTEMPT || '') || !/^[a-f0-9]{40}$/.test(WEBSITE35_HEAD || '')) throw Error('invalid evidence identity');\nconst root = path.join(RUNNER_TEMP, `website-base-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}`);\nfs.mkdirSync(root);\nfs.writeFileSync(path.join(root,'execution-start.json'), JSON.stringify({head:WEBSITE35_HEAD,runId:GITHUB_RUN_ID,attempt:GITHUB_RUN_ATTEMPT,startedAt:new Date().toISOString(),state:'NOT_VERIFIED',browserCasesPassed:null},null,2)+'\\n',{flag:'wx'});\nNODE"
+        },
+        {
+          "name": "Install the existing lockfile, no lifecycle scripts or browser downloads",
+          "shell": "bash",
+          "run": "set -euo pipefail\nnpm ci --ignore-scripts 2>&1 | tee \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/dependencies.log\""
+        },
+        {
+          "name": "Generator and orchestration contracts (no browser proof)",
+          "id": "contracts",
+          "shell": "bash",
+          "run": "set -euo pipefail\nnode --test --test-reporter=tap tests/website-base-generator.test.mjs tests/website-base-verification.test.mjs tests/website-base-publication.test.mjs 2>&1 | tee \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/contracts.tap\""
+        },
+        {
+          "name": "Resolve an existing browser home owned by the effective account",
+          "id": "browser-home",
+          "shell": "bash",
+          "run": "node <<'NODE'\nconst fs = require('node:fs'), os = require('node:os'), path = require('node:path');\nconst {homedir,uid} = os.userInfo();\nif (typeof process.geteuid !== 'function' || uid !== process.geteuid() || !path.isAbsolute(homedir) || /[\\r\\n]/.test(homedir)) throw Error('invalid effective account home');\nconst stat = fs.lstatSync(homedir);\nif (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== uid) throw Error('invalid browser home ownership/type');\nfs.appendFileSync(process.env.GITHUB_OUTPUT, `home=${homedir}\\n`);\nNODE"
+        },
+        {
+          "name": "Execute the existing harness in all three engines",
+          "id": "measurement",
+          "env": {
+            "WEBSITE_PLAYWRIGHT_ROOT": "${{ github.workspace }}",
+            "HOME": "${{ steps.browser-home.outputs.home }}",
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "safe.directory",
+            "GIT_CONFIG_VALUE_0": "${{ github.workspace }}"
+          },
+          "run": "node fixtures/website-base/verify.mjs \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/measurement\""
+        },
+        {
+          "name": "Record job outcomes without manufacturing browser acceptance",
+          "id": "diagnostic",
+          "if": "${{ always() }}",
+          "shell": "bash",
+          "env": {
+            "WEBSITE35_HEAD": "${{ github.event.pull_request.head.sha }}",
+            "WEBSITE35_CONTRACTS": "${{ steps.contracts.outcome }}",
+            "WEBSITE35_MEASUREMENT": "${{ steps.measurement.outcome }}"
+          },
+          "run": "node <<'NODE'\nconst fs = require('node:fs'), path = require('node:path');\nconst {RUNNER_TEMP,GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT,WEBSITE35_HEAD,WEBSITE35_CONTRACTS,WEBSITE35_MEASUREMENT} = process.env;\nif (!path.isAbsolute(RUNNER_TEMP || '') || !/^\\d+$/.test(GITHUB_RUN_ID || '') || !/^\\d+$/.test(GITHUB_RUN_ATTEMPT || '') || !/^[a-f0-9]{40}$/.test(WEBSITE35_HEAD || '')) throw Error('invalid evidence identity');\nconst root = path.join(RUNNER_TEMP, `website-base-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}`);\nfs.mkdirSync(root,{recursive:true});\nfs.writeFileSync(path.join(root,'job-evidence.json'), JSON.stringify({head:WEBSITE35_HEAD,runId:GITHUB_RUN_ID,attempt:GITHUB_RUN_ATTEMPT,finishedAt:new Date().toISOString(),contracts:WEBSITE35_CONTRACTS || 'unavailable',measurement:WEBSITE35_MEASUREMENT || 'unavailable',state:'NOT_VERIFIED',browserCasesPassed:null,acceptanceSource:'measurement/verification.json'},null,2)+'\\n',{flag:'wx'});\nNODE"
+        },
+        {
+          "name": "Retain successes and failures without relabeling",
+          "if": "${{ always() }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "website-base-${{ github.run_id }}-${{ github.run_attempt }}",
+            "path": "${{ runner.temp }}/website-base-${{ github.run_id }}-${{ github.run_attempt }}",
+            "if-no-files-found": "error",
+            "retention-days": 14
+          }
+        }
+      ],
+      "if": "${{ github.run_attempt == 1 && (github.event.action == 'opened' || github.event.before != github.event.pull_request.head.sha) }}"
+    }
+  }
+}
