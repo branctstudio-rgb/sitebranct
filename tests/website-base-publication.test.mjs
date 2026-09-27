@@ -13,6 +13,17 @@ const base='851c1723119b62193623fa24e67090afd18b39f1';
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const git=(...args)=>execFileSync('git',['-C',root,...args],{encoding:'utf8'}).trim();
 
+// WEBSITE38/39 adoption is an exact extension, never a directory-wide exemption.
+const projectDraftPaths=new Set([
+  'docs/website-base/project-drafts.md',
+  'fixtures/website-project/branct.json',
+  'fixtures/website-project/preview.mjs',
+  'fixtures/website-project/project.mjs',
+  'fixtures/website-project/start-preview.ps1',
+  'fixtures/website-project/stop-preview.ps1',
+  'tests/website-project-browser.mjs',
+  'tests/website-project.test.mjs'
+]);
 function checkPublicationScope(repo,anchor){
   const git=(...args)=>execFileSync('git',['-C',repo,...args],{encoding:'utf8'}).trim();
   const committed=git('diff','--name-only',anchor,'HEAD').split('\n').filter(Boolean);
@@ -28,7 +39,7 @@ function checkPublicationScope(repo,anchor){
   assert.ok(changed.length>0);
   const result=classifyRecords(changed.map(p=>({status:'A',path:p})));
   assert.equal(result.accepted,true,JSON.stringify(result));assert.equal(result.deploy,false);
-  for(const p of changed)assert.match(p,/^(?:fixtures\/website-base\/|docs\/website-base\/|tests\/website-base[^/]*\.mjs$|\.github\/workflows\/website-base-references\.yml$)/);
+  for(const p of changed)if(!projectDraftPaths.has(p))assert.match(p,/^(?:fixtures\/website-base\/|docs\/website-base\/|tests\/website-base[^/]*\.mjs$|\.github\/workflows\/website-base-references\.yml$)/);
   assert.equal(git('diff',anchor,'--','src','*.html','deploy','package.json','package-lock.json','.github/workflows/deploy.yml','.github/workflows/universal-pr-gate.yml','.github/workflows/gate-integrity-sentinel.yml'), '');
 }
 test('publication includes only recognized offline paths, no live payload or protected gate delta',()=>checkPublicationScope(root,base));
@@ -43,6 +54,44 @@ function scopeFixture(){
   put('fixtures/website-base/example.json','{"synthetic":true}\n');git('add','.');git('commit','-m','offline candidate');
   return {repo,git,put,anchor};
 }
+// Exercise the actual scope guard with real Git states, not a second path matcher.
+const projectDraftFixturePaths=[
+  'docs/website-base/project-drafts.md',
+  'fixtures/website-project/branct.json',
+  'fixtures/website-project/preview.mjs',
+  'fixtures/website-project/project.mjs',
+  'fixtures/website-project/start-preview.ps1',
+  'fixtures/website-project/stop-preview.ps1',
+  'tests/website-project-browser.mjs',
+  'tests/website-project.test.mjs'
+];
+function projectScopeFixture(state,extra){
+  const f=scopeFixture();
+  for(const p of projectDraftFixturePaths)f.put(p,'offline project fixture\n');
+  if(extra)f.put(extra,'out of declared scope\n');
+  if(state!=='untracked')f.git('add','.');
+  if(state==='committed')f.git('commit','-m','project draft candidate');
+  return f;
+}
+for(const state of ['untracked','staged','committed']){
+  test(`project draft exact eight-path set accepted as non-deploy: ${state}`,()=>{
+    const f=projectScopeFixture(state);
+    assert.doesNotThrow(()=>checkPublicationScope(f.repo,f.anchor));
+  });
+  for(const extra of [
+    'fixtures/website-project/branct.json.bak',
+    'fixtures/website-project/ninth.json',
+    'tests/website-project-extra.mjs',
+    'src/live.js','package-lock.json','node_modules/other.js',
+    '.github/workflows/universal-pr-gate.yml',
+    '.github/workflows/gate-integrity-sentinel.yml',
+    '.github/workflows/deploy.yml'
+  ])test(`project draft set still rejects ${extra}: ${state}`,()=>{
+    const f=projectScopeFixture(state,extra);
+    assert.throws(()=>checkPublicationScope(f.repo,f.anchor));
+  });
+}
+
 test('npm ci hidden-lock residue is not a committed candidate path (CI failure 35911768046)',()=>{
   const f=scopeFixture();f.put('node_modules/.package-lock.json','{"lockfileVersion":3,"packages":{}}\n');
   assert.equal(f.git('diff','--name-only','HEAD'),'node_modules/.package-lock.json');
