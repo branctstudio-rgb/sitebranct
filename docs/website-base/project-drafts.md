@@ -68,7 +68,7 @@ O ícone SVG é tratado como recurso estático, com subset restrito de elementos
 | `fixtures/website-base/generate.mjs`, Cedro/Linha | Intocados. `synthetic=true`, `.invalid`, matriz histórica e recusas originais permanecem. A38 não chama nem relaxa o validador37. |
 | `src/fonts/*` | Fontes existentes copiadas para a saída; escolhas da receita usam tokens do layout comum. |
 
-O novo template preserva a composição da base37; substitui a identidade sintética por conteúdo do projeto, permite nomes de rota e assets configuráveis e mantém indicadores explícitos de rascunho. A adaptação CSS limita-se aos tokens, fontes, quebra segura de texto e imagem inteira no frame. Nenhuma página viva, `branct.js`, workflow, proteção ou payload de deploy foi alterado.
+O novo template preserva a composição da base37; substitui a identidade sintética por conteúdo do projeto, permite nomes de rota e assets configuráveis e mantém indicadores explícitos de rascunho. A adaptação CSS limita-se aos tokens, fontes, quebra segura de texto e imagem inteira no frame. Nenhuma página viva, `branct.js`, proteção ou payload de deploy foi alterado. A WEBSITE40 acrescenta validação do projeto ao workflow de referências existente, sem modificar os gates protegidos.
 
 ## Fontes BRANCT utilizadas
 
@@ -118,6 +118,22 @@ Os 33 testes cobrem criação real, dois destinos, revisão sem overwrite, bundl
 A aceitação WEBSITE38 registou 30/30 casos BRANCT (duas rotas × cinco viewports × três engines) e 21 capturas, com Playwright local 1.62.1. Viewports: 360×800, 390×844, 768×1024, 1024×768, 1440×900. É evidência histórica, não CI deste incremento. A WEBSITE39 conserva o template e demonstra equivalência textual dos recursos após canonização de EOL; não repete a campanha visual. As provas sintéticas WEBSITE37 (72/72, 36 capturas, PR68/ce51acd) permanecem separadas e não aprovam automaticamente qualquer nova receita.
 
 O harness opcional `tests/website-project-browser.mjs` recebe receita, saída, pasta nova de evidências e raiz de um Playwright já instalado; não instala browsers. Não é requisito do comando create/verify nem motivo para copiar um ambiente privado.
+
+### Validação automática preparada na WEBSITE40
+
+O workflow existente `Website base reference validation` passa a selecionar também os cinco ficheiros exatos de `fixtures/website-project` e os dois testes `website-project`, sem wildcard novo. Uma mudança apenas da receita ou do teste seleciona a mesma campanha. Continuam apenas os eventos PR `opened`/`synchronize`, uma tentativa por head, um job e o limite de 20 minutos. Permissões read, checkout do SHA da PR, imagem por digest e downloads de browsers desativados permanecem inalterados.
+
+O passo de contratos inclui agora os 33 testes de projeto e as regressões de seleção, propagação de falha e receptor Git da WEBSITE40. Depois, `fixtures/website-base/verify-project-receiver.mjs` lê do SHA exato os 15 blobs regulares do conjunto fechado necessário à receita BRANCT, materializa um receptor sem `.git`/`node_modules`, executa os comandos existentes `create` e `verify` e exige os 14 ficheiros. Não usa resultados locais ou pastas privadas como entrada. Os paths deste conjunto são específicos da receita BRANCT; mudar suas dependências exige rever o conjunto, não procurar ficheiros externos automaticamente.
+
+`project-receiver/receipt.json`, incluído no artefacto do job já existente, regista head, plataforma, Node, contexto LOCAL/GITHUB_ACTIONS, blobs/digests de origem, comandos, códigos de saída e hashes da saída. Uma falha do teste ou do receptor falha o passo e impede a medição posterior; não há `continue-on-error`. O recibo é prova de reconstrução estática, não aprovação visual. O CI executará ainda **uma só** campanha histórica Cedro/Linha de 72 casos; não foi adicionada uma segunda campanha BRANCT nem aumentado o timeout.
+
+Para repetir apenas o receptor numa revisão já commitada, usar Node e Git, numa pasta de evidências nova e fora do checkout:
+
+```powershell
+node fixtures/website-base/verify-project-receiver.mjs (Get-Location).Path (git rev-parse HEAD) "$((Get-Item ..).FullName)/project-receiver-v1"
+```
+
+Uma execução local permanece identificada como LOCAL e não comprova Linux/GitHub Actions. Os testes de CI usam Bash (Git Bash em Windows) para executar de verdade os comandos do workflow com fixtures isoladas, incluindo o caminho de erro. Não lançam browsers nem instalam dependências. A publicação e os resultados do CI no novo head continuam dependentes do ciclo remoto posterior; configuração testada localmente não equivale a run remoto concluído.
 
 Não foram medidos nesta entrega Lighthouse, Core Web Vitals, hardware móvel/Safari real, auditoria WCAG completa, leitor de ecrã, rede pública ou indexação. Não é um sandbox para uploads hostis; receitas e assets são entradas locais confiáveis. Testes técnicos e proveniência declarada não substituem revisão humana, direitos de utilização ou autorização de publicação.
 
