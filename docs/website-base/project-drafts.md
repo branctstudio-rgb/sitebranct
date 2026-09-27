@@ -1,34 +1,30 @@
-# WEBSITE38 — criar projetos locais por receita
+# Criar projetos locais por receita — base reutilizável
 
 Este fluxo cria uma prévia BRANCT utilizável a partir da base reutilizável. A receita define marca, conteúdo, paleta, fontes, assets e nomes das duas rotas; não é necessário editar JavaScript por marca nem copiar a aplicação inteira para cada projeto. A saída tem 14 ficheiros estáticos. Continua a ser um rascunho local, sem publicação, formulário ou integrações.
 
 ## Usar a entrega
 
-Checkout local desta entrega:
-
-`C:/Users/geral/Documents/Codex/internas-entrega-20260926/website38/worktree`
-
-Receita BRANCT: `fixtures/website-project/branct.json`.
-
-Saída final: `C:/Users/geral/Documents/Codex/internas-entrega-20260926/website38/preview-final`.
-
-Prévia iniciada em 26/09/2026: `http://127.0.0.1:50866/index.html`. A URL é local à máquina. O estado do processo está em `../preview-process.json`; uma nova execução escolhe outra porta livre. Um registo antigo não prova que o processo permanece ativo.
+Usar um checkout Git da candidata que contém este guia. Não é necessário obter pastas de missão, provas privadas ou saídas de outro computador. A receita BRANCT é `fixtures/website-project/branct.json`; todos os seus recursos e fontes estão versionados. A saída gerada é autónoma e não precisa do repositório para ser servida estaticamente.
 
 Requisito: Node já instalado; PowerShell para os helpers de início/parada em Windows. O gerador/verificador não instala dependências nem consulta a rede. Os recursos partilhados e fontes devem continuar disponíveis no checkout da ferramenta; cada nova saída contém só os recursos que utiliza.
 
-Na raiz do checkout, este comando **gera e verifica** outro destino novo:
+Na raiz do checkout, este comando PowerShell **gera e verifica** um destino novo ao lado do repositório (sem caminhos pessoais):
 
 ```powershell
-node fixtures/website-project/project.mjs create fixtures/website-project/branct.json C:/Users/geral/Documents/Codex/internas-entrega-20260926/website38/outro-projeto
+node fixtures/website-project/project.mjs create fixtures/website-project/branct.json "$((Get-Item ..).FullName)/branct-draft-v1"
 ```
 
 Para validar de novo a entrega existente, sem escrever:
 
 ```powershell
-node fixtures/website-project/project.mjs verify fixtures/website-project/branct.json C:/Users/geral/Documents/Codex/internas-entrega-20260926/website38/preview-final
+node fixtures/website-project/project.mjs verify fixtures/website-project/branct.json "$((Get-Item ..).FullName)/branct-draft-v1"
 ```
 
 `PASS` aqui significa reconstrução e comparação exata dos bytes com a receita e os recursos locais atuais. Não significa QA de browser, aprovação de copy, direitos de redistribuição ou publicação. O verificador não confia num manifesto alterado para aceitar ficheiros alterados.
+
+Num shell POSIX, o destino equivalente é `"$(cd .. && pwd)/branct-draft-v1"`. Resolver o pai primeiro: o contrato recusa segmentos `..` no destino. O pai deve existir e o destino não pode existir. Para outra revisão, escolher `branct-draft-v2`.
+
+CSS, JavaScript e SVG gerados usam LF canónico, independentemente do EOL do checkout. Não são normalizados espaços, conteúdo nem recursos binários. A comparação do destino continua byte a byte: adulterações não são normalizadas pelo verificador. Isto torna a saída e o manifesto idênticos em receptores LF/CRLF. Os recursos originais da base e do site não são modificados.
 
 ## Criar outra marca ou revisão
 
@@ -66,8 +62,8 @@ O ícone SVG é tratado como recurso estático, com subset restrito de elementos
 
 | Contrato | Uso na38 |
 | --- | --- |
-| `fixtures/website-base/site.css` | Mesmos bytes: layout editorial, header/nav, hero, lista, convite, rodapé, breakpoints e foco. |
-| `fixtures/website-base/navigation.js` | Mesmos bytes: drawer, Escape, overlay, foco inicial/trap/retorno, inert e scroll lock. |
+| `fixtures/website-base/site.css` | Mesmo conteúdo, com EOL canónico na saída: layout editorial, header/nav, hero, lista, convite, rodapé, breakpoints e foco. |
+| `fixtures/website-base/navigation.js` | Mesmo conteúdo, com EOL canónico na saída: drawer, Escape, overlay, foco inicial/trap/retorno, inert e scroll lock. |
 | `fixtures/website-project/project.mjs` | Novo validador e template de rascunho, metadados coerentes, saída exclusiva, manifesto e rebuild-verification. |
 | `fixtures/website-base/generate.mjs`, Cedro/Linha | Intocados. `synthetic=true`, `.invalid`, matriz histórica e recusas originais permanecem. A38 não chama nem relaxa o validador37. |
 | `src/fonts/*` | Fontes existentes copiadas para a saída; escolhas da receita usam tokens do layout comum. |
@@ -80,7 +76,7 @@ O novo template preserva a composição da base37; substitui a identidade sinté
 - `website-premium.html`: título/aria-label “Websites Premium”.
 - `src/i18n/pt.json`: `wp.hero.eyebrow`, `wp.sheet.sub`, `wp.sheet.title`, `wp.sheet.c1.title`, `wp.sheet.c2.title`, `wp.sheet.c3.title`, `ct.hero.title`, `ct.form.message` sem o asterisco de campo obrigatório.
 - `index.html`: nome BRANCT.Tech e origem canonical `https://branct.com`.
-- `src/img/icon.svg` e `src/img/website-940.webp`: bytes existentes, sem alteração. Alt e legenda descrevem a ilustração observada; não alegam projeto de cliente.
+- `src/img/icon.svg` e `src/img/website-940.webp`: recursos existentes, sem alteração dos originais; apenas EOL do SVG é canonizado na saída. Alt e legenda descrevem a ilustração observada; não alegam projeto de cliente.
 - `src/fonts/font-faces.css` e quatro `.woff2`: famílias e subsets locais.
 
 Não foram criados clientes, preços, testemunhos, traduções, resultados de campanha ou capacidades de CRM. O contacto é uma página informativa de rascunho. Não envia mensagens nem abre canais reais.
@@ -96,31 +92,34 @@ Todas as páginas recebem `noindex, nofollow, noarchive`, `robots.txt` bloqueia 
 Iniciar, a partir da raiz do checkout, com um registo novo:
 
 ```powershell
-./fixtures/website-project/start-preview.ps1 -Recipe ./fixtures/website-project/branct.json -Destination ../preview-final -Record ../preview-nova.json
+./fixtures/website-project/start-preview.ps1 -Recipe ./fixtures/website-project/branct.json -Destination ../branct-draft-v1 -Record ../branct-preview-v1.json
 ```
 
 O helper inicia Node com janela oculta, ligado apenas a `127.0.0.1`, escolhe uma porta livre e retorna o URL. Guarda PID, data, porta, destino, script e logs. Nunca substitui registos existentes. O servidor só serve recursos da saída verificada, aceita GET/HEAD e não serve o código/manifesto do projeto.
 
-Para encerrar **esta entrega**:
+Usar o URL devolvido pelo comando; a porta é escolhida no próprio computador. Para encerrar **apenas essa prévia**:
 
 ```powershell
-./fixtures/website-project/stop-preview.ps1 -Record ../preview-process.json
+./fixtures/website-project/stop-preview.ps1 -Record ../branct-preview-v1.json
 ```
 
 O helper confirma missão, host, caminho do script/registo, PID, comando e data de criação do processo antes de parar. Não encerra por porta nem por nome genérico do processo. PID reutilizado ou comando diferente causa recusa. Foi provado com duas previews próprias: uma parou e a outra continuou HTTP200.
 
 Em outras plataformas, executar `node fixtures/website-project/preview.mjs RECEITA DESTINO REGISTRO_ABSOLUTO_NOVO` em terminal próprio e terminar esse processo com Ctrl+C.
 
-## Provas e limitações medidas
+## Verificação reproduzível e limites
 
-- 32/32 testes novos: criação real, dois destinos independentes, rotas customizadas, revisão sem overwrite, bundle externo, escaping, entradas/assets inválidos, symlink/junction, adulteração mesmo com manifesto reescrito, CLI e servidor.
-- 30/30 casos novos: BRANCT × duas rotas × cinco viewports × Chromium/Firefox/WebKit, Playwright local já instalado 1.62.1. Viewports: 360×800, 390×844, 768×1024, 1024×768, 1440×900.
-- 21 capturas em `qa-v3`; leitura visual de home desktop/tablet/mobile, contacto e drawer por executor e coordenação. Zero erros de página/HTTP, zero tentativas externas; assets, fontes, links/âncoras, overflow, alvos44px, skip-link, foco, menu e metadados passaram.
-- A primeira medição encontrou foco de links em WebKit; a correção `tabindex=0` ficou somente no novo template. Avisos de CSP do screenshotter WebKit permanecem identificados como `toolingDiagnostics`, segundo o contrato já existente; não foram ocultados como erros da aplicação.
-- `preview-final` preserva os bytes37 com LF. A diferença face à versão medida `preview-v3` limita-se a CRLF→LF em CSS/JS herdados e hashes derivados do manifesto. `EQUIVALENCIA-QA.json` prova igualdade de todos os recursos após normalização de EOL; a saída final passou rebuild-verification. Não foi repetida uma campanha de browser por essa mudança sem semântica.
-- As provas históricas37 (72/72, 36 capturas, PR68/ce51) continuam separadas. `PRESERVACAO37.json` regista os hashes idênticos; não houve campanhaCI, push, PR nova, merge ou publicação.
+```powershell
+node --test tests/website-project.test.mjs
+```
 
-Não foram medidos Lighthouse, Core Web Vitals, hardware móvel/Safari real, auditoria WCAG completa, leitor de ecrã, rede pública ou indexação. Esses limites não são PASS. O navegador integrado falhou antes de conectar por Windows1344; o MCP Playwright estava com perfil em uso. O ensaio executado utilizou browsers headless próprios, já instalados, sem alterar perfis ou permissões globais.
+Os 33 testes cobrem criação real, dois destinos, revisão sem overwrite, bundle externo, entradas/assets inválidos, escaping, ligação simbólica/junction, adulteração mesmo com manifesto reescrito, CLI, servidor e receptores sem Git/dependências com EOL LF/CRLF. Não é necessário instalar npm para gerar, verificar ou executar estes contratos.
+
+A aceitação WEBSITE38 registou 30/30 casos BRANCT (duas rotas × cinco viewports × três engines) e 21 capturas, com Playwright local 1.62.1. Viewports: 360×800, 390×844, 768×1024, 1024×768, 1440×900. É evidência histórica, não CI deste incremento. A WEBSITE39 conserva o template e demonstra equivalência textual dos recursos após canonização de EOL; não repete a campanha visual. As provas sintéticas WEBSITE37 (72/72, 36 capturas, PR68/ce51acd) permanecem separadas e não aprovam automaticamente qualquer nova receita.
+
+O harness opcional `tests/website-project-browser.mjs` recebe receita, saída, pasta nova de evidências e raiz de um Playwright já instalado; não instala browsers. Não é requisito do comando create/verify nem motivo para copiar um ambiente privado.
+
+Não foram medidos nesta entrega Lighthouse, Core Web Vitals, hardware móvel/Safari real, auditoria WCAG completa, leitor de ecrã, rede pública ou indexação. Não é um sandbox para uploads hostis; receitas e assets são entradas locais confiáveis. Testes técnicos e proveniência declarada não substituem revisão humana, direitos de utilização ou autorização de publicação.
 
 ## Passagem
 

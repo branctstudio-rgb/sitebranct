@@ -94,6 +94,34 @@ test('CLI create verifies and refuses overwrite with a clear message',()=>{
   const first=spawnSync(process.execPath,[script,'create',recipe,dest('cli')],{encoding:'utf8'});assert.equal(first.status,0,first.stderr);assert.equal(JSON.parse(first.stdout).state,'PASS');
   const again=spawnSync(process.execPath,[script,'create',recipe,dest('cli')],{encoding:'utf8'});assert.equal(again.status,1);assert.match(again.stderr,/destino já existe/);
 });
+
+test('tracked-only receiver produces identical drafts from LF and CRLF inputs without Git or dependencies',()=>{
+  const files=[...new Set([
+    'fixtures/website-project/project.mjs','fixtures/website-project/branct.json',
+    'fixtures/website-base/site.css','fixtures/website-base/navigation.js',
+    ...config.sources.map(source=>source.path),config.assets.logo,config.assets.hero,
+    ...['manrope','bricolage-grotesque'].flatMap(font=>['latin','latin-ext'].map(subset=>`src/fonts/${font}-${subset}.woff2`))
+  ])];
+  const outputs=[];
+  for(const eol of ['LF','CRLF']) {
+    const receiver=dest('receiver-'+eol.toLowerCase());fs.mkdirSync(receiver);
+    for(const name of files) {
+      const target=path.join(receiver,name);fs.mkdirSync(path.dirname(target),{recursive:true});
+      let bytes=fs.readFileSync(path.join(root,name));
+      if(/\.(?:mjs|js|css|json|svg|html|md)$/u.test(name))bytes=Buffer.from(bytes.toString('utf8').replace(/\r\n|\r/gu,'\n').replace(/\n/gu,eol==='LF'?'\n':'\r\n'));
+      fs.writeFileSync(target,bytes,{flag:'wx'});
+    }
+    assert.equal(fs.existsSync(path.join(receiver,'.git')),false);
+    assert.equal(fs.existsSync(path.join(receiver,'node_modules')),false);
+    const output=dest('portable-'+eol.toLowerCase());
+    for(const operation of ['create','verify']) {
+      const result=spawnSync(process.execPath,['fixtures/website-project/project.mjs',operation,'fixtures/website-project/branct.json',output],{cwd:receiver,encoding:'utf8'});
+      assert.equal(result.status,0,result.stderr);assert.equal(JSON.parse(result.stdout).files,14);
+    }
+    outputs.push(hashTree(output));
+  }
+  assert.deepEqual(outputs[1],outputs[0],'same tracked inputs with different EOL must produce identical bytes, including manifest');
+});
 test('loopback preview serves generated routes and blocks non-manifest paths',async()=>{
   const {server,info}=await serve(recipe,dest('first'),dest('server-record.json'));
   try{

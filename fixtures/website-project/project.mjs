@@ -113,7 +113,11 @@ function page(c, contact, logoPath, heroPath) {
 }
 export function build(config, recipeDir) {
   const c=validate(config); if (/^(?:\\\\|\/\/)/u.test(c.assets.root)) fail('assets.root: raiz local obrigatória, UNC não permitido'); const base=path.resolve(recipeDir,c.assets.root), files=new Map();
-  const add=(name,value)=>files.set(name,Buffer.isBuffer(value)?value:Buffer.from(value));
+  const add=(name,value)=>{
+    // Canonical text EOL makes Git checkouts reproducible; binary assets remain exact.
+    const bytes=Buffer.isBuffer(value)?value:Buffer.from(value);
+    files.set(name,/\.(?:css|js|svg)$/u.test(name)?Buffer.from(bytes.toString('utf8').replace(/\r\n|\r/gu,'\n')):bytes);
+  };
   const logoPath='assets/logo'+path.extname(c.assets.logo).toLowerCase(), heroPath='assets/hero'+path.extname(c.assets.hero).toLowerCase();
   add(logoPath,logo(base,c.assets.logo)); add(heroPath,image(base,c.assets.hero,'assets.hero'));
   for(const source of c.sources) asset(base,source.path,'sources.path');
