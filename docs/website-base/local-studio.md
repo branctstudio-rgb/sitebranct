@@ -6,6 +6,10 @@ Na raiz deste checkout, com Node disponível:
 ./fixtures/website-project/studio/start.ps1 -Projects "$([Environment]::GetFolderPath('MyDocuments'))/branct-projetos"
 ```
 
+Fora do checkout, invocar `start.ps1` pelo seu caminho absoluto em PowerShell 7 (`pwsh`). Não depende da pasta corrente. A raiz/ancestrais são validados antes de criar pasta ou logs; o launcher devolve URL e registo após escuta local, sem aguardar o encerramento do serviço. PowerShell 5 com execução de scripts desativada não é suportado sem decisão própria do operador — não é necessário alterar essa política para usar `pwsh`.
+
+No Windows, ferramentas que capturam a árvore de processos podem aguardar o EOF dos pipes até o servidor parar, mesmo depois de o launcher sair com código 0. Usar o URL/registo emitidos; não iniciar outra sessão só por a ferramenta continuar a aguardar. O teste focal mede separadamente o evento de saída real do launcher e encerra o seu próprio servidor pelo registo.
+
 Abrir o URL `127.0.0.1` retornado. Alternativa, com pasta de projetos já existente: `node fixtures/website-project/studio/server.mjs start CAMINHO_ABSOLUTO_DA_PASTA`.
 
 1. Carregar **BRANCT · receita aprovada** ou uma receita/versão guardada.

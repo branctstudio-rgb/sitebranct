@@ -41,8 +41,12 @@ function collect(){const next=structuredClone(recipe);for(const [,, ,items] of s
 function errors(data){
  let focus;
  for(const [key,error] of Object.entries(data.errors||{})){
-   const node=key==='versionName'?$('version-name'):$(key),target=$(key+'-error');
-   if(node&&target){target.textContent=error;node.setAttribute('aria-invalid','true');focus??=node;}
+   const normalized=key.replace(/\[\d+\]$/,'');
+   const keys=normalized==='routes'?['routes.home','routes.contact']:normalized==='palette'?['palette.ink','palette.bg','palette.surface','palette.accent']:[normalized];
+   for(const field of keys){
+     const node=field==='versionName'?$('version-name'):$(field),target=$(field+'-error');
+     if(node&&target){target.textContent=error;node.setAttribute('aria-invalid','true');focus??=node;}
+   }
  }
  message(data.message||'A operação falhou. Nada foi aprovado.',true);pendingFocus=focus||$('status');
 }

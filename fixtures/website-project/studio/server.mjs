@@ -22,13 +22,19 @@ const close=server=>new Promise((resolve,reject)=>{
   server.closeIdleConnections();
 });
 
-export async function startStudio(projectRoot){
+export function validateStudioRoot(projectRoot,{allowMissing=false}={}){
   if(!path.isAbsolute(projectRoot||'')||/^(\\\\|\/\/)/.test(projectRoot))fail('Raiz de projetos absoluta e local obrigatória.');
   const root=path.resolve(projectRoot);
-  noLinks(root);
-  if(!fs.statSync(root).isDirectory())fail('A raiz tem de ser uma pasta.');
+  const existing=allowMissing&&!fs.existsSync(root)?path.dirname(root):root;
+  noLinks(existing);
+  if(!fs.statSync(existing).isDirectory())fail('A raiz ou pasta-pai tem de ser uma pasta.');
   const relative=path.relative(toolRoot,root);
   if(!relative||(!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative)))fail('Projetos devem ficar fora do checkout.');
+  return root;
+}
+
+export async function startStudio(projectRoot){
+  const root=validateStudioRoot(projectRoot);
   // All descendant writes are derived from closed names, never from a browser path.
   const child=(...parts)=>{
     noLinks(root);

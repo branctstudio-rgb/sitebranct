@@ -36,6 +36,11 @@ for(const engine of engines){
   await page.getByLabel('Nome da marca',{exact:true}).fill('BRANCT · ensaio local');
   await page.getByLabel('Título principal',{exact:true}).fill('');await page.getByRole('button',{name:'Validar receita',exact:true}).click();await page.locator('[id="content.headline"][aria-invalid="true"]').waitFor();assert.equal(await page.evaluate(()=>document.activeElement.id),'content.headline');
   await page.getByLabel('Título principal',{exact:true}).fill('Projeto sintético de bancada');
+  for(const [key,bad,good,focus] of [['routes.home','../bad','index.html','routes.home'],['palette.ink',await page.locator('[id="palette.bg"]').inputValue(),await page.locator('[id="palette.ink"]').inputValue(),'palette.ink'],['content.steps','','Etapa um\nEtapa dois','content.steps']]){
+   const input=page.locator('[id="'+key+'"]');await input.fill(bad);await page.getByRole('button',{name:'Validar receita',exact:true}).click();
+   await page.locator('[id="'+focus+'"][aria-invalid="true"]').waitFor({timeout:3000});assert.equal(await page.evaluate(()=>document.activeElement.id),focus);
+   assert.ok(await page.locator('[id="'+focus+'-error"]').textContent());await input.fill(good);
+  }
   // A deliberately delayed response proves controls cannot change under a pending save.
   let release,intercepted,handled;const interceptedPromise=new Promise(r=>intercepted=r),delay=new Promise(r=>release=r),handledPromise=new Promise(r=>handled=r);
   await page.route('**/api/validate',async route=>{intercepted();await delay;await route.continue();handled();});

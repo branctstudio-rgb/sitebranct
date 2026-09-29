@@ -5,10 +5,32 @@ import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import {createHash} from 'node:crypto';
+import {spawn,spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 
 const entry=new URL('../fixtures/website-project/studio/server.mjs',import.meta.url);
 const available=fs.existsSync(entry);
 test('local studio provides a real loopback creation service',()=>assert.ok(available,'Local creation service has not been implemented'));
+test('launcher refuses linked ancestors before creating any directory', {skip:process.platform!=='win32'},()=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'website42-launch-'));
+ const real=path.join(temp,'real'),linked=path.join(temp,'linked');fs.mkdirSync(real);fs.symlinkSync(real,linked,'junction');
+ const launcher=fileURLToPath(new URL('../fixtures/website-project/studio/start.ps1',import.meta.url));
+ const result=spawnSync('pwsh',['-NoProfile','-File',launcher,'-Projects',path.join(linked,'new-project')],{cwd:temp,encoding:'utf8',timeout:15000});
+ assert.notEqual(result.status,0);assert.match(result.stderr,/Caminho ligado não permitido/);assert.deepEqual(fs.readdirSync(real),[],'rejected path must not receive a directory or logs');
+ const forbidden=fileURLToPath(new URL('../fixtures/website-project/studio/not-a-project',import.meta.url));
+ const refused=spawnSync('pwsh',['-NoProfile','-File',launcher,'-Projects',forbidden],{cwd:temp,encoding:'utf8',timeout:15000});
+ assert.notEqual(refused.status,0);assert.match(refused.stderr,/fora do checkout/);assert.equal(fs.existsSync(forbidden),false);
+});
+test('launcher returns promptly outside the checkout and owns a stoppable session',{skip:process.platform!=='win32'},async()=>{
+ const parent=fs.mkdtempSync(path.join(os.tmpdir(),'website42-start-')),root=path.join(parent,'projects');
+ const launcher=fileURLToPath(new URL('../fixtures/website-project/studio/start.ps1',import.meta.url)),server=fileURLToPath(entry);
+ const started=Date.now(),child=spawn('pwsh',['-NoProfile','-File',launcher,'-Projects',root],{cwd:parent,stdio:['ignore','pipe','pipe']});let stdout='',stderr='';child.stdout.on('data',b=>stdout+=b);child.stderr.on('data',b=>stderr+=b);
+ // Measure actual launcher exit, not pipe EOF: Windows descendants can retain capture handles.
+ const exited=new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',resolve);});
+ let timer;
+ try{const status=await Promise.race([exited,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('launcher did not exit within 15s')),15000);})]);assert.equal(status,0,stderr);const info=JSON.parse(stdout);assert.match(info.url,/^http:\/\/127\.0\.0\.1:\d+$/);assert.ok(Date.now()-started<15000);console.log('Launcher exited in '+(Date.now()-started)+'ms outside checkout');}
+ finally{clearTimeout(timer);if(fs.existsSync(path.join(root,'sessions')))for(const record of fs.readdirSync(path.join(root,'sessions')).filter(n=>n.endsWith('.json')&&!n.endsWith('.stopped.json'))){const stopped=spawnSync(process.execPath,[server,'stop',path.join(root,'sessions',record)],{encoding:'utf8',timeout:10000});assert.equal(stopped.status,0,stopped.stderr);}}
+});
 if(available){
  const {startStudio}=await import(entry.href);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'website42-'));
