@@ -1,0 +1,110 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import http from 'node:http';
+import {createHash} from 'node:crypto';
+
+const entry=new URL('../fixtures/website-project/studio/server.mjs',import.meta.url);
+const available=fs.existsSync(entry);
+test('local studio provides a real loopback creation service',()=>assert.ok(available,'Local creation service has not been implemented'));
+if(available){
+ const {startStudio}=await import(entry.href);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'website42-'));
+ const app=await startStudio(root);
+ const get=route=>fetch(app.url+route);
+ const boot=await (await get('/api/state')).json();
+ const original=boot.recipe;
+ const post=(route,body,headers={})=>fetch(app.url+route,{method:'POST',headers:{origin:app.url,'content-type':'application/json','x-studio-token':boot.token,...headers},body:JSON.stringify(body)});
+ const hash=dir=>Object.fromEntries(fs.readdirSync(dir,{recursive:true}).filter(x=>fs.lstatSync(path.join(dir,x)).isFile()).sort().map(x=>[x,createHash('sha256').update(fs.readFileSync(path.join(dir,x))).digest('hex')]));
+ test('field errors use existing recipe validation and do not create an output',async()=>{
+   const recipe=structuredClone(original);recipe.content.headline='';
+   const r=await post('/api/generate',{name:'invalid',recipe});assert.equal(r.status,422);const data=await r.json();assert.ok(data.errors['content.headline']);
+   assert.equal(fs.existsSync(path.join(root,'revisions','invalid')),false);
+ });
+ test('saved recipes reopen and revisions preserve the exact first output',async()=>{
+   let r=await post('/api/save',{name:'example-v1',recipe:original});assert.equal(r.status,201);
+   assert.deepEqual((await (await get('/api/recipe?name=example-v1')).json()).recipe,original);
+   r=await post('/api/generate',{name:'example-v1',recipe:original});assert.equal(r.status,201);assert.equal((await r.json()).files,14);
+   const dir=path.join(root,'revisions','example-v1','site'),before=hash(dir);
+   const changed=structuredClone(original);changed.content.headline='Ensaio local — revisão dois';
+   r=await post('/api/generate',{name:'example-v2',recipe:changed});assert.equal(r.status,201);
+   assert.deepEqual(hash(dir),before);
+   r=await post('/api/generate',{name:'example-v1',recipe:changed});assert.equal(r.status,409);assert.deepEqual(hash(dir),before);
+   r=await post('/api/save',{name:'example-v1',recipe:changed});assert.equal(r.status,409);
+ });
+ test('new drafts retain noindex, publication prohibition and exact verification',async()=>{
+   const dir=path.join(root,'revisions','example-v1','site');
+   assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'manifest.json'))).publicationAllowed,false);
+   assert.match(fs.readFileSync(path.join(dir,'index.html'),'utf8'),/noindex, nofollow, noarchive/);
+   fs.appendFileSync(path.join(dir,'index.html'),'tamper');
+   const r=await post('/api/preview',{name:'example-v1'});assert.equal(r.status,422);
+ });
+ test('foreign origins, missing CSRF token, non JSON and host confusion cannot write',async()=>{
+   for(const headers of [{origin:'https://example.invalid'},{'x-studio-token':''},{'content-type':'text/plain'}]){
+     const r=await post('/api/save',{name:'foreign',recipe:original},headers);assert.equal(r.status,403);
+   }
+   assert.equal((await fetch(app.url+'/api/state',{headers:{origin:'https://example.invalid'}})).status,403);
+   const status=await new Promise(resolve=>{http.get(app.url+'/api/state',{headers:{host:'evil.invalid'}},r=>{r.resume();resolve(r.statusCode);});});assert.equal(status,403);
+   assert.equal(fs.existsSync(path.join(root,'recipes','foreign.json')),false);
+ });
+ test('no paths, assets or unapproved provenance can be supplied by a browser',async()=>{
+   for(const name of ['../escape','C:/escape','a\\b','NUL','x.json','%2e%2e','a/b','Foo'])assert.equal((await post('/api/save',{name,recipe:original})).status,422);
+   for(const mutate of [c=>c.assets.root='C:/',c=>c.assets.hero='src/img/other.webp',c=>c.sources[0].path='package.json',c=>c.extra='ignored']){
+     const c=structuredClone(original);mutate(c);assert.equal((await post('/api/save',{name:'unapproved',recipe:c})).status,422);
+   }
+   assert.equal((await get('/api/recipe?name=../escape')).status,422);
+   assert.equal((await get('/..%2fCLAUDE.md')).status,404);
+ });
+ test('a linked revision directory is refused before materialization',async()=>{
+   const elsewhere=fs.mkdtempSync(path.join(os.tmpdir(),'website42-other-'));
+   fs.symlinkSync(elsewhere,path.join(root,'revisions','linked'),process.platform==='win32'?'junction':'dir');
+   assert.equal((await post('/api/preview',{name:'linked'})).status,422);
+   assert.deepEqual(fs.readdirSync(elsewhere),[]);
+ });
+ test('UTF-8 split across HTTP chunks is preserved, malformed UTF-8 is refused',async()=>{
+   const recipe=structuredClone(original);recipe.content.headline='Criação em português';
+   const bytes=Buffer.from(JSON.stringify({name:'utf-v1',recipe}));const split=bytes.indexOf(Buffer.from('ç'))+1;
+   const result=await new Promise((resolve,reject)=>{
+     const request=http.request(app.url+'/api/save',{method:'POST',headers:{origin:app.url,'content-type':'application/json','x-studio-token':boot.token}},response=>{let data='';response.on('data',b=>data+=b);response.on('end',()=>resolve({status:response.statusCode,body:data}));});
+     request.on('error',reject);request.write(bytes.subarray(0,split));setTimeout(()=>request.end(bytes.subarray(split)),25);
+   });
+   assert.equal(result.status,201);
+   assert.deepEqual((await (await get('/api/recipe?name=utf-v1')).json()).recipe,recipe);
+   const invalid=Buffer.concat([Buffer.from('{"name":"utf-invalid","recipe":"'),Buffer.from([0xff]),Buffer.from('"}')]);
+   const r=await fetch(app.url+'/api/save',{method:'POST',headers:{origin:app.url,'content-type':'application/json','x-studio-token':boot.token},body:invalid});assert.equal(r.status,422);
+ });
+ test('shutdown waits for a genuinely opening preview and closes that owned server',async()=>{
+   const otherRoot=fs.mkdtempSync(path.join(os.tmpdir(),'website42-race-')),other=await startStudio(otherRoot);
+   const auth=await (await fetch(other.url+'/api/state')).json();
+   const call=(route,data)=>fetch(other.url+route,{method:'POST',headers:{origin:other.url,'content-type':'application/json','x-studio-token':auth.token},body:JSON.stringify(data)});
+   await call('/api/generate',{name:'race-v1',recipe:auth.recipe});
+   const originalListen=http.Server.prototype.listen;let notifyOpening;const owned=[];
+   const opening=new Promise(resolve=>notifyOpening=resolve);
+   // Delay only the real listen callback to make the overlap deterministic.
+   http.Server.prototype.listen=function(...args){owned.push(this);const callback=args.pop();return originalListen.call(this,...args,()=>{notifyOpening();setTimeout(callback,70);});};
+   let preview;
+   try{
+     const pending=call('/api/preview',{name:'race-v1'});await opening;
+     const stopping=call('/api/stop',{});preview=await (await pending).json();await stopping;await other.closed;
+     const receipt=JSON.parse(fs.readFileSync(other.record+'.stopped.json'));
+     assert.ok(receipt.previews.includes(preview.id),'opening preview must be included in the shutdown receipt');
+     await assert.rejects(fetch(preview.urls.home));
+   }finally{http.Server.prototype.listen=originalListen;for(const server of owned){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}await other.stop();}
+ });
+ test('only owned previews close and a shutdown receipt is written',async()=>{
+   const r=await post('/api/preview',{name:'example-v2'});assert.equal(r.status,200);const preview=await r.json();
+   assert.equal((await fetch(preview.urls.home)).status,200);assert.equal((await fetch(preview.urls.contact)).status,200);
+   assert.equal((await fetch(preview.urls.home,{headers:{origin:'https://example.invalid'}})).status,403);
+   assert.equal((await post('/api/stop-preview',{id:'unknown'})).status,404);
+   assert.equal((await post('/api/stop-preview',{id:preview.id})).status,200);
+   await assert.rejects(fetch(preview.urls.home));
+   const opened=await (await post('/api/preview',{name:'example-v2'})).json();
+   const response=await post('/api/stop',{});assert.equal(response.status,200);
+   await app.closed;
+   const receipt=JSON.parse(fs.readFileSync(app.record+'.stopped.json','utf8'));assert.equal(receipt.state,'STOPPED');assert.ok(receipt.previews.includes(opened.id));
+   await assert.rejects(fetch(app.url));
+ });
+ test.after(async()=>{await app.stop();console.log('Preserved test evidence: '+root);});
+}

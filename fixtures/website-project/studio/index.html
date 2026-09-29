@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Bancada de criação · BRANCT</title><link rel="stylesheet" href="/studio.css"><script defer src="/studio.js"></script></head>
+<body><a class="skip" href="#editor">Saltar para o editor</a>
+<header class="top"><a class="brand" href="/" aria-label="BRANCT — bancada local">BRANCT<span> / atelier</span></a><span class="local">● Apenas neste computador</span><button id="shutdown" class="quiet" type="button">Encerrar bancada</button></header>
+<main>
+<section class="intro"><div><p class="eyebrow">WEBSITE / BANCADA LOCAL</p><h1>Da ideia à<br><em>primeira versão.</em></h1><p class="lede">A mesma base. A tua identidade.<br>Edita a receita, verifica e abre um rascunho real.</p></div><aside class="intro-note"><span class="number">01—03</span><p>Preparar. Afinar. Ver.</p><small>Sem publicação ou envio de dados.<br>Cada versão fica guardada, sem sobrescritas.</small></aside></section>
+<div class="workspace">
+<aside class="rail" aria-label="Receitas e versões"><h2>O teu ponto de partida</h2><label for="recipe-source">Receita</label><select id="recipe-source"><option value="preset">BRANCT · receita aprovada</option></select><button id="load" class="secondary" type="button">Carregar receita</button><p class="hint">As alterações por guardar não são recuperadas ao recarregar esta página.</p><h2>Versões geradas</h2><div id="revisions"><p class="empty">A tua primeira versão aparece aqui.</p></div><div class="boundary"><strong>Um rascunho, não um site publicado.</strong><p>Duas páginas, assets locais e indexação bloqueada. A publicação tem um gate humano próprio.</p></div></aside>
+<section id="editor" tabindex="-1" aria-label="Editor de receita">
+<form id="recipe-form" novalidate>
+<div id="fields"></div>
+<section class="section"><div class="section-heading"><span>04</span><div><h2>Guardar e experimentar</h2><p>Escolhe um nome novo para cada revisão.</p></div></div><label for="version-name">Nome desta versão</label><input id="version-name" name="versionName" value="branct-v1" autocomplete="off" aria-describedby="version-help versionName-error"><small id="version-help">Letras minúsculas, números e hífen. Ex.: branct-v2</small><span id="versionName-error" class="error"></span><div class="actions"><button type="button" id="validate" class="secondary">Validar receita</button><button type="button" id="save" class="secondary">Guardar receita</button><button type="submit" id="generate" class="primary">Gerar e verificar <span aria-hidden="true">↗</span></button></div></section>
+</form>
+<div id="status" role="status" aria-live="polite" tabindex="-1">A carregar a receita local…</div>
+<section id="preview-result" hidden aria-label="Prévia gerada"></section>
+</section></div>
+<footer><span>BRANCT / ferramentas de criação</span><span>Local-draft · noindex · sem integrações</span></footer>
+</main></body></html>
