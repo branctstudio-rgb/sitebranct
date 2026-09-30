@@ -37,7 +37,7 @@ export function validateStudioRoot(projectRoot,{allowMissing=false}={}){
 export async function startStudio(projectRoot){
   const root=validateStudioRoot(projectRoot);
   // All descendant writes are derived from closed names, never from a browser path.
-  const child=(...parts)=>{
+  const childAt=root=>(...parts)=>{
     noLinks(root);
     const target=path.resolve(root,...parts);
     if(!target.startsWith(root+path.sep))fail('Destino fora da raiz.');
@@ -45,7 +45,8 @@ export async function startStudio(projectRoot){
     if(fs.existsSync(target))noLinks(target);
     return target;
   };
-  for(const folder of ['recipes','revisions','sessions']){
+  const child=childAt(root);
+  for(const folder of ['recipes','revisions','sessions','projects']){
     const target=child(folder);if(!fs.existsSync(target))fs.mkdirSync(target);
     if(!fs.statSync(target).isDirectory())fail('Pasta de projetos inválida.');
   }
@@ -55,7 +56,8 @@ export async function startStudio(projectRoot){
     'fixtures/website-base/site.css','fixtures/website-base/navigation.js',
     ...['manrope','bricolage-grotesque'].flatMap(f=>['latin','latin-ext'].map(s=>`src/fonts/${f}-${s}.woff2`))])];
   const pins=approvedInputs.map(name=>{const file=path.join(toolRoot,name);noLinks(file);return {file,sha256:digest(fs.readFileSync(file))};});
-  const resources=library(root,toolRoot,approvedInputs);
+  function workspace(root,initial=preset,project={id:'legacy',name:'Legado 42/43'}){
+  const child=childAt(root),resources=library(root,toolRoot,approvedInputs);
   function checkRecipe(recipe,{revision=false,allowMissing=false}={}){
     for(const pin of pins){noLinks(pin.file);if(digest(fs.readFileSync(pin.file))!==pin.sha256)fail('assets: fonte aprovada mudou; reiniciar após revisão.');}
     const portable=recipe?.version===2;
@@ -77,6 +79,42 @@ export async function startStudio(projectRoot){
     return {recipe,recipeFile,dir,site};
   };
   const names=folder=>fs.readdirSync(child(folder),{withFileTypes:true}).filter(e=>!e.isSymbolicLink()&&(folder==='recipes'?e.isFile()&&e.name.endsWith('.json'):e.isDirectory())).map(e=>folder==='recipes'?e.name.slice(0,-5):e.name).filter(n=>/^[a-z][a-z0-9-]{1,50}$/.test(n)).sort();
+  return {child,resources,checkRecipe,readRevision,revision,names,initial,project};
+  }
+  const legacy=workspace(root),spaces=new Map([['legacy',legacy]]);
+  function metadata(id){
+    slug(id);const file=child('projects',id,'project.json');const data=JSON.parse(fs.readFileSync(file,'utf8'));
+    if(data.schema!==1||data.id!==id||typeof data.name!=='string'||!data.name.trim()||data.publicationAllowed!==false)fail('project: registo inválido.');
+    return data;
+  }
+  function space(id){
+    if(id==='legacy')return legacy;
+    const meta=metadata(id);
+    if(!spaces.has(id))spaces.set(id,workspace(child('projects',id),meta.initialRecipe,{id,name:meta.name}));
+    const current=spaces.get(id);current.checkRecipe(current.initial,{allowMissing:true});return current;
+  }
+  const projects=()=>[{id:'legacy',name:'Legado 42/43'},...fs.readdirSync(child('projects'),{withFileTypes:true}).filter(e=>e.isDirectory()&&!e.isSymbolicLink()&&fs.existsSync(path.join(root,'projects',e.name,'project.json'))).map(e=>{const m=metadata(e.name);return {id:m.id,name:m.name};}).sort((a,b)=>a.id.localeCompare(b.id))];
+  function createProject(input){
+    const id=slug(input.id);if(id==='legacy')fail('project: identificador reservado.',409);
+    if(typeof input.name!=='string'||input.name!==input.name.trim()||!input.name||input.name.length>80||/[\x00-\x1f<>]/.test(input.name))fail('project: nome simples de 1–80 caracteres obrigatório.');
+    const destination=child('projects',id);if(fs.existsSync(destination))fail('project: identificador já existe; nada foi sobrescrito.',409);
+    let source=legacy,recipe=structuredClone(preset),provenance={kind:'approved-preset'};
+    if(input.source!==null){
+      const s=input.source;if(!s||typeof s!=='object'||Object.keys(s).sort().join()!=='kind,name,project'||!['initial','recipe','revision'].includes(s.kind))fail('project: origem fechada inválida.');
+      source=space(s.project);
+      if(s.kind==='initial'){if(s.name!==null)fail('project: origem inicial sem nome de revisão.');recipe=structuredClone(source.initial);}
+      else if(s.kind==='recipe')recipe=source.checkRecipe(readRecipe(source.child('recipes',slug(s.name)+'.json')).config);
+      else recipe=source.readRevision(slug(s.name)).recipe;
+      provenance={...s,recipeSha256:digest(Buffer.from(JSON.stringify(recipe)))};
+    }
+    const imports=[...new Set([recipe.assets.logo,recipe.assets.hero].filter(p=>p.startsWith('imports/')))].map(p=>source.resources.read(p));
+    recipe=structuredClone(recipe);recipe.version=2;recipe.id=id;recipe.name=input.name;recipe.assets.root='../library';recipe.assets.heroDecorative=Boolean(recipe.assets.heroDecorative);validate(recipe);
+    fs.mkdirSync(destination);for(const folder of ['recipes','revisions'])fs.mkdirSync(path.join(destination,folder));
+    const created=workspace(destination,recipe,{id,name:input.name});
+    for(const item of imports){const copy=created.resources.add(item.record.name,item.bytes.toString('base64'));if(copy.sha256!==item.record.sha256)fail('project: digest da cópia divergiu.');}
+    created.checkRecipe(recipe);write(path.join(destination,'project.json'),{schema:1,id,name:input.name,publicationAllowed:false,createdAt:new Date().toISOString(),source:provenance,resources:imports.map(i=>({path:i.record.path,sha256:i.record.sha256})),initialRecipe:recipe});
+    spaces.set(id,created);return {state:'CREATED',project:created.project};
+  }
   const token=randomBytes(32).toString('hex'),sessionId=randomUUID();
   const record=child('sessions',sessionId+'.json');
   const previews=new Map();let origin,stopping=false,stopPromise,resolveClosed,operations=Promise.resolve();
@@ -116,14 +154,16 @@ export async function startStudio(projectRoot){
       if(stopping)fail('Bancada a encerrar.',409);
       if(!req.url.startsWith('/')||/[\\%]/.test(req.url.split('?')[0]))fail('Recurso indisponível.',404);
       const url=new URL(req.url,origin),route=url.pathname;
+      const projectId=req.method==='POST'?(req.headers['x-studio-project']||'legacy'):(url.searchParams.get('project')||'legacy');
+      const selected=space(projectId),{resources,checkRecipe,readRevision,revision,names,child:projectChild}=selected;
       if(req.method==='GET'){
-        if(route==='/api/state'){const imported=resources.list();return send(res,200,{token,sessionId,recipe:preset,catalog:{logo:[preset.assets.logo,...imported.map(r=>r.path)],hero:[preset.assets.hero,...imported.map(r=>r.path)]},imported,limits,recipes:names('recipes'),revisions:names('revisions'),previews:[...previews.values()].map(p=>p.public),root});}
+        if(route==='/api/state'){const imported=resources.list();return send(res,200,{token,sessionId,project:selected.project,projects:projects(),recipe:selected.initial,catalog:{logo:[preset.assets.logo,...imported.map(r=>r.path)],hero:[preset.assets.hero,...imported.map(r=>r.path)]},imported,limits,recipes:names('recipes'),revisions:names('revisions'),previews:[...previews.values()].filter(p=>p.public.project===projectId).map(p=>p.public),root});}
         if(route==='/api/recipe'){
           const name=slug(url.searchParams.get('name'));
-          const file=child('recipes',name+'.json');return send(res,200,{name,recipe:checkRecipe(readRecipe(file).config,{allowMissing:true})});
+          const file=projectChild('recipes',name+'.json');return send(res,200,{name,recipe:checkRecipe(readRecipe(file).config,{allowMissing:true})});
         }
         if(route==='/api/revision'){
-          const name=slug(url.searchParams.get('name')),recipe=checkRecipe(readRecipe(child('revisions',name,'recipe.json')).config,{revision:true,allowMissing:true});if(recipe.version===2)recipe.assets.root='../library';return send(res,200,{name,recipe});
+          const name=slug(url.searchParams.get('name')),recipe=checkRecipe(readRecipe(projectChild('revisions',name,'recipe.json')).config,{revision:true,allowMissing:true});if(recipe.version===2)recipe.assets.root='../library';return send(res,200,{name,recipe});
         }
         if(route==='/api/media'){
           const kind=url.searchParams.get('kind'),name=url.searchParams.get('path');if(!['logo','hero'].includes(kind))fail('Recurso indisponível.',404);
@@ -146,24 +186,25 @@ export async function startStudio(projectRoot){
       for await(const bytes of req){bodyBytes+=bytes.length;if(bodyBytes>maxBody)fail('Pedido demasiado grande.',413);chunks.push(bytes);}
       let input;try{input=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));}catch{fail('Pedido JSON/UTF-8 inválido.');}
       if(!input||typeof input!=='object'||Array.isArray(input))fail('Pedido inválido.');
-      const keys={ '/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
+      const keys={ '/api/projects':['id','name','source'],'/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
       if(!keys)fail('Operação indisponível.',404);
       if(Object.keys(input).sort().join()!==[...keys].sort().join())fail('Campos de operação inesperados.');
+      if(route==='/api/projects')return send(res,201,createProject(input));
       if(route==='/api/import'){const imported=resources.add(input.name,input.data);return send(res,imported.existing?200:201,imported);}
       if(route==='/api/validate'){checkRecipe(input.recipe);return send(res,200,{state:'PASS',message:'Receita válida. Ainda não foi gerada.'});}
       if(route==='/api/save'||route==='/api/generate'){
         const name=slug(input.name),recipe=checkRecipe(input.recipe);
-        const target=route==='/api/save'?child('recipes',name+'.json'):revision(name);
+        const target=route==='/api/save'?projectChild('recipes',name+'.json'):revision(name);
         if(fs.existsSync(target))fail('versionName: esta versão já existe. Escolha um nome novo.',409);
         if(route==='/api/save'){write(target,recipe);return send(res,201,{state:'SAVED',name});}
         if(recipe.version===2)recipe.assets.root='../../library';
-        fs.mkdirSync(target);write(child('revisions',name,'recipe.json'),recipe);
-        const site=child('revisions',name,'site');generate(recipe,target,site);
+        fs.mkdirSync(target);write(projectChild('revisions',name,'recipe.json'),recipe);
+        const site=projectChild('revisions',name,'site');generate(recipe,target,site);
         const proof=verify(recipe,target,site);return send(res,201,{...proof,name});
       }
       if(route==='/api/preview'){
         const name=slug(input.name),rev=readRevision(name);
-        const existing=[...previews.values()].find(item=>item.public.name===name);
+        const existing=[...previews.values()].find(item=>item.public.name===name&&item.public.project===projectId);
         if(existing)return send(res,200,existing.public);
         const id=randomUUID(),previewRecord=child('sessions',id+'.preview.json');
         const running=await serve(rev.recipeFile,rev.site,previewRecord);
@@ -173,7 +214,7 @@ export async function startStudio(projectRoot){
           if(!safeOrigin(request,[new URL(previewOrigin).host])){response.writeHead(403).end('Origem externa recusada');return;}
           try{readRevision(name);handler(request,response);}catch{response.writeHead(409).end('Preview alterada ou inválida');}
         });
-        const publicInfo={id,name,urls:Object.fromEntries(Object.entries(rev.recipe.routes).map(([key,value])=>[key,previewOrigin+'/'+value]))};
+        const publicInfo={id,name,project:projectId,urls:Object.fromEntries(Object.entries(rev.recipe.routes).map(([key,value])=>[key,previewOrigin+'/'+value]))};
         previews.set(id,{server:running.server,record:previewRecord,public:publicInfo});return send(res,200,publicInfo);
       }
       if(route==='/api/stop-preview')return send(res,200,await stopPreview(input.id));

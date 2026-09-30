@@ -3,6 +3,7 @@ const $=id=>document.getElementById(id);
 const get=(object,key)=>key.split('.').reduce((value,k)=>value[k],object);
 const put=(object,key,value)=>{const keys=key.split('.');const leaf=keys.pop();keys.reduce((o,k)=>o[k],object)[leaf]=value;};
 let state,recipe,dirty=false,busy=false,stopped=false,pendingFocus,selection,selectionURL,selectionEpoch=0,mediaEpoch=0;
+let activeProject=new URL(location.href).searchParams.get('project')||'legacy';
 const sections=[
  ['01','Identidade & direção','O que identifica o projeto, sem mudar a estrutura.',[
  ['id','Identificador do projeto'],['name','Nome da marca'],['origin','Origem de referência','url'],
@@ -41,7 +42,7 @@ function collect(){const next=structuredClone(recipe);for(const [,, ,items] of s
 function resourcePreview(reload=false){
  if(!$('assets.logo'))return;
  if(reload)mediaEpoch++;
- for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview'),src='/api/media?kind='+kind+'&path='+encodeURIComponent($('assets.'+kind).value)+'&view='+mediaEpoch;if(img.getAttribute('src')!==src)img.src=src;img.alt=kind==='logo'?'Prévia do logótipo':$('assets.heroDecorative').checked?'':$('assets.heroAlt').value;}
+ for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview'),src='/api/media?kind='+kind+'&path='+encodeURIComponent($('assets.'+kind).value)+'&view='+mediaEpoch+'&project='+encodeURIComponent(activeProject);if(img.getAttribute('src')!==src)img.src=src;img.alt=kind==='logo'?'Prévia do logótipo':$('assets.heroDecorative').checked?'':$('assets.heroAlt').value;}
  $('assets.heroAlt').disabled=busy||stopped||$('assets.heroDecorative').checked;
  $('font-sample').dataset.body=$('fonts.body').value;$('font-sample').dataset.display=$('fonts.display').value;
 }
@@ -57,8 +58,8 @@ function errors(data){
  }
  message(data.message||'A operação falhou. Nada foi aprovado.',true);pendingFocus=focus||$('status');
 }
-async function api(route,body){
- const response=await fetch('/api/'+route,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Token':state.token},body:JSON.stringify(body)});
+async function api(route,body,project=activeProject){
+ const response=await fetch('/api/'+route+(body===undefined?(route.includes('?')?'&':'?')+'project='+encodeURIComponent(project):''),body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Token':state.token,'X-Studio-Project':project},body:JSON.stringify(body)});
  const result=await response.json();if(!response.ok){errors(result);throw new Error(result.message);}return result;
 }
 async function act(fn){
@@ -67,8 +68,11 @@ async function act(fn){
  try{await fn();}catch(error){if($('status').dataset.state!=='error')message('Não foi possível concluir: '+error.message,true);}
  finally{busy=false;$('recipe-form').removeAttribute('aria-busy');document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=stopped);$('import-confirm').disabled=stopped||!selection;resourcePreview();pendingFocus?.focus();pendingFocus=undefined;}
 }
-async function refresh(){
- state=await api('state');
+async function refresh(project=activeProject){
+ state=await api('state',undefined,project);activeProject=state.project.id;
+ $('project-active').textContent='Projeto ativo: '+state.project.name+' · '+activeProject;$('project-active').dataset.id=activeProject;
+ $('project-select').replaceChildren();for(const item of state.projects){const option=el('option',item.name+' · '+item.id);option.value=item.id;$('project-select').append(option);}$('project-select').value=activeProject;
+ const source=$('project-source'),previous=source.value;source.replaceChildren();for(const [value,label] of [['approved','Receita BRANCT aprovada'],['initial','Duplicar ponto de partida deste projeto'],...state.recipes.map(n=>['recipe:'+n,'Duplicar receita · '+n]),...state.revisions.map(n=>['revision:'+n,'Duplicar versão · '+n])]){const option=el('option',label);option.value=value;source.append(option);}if([...source.options].some(o=>o.value===previous))source.value=previous;
  const select=$('recipe-source'),selected=select.value;
  select.replaceChildren();for(const [value,label] of [['preset','BRANCT · receita aprovada'],...state.recipes.map(n=>['recipe:'+n,'Guardada · '+n]),...state.revisions.map(n=>['revision:'+n,'Versão · '+n])]){
    const option=el('option',label);option.value=value;select.append(option);
@@ -129,4 +133,18 @@ $('import-confirm').addEventListener('click',()=>act(async()=>{
 }));
 for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview');img.addEventListener('error',()=>{$('asset-'+kind+'-status').textContent='Recurso ausente ou inválido. Selecione outro ou reimporte o original.';});img.addEventListener('load',()=>{$('asset-'+kind+'-status').textContent='Recurso local disponível.';});}
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
+async function allowProjectChange(opener){
+ if(busy||stopped)return false;if(!dirty&&!selection)return true;
+ const dialog=$('pending-dialog');$('pending-error').textContent='';dialog.returnValue='cancel';dialog.showModal();
+ const decision=await new Promise(resolve=>dialog.addEventListener('close',()=>resolve(dialog.returnValue),{once:true}));
+ if(decision!=='discard'&&decision!=='saved'){opener.focus();return false;}dirty=false;clearSelection();return true;
+}
+$('pending-dialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+$('pending-save').addEventListener('click',()=>act(async()=>{try{await api('save',{name:$('version-name').value,recipe:collect()});dirty=false;await refresh();$('pending-dialog').close('saved');}catch(error){$('pending-error').textContent=error.message;pendingFocus=$('pending-save');}}));
+async function enterProject(id){await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
+$('project-open').addEventListener('click',async()=>{const id=$('project-select').value;if(id===activeProject)return;if(await allowProjectChange($('project-open')))await act(()=>enterProject(id));});
+$('project-create').addEventListener('click',async()=>{if(!await allowProjectChange($('project-create')))return;await act(async()=>{
+ const selected=$('project-source').value,[kind,name]=selected.split(':');const source=selected==='approved'?null:{project:activeProject,kind:kind==='initial'?'initial':kind,name:name||null};
+ const result=await api('projects',{id:$('project-id').value,name:$('project-name').value,source});await enterProject(result.project.id);$('project-manager').querySelector('details').open=false;message('Projeto criado. Original preservado; guarde uma versão própria.');
+});});
 act(async()=>{await refresh();await load('preset');});
