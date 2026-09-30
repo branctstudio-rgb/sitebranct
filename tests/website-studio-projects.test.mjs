@@ -38,3 +38,12 @@ test('two projects survive restart and copying the entire stopped library to a n
   for(const id of ['first-project','second-project']){const s=await (await fetch(moved.url+'/api/state?project='+id)).json();assert.equal(s.project.id,id);assert.deepEqual(s.recipes,['v1']);assert.deepEqual(s.revisions,['v1']);const response=await fetch(moved.url+'/api/preview',{method:'POST',headers:{origin:moved.url,'content-type':'application/json','x-studio-token':s.token,'x-studio-project':id},body:JSON.stringify({name:'v1'})});assert.equal(response.status,200);const links=await response.json();for(const url of Object.values(links.urls))assert.equal((await fetch(url)).status,200);}
  }finally{await app.stop();if(moved)await moved.stop();}
 });
+test('creation limits match recipe authority and errors identify the project fields',async()=>{
+ const {root,app,post}=await harness();try{
+  assert.equal((await post('legacy','projects',{id:'a'.repeat(36),name:'N'.repeat(48),source:null})).status,201);
+  for(const [id,name,field] of [['b'.repeat(37),'Normal','projectId'],['good-id','N'.repeat(49),'projectName'],['../invalid','Normal','projectId']]){
+   const r=await post('legacy','projects',{id,name,source:null});assert.equal(r.status,422);assert.ok(Object.hasOwn((await r.json()).errors,field));
+  }
+  assert.deepEqual(fs.readdirSync(path.join(root,'projects')),['a'.repeat(36)]);
+ }finally{await app.stop();}
+});

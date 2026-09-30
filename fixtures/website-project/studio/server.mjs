@@ -17,6 +17,10 @@ const slug=name=>{
   if(typeof name!=='string'||!/^[a-z][a-z0-9-]{1,50}$/.test(name)||/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(name))fail('versionName: use 2–51 letras minúsculas, números ou hífen.');
   return name;
 };
+const projectSlug=id=>{
+  if(typeof id!=='string'||!/^[a-z][a-z0-9-]{1,35}$/.test(id)||/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(id))fail('projectId: use 2–36 letras minúsculas, números ou hífen.');
+  return id;
+};
 const write=(file,value)=>fs.writeFileSync(file,JSON.stringify(value,null,2)+'\n',{flag:'wx'});
 const close=server=>new Promise((resolve,reject)=>{
   server.close(error=>error&&error.code!=='ERR_SERVER_NOT_RUNNING'?reject(error):resolve());
@@ -83,7 +87,7 @@ export async function startStudio(projectRoot){
   }
   const legacy=workspace(root),spaces=new Map([['legacy',legacy]]);
   function metadata(id){
-    slug(id);const file=child('projects',id,'project.json');const data=JSON.parse(fs.readFileSync(file,'utf8'));
+    projectSlug(id);const file=child('projects',id,'project.json');const data=JSON.parse(fs.readFileSync(file,'utf8'));
     if(data.schema!==1||data.id!==id||typeof data.name!=='string'||!data.name.trim()||data.publicationAllowed!==false)fail('project: registo inválido.');
     return data;
   }
@@ -95,9 +99,9 @@ export async function startStudio(projectRoot){
   }
   const projects=()=>[{id:'legacy',name:'Legado 42/43'},...fs.readdirSync(child('projects'),{withFileTypes:true}).filter(e=>e.isDirectory()&&!e.isSymbolicLink()&&fs.existsSync(path.join(root,'projects',e.name,'project.json'))).map(e=>{const m=metadata(e.name);return {id:m.id,name:m.name};}).sort((a,b)=>a.id.localeCompare(b.id))];
   function createProject(input){
-    const id=slug(input.id);if(id==='legacy')fail('project: identificador reservado.',409);
-    if(typeof input.name!=='string'||input.name!==input.name.trim()||!input.name||input.name.length>80||/[\x00-\x1f<>]/.test(input.name))fail('project: nome simples de 1–80 caracteres obrigatório.');
-    const destination=child('projects',id);if(fs.existsSync(destination))fail('project: identificador já existe; nada foi sobrescrito.',409);
+    const id=projectSlug(input.id);if(id==='legacy')fail('projectId: identificador reservado.',409);
+    if(typeof input.name!=='string'||input.name!==input.name.trim()||!input.name||input.name.length>48||/[\x00-\x1f<>]/.test(input.name))fail('projectName: nome simples de 1–48 caracteres obrigatório.');
+    const destination=child('projects',id);if(fs.existsSync(destination))fail('projectId: identificador já existe; nada foi sobrescrito.',409);
     let source=legacy,recipe=structuredClone(preset),provenance={kind:'approved-preset'};
     if(input.source!==null){
       const s=input.source;if(!s||typeof s!=='object'||Object.keys(s).sort().join()!=='kind,name,project'||!['initial','recipe','revision'].includes(s.kind))fail('project: origem fechada inválida.');

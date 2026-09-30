@@ -52,7 +52,8 @@ function errors(data){
    const normalized=key.replace(/\[\d+\]$/,'');
    const keys=normalized==='routes'?['routes.home','routes.contact']:normalized==='palette'?['palette.ink','palette.bg','palette.surface','palette.accent']:[normalized];
    for(const field of keys){
-     const node=field==='versionName'?$('version-name'):$(field),target=$(field+'-error');
+   const resolved={projectId:'project-id',projectName:'project-name'}[field]||field;
+   const node=resolved==='versionName'?$('version-name'):$(resolved),target=$(resolved+'-error');
      if(node&&target){target.textContent=error;node.setAttribute('aria-invalid','true');focus??=node;}
    }
  }
