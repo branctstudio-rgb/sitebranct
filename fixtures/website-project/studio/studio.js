@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const get=(object,key)=>key.split('.').reduce((value,k)=>value[k],object);
 const put=(object,key,value)=>{const keys=key.split('.');const leaf=keys.pop();keys.reduce((o,k)=>o[k],object)[leaf]=value;};
-let state,recipe,dirty=false,busy=false,stopped=false,pendingFocus,selection,selectionURL,selectionEpoch=0;
+let state,recipe,dirty=false,busy=false,stopped=false,pendingFocus,selection,selectionURL,selectionEpoch=0,mediaEpoch=0;
 const sections=[
  ['01','Identidade & direção','O que identifica o projeto, sem mudar a estrutura.',[
  ['id','Identificador do projeto'],['name','Nome da marca'],['origin','Origem de referência','url'],
@@ -38,9 +38,10 @@ function fields(){
  }resourcePreview();
 }
 function collect(){const next=structuredClone(recipe);for(const [,, ,items] of sections)for(const [key,,type] of items)put(next,key,type==='checkbox'?$(key).checked:type==='steps'?$(key).value.split(/\r?\n/):$(key).value);next.version=2;next.assets.root='../library';if(next.assets.heroDecorative)next.assets.heroAlt='';return next;}
-function resourcePreview(){
+function resourcePreview(reload=false){
  if(!$('assets.logo'))return;
- for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview'),src='/api/media?kind='+kind+'&path='+encodeURIComponent($('assets.'+kind).value);if(img.getAttribute('src')!==src)img.src=src;img.alt=kind==='logo'?'Prévia do logótipo':$('assets.heroDecorative').checked?'':$('assets.heroAlt').value;}
+ if(reload)mediaEpoch++;
+ for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview'),src='/api/media?kind='+kind+'&path='+encodeURIComponent($('assets.'+kind).value)+'&view='+mediaEpoch;if(img.getAttribute('src')!==src)img.src=src;img.alt=kind==='logo'?'Prévia do logótipo':$('assets.heroDecorative').checked?'':$('assets.heroAlt').value;}
  $('assets.heroAlt').disabled=busy||stopped||$('assets.heroDecorative').checked;
  $('font-sample').dataset.body=$('fonts.body').value;$('font-sample').dataset.display=$('fonts.display').value;
 }
@@ -104,10 +105,10 @@ $('shutdown').addEventListener('click',()=>act(async()=>{
  if(!confirm('Encerrar esta bancada e as suas prévias? As receitas e versões ficam guardadas.'))return;
  const result=await api('stop',{});stopped=true;dirty=false;$('preview-result').hidden=true;message('Encerramento solicitado. Consulta o recibo: '+result.receipt);
 }));
-function clearSelection(){selectionEpoch++;selection=undefined;if(selectionURL)URL.revokeObjectURL(selectionURL);selectionURL=undefined;$('import-file').value='';$('import-preview').removeAttribute('src');$('import-preview').hidden=true;$('import-confirm').disabled=true;$('import-progress').value=0;}
+function clearSelection(resetInput=true){selectionEpoch++;selection=undefined;if(selectionURL)URL.revokeObjectURL(selectionURL);selectionURL=undefined;if(resetInput)$('import-file').value='';$('import-preview').removeAttribute('src');$('import-preview').hidden=true;$('import-confirm').disabled=true;$('import-progress').value=0;}
 $('import-cancel').addEventListener('click',()=>{clearSelection();$('import-status').textContent='Seleção cancelada. Nada foi gravado.';$('import-file').focus();});
 $('import-file').addEventListener('change',async()=>{
- const file=$('import-file').files[0];clearSelection();if(!file)return;const epoch=selectionEpoch;
+ const file=$('import-file').files[0];clearSelection(false);if(!file)return;const epoch=selectionEpoch;
  if(file.size>state.limits.bytes){$('import-status').textContent='Máximo 2 MiB por PNG. Nada foi gravado.';return;}
  if(!/\.png$/i.test(file.name)||!file.size){$('import-status').textContent='Escolha PNG estático. Outros formatos não são importados.';return;}
  $('import-status').textContent='A ler e verificar a seleção local…';$('import-progress').value=1;
@@ -123,7 +124,7 @@ $('import-file').addEventListener('change',async()=>{
 $('import-confirm').addEventListener('click',()=>act(async()=>{
  if(!selection)return;const next=collect(),kind=$('import-target').value;
  $('import-status').textContent='A validar e guardar no projeto…';$('import-progress').removeAttribute('value');
- try{const result=await api('import',selection);next.assets[kind]=result.path;await refresh();recipe=next;fields();dirty=true;clearSelection();$('import-progress').value=3;$('import-status').textContent='Recurso importado e selecionado. Guarde uma nova versão.';pendingFocus=$('assets.'+kind);}
+ try{const result=await api('import',selection);next.assets[kind]=result.path;await refresh();recipe=next;fields();resourcePreview(true);dirty=true;clearSelection();$('import-progress').value=3;$('import-status').textContent='Recurso importado e selecionado. Guarde uma nova versão.';pendingFocus=$('assets.'+kind);}
  catch(error){$('import-progress').value=1;$('import-status').textContent=error.message+' Corrija a seleção; a receita não foi alterada.';throw error;}
 }));
 for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview');img.addEventListener('error',()=>{$('asset-'+kind+'-status').textContent='Recurso ausente ou inválido. Selecione outro ou reimporte o original.';});img.addEventListener('load',()=>{$('asset-'+kind+'-status').textContent='Recurso local disponível.';});}

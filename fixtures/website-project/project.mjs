@@ -131,6 +131,10 @@ export function build(config, recipeDir) {
   }
   const extended=fs.readFileSync(path.join(root,'src/fonts/font-faces.css'),'utf8').replaceAll("'Bricolage Grotesque'",'bricolage').replaceAll("'Manrope'",'manrope').replaceAll('../fonts/bricolage-grotesque-latin-ext.woff2','bricolage-ext.woff2').replaceAll('../fonts/bricolage-grotesque-latin.woff2','bricolage.woff2').replaceAll('../fonts/manrope-latin-ext.woff2','manrope-ext.woff2').replaceAll('../fonts/manrope-latin.woff2','manrope.woff2');
   add('assets/project.css',extended+`\n:root{${Object.entries(c.palette).map(([k,v])=>`--${k}:${v};`).join('')}--font-body:'${c.fonts.body}';--font-display:'${c.fonts.display}';}\n.hero-copy,.header .logo{min-width:0}h1,h2,h3,p,.logo{overflow-wrap:anywhere}.header .logo{max-width:65%}.visual>img{object-fit:contain;background:var(--surface)}\n`);
+  // Only nonsquare imported PNGs need containment; preserve v1 and existing square-logo outputs byte for byte.
+  const logoBytes=files.get(logoPath);
+  if(c.version===2&&logoPath.endsWith('.png')&&logoBytes.length>=24&&logoBytes.readUInt32BE(16)!==logoBytes.readUInt32BE(20))
+    add('assets/project.css',Buffer.concat([files.get('assets/project.css'),Buffer.from('.header .logo img{object-fit:contain}\n')]));
   add('robots.txt','User-agent: *\nDisallow: /\n');
   // Empty by design: draft routes are never advertised for indexing.
   add('sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n');
