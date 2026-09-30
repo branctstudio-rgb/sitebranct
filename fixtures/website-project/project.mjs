@@ -64,7 +64,7 @@ function luminance(color) {
 export function contrast(a,b) { const x=luminance(a), y=luminance(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
 export function validate(config) {
   exact(config, ['version','kind','id','name','origin','locale','palette','fonts','assets','routes','content','navigation','sources'], 'receita');
-  if (config.version !== 1 || config.kind !== 'local-draft') fail('version/kind: apenas version=1 e kind=local-draft; publicação não suportada');
+  if (![1,2].includes(config.version) || config.kind !== 'local-draft') fail('version/kind: apenas version=1/2 e kind=local-draft; publicação não suportada');
   if (typeof config.id !== 'string' || !/^[a-z][a-z0-9-]{1,35}$/.test(config.id)) fail('id: usar 2–36 letras minúsculas, números ou hífen');
   text(config.name, 'name', 48);
   if (config.locale !== 'pt-PT') fail('locale: este contrato suporta pt-PT; não traduz conteúdo automaticamente');
@@ -74,9 +74,12 @@ export function validate(config) {
   for (const [a,b] of [['ink','bg'],['ink','surface'],['accent','bg'],['accent','surface']]) if (contrast(config.palette[a],config.palette[b]) < 4.5) fail(`palette: contraste ${a}/${b} abaixo de 4.5:1`);
   exact(config.fonts, ['body','display'], 'fonts');
   for (const v of Object.values(config.fonts)) if (!['manrope','bricolage'].includes(v)) fail('fonts: escolher manrope ou bricolage locais');
-  exact(config.assets, ['root','logo','hero','heroAlt','heroCaption'], 'assets');
+  exact(config.assets, ['root','logo','hero','heroAlt','heroCaption',...(config.version===2?['heroDecorative']:[])], 'assets');
   text(config.assets.root, 'assets.root', 1024); relative(config.assets.logo, 'assets.logo'); relative(config.assets.hero, 'assets.hero');
-  text(config.assets.heroAlt, 'assets.heroAlt'); text(config.assets.heroCaption, 'assets.heroCaption');
+  if(config.version===2&&typeof config.assets.heroDecorative!=='boolean')fail('assets.heroDecorative: escolha informativa ou decorativa.');
+  if(config.version===2&&config.assets.heroDecorative){if(config.assets.heroAlt!=='')fail('assets.heroAlt: imagem decorativa requer alt vazio.');}
+  else text(config.assets.heroAlt, 'assets.heroAlt');
+  text(config.assets.heroCaption, 'assets.heroCaption');
   exact(config.routes, ['home','contact'], 'routes');
   for (const value of Object.values(config.routes)) if (typeof value !== 'string' || !/^[a-z][a-z0-9-]{0,40}\.html$/u.test(value)) fail('routes: nomes HTML distintos, planos e portáveis obrigatórios');
   if (config.routes.home === config.routes.contact) fail('routes: home e contact devem ser diferentes');

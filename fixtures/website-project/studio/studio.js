@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const get=(object,key)=>key.split('.').reduce((value,k)=>value[k],object);
 const put=(object,key,value)=>{const keys=key.split('.');const leaf=keys.pop();keys.reduce((o,k)=>o[k],object)[leaf]=value;};
-let state,recipe,dirty=false,busy=false,stopped=false,pendingFocus;
+let state,recipe,dirty=false,busy=false,stopped=false,pendingFocus,selection,selectionURL,selectionEpoch=0;
 const sections=[
  ['01','Identidade & direção','O que identifica o projeto, sem mudar a estrutura.',[
  ['id','Identificador do projeto'],['name','Nome da marca'],['origin','Origem de referência','url'],
@@ -10,8 +10,8 @@ const sections=[
  ['palette.bg','Fundo','color'],['palette.surface','Superfície','color'],['palette.ink','Texto','color'],['palette.accent','Acento','color']]],
  ['02','As palavras certas','Texto simples; o gerador trata do HTML.',[
  ['content.eyebrow','Sobretítulo'],['content.headline','Título principal'],['content.description','Descrição','textarea'],['content.approachTitle','Título da abordagem'],['content.steps','Etapas · uma por linha','steps'],['content.contactTitle','Título do contacto'],['content.contactText','Texto do contacto','textarea'],['routes.home','Página inicial'],['routes.contact','Página de contacto'],['navigation.home','Navegação · início'],['navigation.approach','Navegação · abordagem'],['navigation.contact','Navegação · contacto'],['navigation.open','Nome acessível · abrir menu'],['navigation.close','Nome acessível · fechar menu']]],
- ['03','Recursos locais','Só referências do catálogo aprovado. Sem uploads.',[
- ['assets.logo','Logótipo','catalog'],['assets.hero','Imagem principal','catalog'],['assets.heroAlt','Descrição acessível da imagem','textarea'],['assets.heroCaption','Legenda da imagem','textarea']]]
+ ['03','Recursos locais','Catálogo aprovado e PNGs importados explicitamente neste projeto.',[
+ ['assets.logo','Logótipo','catalog'],['assets.hero','Imagem principal','catalog'],['assets.heroDecorative','Imagem decorativa','checkbox'],['assets.heroAlt','Descrição acessível da imagem','textarea'],['assets.heroCaption','Legenda da imagem','textarea']]]
 ];
 function el(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;}
 function message(text,error=false){$('status').textContent=text;$('status').dataset.state=error?'error':'ok';}
@@ -26,18 +26,24 @@ function fields(){
      const lab=el('label',label);lab.htmlFor=key;
      const input=el(['textarea','steps'].includes(type)?'textarea':['select','catalog'].includes(type)?'select':'input');
      input.id=key;input.name=key;input.disabled=busy;
-     if(input.tagName==='INPUT'){input.type=type==='url'?'url':'text';if(type==='color'){input.maxLength=7;input.placeholder='#0C7C8F';}}
-     if(input.tagName==='SELECT')for(const value of options||state.catalog[key.split('.')[1]]){const option=el('option',value);option.value=value;input.append(option);}
-     input.value=type==='steps'?get(recipe,key).join('\n'):get(recipe,key);
+     if(input.tagName==='INPUT'){input.type=type==='checkbox'?'checkbox':type==='url'?'url':'text';if(type==='color'){input.maxLength=7;input.placeholder='#0C7C8F';}}
+     if(input.tagName==='SELECT')for(const value of options||state.catalog[key.split('.')[1]]){const item=state.imported?.find(r=>r.path===value);const option=el('option',item?item.name+' · '+item.sha256.slice(0,8)+(item.available?'':' · ausente/alterado'):value);option.value=value;input.append(option);}
+     if(type==='checkbox')input.checked=Boolean(get(recipe,key));else input.value=type==='steps'?get(recipe,key).join('\n'):get(recipe,key);
      input.setAttribute('aria-describedby',key+'-error');
-     input.addEventListener('input',()=>{dirty=true;input.removeAttribute('aria-invalid');$(key+'-error').textContent='';});
+     input.addEventListener('input',()=>{dirty=true;input.removeAttribute('aria-invalid');$(key+'-error').textContent='';resourcePreview();});
      const error=el('span',undefined,'error');error.id=key+'-error';box.append(lab,input,error);grid.append(box);
    }
-   if(n==='03')grid.append(el('p','Assets e proveniência vêm da receita BRANCT versionada. A inclusão de recursos novos exige revisão fora desta bancada.','asset-note'));
+   if(n==='03')grid.append(el('p','O logo acompanha o nome visível da marca, por isso tem alt vazio para evitar repetição. A imagem principal requer descrição ou escolha explícita de decorativa. Importar não concede direitos nem autorização para publicar.','asset-note'));
    section.append(grid);$('fields').append(section);
- }
+ }resourcePreview();
 }
-function collect(){const next=structuredClone(recipe);for(const [,, ,items] of sections)for(const [key,,type] of items)put(next,key,type==='steps'?$(key).value.split(/\r?\n/):$(key).value);return next;}
+function collect(){const next=structuredClone(recipe);for(const [,, ,items] of sections)for(const [key,,type] of items)put(next,key,type==='checkbox'?$(key).checked:type==='steps'?$(key).value.split(/\r?\n/):$(key).value);next.version=2;next.assets.root='../library';if(next.assets.heroDecorative)next.assets.heroAlt='';return next;}
+function resourcePreview(){
+ if(!$('assets.logo'))return;
+ for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview'),src='/api/media?kind='+kind+'&path='+encodeURIComponent($('assets.'+kind).value);if(img.getAttribute('src')!==src)img.src=src;img.alt=kind==='logo'?'Prévia do logótipo':$('assets.heroDecorative').checked?'':$('assets.heroAlt').value;}
+ $('assets.heroAlt').disabled=busy||stopped||$('assets.heroDecorative').checked;
+ $('font-sample').dataset.body=$('fonts.body').value;$('font-sample').dataset.display=$('fonts.display').value;
+}
 function errors(data){
  let focus;
  for(const [key,error] of Object.entries(data.errors||{})){
@@ -58,7 +64,7 @@ async function act(fn){
  if(busy||stopped)return;busy=true;document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=true);
  $('recipe-form').setAttribute('aria-busy','true');document.querySelectorAll('.error').forEach(n=>n.textContent='');document.querySelectorAll('[aria-invalid]').forEach(n=>n.removeAttribute('aria-invalid'));
  try{await fn();}catch(error){if($('status').dataset.state!=='error')message('Não foi possível concluir: '+error.message,true);}
- finally{busy=false;$('recipe-form').removeAttribute('aria-busy');document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=stopped);pendingFocus?.focus();pendingFocus=undefined;}
+ finally{busy=false;$('recipe-form').removeAttribute('aria-busy');document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=stopped);$('import-confirm').disabled=stopped||!selection;resourcePreview();pendingFocus?.focus();pendingFocus=undefined;}
 }
 async function refresh(){
  state=await api('state');
@@ -98,5 +104,28 @@ $('shutdown').addEventListener('click',()=>act(async()=>{
  if(!confirm('Encerrar esta bancada e as suas prévias? As receitas e versões ficam guardadas.'))return;
  const result=await api('stop',{});stopped=true;dirty=false;$('preview-result').hidden=true;message('Encerramento solicitado. Consulta o recibo: '+result.receipt);
 }));
+function clearSelection(){selectionEpoch++;selection=undefined;if(selectionURL)URL.revokeObjectURL(selectionURL);selectionURL=undefined;$('import-file').value='';$('import-preview').removeAttribute('src');$('import-preview').hidden=true;$('import-confirm').disabled=true;$('import-progress').value=0;}
+$('import-cancel').addEventListener('click',()=>{clearSelection();$('import-status').textContent='Seleção cancelada. Nada foi gravado.';$('import-file').focus();});
+$('import-file').addEventListener('change',async()=>{
+ const file=$('import-file').files[0];clearSelection();if(!file)return;const epoch=selectionEpoch;
+ if(file.size>state.limits.bytes){$('import-status').textContent='Máximo 2 MiB por PNG. Nada foi gravado.';return;}
+ if(!/\.png$/i.test(file.name)||!file.size){$('import-status').textContent='Escolha PNG estático. Outros formatos não são importados.';return;}
+ $('import-status').textContent='A ler e verificar a seleção local…';$('import-progress').value=1;
+ try{
+  const bytes=new Uint8Array(await file.arrayBuffer());if(epoch!==selectionEpoch)return;
+  if([137,80,78,71,13,10,26,10].some((b,i)=>bytes[i]!==b))throw new Error('Assinatura PNG inválida.');
+  selectionURL=URL.createObjectURL(file);const img=$('import-preview');img.src=selectionURL;await img.decode();if(epoch!==selectionEpoch)return;
+  if(img.naturalWidth>state.limits.width||img.naturalHeight>state.limits.height)throw new Error('Máximo 2048×2048 píxeis.');
+  let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  selection={name:file.name,data:btoa(binary)};img.hidden=false;$('import-confirm').disabled=busy||stopped;$('import-status').textContent='Pronto para importar. Ainda não foi gravado.';
+ }catch(error){if(epoch!==selectionEpoch)return;clearSelection();$('import-status').textContent=error.message+' Nada foi gravado.';}
+});
+$('import-confirm').addEventListener('click',()=>act(async()=>{
+ if(!selection)return;const next=collect(),kind=$('import-target').value;
+ $('import-status').textContent='A validar e guardar no projeto…';$('import-progress').removeAttribute('value');
+ try{const result=await api('import',selection);next.assets[kind]=result.path;await refresh();recipe=next;fields();dirty=true;clearSelection();$('import-progress').value=3;$('import-status').textContent='Recurso importado e selecionado. Guarde uma nova versão.';pendingFocus=$('assets.'+kind);}
+ catch(error){$('import-progress').value=1;$('import-status').textContent=error.message+' Corrija a seleção; a receita não foi alterada.';throw error;}
+}));
+for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview');img.addEventListener('error',()=>{$('asset-'+kind+'-status').textContent='Recurso ausente ou inválido. Selecione outro ou reimporte o original.';});img.addEventListener('load',()=>{$('asset-'+kind+'-status').textContent='Recurso local disponível.';});}
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 act(async()=>{await refresh();await load('preset');});

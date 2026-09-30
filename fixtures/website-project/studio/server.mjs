@@ -4,8 +4,9 @@ import path from 'node:path';
 import http from 'node:http';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {readRecipe,build,generate,verify,noLinks} from '../project.mjs';
+import {readRecipe,build,generate,verify,noLinks,validate} from '../project.mjs';
 import {serve} from '../preview.mjs';
+import {library,limits} from './library.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const toolRoot=path.resolve(here,'../../..');
@@ -54,17 +55,24 @@ export async function startStudio(projectRoot){
     'fixtures/website-base/site.css','fixtures/website-base/navigation.js',
     ...['manrope','bricolage-grotesque'].flatMap(f=>['latin','latin-ext'].map(s=>`src/fonts/${f}-${s}.woff2`))])];
   const pins=approvedInputs.map(name=>{const file=path.join(toolRoot,name);noLinks(file);return {file,sha256:digest(fs.readFileSync(file))};});
-  function checkRecipe(recipe){
+  const resources=library(root,toolRoot,approvedInputs);
+  function checkRecipe(recipe,{revision=false,allowMissing=false}={}){
     for(const pin of pins){noLinks(pin.file);if(digest(fs.readFileSync(pin.file))!==pin.sha256)fail('assets: fonte aprovada mudou; reiniciar após revisão.');}
-    if(recipe?.assets?.root!==preset.assets.root)fail('assets.root: a bancada usa apenas a raiz aprovada.');
-    for(const kind of ['logo','hero'])if(recipe?.assets?.[kind]!==preset.assets[kind])fail(`assets.${kind}: escolha um recurso do catálogo aprovado.`);
+    const portable=recipe?.version===2;
+    if(recipe?.assets?.root!==(portable?(revision?'../../library':'../library'):preset.assets.root))fail('assets.root: a bancada usa apenas a raiz aprovada.');
+    for(const kind of ['logo','hero'])if(recipe?.assets?.[kind]!==preset.assets[kind]){
+      const match=portable&&/^imports\/([a-f0-9]{64})\.png$/.exec(recipe?.assets?.[kind]);
+      if(!match)fail(`assets.${kind}: escolha um recurso do catálogo aprovado.`);
+      try{if(allowMissing)resources.record(match[1]);else resources.read(recipe.assets[kind]);}catch(error){fail(`assets.${kind}: ${error.message}`);}
+    }
     if(JSON.stringify(recipe.sources)!==JSON.stringify(preset.sources))fail('sources: a proveniência aprovada não pode ser substituída.');
-    return build(recipe,loaded.dir).config; // Original complete contract, no replacement validator.
+    if(allowMissing)return validate(recipe);
+    return build(recipe,portable?path.join(root,revision?'revisions/placeholder':'recipes'):loaded.dir).config;
   }
   const revision=name=>child('revisions',slug(name));
   const readRevision=name=>{
     const dir=revision(name),recipeFile=child('revisions',name,'recipe.json');
-    const recipe=checkRecipe(readRecipe(recipeFile).config),site=child('revisions',name,'site');
+    const recipe=checkRecipe(readRecipe(recipeFile).config,{revision:true}),site=child('revisions',name,'site');
     verify(recipe,dir,site);
     return {recipe,recipeFile,dir,site};
   };
@@ -97,7 +105,7 @@ export async function startStudio(projectRoot){
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');res.setHeader('Referrer-Policy','no-referrer');
-    res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+    res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
     let releaseOperation;
     try{
       if(!safeOrigin(req,[new URL(origin).host]))fail('Origem externa ou Host inválido.',403);
@@ -109,13 +117,20 @@ export async function startStudio(projectRoot){
       if(!req.url.startsWith('/')||/[\\%]/.test(req.url.split('?')[0]))fail('Recurso indisponível.',404);
       const url=new URL(req.url,origin),route=url.pathname;
       if(req.method==='GET'){
-        if(route==='/api/state')return send(res,200,{token,sessionId,recipe:preset,catalog:{logo:[preset.assets.logo],hero:[preset.assets.hero]},recipes:names('recipes'),revisions:names('revisions'),previews:[...previews.values()].map(p=>p.public),root});
+        if(route==='/api/state'){const imported=resources.list();return send(res,200,{token,sessionId,recipe:preset,catalog:{logo:[preset.assets.logo,...imported.map(r=>r.path)],hero:[preset.assets.hero,...imported.map(r=>r.path)]},imported,limits,recipes:names('recipes'),revisions:names('revisions'),previews:[...previews.values()].map(p=>p.public),root});}
         if(route==='/api/recipe'){
           const name=slug(url.searchParams.get('name'));
-          const file=child('recipes',name+'.json');return send(res,200,{name,recipe:checkRecipe(readRecipe(file).config)});
+          const file=child('recipes',name+'.json');return send(res,200,{name,recipe:checkRecipe(readRecipe(file).config,{allowMissing:true})});
         }
         if(route==='/api/revision'){
-          const name=slug(url.searchParams.get('name'));return send(res,200,{name,recipe:readRevision(name).recipe});
+          const name=slug(url.searchParams.get('name')),recipe=checkRecipe(readRecipe(child('revisions',name,'recipe.json')).config,{revision:true,allowMissing:true});if(recipe.version===2)recipe.assets.root='../library';return send(res,200,{name,recipe});
+        }
+        if(route==='/api/media'){
+          const kind=url.searchParams.get('kind'),name=url.searchParams.get('path');if(!['logo','hero'].includes(kind))fail('Recurso indisponível.',404);
+          let bytes,type;
+          if(name===preset.assets[kind]){const file=path.join(toolRoot,name);noLinks(file);bytes=fs.readFileSync(file);if(digest(bytes)!==pins.find(p=>p.file===file).sha256)fail('Fonte aprovada alterada.');type=path.extname(name)==='.svg'?'image/svg+xml':'image/webp';}
+          else {bytes=resources.read(name).bytes;type='image/png';}
+          res.writeHead(200,{'Content-Type':type});return res.end(bytes);
         }
         const assets={'/':'index.html','/studio.js':'studio.js','/studio.css':'studio.css',
           '/manrope.woff2':'../../../src/fonts/manrope-latin.woff2','/bricolage.woff2':'../../../src/fonts/bricolage-grotesque-latin.woff2'};
@@ -126,18 +141,22 @@ export async function startStudio(projectRoot){
       if(req.method!=='POST')fail('Método não permitido.',405);
       if(req.headers.origin!==origin||req.headers['x-studio-token']!==token||req.headers['content-type']!=='application/json')fail('Pedido não autorizado pela bancada.',403);
       const chunks=[];let bodyBytes=0;
-      for await(const bytes of req){bodyBytes+=bytes.length;if(bodyBytes>65536)fail('Pedido demasiado grande.',413);chunks.push(bytes);}
+      const maxBody=route==='/api/import'?Math.ceil(limits.bytes/3)*4+512:65536;
+      if(Number(req.headers['content-length'])>maxBody)fail('Pedido demasiado grande.',413);
+      for await(const bytes of req){bodyBytes+=bytes.length;if(bodyBytes>maxBody)fail('Pedido demasiado grande.',413);chunks.push(bytes);}
       let input;try{input=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));}catch{fail('Pedido JSON/UTF-8 inválido.');}
       if(!input||typeof input!=='object'||Array.isArray(input))fail('Pedido inválido.');
-      const keys={ '/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
+      const keys={ '/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
       if(!keys)fail('Operação indisponível.',404);
       if(Object.keys(input).sort().join()!==[...keys].sort().join())fail('Campos de operação inesperados.');
+      if(route==='/api/import'){const imported=resources.add(input.name,input.data);return send(res,imported.existing?200:201,imported);}
       if(route==='/api/validate'){checkRecipe(input.recipe);return send(res,200,{state:'PASS',message:'Receita válida. Ainda não foi gerada.'});}
       if(route==='/api/save'||route==='/api/generate'){
         const name=slug(input.name),recipe=checkRecipe(input.recipe);
         const target=route==='/api/save'?child('recipes',name+'.json'):revision(name);
         if(fs.existsSync(target))fail('versionName: esta versão já existe. Escolha um nome novo.',409);
         if(route==='/api/save'){write(target,recipe);return send(res,201,{state:'SAVED',name});}
+        if(recipe.version===2)recipe.assets.root='../../library';
         fs.mkdirSync(target);write(child('revisions',name,'recipe.json'),recipe);
         const site=child('revisions',name,'site');generate(recipe,target,site);
         const proof=verify(recipe,target,site);return send(res,201,{...proof,name});
