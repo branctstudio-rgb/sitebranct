@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "kind": "local-draft",
+  "id": "branct-local",
+  "name": "BRANCT.Tech",
+  "origin": "https://branct.com",
+  "locale": "pt-PT",
+  "palette": {
+    "bg": "#FAFAF9",
+    "surface": "#FFFFFF",
+    "ink": "#0D1B24",
+    "accent": "#0C7C8F"
+  },
+  "fonts": {
+    "body": "manrope",
+    "display": "bricolage"
+  },
+  "assets": {
+    "root": "../..",
+    "logo": "src/img/icon.svg",
+    "hero": "src/img/website-940.webp",
+    "heroAlt": "Ilustração de uma pessoa a trabalhar num portátil, com interfaces digitais num monitor e dispositivos móveis",
+    "heroCaption": "Ilustração do acervo BRANCT; não representa um projeto de cliente."
+  },
+  "routes": {
+    "home": "index.html",
+    "contact": "contactos.html"
+  },
+  "content": {
+    "eyebrow": "Serviço 01 · Websites Premium",
+    "headline": "Websites Premium",
+    "description": "Sem letras pequenas: isto é o que está dentro de um Website Premium da BRANCT.",
+    "approachTitle": "O que levas para casa.",
+    "steps": [
+      "Design & Conteúdo",
+      "Engenharia",
+      "Pós-lançamento"
+    ],
+    "contactTitle": "Diz-nos o que queres construir.",
+    "contactText": "Conta-nos o objetivo (e o prazo, se tiveres)"
+  },
+  "navigation": {
+    "home": "Início",
+    "approach": "Ficha técnica",
+    "contact": "Contactos",
+    "open": "Abrir navegação",
+    "close": "Fechar navegação"
+  },
+  "sources": [
+    {
+      "path": "CLAUDE.md",
+      "note": "Premium Light 2026: paleta, fontes e nome BRANCT.Tech. Estado de serviços não inferido."
+    },
+    {
+      "path": "website-premium.html",
+      "note": "Headline extraída do título/aria-label Websites Premium. Conteúdo comercial limitado à ficha técnica já existente."
+    },
+    {
+      "path": "src/i18n/pt.json",
+      "note": "wp.hero.eyebrow; wp.sheet.sub/title/c1.title/c2.title/c3.title; ct.hero.title; ct.form.message sem o marcador de campo obrigatório. Rótulos de navegação são operacionais, não traduções."
+    },
+    {
+      "path": "index.html",
+      "note": "Origem https://branct.com no canonical; não concede publicação. Nome BRANCT.Tech no header."
+    },
+    {
+      "path": "src/img/icon.svg",
+      "note": "Ícone existente da marca, copiado sem alteração."
+    },
+    {
+      "path": "src/img/website-940.webp",
+      "note": "Ilustração local copiada sem alteração; alt e legenda descrevem o asset observado, sem alegação de cliente."
+    },
+    {
+      "path": "src/fonts/font-faces.css",
+      "note": "Manrope e Bricolage Grotesque locais, subsets latin e latin-ext."
+    }
+  ]
+}

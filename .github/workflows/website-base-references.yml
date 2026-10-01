@@ -5,6 +5,16 @@
       "paths": [
         "fixtures/website-base/**",
         "tests/website-base*.mjs",
+        "fixtures/website-project/branct.json",
+        "fixtures/website-project/preview.mjs",
+        "fixtures/website-project/project.mjs",
+        "fixtures/website-project/delivery.mjs",
+        "fixtures/website-project/studio/**",
+        "fixtures/website-project/start-preview.ps1",
+        "fixtures/website-project/stop-preview.ps1",
+        "tests/website-project-browser.mjs",
+        "tests/website-project.test.mjs",
+        "tests/website-studio*.mjs",
         "docs/website-base/**",
         "package.json",
         "package-lock.json",
@@ -75,7 +85,21 @@
           "name": "Generator and orchestration contracts (no browser proof)",
           "id": "contracts",
           "shell": "bash",
-          "run": "set -euo pipefail\nnode --test --test-reporter=tap tests/website-base-generator.test.mjs tests/website-base-verification.test.mjs tests/website-base-publication.test.mjs 2>&1 | tee \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/contracts.tap\""
+          "run": "set -euo pipefail\nnode --test --test-reporter=tap tests/website-base-generator.test.mjs tests/website-base-verification.test.mjs tests/website-base-publication.test.mjs tests/website-project.test.mjs tests/website-base-project-ci.test.mjs 2>&1 | tee \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/contracts.tap\""
+        },
+        {
+          "name": "Verify local studio and static delivery contracts (Node only)",
+          "id": "studio-contracts",
+          "shell": "bash",
+          "run": "set -euo pipefail\nnode --test --test-reporter=tap tests/website-studio.test.mjs tests/website-studio-assets.test.mjs tests/website-studio-projects.test.mjs tests/website-studio-delivery.test.mjs 2>&1 | tee \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/studio-contracts.tap\""
+        },
+        {
+          "name": "Rebuild BRANCT from Git-only inputs without private dependencies",
+          "id": "project-receiver",
+          "env": {
+            "WEBSITE_PROJECT_HEAD": "${{ github.event.pull_request.head.sha }}"
+          },
+          "run": "node fixtures/website-base/verify-project-receiver.mjs \"$GITHUB_WORKSPACE\" \"$WEBSITE_PROJECT_HEAD\" \"$RUNNER_TEMP/website-base-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/project-receiver\""
         },
         {
           "name": "Resolve an existing browser home owned by the effective account",
