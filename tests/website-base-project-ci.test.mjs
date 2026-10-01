@@ -23,9 +23,35 @@ for(const name of projectPaths)test(`project CI selects a change only to ${name}
 });
 test('project CI extension is exact, not another project-wide wildcard',()=>{
   const added=workflow().on.pull_request.paths.filter(p=>p.includes('website-project'));
-  assert.deepEqual([...added].sort(),[...projectPaths].sort());
+  assert.deepEqual([...added].sort(),[...projectPaths,'fixtures/website-project/delivery.mjs','fixtures/website-project/studio/**'].sort());
   for(const name of ['fixtures/website-project/extra.json','tests/website-project-other.mjs','src/live.js'])
     assert.equal(workflow().on.pull_request.paths.some(p=>matches(name,p)),false,name);
+});
+
+test('studio CI selects only the local tool, delivery and their focal tests',()=>{
+ const paths=workflow().on.pull_request.paths;
+ for(const name of ['fixtures/website-project/delivery.mjs','fixtures/website-project/studio/server.mjs','fixtures/website-project/studio/library.mjs','fixtures/website-project/studio/index.html','tests/website-studio-delivery.test.mjs','tests/website-studio-projects.test.mjs','tests/website-studio-fixtures.mjs'])
+  assert.ok(paths.some(p=>matches(name,p)),`no studio campaign for ${name}`);
+ for(const name of ['fixtures/website-project/private/recipe.json','tests/customer-private.mjs','src/live.js'])assert.equal(paths.some(p=>matches(name,p)),false);
+});
+const studioTests=['website-studio.test.mjs','website-studio-assets.test.mjs','website-studio-projects.test.mjs','website-studio-delivery.test.mjs'];
+function runStudioContracts(w,failName){
+ const f=temp(),log=path.join(f,'website-base-45-1');fs.mkdirSync(log);
+ for(const name of studioTests)put(f,'tests/'+name,`import test from 'node:test';import assert from 'node:assert/strict';test('${name}',()=>assert.equal(${name===failName?'1':'0'},0));\n`);
+ const step=w.jobs.references.steps.find(s=>s.id==='studio-contracts');assert.ok(step,'studio Node contracts not scheduled');assert.equal(step.if,undefined);assert.equal(step['continue-on-error'],undefined);assert.equal(step.shell,'bash');
+ const env={...process.env,RUNNER_TEMP:f.replaceAll('\\','/'),GITHUB_RUN_ID:'45',GITHUB_RUN_ATTEMPT:'1'};delete env.NODE_TEST_CONTEXT;
+ const r=spawnSync(process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'bash',['--noprofile','--norc','-c',step.run],{cwd:f,encoding:'utf8',env,timeout:20000});assert.equal(r.error,undefined);
+ return {...r,tap:fs.readFileSync(path.join(log,'studio-contracts.tap'),'utf8')};
+}
+test('studio CI executes every Node suite and propagates each failing result through tee',()=>{
+ const w=workflow(),green=runStudioContracts(w);assert.equal(green.status,0,green.stderr);
+ for(const name of studioTests){assert.ok(green.tap.includes(name));const red=runStudioContracts(w,name);assert.notEqual(red.status,0,name);assert.ok(red.tap.includes('not ok'),name);}
+ assert.equal(w.jobs.references.steps.filter(s=>s.run?.includes('fixtures/website-base/verify.mjs ')).length,1,'existing browser campaign only');
+ assert.equal(w.jobs.references.steps.some(s=>s.run?.includes('node tests/website-studio-')&&s.run.includes('-browser.mjs')),false,'no additional browser campaign');
+});
+test('studio CI mutation exposes a hidden failed delivery test if pipefail is removed',()=>{
+ const w=workflow(),step=w.jobs.references.steps.find(s=>s.id==='studio-contracts');assert.ok(step);const before=step.run;step.run=before.replace('set -euo pipefail','set -eu');assert.notEqual(step.run,before);
+ const hidden=runStudioContracts(w,'website-studio-delivery.test.mjs');assert.equal(hidden.status,0);assert.match(hidden.tap,/not ok .*website-studio-delivery/);
 });
 
 function runContracts(w,failProject){
