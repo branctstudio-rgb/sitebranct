@@ -24,6 +24,25 @@ const projectDraftPaths=new Set([
   'tests/website-project-browser.mjs',
   'tests/website-project.test.mjs'
 ]);
+// WEBSITE42–45 adopts only these reviewed offline files, not their directories.
+const studioDraftPaths=new Set([
+  'fixtures/website-project/delivery.mjs',
+  'fixtures/website-project/studio/index.html',
+  'fixtures/website-project/studio/library.mjs',
+  'fixtures/website-project/studio/server.mjs',
+  'fixtures/website-project/studio/start.ps1',
+  'fixtures/website-project/studio/studio.css',
+  'fixtures/website-project/studio/studio.js',
+  'tests/website-studio-assets-browser.mjs',
+  'tests/website-studio-assets.test.mjs',
+  'tests/website-studio-browser.mjs',
+  'tests/website-studio-delivery-browser.mjs',
+  'tests/website-studio-delivery.test.mjs',
+  'tests/website-studio-fixtures.mjs',
+  'tests/website-studio-projects-browser.mjs',
+  'tests/website-studio-projects.test.mjs',
+  'tests/website-studio.test.mjs'
+]);
 function checkPublicationScope(repo,anchor){
   const git=(...args)=>execFileSync('git',['-C',repo,...args],{encoding:'utf8'}).trim();
   const committed=git('diff','--name-only',anchor,'HEAD').split('\n').filter(Boolean);
@@ -39,8 +58,8 @@ function checkPublicationScope(repo,anchor){
   assert.ok(changed.length>0);
   const result=classifyRecords(changed.map(p=>({status:'A',path:p})));
   assert.equal(result.accepted,true,JSON.stringify(result));assert.equal(result.deploy,false);
-  for(const p of changed)if(!projectDraftPaths.has(p))assert.match(p,/^(?:fixtures\/website-base\/|docs\/website-base\/|tests\/website-base[^/]*\.mjs$|\.github\/workflows\/website-base-references\.yml$)/);
-  assert.equal(git('diff',anchor,'--','src','*.html','deploy','package.json','package-lock.json','.github/workflows/deploy.yml','.github/workflows/universal-pr-gate.yml','.github/workflows/gate-integrity-sentinel.yml'), '');
+  for(const p of changed)if(!projectDraftPaths.has(p)&&!studioDraftPaths.has(p))assert.match(p,/^(?:fixtures\/website-base\/|docs\/website-base\/|tests\/website-base[^/]*\.mjs$|\.github\/workflows\/website-base-references\.yml$)/);
+  assert.equal(git('diff',anchor,'--','src','*.html','deploy','package.json','package-lock.json','.github/workflows/deploy.yml','.github/workflows/universal-pr-gate.yml','.github/workflows/gate-integrity-sentinel.yml',':(exclude)fixtures/website-project/studio/index.html'), '');
 }
 test('publication includes only recognized offline paths, no live payload or protected gate delta',()=>checkPublicationScope(root,base));
 
@@ -72,6 +91,35 @@ function projectScopeFixture(state,extra){
   if(state!=='untracked')f.git('add','.');
   if(state==='committed')f.git('commit','-m','project draft candidate');
   return f;
+}
+// Independent fixture inventory: every adopted file is named, never a prefix exemption.
+const studioFixturePaths=[
+ 'fixtures/website-project/delivery.mjs',
+ 'fixtures/website-project/studio/index.html',
+ 'fixtures/website-project/studio/library.mjs',
+ 'fixtures/website-project/studio/server.mjs',
+ 'fixtures/website-project/studio/start.ps1',
+ 'fixtures/website-project/studio/studio.css',
+ 'fixtures/website-project/studio/studio.js',
+ 'tests/website-studio-assets-browser.mjs',
+ 'tests/website-studio-assets.test.mjs',
+ 'tests/website-studio-browser.mjs',
+ 'tests/website-studio-delivery-browser.mjs',
+ 'tests/website-studio-delivery.test.mjs',
+ 'tests/website-studio-fixtures.mjs',
+ 'tests/website-studio-projects-browser.mjs',
+ 'tests/website-studio-projects.test.mjs',
+ 'tests/website-studio.test.mjs'
+];
+function studioScopeFixture(state,extra){
+ const f=scopeFixture();for(const p of studioFixturePaths)f.put(p,'offline studio fixture\n');
+ if(extra)f.put(extra,'outside exact studio set\n');
+ if(state!=='untracked')f.git('add','.');if(state==='committed')f.git('commit','-m','studio candidate');return f;
+}
+for(const state of ['untracked','staged','committed']){
+ test(`studio exact sixteen-path set accepted as offline including its sole HTML: ${state}`,()=>{const f=studioScopeFixture(state);assert.doesNotThrow(()=>checkPublicationScope(f.repo,f.anchor));});
+ for(const extra of ['fixtures/website-project/studio/extra.mjs','fixtures/website-project/studio/extra.html','fixtures/website-project/delivery.mjs.bak','tests/website-studio-private.test.mjs','index.html','src/live.js','package-lock.json','.github/workflows/universal-pr-gate.yml','.github/workflows/gate-integrity-sentinel.yml','.github/workflows/deploy.yml'])
+  test(`studio exact set rejects ${extra}: ${state}`,()=>{const f=studioScopeFixture(state,extra);assert.throws(()=>checkPublicationScope(f.repo,f.anchor));});
 }
 for(const state of ['untracked','staged','committed']){
   test(`project draft exact eight-path set accepted as non-deploy: ${state}`,()=>{
