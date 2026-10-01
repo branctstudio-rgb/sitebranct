@@ -83,7 +83,9 @@ async function refresh(project=activeProject){
  for(const name of state.revisions){
    const item=el('div',undefined,'revision'),buttons=el('div',undefined,'revision-actions');item.append(el('strong',name));
    const reopen=el('button','Reabrir receita');reopen.type='button';reopen.addEventListener('click',()=>act(()=>load('revision:'+name)));
-   const view=el('button','Ver páginas');view.type='button';view.addEventListener('click',()=>act(()=>preview(name)));buttons.append(reopen,view);item.append(buttons);$('revisions').append(item);
+   const view=el('button','Ver páginas');view.type='button';view.addEventListener('click',()=>act(()=>preview(name)));
+   const ready=state.deliveries.includes(name),deliver=el('button',ready?'Abrir entrega':'Preparar entrega');deliver.type='button';deliver.addEventListener('click',()=>act(async()=>{if(!ready){await api('prepare-delivery',{name});await refresh();}await delivery(name);}));
+   buttons.append(reopen,view,deliver);item.append(buttons);$('revisions').append(item);
  }
 }
 async function load(value){
@@ -98,6 +100,15 @@ async function preview(name){
  const stop=el('button','Encerrar esta prévia','secondary');stop.type='button';stop.addEventListener('click',()=>act(async()=>{await api('stop-preview',{id:result.id});panel.hidden=true;message('Prévia encerrada. Recibo guardado; ficheiros preservados.');}));panel.append(stop);
  message('Prévia local ativa. Não foi publicado nenhum site.');panel.scrollIntoView({block:'nearest'});
 }
+async function delivery(name){
+ const panel=$('delivery-result');panel.hidden=true;const result=await api('delivery-preview',{name});panel.replaceChildren();panel.hidden=false;
+ panel.append(el('h2',name+' · entrega estática verificada'),el('p','Projeto '+result.project+'. Cópia da versão guardada, não das alterações pendentes no editor. Rascunho noindex; não publicado.'));
+ panel.append(el('h3','Pasta independente'),el('p',result.destination,'delivery-path'),el('p','17 ficheiros: saída estática + instruções + verificador. Copia a pasta inteira para outro diretório; não precisa da bancada, receita ou biblioteca original.'));
+ panel.append(el('h3','Conferir e abrir'),el('p','Com Node já instalado, dentro dessa pasta:'),el('pre','node verify.mjs verify .\nnode verify.mjs serve .'),el('p','SHA-256 de delivery.json: '+result.manifestSha256,'delivery-path'),el('p','Guarda este hash separadamente. Confere integridade, não autenticidade. LEIA-ME.md descreve a futura hospedagem; só site/ é saída estática. Publicar exige autorização própria.'));
+ for(const [key,label] of [['home','Abrir início da entrega'],['contact','Abrir contacto da entrega']]){const link=el('a',label+' ↗');link.href=result.urls[key];link.target='_blank';link.rel='noopener noreferrer';panel.append(link);}
+ const stop=el('button','Encerrar prévia da entrega','secondary');stop.type='button';stop.addEventListener('click',()=>act(async()=>{await api('stop-preview',{id:result.id});panel.hidden=true;message('Prévia encerrada. Entrega e versões preservadas.');pendingFocus=$('status');}));panel.append(stop);
+ message('Entrega '+name+' verificada, sem publicação.');panel.scrollIntoView({block:'nearest'});pendingFocus=panel;
+}
 $('load').addEventListener('click',()=>act(()=>load($('recipe-source').value)));
 $('version-name').addEventListener('input',()=>{$('versionName-error').textContent='';$('version-name').removeAttribute('aria-invalid');});
 $('validate').addEventListener('click',()=>act(async()=>{await api('validate',{recipe:collect()});message('Receita válida. Ainda não foi gerada nem publicada.');}));
@@ -108,7 +119,7 @@ $('recipe-form').addEventListener('submit',event=>{event.preventDefault();act(as
 });});
 $('shutdown').addEventListener('click',()=>act(async()=>{
  if(!confirm('Encerrar esta bancada e as suas prévias? As receitas e versões ficam guardadas.'))return;
- const result=await api('stop',{});stopped=true;dirty=false;$('preview-result').hidden=true;message('Encerramento solicitado. Consulta o recibo: '+result.receipt);
+ const result=await api('stop',{});stopped=true;dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;message('Encerramento solicitado. Consulta o recibo: '+result.receipt);
 }));
 function clearSelection(resetInput=true){selectionEpoch++;selection=undefined;if(selectionURL)URL.revokeObjectURL(selectionURL);selectionURL=undefined;if(resetInput)$('import-file').value='';$('import-preview').removeAttribute('src');$('import-preview').hidden=true;$('import-confirm').disabled=true;$('import-progress').value=0;}
 $('import-cancel').addEventListener('click',()=>{clearSelection();$('import-status').textContent='Seleção cancelada. Nada foi gravado.';$('import-file').focus();});
@@ -142,7 +153,7 @@ async function allowProjectChange(opener){
 }
 $('pending-dialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
 $('pending-save').addEventListener('click',()=>act(async()=>{try{await api('save',{name:$('version-name').value,recipe:collect()});dirty=false;await refresh();$('pending-dialog').close('saved');}catch(error){$('pending-error').textContent=error.message;pendingFocus=$('pending-save');}}));
-async function enterProject(id){await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
+async function enterProject(id){await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
 $('project-open').addEventListener('click',async()=>{const id=$('project-select').value;if(id===activeProject)return;if(await allowProjectChange($('project-open')))await act(()=>enterProject(id));});
 $('project-create').addEventListener('click',async()=>{if(!await allowProjectChange($('project-create')))return;await act(async()=>{
  const selected=$('project-source').value,[kind,name]=selected.split(':');const source=selected==='approved'?null:{project:activeProject,kind:kind==='initial'?'initial':kind,name:name||null};

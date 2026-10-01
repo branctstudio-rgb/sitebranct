@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {readRecipe,build,generate,verify,noLinks,validate} from '../project.mjs';
 import {serve} from '../preview.mjs';
 import {library,limits} from './library.mjs';
+import {verifyDelivery,serveDelivery} from '../delivery.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const toolRoot=path.resolve(here,'../../..');
@@ -83,7 +84,20 @@ export async function startStudio(projectRoot){
     return {recipe,recipeFile,dir,site};
   };
   const names=folder=>fs.readdirSync(child(folder),{withFileTypes:true}).filter(e=>!e.isSymbolicLink()&&(folder==='recipes'?e.isFile()&&e.name.endsWith('.json'):e.isDirectory())).map(e=>folder==='recipes'?e.name.slice(0,-5):e.name).filter(n=>/^[a-z][a-z0-9-]{1,50}$/.test(n)).sort();
-  return {child,resources,checkRecipe,readRevision,revision,names,initial,project};
+  function prepareDelivery(name){
+    const rev=readRevision(name); // Exact rebuild verification, not trust in an output manifest alone.
+    const folder=child('deliveries');if(!fs.existsSync(folder))fs.mkdirSync(folder);
+    const dest=child('deliveries',name);if(fs.existsSync(dest))fail('Entrega já existe; abra a entrega ou gere outra versão. Nada foi sobrescrito.',409);
+    const built=build(rev.recipe,rev.dir),packed=new Map();
+    for(const [file,expected] of built.files){const actual=fs.readFileSync(path.join(rev.site,file));if(!actual.equals(expected))fail('Saída mudou durante a cópia.');packed.set('site/'+file,actual);}
+    packed.set('verify.mjs',fs.readFileSync(path.join(here,'../delivery.mjs')));
+    packed.set('LEIA-ME.md',Buffer.from(`# Entrega estática para revisão — ${project.id} / ${name}\n\nRascunho local. publicationAllowed=false. noindex preservado. Não publicar sem autorização separada.\n\nEsta pasta é independente da bancada, da receita e da origem dos assets. Usa apenas Node já instalado para verificar/abrir localmente:\n\n\`\`\`sh\nnode verify.mjs verify .\nnode verify.mjs serve .\n\`\`\`\n\nO segundo comando imprime dois URLs loopback; Ctrl+C encerra só esse processo. Não instala nem descarrega nada.\n\nPara uma futura hospedagem autorizada: servir somente o conteúdo de site/ como ficheiros estáticos, mantendo os caminhos relativos, tipos MIME e fontes/assets. Não enviar esta pasta exterior, verify.mjs, receitas ou sessões. Não executar builds, formulários ou APIs. Manter noindex e o aviso de rascunho até decisão explícita; esta entrega NÃO é uma aprovação de publicação.\n\nConferir o SHA-256 de delivery.json com o recibo independente guardado pelo operador. O verificador confere lista exata e hashes; não é assinatura nem defesa contra substituição coordenada do verificador e manifesto. Alterar qualquer ficheiro exige nova versão e nova entrega.\n`));
+    const manifest={schema:1,kind:'static-review-delivery',project:project.id,version:name,publicationAllowed:false,indexable:false,routes:rev.recipe.routes,files:[...packed].map(([file,bytes])=>({path:file,bytes:bytes.length,sha256:digest(bytes)}))};
+    fs.mkdirSync(dest);fs.mkdirSync(path.join(dest,'site'));fs.mkdirSync(path.join(dest,'site/assets'));
+    for(const [file,bytes] of packed)fs.writeFileSync(path.join(dest,file),bytes,{flag:'wx'});
+    write(path.join(dest,'delivery.json'),manifest);return verifyDelivery(dest);
+  }
+  return {child,resources,checkRecipe,readRevision,revision,names,initial,project,prepareDelivery};
   }
   const legacy=workspace(root),spaces=new Map([['legacy',legacy]]);
   function metadata(id){
@@ -161,7 +175,7 @@ export async function startStudio(projectRoot){
       const projectId=req.method==='POST'?(req.headers['x-studio-project']||'legacy'):(url.searchParams.get('project')||'legacy');
       const selected=space(projectId),{resources,checkRecipe,readRevision,revision,names,child:projectChild}=selected;
       if(req.method==='GET'){
-        if(route==='/api/state'){const imported=resources.list();return send(res,200,{token,sessionId,project:selected.project,projects:projects(),recipe:selected.initial,catalog:{logo:[preset.assets.logo,...imported.map(r=>r.path)],hero:[preset.assets.hero,...imported.map(r=>r.path)]},imported,limits,recipes:names('recipes'),revisions:names('revisions'),previews:[...previews.values()].filter(p=>p.public.project===projectId).map(p=>p.public),root});}
+        if(route==='/api/state'){const imported=resources.list();return send(res,200,{token,sessionId,project:selected.project,projects:projects(),recipe:selected.initial,catalog:{logo:[preset.assets.logo,...imported.map(r=>r.path)],hero:[preset.assets.hero,...imported.map(r=>r.path)]},imported,limits,recipes:names('recipes'),revisions:names('revisions'),deliveries:fs.existsSync(projectChild('deliveries'))?names('deliveries'):[],previews:[...previews.values()].filter(p=>p.public.project===projectId).map(p=>p.public),root});}
         if(route==='/api/recipe'){
           const name=slug(url.searchParams.get('name'));
           const file=projectChild('recipes',name+'.json');return send(res,200,{name,recipe:checkRecipe(readRecipe(file).config,{allowMissing:true})});
@@ -190,11 +204,21 @@ export async function startStudio(projectRoot){
       for await(const bytes of req){bodyBytes+=bytes.length;if(bodyBytes>maxBody)fail('Pedido demasiado grande.',413);chunks.push(bytes);}
       let input;try{input=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));}catch{fail('Pedido JSON/UTF-8 inválido.');}
       if(!input||typeof input!=='object'||Array.isArray(input))fail('Pedido inválido.');
-      const keys={ '/api/projects':['id','name','source'],'/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
+      const keys={ '/api/projects':['id','name','source'],'/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/prepare-delivery':['name'],'/api/delivery-preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
       if(!keys)fail('Operação indisponível.',404);
       if(Object.keys(input).sort().join()!==[...keys].sort().join())fail('Campos de operação inesperados.');
       if(route==='/api/projects')return send(res,201,createProject(input));
       if(route==='/api/import'){const imported=resources.add(input.name,input.data);return send(res,imported.existing?200:201,imported);}
+      if(route==='/api/prepare-delivery')return send(res,201,selected.prepareDelivery(slug(input.name)));
+      if(route==='/api/delivery-preview'){
+        const name=slug(input.name),dest=projectChild('deliveries',name),proof=verifyDelivery(dest);
+        if(proof.project!==projectId||proof.name!==name)fail('Identidade de entrega divergente.');
+        const existing=[...previews.values()].find(p=>p.public.delivery&&p.public.name===name&&p.public.project===projectId);if(existing)return send(res,200,existing.public);
+        const running=await serveDelivery(dest),id=randomUUID(),previewRecord=child('sessions',id+'.delivery.json');
+        const publicInfo={...proof,id,delivery:true,urls:running.urls};
+        try{write(previewRecord,{id,sessionId,name,project:projectId,kind:'delivery',startedAt:new Date().toISOString(),urls:running.urls});}catch(error){await close(running.server);throw error;}
+        previews.set(id,{server:running.server,record:previewRecord,public:publicInfo});return send(res,200,publicInfo);
+      }
       if(route==='/api/validate'){checkRecipe(input.recipe);return send(res,200,{state:'PASS',message:'Receita válida. Ainda não foi gerada.'});}
       if(route==='/api/save'||route==='/api/generate'){
         const name=slug(input.name),recipe=checkRecipe(input.recipe);
@@ -208,7 +232,7 @@ export async function startStudio(projectRoot){
       }
       if(route==='/api/preview'){
         const name=slug(input.name),rev=readRevision(name);
-        const existing=[...previews.values()].find(item=>item.public.name===name&&item.public.project===projectId);
+        const existing=[...previews.values()].find(item=>!item.public.delivery&&item.public.name===name&&item.public.project===projectId);
         if(existing)return send(res,200,existing.public);
         const id=randomUUID(),previewRecord=child('sessions',id+'.preview.json');
         const running=await serve(rev.recipeFile,rev.site,previewRecord);
