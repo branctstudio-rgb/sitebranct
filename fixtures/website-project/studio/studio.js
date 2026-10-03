@@ -22,10 +22,13 @@ function editorState(){
  $('editor-state').dataset.pending=String(dirty);
 }
 function nextVersion(name){
- const used=new Set([...state.recipes,...state.revisions,...state.deliveries]),match=name.match(/^(.*?)(\d+)$/);
- const prefix=match?match[1]:name+'-v';let n=match?Number(match[2])+1:2;
- if(!Number.isSafeInteger(n)||n>1000000)return 'revisao-'+Date.now();
- while(used.has(prefix+n))n++;return prefix+n;
+ const used=new Set([...state.recipes,...state.revisions,...state.deliveries]),match=name.match(/^(.*?)(\d{1,6})$/);
+ let prefix=match?match[1]:name+'-v',n=match?Number(match[2])+1:2;
+ for(;;n++){
+  const candidate=prefix+n;
+  if(!/^[a-z][a-z0-9-]{1,50}$/.test(candidate)||/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(candidate)){prefix='revisao-v';n=0;continue;}
+  if(!used.has(candidate))return candidate;
+ }
 }
 function fields(){
  $('fields').replaceChildren();
@@ -192,7 +195,7 @@ async function allowProjectChange(opener){
  if(decision!=='discard'&&decision!=='saved'){opener.focus();return false;}dirty=false;clearSelection();return true;
 }
 $('pending-dialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
-$('pending-save').addEventListener('click',()=>act(async()=>{try{await api('save',{name:$('version-name').value,recipe:collect()});dirty=false;await refresh();$('pending-dialog').close('saved');}catch(error){$('pending-error').textContent=error.message;pendingFocus=$('pending-save');}}));
+$('pending-save').addEventListener('click',()=>act(async()=>{try{const name=$('version-name').value;await api('save',{name,recipe:collect()});dirty=false;editorSource='Receita guardada: '+name;editorState();await refresh();$('pending-dialog').close('saved');}catch(error){$('pending-error').textContent=error.message;pendingFocus=$('pending-save');}}));
 async function enterProject(id){await closeComparison();await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
 $('project-open').addEventListener('click',async()=>{const id=$('project-select').value;if(id===activeProject)return;if(await allowProjectChange($('project-open')))await act(()=>enterProject(id));});
 $('project-create').addEventListener('click',async()=>{if(!await allowProjectChange($('project-create')))return;await act(async()=>{

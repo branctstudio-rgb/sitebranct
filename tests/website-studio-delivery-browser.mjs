@@ -119,6 +119,23 @@ for(const engine of engines.split(',')){
   assert.deepEqual(snapshot(path.join(root,'revisions/v1')),v1);assert.deepEqual(snapshot(path.join(root,'deliveries/v1')),delivery1);
   assert.match(fs.readFileSync(path.join(root,'deliveries/v2/site/index.html'),'utf8'),/Segunda proposta fictícia/);
   assert.ok(!fs.readFileSync(path.join(root,'deliveries/v2/site/index.html'),'utf8').includes('Alteração abandonada'));
+  // Saving before a rejected project change still updates the editor's truth.
+  await page.locator('#version-name').fill('guardada-antes-do-erro');
+  await page.getByText('Criar ou duplicar projeto',{exact:true}).click();
+  await page.locator('#project-name').fill('Projeto fictício');await page.locator('#project-id').fill('../invalid');
+  await page.locator('#project-create').click();await page.getByRole('dialog').waitFor();await page.locator('#pending-save').click();
+  await page.waitForFunction(()=>document.getElementById('status').dataset.state==='error'&&!document.getElementById('recipe-form').hasAttribute('aria-busy'));
+  const edgeFailures=[];
+  if(await page.locator('#editor-state').getAttribute('data-pending')!=='false')edgeFailures.push('pending-save did not update the saved editor state after project rejection');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root,'recipes/guardada-antes-do-erro.json'))).content.headline,'Alteração abandonada');
+  for(const name of ['a'.repeat(51),'com0']){
+   assert.equal((await post('save',{name,recipe})).status,201);await page.reload();await page.locator('#recipe-source').selectOption('recipe:'+name);await page.locator('#load').click();
+   await page.waitForFunction(()=>!document.getElementById('recipe-form').hasAttribute('aria-busy'));
+   const suggested=await page.locator('#version-name').inputValue();
+   if(!/^[a-z][a-z0-9-]{1,50}$/.test(suggested)||/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(suggested))edgeFailures.push('invalid suggested version: '+suggested);
+   else assert.equal((await post('save',{name:suggested,recipe})).status,201,'suggestion must also be accepted as a fresh name by the real server');
+  }
+  assert.deepEqual(edgeFailures,[]);
   report.cases.push({engine,version:browser.version(),case:'reopen-v1-edit-text-image-save-v2-compare-deliver-preserve-v1',state:'PASS'});
  }catch(error){report.errors.push({engine,error:error.stack});process.exitCode=1;}finally{if(browser)await browser.close();if(app)await app.stop();}
 }
