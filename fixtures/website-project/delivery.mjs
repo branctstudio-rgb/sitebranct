@@ -6,7 +6,7 @@ import http from 'node:http';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 const hash=b=>createHash('sha256').update(b).digest('hex');
-const fail=message=>{throw new Error(message);};
+const fail=(message,file)=>{throw Object.assign(new Error(message),{file});};
 function noLinks(file){
  let current=path.resolve(file);
  while(true){if(fs.lstatSync(current).isSymbolicLink())fail('Caminho ligado recusado.');const parent=path.dirname(current);if(parent===current)break;current=parent;}
@@ -19,14 +19,15 @@ function files(root,prefix=''){
 }
 const safe=name=>typeof name==='string'&&/^[a-zA-Z0-9_.\/-]+$/.test(name)&&name.split('/').every(s=>s&&s!=='.'&&s!=='..'&&!s.endsWith('.'));
 export function verifyDelivery(directory){
- const root=path.resolve(directory);noLinks(root);
+ const root=path.resolve(directory);noLinks(root);noLinks(path.join(root,'delivery.json'));
  const bytes=fs.readFileSync(path.join(root,'delivery.json')),m=JSON.parse(bytes.toString('utf8'));
  if(m.schema!==1||m.kind!=='static-review-delivery'||m.publicationAllowed!==false||m.indexable!==false||!Array.isArray(m.files)||m.files.length!==16)fail('Contrato de entrega inválido.');
  if(!/^[a-z][a-z0-9-]{1,35}$/.test(m.project)||!/^[a-z][a-z0-9-]{1,50}$/.test(m.version))fail('Identidade de entrega inválida.');
  const expected=m.files.map(f=>f.path);
  if(new Set(expected).size!==expected.length||expected.some(n=>!safe(n))||!expected.includes('verify.mjs')||!expected.includes('LEIA-ME.md')||expected.some(n=>!['verify.mjs','LEIA-ME.md'].includes(n)&&!n.startsWith('site/')))fail('Lista de ficheiros inválida.');
- if(JSON.stringify(files(root).sort())!==JSON.stringify([...expected,'delivery.json'].sort()))fail('Entrega: ficheiros ausentes ou extras.');
- for(const f of m.files){const b=fs.readFileSync(path.join(root,f.path));if(!Number.isSafeInteger(f.bytes)||b.length!==f.bytes||!(/^[a-f0-9]{64}$/.test(f.sha256))||hash(b)!==f.sha256)fail('Entrega: bytes/hash divergentes em '+f.path);}
+ const actual=files(root),missing=expected.find(n=>!actual.includes(n)),extra=actual.find(n=>![...expected,'delivery.json'].includes(n));
+ if(missing||extra)fail('Entrega: ficheiros ausentes ou extras. '+(missing?'Ausente: '+missing:'Extra: '+extra),missing||extra);
+ for(const f of m.files){const b=fs.readFileSync(path.join(root,f.path));if(!Number.isSafeInteger(f.bytes)||b.length!==f.bytes||!(/^[a-f0-9]{64}$/.test(f.sha256))||hash(b)!==f.sha256)fail('Entrega: bytes/hash divergentes em '+f.path,f.path);}
  const site=JSON.parse(fs.readFileSync(path.join(root,'site/manifest.json'),'utf8'));
  if(site.publicationAllowed!==false||site.indexable!==false||site.kind!=='local-draft'||!Array.isArray(site.files))fail('Manifesto estático inválido.');
  if(JSON.stringify(['site/manifest.json',...site.files.map(f=>'site/'+f.path)].sort())!==JSON.stringify(expected.filter(p=>p.startsWith('site/')).sort()))fail('Manifestos de ficheiros divergentes.');

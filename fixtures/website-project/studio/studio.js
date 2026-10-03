@@ -102,11 +102,13 @@ async function refresh(project=activeProject){
    const reopen=el('button','Reabrir receita');reopen.type='button';reopen.addEventListener('click',()=>act(()=>load('revision:'+name)));
    const view=el('button','Ver páginas');view.type='button';view.addEventListener('click',()=>act(()=>preview(name)));
    const ready=state.deliveries.includes(name),deliver=el('button',ready?'Abrir entrega':'Preparar entrega');deliver.type='button';deliver.addEventListener('click',()=>act(async()=>{if(!ready){await api('prepare-delivery',{name});await refresh();}await delivery(name);}));
-   buttons.append(reopen,view,deliver);item.append(buttons);$('revisions').append(item);
+   buttons.append(reopen,view,deliver);
+   if(ready){const check=el('button','Conferir entrega');check.type='button';check.addEventListener('click',()=>act(()=>conference(name)));buttons.append(check);}
+   item.append(buttons);$('revisions').append(item);
  }
 }
 async function load(value){
- if(dirty&&!confirm('Descartar apenas as alterações por guardar no editor? As versões guardadas mantêm-se.'))return;
+ if(dirty&&!confirm('Descartar apenas as alterações por guardar no editor? As versões guardadas mantêm-se.'))return false;
  recipe=value==='preset'?structuredClone(state.recipe):(await api((value.startsWith('recipe:')?'recipe':'revision')+'?name='+encodeURIComponent(value.split(':')[1]))).recipe;
  fields();dirty=false;editorSource=value==='preset'?'Ponto de partida':'Carregada: '+value.split(':')[1];
  if(value!=='preset')$('version-name').value=nextVersion(value.split(':')[1]);
@@ -143,8 +145,24 @@ async function preview(name){
  const stop=el('button','Encerrar esta prévia','secondary');stop.type='button';stop.addEventListener('click',()=>act(async()=>{await api('stop-preview',{id:result.id});panel.hidden=true;message('Prévia encerrada. Recibo guardado; ficheiros preservados.');}));panel.append(stop);
  message('Prévia local ativa. Não foi publicado nenhum site.');panel.scrollIntoView({block:'nearest'});
 }
+async function conference(name){
+ const panel=$('delivery-check');panel.hidden=true;panel.replaceChildren();delete panel.dataset.state;$('delivery-result').hidden=true;
+ const result=await api('check-delivery',{name});panel.dataset.state=result.state;
+ panel.append(el('h2',name+' · '+(result.state==='PASS'?'conferência concluída':'entrega bloqueada')),el('p','Projeto '+result.project+' · versão guardada '+name+' · '+new Date(result.checkedAt).toLocaleString()),el('p','Esta conferência não inclui edições pendentes no editor.'));
+ if(result.manifestSha256)panel.append(el('p','SHA-256 de delivery.json: '+result.manifestSha256,'delivery-path'));
+ const checks=el('ul');for(const check of result.checks)checks.append(el('li',(check.state==='PASS'?'OK':check.state==='FAIL'?'BLOQUEIO':'Não conferido')+' · '+check.label+(check.detail?' — '+check.detail:'')));panel.append(checks);
+ for(const issue of result.issues){const box=el('div',undefined,'check-issue');box.append(el('h3','Bloqueio · '+issue.file),el('p',issue.message),el('p','Campo: '+issue.field+'. '+issue.action));panel.append(box);}
+ panel.append(el('h3','Limites desta conferência'));for(const warning of result.warnings)panel.append(el('p',warning,'hint'));
+ const actions=el('div',undefined,'actions'),again=el('button','Conferir novamente','secondary'),correct=el('button',result.state==='PASS'?'Editar numa nova versão':'Corrigir em nova versão','secondary');again.type=correct.type='button';
+ again.addEventListener('click',()=>act(()=>conference(name)));
+ correct.addEventListener('click',()=>act(async()=>{const loaded=await load('revision:'+name);if(loaded===false)return;const field=result.issues[0]?.field;pendingFocus=$(field==='versionName'?'version-name':field)||$('editor');pendingFocus.scrollIntoView({block:'center'});}));
+ actions.append(again,correct);panel.append(actions);panel.hidden=false;panel.scrollIntoView({block:'nearest'});pendingFocus=panel;
+ message('Conferência '+name+': '+(result.state==='PASS'?'íntegra nesta leitura.':'bloqueada. '+result.issues[0].message),result.state!=='PASS');return result;
+}
 async function delivery(name){
- const panel=$('delivery-result');panel.hidden=true;const result=await api('delivery-preview',{name});panel.replaceChildren();panel.hidden=false;
+ const panel=$('delivery-result'),check=await conference(name);if(check.state!=='PASS'){pendingFocus=$('status');return;}
+ let result;try{result=await api('delivery-preview',{name});}catch(error){$('delivery-check').hidden=true;delete $('delivery-check').dataset.state;throw error;}
+ panel.replaceChildren();panel.hidden=false;
  panel.append(el('h2',name+' · entrega estática verificada'),el('p','Projeto '+result.project+'. Cópia da versão guardada, não das alterações pendentes no editor. Rascunho noindex; não publicado.'));
  panel.append(el('h3','Pasta independente'),el('p',result.destination,'delivery-path'),el('p','17 ficheiros: saída estática + instruções + verificador. Copia a pasta inteira para outro diretório; não precisa da bancada, receita ou biblioteca original.'));
  panel.append(el('h3','Conferir e abrir'),el('p','Com Node já instalado, dentro dessa pasta:'),el('pre','node verify.mjs verify .\nnode verify.mjs serve .'),el('p','SHA-256 de delivery.json: '+result.manifestSha256,'delivery-path'),el('p','Guarda este hash separadamente. Confere integridade, não autenticidade. LEIA-ME.md descreve a futura hospedagem; só site/ é saída estática. Publicar exige autorização própria.'));
@@ -196,7 +214,7 @@ async function allowProjectChange(opener){
 }
 $('pending-dialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
 $('pending-save').addEventListener('click',()=>act(async()=>{try{const name=$('version-name').value;await api('save',{name,recipe:collect()});dirty=false;editorSource='Receita guardada: '+name;editorState();await refresh();$('pending-dialog').close('saved');}catch(error){$('pending-error').textContent=error.message;pendingFocus=$('pending-save');}}));
-async function enterProject(id){await closeComparison();await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
+async function enterProject(id){await closeComparison();await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;$('delivery-check').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
 $('project-open').addEventListener('click',async()=>{const id=$('project-select').value;if(id===activeProject)return;if(await allowProjectChange($('project-open')))await act(()=>enterProject(id));});
 $('project-create').addEventListener('click',async()=>{if(!await allowProjectChange($('project-create')))return;await act(async()=>{
  const selected=$('project-source').value,[kind,name]=selected.split(':');const source=selected==='approved'?null:{project:activeProject,kind:kind==='initial'?'initial':kind,name:name||null};

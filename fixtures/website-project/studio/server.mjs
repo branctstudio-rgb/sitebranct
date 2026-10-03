@@ -116,7 +116,44 @@ export async function startStudio(projectRoot){
     for(const [file,bytes] of packed)fs.writeFileSync(path.join(dest,file),bytes,{flag:'wx'});
     write(path.join(dest,'delivery.json'),manifest);return verifyDelivery(dest);
   }
-  return {child,resources,checkRecipe,readRevision,revision,names,initial,project,prepareDelivery};
+  function checkDelivery(name){
+    const report={state:'FAIL',project:project.id,name,checkedAt:new Date().toISOString(),manifestSha256:null,publicationAllowed:false,
+      checks:[['integrity','Integridade e ficheiros'],['recipe','Receita e conteúdo contratado'],['pages','Páginas esperadas'],['navigation','Links e âncoras internas'],['resources','Imagens, estilos e fontes locais']].map(([id,label])=>({id,label,state:'NOT_CHECKED'})),issues:[],warnings:['Conferência estática, não aprovação visual ou de publicação. Resultado válido para os bytes observados nesta hora; abrir volta a conferir.']};
+    const passed=(id,detail)=>Object.assign(report.checks.find(c=>c.id===id),{state:'PASS',detail});let current='integrity';
+    try{
+      const dest=child('deliveries',name),proof=verifyDelivery(dest);
+      if(proof.project!==project.id||proof.name!==name)fail('Identidade de entrega divergente.');
+      report.manifestSha256=proof.manifestSha256;passed('integrity','17 ficheiros; lista exata, tamanhos e SHA-256.');
+      current='recipe';const rev=readRevision(name);verify(rev.recipe,rev.dir,path.join(dest,'site'));
+      // Only the existing generator's exact bytes reach the reference checker.
+      // This is not an HTML importer/parser or an execution environment.
+      passed('recipe','Saída idêntica à reconstrução da receita guardada; requisitos existentes preservados.');
+      const built=build(rev.recipe,rev.dir),docs=new Map(Object.values(proof.routes).map(route=>[route,built.files.get(route).toString('utf8')]));
+      current='pages';passed('pages',[...docs.keys()].join(' · '));
+      function reference(value,source,field){
+        const url=new URL(value,'http://local.invalid/'+source),target=url.pathname.slice(1);
+        if(url.origin!=='http://local.invalid'||!built.files.has(target))throw Object.assign(new Error('Referência local ausente ou externa: '+value),{file:'site/'+source,field});
+        if(url.hash&&(!docs.has(target)||!docs.get(target).includes('id="'+decodeURIComponent(url.hash.slice(1))+'"')))throw Object.assign(new Error('Âncora interna ausente: '+value),{file:'site/'+source,field});
+      }
+      current='navigation';let links=0;
+      for(const [route,html] of docs)for(const match of html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)){reference(match[1],route,'routes.home');links++;}
+      passed('navigation',links+' links e respetivas âncoras conferidos.');
+      current='resources';let count=0;
+      for(const [route,html] of docs)for(const match of html.matchAll(/<(img|script|link)\b[^>]*>/g)){
+        if(/\brel="canonical"/.test(match[0]))continue;
+        const value=match[0].match(/\b(?:src|href)="([^"]*)"/)?.[1];if(value){reference(value,route,'assets.hero');count++;}
+      }
+      for(const [file,bytes] of built.files)if(file.endsWith('.css'))for(const match of bytes.toString('utf8').matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)/g)){reference(match[1],file,'fonts.body');count++;}
+      passed('resources',count+' referências locais, incluindo imagens e fontes; nenhum pedido de rede executado.');report.state='PASS';
+    }catch(error){
+      report.checks.find(c=>c.id===current).state='FAIL';
+      const file=error.file||(error.message.match(/bytes diferentes em (.+)$/)?.[1]?'site/'+error.message.match(/bytes diferentes em (.+)$/)[1]:'delivery.json');
+      const field=error.field||(file.includes('/hero.')?'assets.hero':file.includes('/logo.')?'assets.logo':file.endsWith('.woff2')?'fonts.body':'versionName');
+      report.issues.push({severity:'blocker',file,field,message:error.message,action:'Reabrir a receita desta versão e gerar uma nova versão/entrega. A anterior não será sobrescrita.'});
+    }
+    return report;
+  }
+  return {child,resources,checkRecipe,readRevision,revision,names,initial,project,prepareDelivery,checkDelivery};
   }
   const legacy=workspace(root),spaces=new Map([['legacy',legacy]]);
   function metadata(id){
@@ -223,13 +260,15 @@ export async function startStudio(projectRoot){
       for await(const bytes of req){bodyBytes+=bytes.length;if(bodyBytes>maxBody)fail('Pedido demasiado grande.',413);chunks.push(bytes);}
       let input;try{input=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));}catch{fail('Pedido JSON/UTF-8 inválido.');}
       if(!input||typeof input!=='object'||Array.isArray(input))fail('Pedido inválido.');
-      const keys={ '/api/projects':['id','name','source'],'/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/prepare-delivery':['name'],'/api/delivery-preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
+      const keys={ '/api/projects':['id','name','source'],'/api/import':['name','data'],'/api/validate':['recipe'],'/api/save':['name','recipe'],'/api/generate':['name','recipe'],'/api/preview':['name'],'/api/prepare-delivery':['name'],'/api/check-delivery':['name'],'/api/delivery-preview':['name'],'/api/stop-preview':['id'],'/api/stop':[] }[route];
       if(!keys)fail('Operação indisponível.',404);
       if(Object.keys(input).sort().join()!==[...keys].sort().join())fail('Campos de operação inesperados.');
       if(route==='/api/projects')return send(res,201,createProject(input));
       if(route==='/api/import'){const imported=resources.add(input.name,input.data);return send(res,imported.existing?200:201,imported);}
       if(route==='/api/prepare-delivery')return send(res,201,selected.prepareDelivery(slug(input.name)));
+      if(route==='/api/check-delivery')return send(res,200,selected.checkDelivery(slug(input.name)));
       if(route==='/api/delivery-preview'){
+        const check=selected.checkDelivery(slug(input.name));if(check.state!=='PASS')fail(check.issues[0].message);
         const name=slug(input.name),dest=projectChild('deliveries',name),proof=verifyDelivery(dest);
         if(proof.project!==projectId||proof.name!==name)fail('Identidade de entrega divergente.');
         const existing=[...previews.values()].find(p=>p.public.delivery&&p.public.name===name&&p.public.project===projectId);if(existing)return send(res,200,existing.public);

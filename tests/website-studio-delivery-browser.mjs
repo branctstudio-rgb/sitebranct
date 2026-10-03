@@ -5,6 +5,43 @@ import {syntheticPNG} from './website-studio-fixtures.mjs';
 const [out,runtime,engines='chromium,firefox,webkit']=process.argv.slice(2);assert.ok(path.isAbsolute(out)&&!fs.existsSync(out));fs.mkdirSync(out,{recursive:true});
 const require=createRequire(path.join(runtime,'package.json')),pw=require('playwright');
 const report={mission:'WEBSITE45',state:'RUNNING',playwright:require('playwright/package.json').version,cases:[],screenshots:[],errors:[],external:[]};
+// Complete operator journey; only the initial defect is injected by this fixture.
+{
+ const qa={state:'RUNNING',cases:[],errors:[],external:[],screenshots:[]},folder=path.join(out,'conference');fs.mkdirSync(folder);
+ for(const engine of engines.split(',')){
+  let app,browser;try{
+   const dir=path.join(folder,engine);fs.mkdirSync(dir);const root=path.join(dir,'projects');fs.mkdirSync(root);app=await startStudio(root);
+   const s=await(await fetch(app.url+'/api/state')).json();const post=(route,body)=>fetch(app.url+'/api/'+route,{method:'POST',headers:{origin:app.url,'content-type':'application/json','x-studio-token':s.token},body:JSON.stringify(body)});
+   await post('generate',{name:'v1',recipe:s.recipe});await post('prepare-delivery',{name:'v1'});
+   const source=fs.readFileSync(path.join(root,'revisions/v1/site/manifest.json')),delivery=path.join(root,'deliveries/v1'),m=JSON.parse(fs.readFileSync(path.join(delivery,'delivery.json'))),hero=m.files.find(f=>f.path.startsWith('site/assets/hero.')).path;
+   browser=await pw[engine].launch();const context=await browser.newContext({viewport:{width:1440,height:900},reducedMotion:'reduce'});
+   await context.route('**/*',r=>{if(new URL(r.request().url()).hostname!=='127.0.0.1'){qa.external.push(r.request().url());return r.abort();}return r.continue();});
+   const page=await context.newPage();page.setDefaultTimeout(5000);page.on('pageerror',e=>qa.errors.push({engine,error:e.message}));await page.goto(app.url);
+   assert.equal(await page.getByRole('button',{name:'Conferir entrega',exact:true}).count(),1,'prepared delivery needs an actionable conference');
+   await page.getByRole('button',{name:'Conferir entrega',exact:true}).click();const panel=page.locator('#delivery-check');
+   await page.waitForFunction(()=>document.getElementById('delivery-check').dataset.state==='PASS');assert.match(await panel.textContent(),/v1/);assert.match(await panel.textContent(),/SHA-256/);
+   fs.unlinkSync(path.join(delivery,hero));
+   await panel.getByRole('button',{name:'Conferir novamente',exact:true}).click();await page.waitForFunction(()=>document.getElementById('delivery-check').dataset.state==='FAIL');
+   assert.match(await panel.textContent(),/assets\/hero/);assert.equal(await page.locator('#delivery-result').isVisible(),false);
+   const image=path.join(dir,'blocker-desktop.png');await panel.scrollIntoViewIfNeeded();await page.screenshot({path:image});qa.screenshots.push(image);
+   await panel.getByRole('button',{name:'Corrigir em nova versão',exact:true}).focus();await page.keyboard.press('Enter');
+   await page.waitForFunction(()=>document.activeElement.id==='assets.hero');assert.equal(await page.locator('#version-name').inputValue(),'v2');
+   await page.getByLabel('Título principal',{exact:true}).fill('Entrega fictícia revista pela bancada');await page.locator('#generate').click();await page.getByRole('heading',{name:'v2 · pronto a experimentar',exact:true}).waitFor();
+   const row=page.locator('.revision').filter({has:page.getByText('v2',{exact:true})});await row.getByRole('button',{name:'Preparar entrega',exact:true}).click();await page.getByRole('heading',{name:'v2 · entrega estática verificada',exact:true}).waitFor();
+   assert.equal(await panel.getAttribute('data-state'),'PASS');assert.match(await panel.textContent(),/v2/);assert.doesNotMatch(await panel.textContent(),/v1/);
+   for(const [width,height] of [[1440,900],[1024,768],[768,1024],[390,844],[360,800]]){
+    await page.setViewportSize({width,height});await panel.scrollIntoViewIfNeeded();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    assert.deepEqual(await panel.locator('button').evaluateAll(ns=>ns.filter(n=>{const r=n.getBoundingClientRect();return r.width<44||r.height<44;}).map(n=>n.textContent)),[]);
+    if(width===1440||width===390){const image=path.join(dir,'checked-'+width+'.png');await page.screenshot({path:image});qa.screenshots.push(image);}qa.cases.push({engine,width,height,state:'PASS'});
+   }
+   assert.deepEqual(fs.readFileSync(path.join(root,'revisions/v1/site/manifest.json')),source);assert.equal(fs.existsSync(path.join(delivery,hero)),false);
+   await page.route('**/api/check-delivery',r=>r.abort());await row.getByRole('button',{name:'Conferir entrega',exact:true}).click();await page.waitForFunction(()=>!document.getElementById('recipe-form').hasAttribute('aria-busy'));
+   assert.equal(await panel.isVisible(),false,'transport failure must clear obsolete PASS');assert.equal(await page.locator('#delivery-result').isVisible(),false);
+   qa.cases.push({engine,version:browser.version(),case:'check-pass-defect-action-edit-v2-recheck-preserve-v1-no-stale-pass',state:'PASS'});
+  }catch(error){qa.errors.push({engine,error:error.stack});process.exitCode=1;}finally{if(browser)await browser.close();if(app)await app.stop();}
+ }
+ qa.state=qa.errors.length||qa.external.length?'FAIL':'PASS';fs.writeFileSync(path.join(folder,'QA.json'),JSON.stringify(qa,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify(qa,null,2));
+}
 for(const engine of engines.split(',')){
  let app,browser;try{
   const dir=path.join(out,engine);fs.mkdirSync(dir);const root=path.join(dir,'projects');fs.mkdirSync(root);app=await startStudio(root);

@@ -7,6 +7,41 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {startStudio} from '../fixtures/website-project/studio/server.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex');
+test('delivery conference binds the complete checks to the exact saved project/version and manifest',async()=>{
+ const {root,app,post}=await harness();try{
+  await post('prepare-delivery',{name:'v1'});
+  const response=await post('check-delivery',{name:'v1'});assert.equal(response.status,200,await response.clone().text());const report=await response.json();
+  assert.equal(report.state,'PASS');assert.equal(report.project,'legacy');assert.equal(report.name,'v1');
+  assert.deepEqual(report.checks.map(c=>c.id),['integrity','recipe','pages','navigation','resources']);assert.ok(report.checks.every(c=>c.state==='PASS'));
+  assert.equal(report.manifestSha256,hash(fs.readFileSync(path.join(root,'deliveries/v1/delivery.json'))));assert.ok(Number.isFinite(Date.parse(report.checkedAt)));
+  assert.deepEqual(report.issues,[]);assert.equal(report.publicationAllowed,false);
+  assert.equal((await post('check-delivery',{name:'../v1'})).status,422);
+  assert.equal((await post('check-delivery',{name:'v1',root:os.tmpdir()})).status,422);
+ }finally{await app.stop();}
+});
+test('conference reports the missing image with correction field; regeneration preserves old revision and never reuses PASS',async()=>{
+ const {root,app,post}=await harness();try{
+  await post('prepare-delivery',{name:'v1'});assert.equal((await(await post('check-delivery',{name:'v1'})).json()).state,'PASS');
+  const dest=path.join(root,'deliveries/v1'),manifest=JSON.parse(fs.readFileSync(path.join(dest,'delivery.json'))),hero=manifest.files.find(f=>f.path.startsWith('site/assets/hero.')).path;
+  const revisionBefore=fs.readFileSync(path.join(root,'revisions/v1/site/manifest.json'));
+  fs.unlinkSync(path.join(dest,hero));
+  const report=await(await post('check-delivery',{name:'v1'})).json();assert.equal(report.state,'FAIL');assert.equal(report.issues[0].file,hero);assert.equal(report.issues[0].field,'assets.hero');assert.equal(report.issues[0].severity,'blocker');
+  assert.notEqual((await post('delivery-preview',{name:'v1'})).status,200);
+  const state=await(await fetch(app.url+'/api/state')).json();assert.equal((await post('generate',{name:'v2',recipe:state.recipe})).status,201);await post('prepare-delivery',{name:'v2'});
+  assert.equal((await(await post('check-delivery',{name:'v2'})).json()).state,'PASS');assert.equal((await(await post('check-delivery',{name:'v1'})).json()).state,'FAIL');
+  assert.deepEqual(fs.readFileSync(path.join(root,'revisions/v1/site/manifest.json')),revisionBefore);assert.equal(fs.existsSync(path.join(dest,hero)),false);
+ }finally{await app.stop();}
+});
+test('conference rejects coordinated hash updates and does not execute delivery scripts or accept another version',async()=>{
+ const {root,app,post}=await harness();try{
+  await post('prepare-delivery',{name:'v1'});const dest=path.join(root,'deliveries/v1'),file=path.join(dest,'site/index.html');
+  fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('id="abordagem"','id="broken"'));
+  const site=JSON.parse(fs.readFileSync(path.join(dest,'site/manifest.json')));for(const row of site.files){const bytes=fs.readFileSync(path.join(dest,'site',row.path));row.bytes=bytes.length;row.sha256=hash(bytes);}fs.writeFileSync(path.join(dest,'site/manifest.json'),JSON.stringify(site));
+  const m=JSON.parse(fs.readFileSync(path.join(dest,'delivery.json')));for(const row of m.files){const bytes=fs.readFileSync(path.join(dest,row.path));row.bytes=bytes.length;row.sha256=hash(bytes);}fs.writeFileSync(path.join(dest,'delivery.json'),JSON.stringify(m));
+  let report=await(await post('check-delivery',{name:'v1'})).json();assert.equal(report.state,'FAIL');assert.match(report.issues[0].message,/bytes diferentes/);assert.equal(report.issues[0].file,'site/index.html');
+  m.version='v2';fs.writeFileSync(path.join(dest,'delivery.json'),JSON.stringify(m));report=await(await post('check-delivery',{name:'v1'})).json();assert.equal(report.state,'FAIL');assert.match(report.issues[0].message,/Identidade/);
+ }finally{await app.stop();}
+});
 async function harness(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'website45-')),app=await startStudio(root);
  const state=await (await fetch(app.url+'/api/state')).json();
@@ -63,5 +98,19 @@ test('same revision names produce separate deliveries in each project',async()=>
  const {root,app,post}=await harness();try{
   for(const id of ['cedro45','linha45']){assert.equal((await post('projects',{id,name:id,source:null})).status,201);const s=await (await fetch(app.url+'/api/state?project='+id)).json();assert.equal((await post('generate',{name:'v1',recipe:s.recipe},id)).status,201);assert.equal((await post('prepare-delivery',{name:'v1'},id)).status,201);assert.ok(fs.readFileSync(path.join(root,'projects',id,'deliveries/v1/site/index.html'),'utf8').includes(id));}
   assert.equal(fs.existsSync(path.join(root,'deliveries/v1')),false);
+ }finally{await app.stop();}
+});
+test('conference names missing page/font and refuses extra files or a linked manifest before reading it',async t=>{
+ const {root,app,post}=await harness();try{
+  await post('prepare-delivery',{name:'v1'});const dest=path.join(root,'deliveries/v1'),manifestFile=path.join(dest,'delivery.json'),bytes=fs.readFileSync(manifestFile),m=JSON.parse(bytes);
+  for(const name of ['site/index.html',m.files.find(f=>f.path.endsWith('.woff2')).path]){
+   const file=path.join(dest,name),saved=fs.readFileSync(file);fs.unlinkSync(file);
+   const report=await(await post('check-delivery',{name:'v1'})).json();assert.equal(report.state,'FAIL');assert.equal(report.issues[0].file,name);
+   if(name.endsWith('.woff2'))assert.equal(report.issues[0].field,'fonts.body');fs.writeFileSync(file,saved);
+  }
+  const extra=path.join(dest,'unexpected.txt');fs.writeFileSync(extra,'synthetic');const report=await(await post('check-delivery',{name:'v1'})).json();assert.equal(report.state,'FAIL');assert.equal(report.issues[0].file,'unexpected.txt');fs.unlinkSync(extra);
+  const outside=path.join(root,'not-a-manifest.txt');fs.writeFileSync(outside,'NOT JSON — must not be read');fs.unlinkSync(manifestFile);
+  try{fs.symlinkSync(outside,manifestFile,'file');}catch(error){if(error.code!=='EPERM')throw error;t.diagnostic('File symlink unavailable: using directory junction at manifest path to verify pre-read refusal.');fs.symlinkSync(root,manifestFile,'junction');}
+  const {verifyDelivery}=await import('../fixtures/website-project/delivery.mjs');assert.throws(()=>verifyDelivery(dest),/Caminho ligado recusado/);
  }finally{await app.stop();}
 });
