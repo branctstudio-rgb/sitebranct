@@ -39,6 +39,25 @@ export function validateStudioRoot(projectRoot,{allowMissing=false}={}){
   return root;
 }
 
+// Resume only a recorded, live session on this exact local library. Never guess a PID.
+export async function findRunningStudio(projectRoot){
+  const root=validateStudioRoot(projectRoot,{allowMissing:true}),folder=path.join(root,'sessions');
+  if(!fs.existsSync(folder))return null;
+  noLinks(folder);const matches=[];
+  for(const name of fs.readdirSync(folder).filter(n=>/^[a-f0-9-]{36}\.json$/.test(n))){
+    const record=path.join(folder,name);noLinks(record);
+    if(fs.existsSync(record+'.stopped.json')){noLinks(record+'.stopped.json');continue;}
+    let info;try{info=JSON.parse(fs.readFileSync(record,'utf8'));}catch{fail('Registo de sessão ilegível. Preserve os ficheiros e verifique a pasta de sessões.');}
+    if(info.mission!=='WEBSITE42'||info.root!==root||name!==info.sessionId+'.json'||!/^http:\/\/127\.0\.0\.1:\d+$/.test(info.url))fail('Registo de sessão inválido; não iniciar outra bancada nesta pasta.');
+    let response;try{response=await fetch(info.url+'/api/state',{signal:AbortSignal.timeout(2000),redirect:'error'});}catch(error){if(error.cause?.code==='ECONNREFUSED')continue;fail('Não foi possível confirmar a sessão anterior. Não iniciar outra; verificar ou encerrar a sessão pelo seu registo.');}
+    const live=await response.json();
+    if(!response.ok||live.sessionId!==info.sessionId||live.root!==root||info.script!==fileURLToPath(import.meta.url))fail('Sessão ativa diferente. Encerre a bancada anterior pelo seu próprio registo antes de usar esta versão.');
+    matches.push({url:info.url,record});
+  }
+  if(matches.length>1)fail('Existem várias sessões nesta pasta. Encerre-as pelos respetivos registos antes de continuar.');
+  return matches[0]||null;
+}
+
 export async function startStudio(projectRoot){
   const root=validateStudioRoot(projectRoot);
   // All descendant writes are derived from closed names, never from a browser path.

@@ -65,8 +65,9 @@ async function api(route,body,project=activeProject){
 }
 async function act(fn){
  if(busy||stopped)return;busy=true;document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=true);
+ message('A processar…');
  $('recipe-form').setAttribute('aria-busy','true');document.querySelectorAll('.error').forEach(n=>n.textContent='');document.querySelectorAll('[aria-invalid]').forEach(n=>n.removeAttribute('aria-invalid'));
- try{await fn();}catch(error){if($('status').dataset.state!=='error')message('Não foi possível concluir: '+error.message,true);}
+ try{await fn();}catch(error){if($('status').dataset.state!=='error'){message('Não foi possível concluir. Verifique se a bancada continua aberta e tente novamente. As edições neste ecrã foram mantidas. Detalhe: '+error.message,true);pendingFocus=$('status');}}
  finally{busy=false;$('recipe-form').removeAttribute('aria-busy');document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=stopped);$('import-confirm').disabled=stopped||!selection;resourcePreview();pendingFocus?.focus();pendingFocus=undefined;}
 }
 async function refresh(project=activeProject){

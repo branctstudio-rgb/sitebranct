@@ -31,6 +31,41 @@ test('launcher returns promptly outside the checkout and owns a stoppable sessio
  try{const status=await Promise.race([exited,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('launcher did not exit within 15s')),15000);})]);assert.equal(status,0,stderr);const info=JSON.parse(stdout);assert.match(info.url,/^http:\/\/127\.0\.0\.1:\d+$/);assert.ok(Date.now()-started<15000);console.log('Launcher exited in '+(Date.now()-started)+'ms outside checkout');}
  finally{clearTimeout(timer);if(fs.existsSync(path.join(root,'sessions')))for(const record of fs.readdirSync(path.join(root,'sessions')).filter(n=>n.endsWith('.json')&&!n.endsWith('.stopped.json'))){const stopped=spawnSync(process.execPath,[server,'stop',path.join(root,'sessions',record)],{encoding:'utf8',timeout:10000});assert.equal(stopped.status,0,stopped.stderr);}}
 });
+test('opening the local entry twice resumes the same session and preserves saved projects',{skip:process.platform!=='win32'},async()=>{
+ const parent=fs.mkdtempSync(path.join(os.tmpdir(),'website-use-entry-')),root=path.join(parent,'projects');
+ const launcher=fileURLToPath(new URL('../fixtures/website-project/studio/start.ps1',import.meta.url)),server=fileURLToPath(entry);
+ async function launch(){
+  const child=spawn('pwsh',['-NoProfile','-File',launcher,'-Projects',root],{cwd:parent,stdio:['ignore','pipe','pipe']});let stdout='',stderr='',timer;
+  child.stdout.on('data',b=>stdout+=b);child.stderr.on('data',b=>stderr+=b);
+  try{const status=await Promise.race([new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',resolve);}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('launcher did not return')),15000);})]);assert.equal(status,0,stderr);return JSON.parse(stdout);}finally{clearTimeout(timer);}
+ }
+ try{
+  const first=await launch(),state=await (await fetch(first.url+'/api/state')).json();
+  const saved=await fetch(first.url+'/api/save',{method:'POST',headers:{origin:first.url,'content-type':'application/json','x-studio-token':state.token},body:JSON.stringify({name:'saved-v1',recipe:state.recipe})});assert.equal(saved.status,201);
+  const bytes=fs.readFileSync(path.join(root,'recipes/saved-v1.json'));
+  const again=await launch();assert.equal(again.url,first.url,'double-clicking the entry must not start another server');assert.equal(again.record,first.record);assert.deepEqual(fs.readFileSync(path.join(root,'recipes/saved-v1.json')),bytes);
+  const stopped=spawnSync(process.execPath,[server,'stop',first.record],{encoding:'utf8',timeout:10000});assert.equal(stopped.status,0,stopped.stderr);
+  const [restarted,concurrent]=await Promise.all([launch(),launch()]);assert.notEqual(restarted.record,first.record);assert.equal(concurrent.record,restarted.record,'simultaneous entry clicks must also share one session');assert.deepEqual((await (await fetch(restarted.url+'/api/state')).json()).recipes,['saved-v1']);assert.deepEqual(fs.readFileSync(path.join(root,'recipes/saved-v1.json')),bytes);
+ }finally{
+  if(fs.existsSync(path.join(root,'sessions')))for(const record of fs.readdirSync(path.join(root,'sessions')).filter(n=>n.endsWith('.json')&&!n.endsWith('.stopped.json'))){const file=path.join(root,'sessions',record);if(!fs.existsSync(file+'.stopped.json')){const result=spawnSync(process.execPath,[server,'stop',file],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stderr);}}
+ }
+});
+test('session resume rejects wrong identity, foreign URLs, unreadable records and multiple live sessions',async()=>{
+ const {startStudio,findRunningStudio}=await import(entry.href);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'website-use-resume-')),app=await startStudio(root),original=fs.readFileSync(app.record),info=JSON.parse(original);
+ let other;
+ try{
+  assert.deepEqual(await findRunningStudio(root),{url:app.url,record:app.record});
+  for(const patch of [{url:'https://example.invalid'},{root:root+'-other'},{script:'other-server.mjs'}]){
+   fs.writeFileSync(app.record,JSON.stringify({...info,...patch}));await assert.rejects(findRunningStudio(root),/inválido|diferente/);fs.writeFileSync(app.record,original);
+  }
+  fs.writeFileSync(app.record,'{');await assert.rejects(findRunningStudio(root),/ilegível/);fs.writeFileSync(app.record,original);
+  const fake=http.createServer((_req,res)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify({root,sessionId:'wrong'}));});await new Promise(r=>fake.listen(0,'127.0.0.1',r));
+  try{fs.writeFileSync(app.record,JSON.stringify({...info,url:`http://127.0.0.1:${fake.address().port}`}));await assert.rejects(findRunningStudio(root),/diferente/);}finally{fs.writeFileSync(app.record,original);await new Promise(r=>fake.close(r));}
+  other=await startStudio(root);await assert.rejects(findRunningStudio(root),/várias sessões/);
+ }finally{fs.writeFileSync(app.record,original);if(other)await other.stop();await app.stop();}
+ assert.equal(await findRunningStudio(root),null);
+});
 if(available){
  const {startStudio}=await import(entry.href);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'website42-'));

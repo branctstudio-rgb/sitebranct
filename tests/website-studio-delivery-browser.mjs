@@ -24,6 +24,15 @@ for(const engine of engines.split(',')){
   await page.getByRole('button',{name:'Abrir entrega',exact:true}).click();await page.getByRole('heading',{name:'v1 · entrega estática verificada',exact:true}).waitFor();
   fs.appendFileSync(path.join(root,'deliveries/v1/site/index.html'),'test-only alteration');await page.getByRole('button',{name:'Abrir entrega',exact:true}).click();await page.waitForFunction(()=>document.getElementById('status').dataset.state==='error'&&document.activeElement.id==='status');
   assert.match(await page.locator('#status').textContent(),/hash|bytes/);
+  // A new transport error must replace the old field/delivery error, not mask it.
+  await page.route('**/api/validate',route=>route.abort());
+  await page.getByRole('button',{name:'Validar receita',exact:true}).click();
+  await page.waitForFunction(()=>!document.getElementById('recipe-form').hasAttribute('aria-busy'));
+  assert.match(await page.locator('#status').textContent(),/ligação|conexão|concluir/i);
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'status');
+  await page.unroute('**/api/validate');
+  await page.getByRole('button',{name:'Validar receita',exact:true}).click();
+  await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('Receita válida'));
   report.cases.push({engine,version:browser.version(),case:'keyboard-prepare-exact-saved-version-open-close-reopen-tamper-error',state:'PASS'});
  }catch(error){report.errors.push({engine,error:error.stack});process.exitCode=1;}finally{if(browser)await browser.close();if(app)await app.stop();}
 }

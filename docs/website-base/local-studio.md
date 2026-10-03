@@ -3,14 +3,26 @@
 Na raiz deste checkout, com Node disponível:
 
 ```powershell
-./fixtures/website-project/studio/start.ps1 -Projects "$([Environment]::GetFolderPath('MyDocuments'))/branct-projetos"
+./fixtures/website-project/studio/start.ps1 -Projects "$([Environment]::GetFolderPath('MyDocuments'))/branct-projetos" -Open
 ```
 
 Fora do checkout, invocar `start.ps1` pelo seu caminho absoluto em PowerShell 7 (`pwsh`). Não depende da pasta corrente. A raiz/ancestrais são validados antes de criar pasta ou logs; o launcher devolve URL e registo após escuta local, sem aguardar o encerramento do serviço. PowerShell 5 com execução de scripts desativada não é suportado sem decisão própria do operador — não é necessário alterar essa política para usar `pwsh`.
 
 No Windows, ferramentas que capturam a árvore de processos podem aguardar o EOF dos pipes até o servidor parar, mesmo depois de o launcher sair com código 0. Usar o URL/registo emitidos; não iniciar outra sessão só por a ferramenta continuar a aguardar. O teste focal mede separadamente o evento de saída real do launcher e encerra o seu próprio servidor pelo registo.
 
-Abrir o URL `127.0.0.1` retornado. Alternativa, com pasta de projetos já existente: `node fixtures/website-project/studio/server.mjs start CAMINHO_ABSOLUTO_DA_PASTA`.
+`-Open` abre o navegador predefinido. Se a abertura automática não estiver disponível, o endereço `127.0.0.1` também aparece no terminal. Sem `-Open`, apenas devolve o recibo JSON. Abrir de novo o mesmo comando retoma a sessão viva desta mesma versão e pasta; dois cliques simultâneos no launcher Windows são serializados. A identidade é conferida por loopback, não por PID. Uma sessão ativa de outra versão ou registo ambíguo exige encerrar a sessão antiga pelo seu registo; nada é sobrescrito ou terminado à força. Após **Encerrar bancada**, o mesmo comando inicia uma nova sessão e conserva os projetos/revisões.
+
+Alternativa avançada, com pasta de projetos já existente: `node fixtures/website-project/studio/server.mjs start CAMINHO_ABSOLUTO_DA_PASTA`. Essa chamada direta não passa pela serialização do launcher; não a usar para abrir sessões simultâneas na mesma pasta.
+
+### Primeiro uso, do projeto à entrega
+
+1. Em **Criar ou duplicar projeto**, indique nome e identificador (ex.: `oficina-aurora`) e crie a partir da receita aprovada. Em retomadas, selecione o projeto e clique **Abrir projeto**.
+2. Edite nome, textos e cores. Para logo/imagem, selecione PNG local e confirme **Importar para o projeto**. Preencha a descrição da imagem; selecionar sem confirmar não grava o recurso.
+3. Use um nome novo, como `v1`. **Guardar receita** preserva a edição; **Gerar e verificar** com esse mesmo nome cria a revisão e os links de prévia. Não sobrescreve uma revisão existente: para uma alteração seguinte, use `v2`.
+4. Na lista **Versões geradas**, **Preparar entrega** verifica/copia a revisão guardada e oferece os dois links. **Abrir entrega** permite reabrir a cópia depois. Edições pendentes nunca entram silenciosamente na entrega.
+5. Para continuar depois, escolha a receita guardada ou **Reabrir receita** da revisão. O ponto de partida inicial do projeto não é o último rascunho. Antes de fechar, guarde as alterações que queira conservar.
+
+Erros de campo levam o foco ao campo. Se a ligação à bancada falhar, uma mensagem nova substitui o erro anterior e preserva o editor: confirme se o serviço ainda está aberto antes de tentar novamente. Recarregar a página descarta alterações não guardadas; não é necessário fazê-lo para corrigir um campo.
 
 1. Carregar **BRANCT · receita aprovada** ou uma receita/versão guardada.
 2. Editar identidade, paleta, fontes, textos, etapas, rotas e referências do catálogo. O catálogo anterior mantém os assets/pinos BRANCT. A secção de recursos permite selecionar PNGs locais e confirmar a importação; não aceita URLs. A proveniência e a raiz dos assets não são caminhos editáveis no browser.
