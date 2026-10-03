@@ -41,6 +41,14 @@ Não substitua esse comando por encerramento genérico de Node. Cada arranque te
 
 ## Limites
 
+### Trabalhar uma revisão de cliente
+
+Na versão anterior, **Abrir entrega** reverifica e abre a cópia guardada; **Reabrir receita** carrega os valores para editar. Ao reabrir uma receita/versão, o editor sugere um nome livre para a próxima revisão (por exemplo v2). A sugestão não reserva o nome: a validação do servidor continua a recusar qualquer sobrescrita.
+
+O aviso permanente sobre o editor distingue o ponto de partida/receita carregada das alterações por guardar. Abrir uma entrega ou comparar versões não guarda o editor. Para entregar a alteração, **Guardar receita**, depois **Gerar e verificar** e **Preparar entrega** da nova versão. v1 permanece intacta. Reabrir outra receita com edição pendente exige confirmação; cancelar conserva o editor.
+
+Em **Conferir antes e depois**, escolher duas versões geradas diferentes. São lidas as receitas guardadas e as páginas são reverificadas antes de apresentar os campos alterados e quatro links (início/contacto, antes/depois). A comparação não inclui o editor pendente nem constitui aprovação visual automática. **Ocultar comparação** só esconde o painel: as prévias são partilhadas por versão e podem já estar abertas noutra janela. **Encerrar bancada** encerra todos os seus servidores locais. Trocar de projeto remove a comparação do ecrã; não mistura versões de projetos diferentes.
+
 Somente loopback e operador local de confiança. Não é servidor público, sandbox para uploads anónimos nem defesa contra outro processo local privilegiado que modifique simultaneamente a pasta. Não mover/substituir assets/ficheiros enquanto serve; adulterações de receita/saída são recusadas ao abrir/servir a prévia. Sem shell, endpoints reais, recolha de contactos, secrets, CRM ou publicação. Conteúdo local-draft, noindex e publicationAllowed=false permanecem obrigatórios. As páginas de contacto são rascunhos sem envio. Revisão de copy, direitos, QA da receita final e autorização de publicação continuam separados.
 
 O editor reutiliza `project.mjs`, `build/generate/verify`, assets/fontes locais e `preview.mjs`; não altera Cedro/Linha, workflows ou páginas vivas. PT-PT, duas páginas, sem novas dependências. Fontes locais fornecidas: Manrope e Bricolage, escolhidas na UI com prévia; não há importação arbitrária de fontes nem inferência de direitos.

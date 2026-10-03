@@ -4,6 +4,7 @@ const get=(object,key)=>key.split('.').reduce((value,k)=>value[k],object);
 const put=(object,key,value)=>{const keys=key.split('.');const leaf=keys.pop();keys.reduce((o,k)=>o[k],object)[leaf]=value;};
 let state,recipe,dirty=false,busy=false,stopped=false,pendingFocus,selection,selectionURL,selectionEpoch=0,mediaEpoch=0;
 let activeProject=new URL(location.href).searchParams.get('project')||'legacy';
+let editorSource='Ponto de partida';
 const sections=[
  ['01','Identidade & direção','O que identifica o projeto, sem mudar a estrutura.',[
  ['id','Identificador do projeto'],['name','Nome da marca'],['origin','Origem de referência','url'],
@@ -16,6 +17,16 @@ const sections=[
 ];
 function el(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;}
 function message(text,error=false){$('status').textContent=text;$('status').dataset.state=error?'error':'ok';}
+function editorState(){
+ $('editor-state').textContent=editorSource+'. '+(dirty?'Há alterações por guardar. Guarda ou gera uma nova versão antes de preparar a sua entrega.':'Sem alterações por guardar no editor.')+' Abrir uma entrega usa sempre a versão guardada, não este editor.';
+ $('editor-state').dataset.pending=String(dirty);
+}
+function nextVersion(name){
+ const used=new Set([...state.recipes,...state.revisions,...state.deliveries]),match=name.match(/^(.*?)(\d+)$/);
+ const prefix=match?match[1]:name+'-v';let n=match?Number(match[2])+1:2;
+ if(!Number.isSafeInteger(n)||n>1000000)return 'revisao-'+Date.now();
+ while(used.has(prefix+n))n++;return prefix+n;
+}
 function fields(){
  $('fields').replaceChildren();
  for(const [n,title,description,items] of sections){
@@ -31,7 +42,7 @@ function fields(){
      if(input.tagName==='SELECT')for(const value of options||state.catalog[key.split('.')[1]]){const item=state.imported?.find(r=>r.path===value);const option=el('option',item?item.name+' · '+item.sha256.slice(0,8)+(item.available?'':' · ausente/alterado'):value);option.value=value;input.append(option);}
      if(type==='checkbox')input.checked=Boolean(get(recipe,key));else input.value=type==='steps'?get(recipe,key).join('\n'):get(recipe,key);
      input.setAttribute('aria-describedby',key+'-error');
-     input.addEventListener('input',()=>{dirty=true;input.removeAttribute('aria-invalid');$(key+'-error').textContent='';resourcePreview();});
+     input.addEventListener('input',()=>{dirty=true;editorState();input.removeAttribute('aria-invalid');$(key+'-error').textContent='';resourcePreview();});
      const error=el('span',undefined,'error');error.id=key+'-error';box.append(lab,input,error);grid.append(box);
    }
    if(n==='03')grid.append(el('p','O logo acompanha o nome visível da marca, por isso tem alt vazio para evitar repetição. A imagem principal requer descrição ou escolha explícita de decorativa. Importar não concede direitos nem autorização para publicar.','asset-note'));
@@ -80,6 +91,7 @@ async function refresh(project=activeProject){
  select.replaceChildren();for(const [value,label] of [['preset','BRANCT · receita aprovada'],...state.recipes.map(n=>['recipe:'+n,'Guardada · '+n]),...state.revisions.map(n=>['revision:'+n,'Versão · '+n])]){
    const option=el('option',label);option.value=value;select.append(option);
  }if([...select.options].some(o=>o.value===selected))select.value=selected;
+ for(const id of ['compare-before','compare-after']){const select=$(id),old=select.value;select.replaceChildren();for(const name of state.revisions){const option=el('option',name);option.value=name;select.append(option);}if(state.revisions.includes(old))select.value=old;else if(id==='compare-after'&&state.revisions.length)select.value=state.revisions.at(-1);}
  $('revisions').replaceChildren();
  if(!state.revisions.length)$('revisions').append(el('p','A tua primeira versão aparece aqui.','empty'));
  for(const name of state.revisions){
@@ -93,8 +105,34 @@ async function refresh(project=activeProject){
 async function load(value){
  if(dirty&&!confirm('Descartar apenas as alterações por guardar no editor? As versões guardadas mantêm-se.'))return;
  recipe=value==='preset'?structuredClone(state.recipe):(await api((value.startsWith('recipe:')?'recipe':'revision')+'?name='+encodeURIComponent(value.split(':')[1]))).recipe;
- fields();dirty=false;message('Receita carregada. Escolhe um nome novo para guardar a próxima versão.');
+ fields();dirty=false;editorSource=value==='preset'?'Ponto de partida':'Carregada: '+value.split(':')[1];
+ if(value!=='preset')$('version-name').value=nextVersion(value.split(':')[1]);
+ editorState();message('Receita carregada. Escolhe um nome novo para guardar a próxima versão.');
 }
+async function closeComparison(){
+ // Revision previews are shared by name. Hiding this panel must not close
+ // a page the operator already opened through "Ver páginas".
+ $('comparison-result').hidden=true;
+}
+function comparisonValue(value){return value===undefined?'Não definido nesta receita':typeof value==='boolean'?(value?'Sim':'Não'):Array.isArray(value)?value.join(' · '):String(value);}
+async function compare(){
+ const before=$('compare-before').value,after=$('compare-after').value;
+ if(!before||!after||before===after){message('Escolhe duas versões geradas diferentes para comparar.',true);pendingFocus=$('compare-after');return;}
+ await closeComparison();
+ const panel=$('comparison-result');panel.replaceChildren();
+ try{
+  const left=(await api('revision?name='+encodeURIComponent(before))).recipe,right=(await api('revision?name='+encodeURIComponent(after))).recipe;
+  const previews=[];for(const name of [before,after])previews.push(await api('preview',{name}));
+  panel.append(el('h3',before+' → '+after+' · versões guardadas'),el('p','Somente versões guardadas. As edições pendentes não entram nesta comparação. Abre as páginas para conferir o resultado visual.'));
+  const changes=el('dl');let count=0;
+  for(const [,,,items] of sections)for(const [key,label] of items){const a=get(left,key),b=get(right,key);if(JSON.stringify(a)===JSON.stringify(b))continue;count++;changes.append(el('dt',label),el('dd','Antes: '+comparisonValue(a)),el('dd','Depois: '+comparisonValue(b)));}
+  panel.append(count?changes:el('p','As receitas destas versões têm os mesmos valores.'));
+  for(const [i,name] of [before,after].entries())for(const [key,label] of [['home','início'],['contact','contacto']]){const link=el('a',(i===0?'Antes':'Depois')+' · '+name+' · '+label);link.href=previews[i].urls[key];link.target='_blank';link.rel='noopener noreferrer';panel.append(link);}
+  const stop=el('button','Ocultar comparação','secondary');stop.type='button';stop.addEventListener('click',()=>act(async()=>{await closeComparison();message('Comparação ocultada. As prévias abertas mantêm-se até encerrar a bancada ou a respetiva prévia.');pendingFocus=$('compare');}));panel.append(stop);
+  panel.hidden=false;pendingFocus=panel;message('Comparação '+before+' → '+after+' pronta. Nenhuma versão foi alterada.');panel.scrollIntoView({block:'nearest'});
+ }catch(error){await closeComparison();throw error;}
+}
+$('compare').addEventListener('click',()=>act(compare));
 async function preview(name){
  const result=await api('preview',{name}),panel=$('preview-result');panel.replaceChildren();panel.hidden=false;
  panel.append(el('h2',name+' · pronto a experimentar'),el('p','14 ficheiros verificados. Abre as duas páginas reais, servidas apenas neste computador.'));
@@ -114,10 +152,10 @@ async function delivery(name){
 $('load').addEventListener('click',()=>act(()=>load($('recipe-source').value)));
 $('version-name').addEventListener('input',()=>{$('versionName-error').textContent='';$('version-name').removeAttribute('aria-invalid');});
 $('validate').addEventListener('click',()=>act(async()=>{await api('validate',{recipe:collect()});message('Receita válida. Ainda não foi gerada nem publicada.');}));
-$('save').addEventListener('click',()=>act(async()=>{const name=$('version-name').value;await api('save',{name,recipe:collect()});dirty=false;await refresh();message('Receita '+name+' guardada. Podes reabri-la no ponto de partida.');}));
+$('save').addEventListener('click',()=>act(async()=>{const name=$('version-name').value;await api('save',{name,recipe:collect()});dirty=false;editorSource='Receita guardada: '+name;editorState();await refresh();message('Receita '+name+' guardada. Podes reabri-la no ponto de partida.');}));
 $('recipe-form').addEventListener('submit',event=>{event.preventDefault();act(async()=>{
  const name=$('version-name').value;message('A gerar e verificar a nova versão…');
- await api('generate',{name,recipe:collect()});dirty=false;await refresh();await preview(name);
+ await api('generate',{name,recipe:collect()});dirty=false;editorSource='Versão gerada: '+name;editorState();await refresh();await preview(name);
 });});
 $('shutdown').addEventListener('click',()=>act(async()=>{
  if(!confirm('Encerrar esta bancada e as suas prévias? As receitas e versões ficam guardadas.'))return;
@@ -142,7 +180,7 @@ $('import-file').addEventListener('change',async()=>{
 $('import-confirm').addEventListener('click',()=>act(async()=>{
  if(!selection)return;const next=collect(),kind=$('import-target').value;
  $('import-status').textContent='A validar e guardar no projeto…';$('import-progress').removeAttribute('value');
- try{const result=await api('import',selection);next.assets[kind]=result.path;await refresh();recipe=next;fields();resourcePreview(true);dirty=true;clearSelection();$('import-progress').value=3;$('import-status').textContent='Recurso importado e selecionado. Guarde uma nova versão.';pendingFocus=$('assets.'+kind);}
+ try{const result=await api('import',selection);next.assets[kind]=result.path;await refresh();recipe=next;fields();resourcePreview(true);dirty=true;editorState();clearSelection();$('import-progress').value=3;$('import-status').textContent='Recurso importado e selecionado. Guarde uma nova versão.';pendingFocus=$('assets.'+kind);}
  catch(error){$('import-progress').value=1;$('import-status').textContent=error.message+' Corrija a seleção; a receita não foi alterada.';throw error;}
 }));
 for(const kind of ['logo','hero']){const img=$('asset-'+kind+'-preview');img.addEventListener('error',()=>{$('asset-'+kind+'-status').textContent='Recurso ausente ou inválido. Selecione outro ou reimporte o original.';});img.addEventListener('load',()=>{$('asset-'+kind+'-status').textContent='Recurso local disponível.';});}
@@ -155,7 +193,7 @@ async function allowProjectChange(opener){
 }
 $('pending-dialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
 $('pending-save').addEventListener('click',()=>act(async()=>{try{await api('save',{name:$('version-name').value,recipe:collect()});dirty=false;await refresh();$('pending-dialog').close('saved');}catch(error){$('pending-error').textContent=error.message;pendingFocus=$('pending-save');}}));
-async function enterProject(id){await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
+async function enterProject(id){await closeComparison();await refresh(id);clearSelection();dirty=false;$('preview-result').hidden=true;$('delivery-result').hidden=true;$('recipe-source').value='preset';await load('preset');$('version-name').value='v1';history.replaceState(null,'','/?project='+encodeURIComponent(id));pendingFocus=$('project-select');}
 $('project-open').addEventListener('click',async()=>{const id=$('project-select').value;if(id===activeProject)return;if(await allowProjectChange($('project-open')))await act(()=>enterProject(id));});
 $('project-create').addEventListener('click',async()=>{if(!await allowProjectChange($('project-create')))return;await act(async()=>{
  const selected=$('project-source').value,[kind,name]=selected.split(':');const source=selected==='approved'?null:{project:activeProject,kind:kind==='initial'?'initial':kind,name:name||null};
