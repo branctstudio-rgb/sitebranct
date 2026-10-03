@@ -33,6 +33,11 @@ for(const engine of engines.split(',')){
   await page.unroute('**/api/validate');
   await page.getByRole('button',{name:'Validar receita',exact:true}).click();
   await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('Receita válida'));
+  page.once('dialog',dialog=>dialog.dismiss());
+  await page.getByRole('button',{name:'Encerrar bancada',exact:true}).click();
+  await page.waitForFunction(()=>!document.getElementById('recipe-form').hasAttribute('aria-busy'));
+  assert.doesNotMatch(await page.locator('#status').textContent(),/A processar/,'cancelled action must not leave a processing announcement');
+  assert.equal((await fetch(app.url+'/api/state')).status,200,'cancel keeps the owned service active');
   report.cases.push({engine,version:browser.version(),case:'keyboard-prepare-exact-saved-version-open-close-reopen-tamper-error',state:'PASS'});
  }catch(error){report.errors.push({engine,error:error.stack});process.exitCode=1;}finally{if(browser)await browser.close();if(app)await app.stop();}
 }

@@ -1,6 +1,6 @@
 param([Parameter(Mandatory=$true)][string]$Projects, [switch]$Open)
 $ErrorActionPreference = 'Stop'
-$projectsRoot = [IO.Path]::GetFullPath($Projects)
+$projectsRoot = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($Projects))
 $entry = Join-Path $PSScriptRoot 'server.mjs'
 $node = (Get-Command node -ErrorAction Stop).Source
 $key = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($projectsRoot.ToLowerInvariant())))

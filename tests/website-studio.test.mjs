@@ -34,8 +34,8 @@ test('launcher returns promptly outside the checkout and owns a stoppable sessio
 test('opening the local entry twice resumes the same session and preserves saved projects',{skip:process.platform!=='win32'},async()=>{
  const parent=fs.mkdtempSync(path.join(os.tmpdir(),'website-use-entry-')),root=path.join(parent,'projects');
  const launcher=fileURLToPath(new URL('../fixtures/website-project/studio/start.ps1',import.meta.url)),server=fileURLToPath(entry);
- async function launch(){
-  const child=spawn('pwsh',['-NoProfile','-File',launcher,'-Projects',root],{cwd:parent,stdio:['ignore','pipe','pipe']});let stdout='',stderr='',timer;
+ async function launch(folder=root){
+  const child=spawn('pwsh',['-NoProfile','-File',launcher,'-Projects',folder],{cwd:parent,stdio:['ignore','pipe','pipe']});let stdout='',stderr='',timer;
   child.stdout.on('data',b=>stdout+=b);child.stderr.on('data',b=>stderr+=b);
   try{const status=await Promise.race([new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',resolve);}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('launcher did not return')),15000);})]);assert.equal(status,0,stderr);return JSON.parse(stdout);}finally{clearTimeout(timer);}
  }
@@ -45,7 +45,7 @@ test('opening the local entry twice resumes the same session and preserves saved
   const bytes=fs.readFileSync(path.join(root,'recipes/saved-v1.json'));
   const again=await launch();assert.equal(again.url,first.url,'double-clicking the entry must not start another server');assert.equal(again.record,first.record);assert.deepEqual(fs.readFileSync(path.join(root,'recipes/saved-v1.json')),bytes);
   const stopped=spawnSync(process.execPath,[server,'stop',first.record],{encoding:'utf8',timeout:10000});assert.equal(stopped.status,0,stopped.stderr);
-  const [restarted,concurrent]=await Promise.all([launch(),launch()]);assert.notEqual(restarted.record,first.record);assert.equal(concurrent.record,restarted.record,'simultaneous entry clicks must also share one session');assert.deepEqual((await (await fetch(restarted.url+'/api/state')).json()).recipes,['saved-v1']);assert.deepEqual(fs.readFileSync(path.join(root,'recipes/saved-v1.json')),bytes);
+  const [restarted,concurrent]=await Promise.all([launch(),launch(root+path.sep)]);assert.notEqual(restarted.record,first.record);assert.equal(concurrent.record,restarted.record,'equivalent folder spellings must share one launch lock');assert.deepEqual((await (await fetch(restarted.url+'/api/state')).json()).recipes,['saved-v1']);assert.deepEqual(fs.readFileSync(path.join(root,'recipes/saved-v1.json')),bytes);
  }finally{
   if(fs.existsSync(path.join(root,'sessions')))for(const record of fs.readdirSync(path.join(root,'sessions')).filter(n=>n.endsWith('.json')&&!n.endsWith('.stopped.json'))){const file=path.join(root,'sessions',record);if(!fs.existsSync(file+'.stopped.json')){const result=spawnSync(process.execPath,[server,'stop',file],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stderr);}}
  }

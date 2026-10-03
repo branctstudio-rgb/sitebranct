@@ -65,10 +65,11 @@ async function api(route,body,project=activeProject){
 }
 async function act(fn){
  if(busy||stopped)return;busy=true;document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=true);
+ const previousStatus={text:$('status').textContent,error:$('status').dataset.state==='error'};
  message('A processar…');
  $('recipe-form').setAttribute('aria-busy','true');document.querySelectorAll('.error').forEach(n=>n.textContent='');document.querySelectorAll('[aria-invalid]').forEach(n=>n.removeAttribute('aria-invalid'));
  try{await fn();}catch(error){if($('status').dataset.state!=='error'){message('Não foi possível concluir. Verifique se a bancada continua aberta e tente novamente. As edições neste ecrã foram mantidas. Detalhe: '+error.message,true);pendingFocus=$('status');}}
- finally{busy=false;$('recipe-form').removeAttribute('aria-busy');document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=stopped);$('import-confirm').disabled=stopped||!selection;resourcePreview();pendingFocus?.focus();pendingFocus=undefined;}
+ finally{if($('status').textContent==='A processar…')message(previousStatus.text,previousStatus.error);busy=false;$('recipe-form').removeAttribute('aria-busy');document.querySelectorAll('button,input,select,textarea').forEach(b=>b.disabled=stopped);$('import-confirm').disabled=stopped||!selection;resourcePreview();pendingFocus?.focus();pendingFocus=undefined;}
 }
 async function refresh(project=activeProject){
  state=await api('state',undefined,project);activeProject=state.project.id;
