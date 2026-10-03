@@ -7,6 +7,19 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {startStudio} from '../fixtures/website-project/studio/server.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex');
+test('conference binds route roles to the saved recipe, not just valid filenames',async()=>{
+ const {root,app,post}=await harness();try{
+  await post('prepare-delivery',{name:'v1'});const file=path.join(root,'deliveries/v1/delivery.json'),m=JSON.parse(fs.readFileSync(file));[m.routes.home,m.routes.contact]=[m.routes.contact,m.routes.home];fs.writeFileSync(file,JSON.stringify(m));
+  const report=await(await post('check-delivery',{name:'v1'})).json();assert.equal(report.state,'FAIL');assert.match(report.issues[0].message,/Rotas.*receita/);assert.notEqual((await post('delivery-preview',{name:'v1'})).status,200);
+ }finally{await app.stop();}
+});
+test('an existing delivery preview returns the fresh receipt rather than a cached manifest digest',async()=>{
+ const {root,app,post}=await harness();try{
+  await post('prepare-delivery',{name:'v1'});const before=await(await post('delivery-preview',{name:'v1'})).json();
+  const file=path.join(root,'deliveries/v1/delivery.json');fs.appendFileSync(file,'\n');
+  const check=await(await post('check-delivery',{name:'v1'})).json(),after=await(await post('delivery-preview',{name:'v1'})).json();assert.equal(check.state,'PASS');assert.notEqual(check.manifestSha256,before.manifestSha256);assert.equal(after.manifestSha256,check.manifestSha256);assert.equal(after.id,before.id);
+ }finally{await app.stop();}
+});
 test('delivery conference binds the complete checks to the exact saved project/version and manifest',async()=>{
  const {root,app,post}=await harness();try{
   await post('prepare-delivery',{name:'v1'});

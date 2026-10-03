@@ -124,7 +124,9 @@ export async function startStudio(projectRoot){
       const dest=child('deliveries',name),proof=verifyDelivery(dest);
       if(proof.project!==project.id||proof.name!==name)fail('Identidade de entrega divergente.');
       report.manifestSha256=proof.manifestSha256;passed('integrity','17 ficheiros; lista exata, tamanhos e SHA-256.');
-      current='recipe';const rev=readRevision(name);verify(rev.recipe,rev.dir,path.join(dest,'site'));
+      current='recipe';const rev=readRevision(name);
+      if(['home','contact'].some(key=>proof.routes[key]!==rev.recipe.routes[key]))throw Object.assign(new Error('Rotas da entrega divergentes da receita guardada.'),{file:'delivery.json',field:'routes.home'});
+      verify(rev.recipe,rev.dir,path.join(dest,'site'));
       // Only the existing generator's exact bytes reach the reference checker.
       // This is not an HTML importer/parser or an execution environment.
       passed('recipe','Saída idêntica à reconstrução da receita guardada; requisitos existentes preservados.');
@@ -271,7 +273,7 @@ export async function startStudio(projectRoot){
         const check=selected.checkDelivery(slug(input.name));if(check.state!=='PASS')fail(check.issues[0].message);
         const name=slug(input.name),dest=projectChild('deliveries',name),proof=verifyDelivery(dest);
         if(proof.project!==projectId||proof.name!==name)fail('Identidade de entrega divergente.');
-        const existing=[...previews.values()].find(p=>p.public.delivery&&p.public.name===name&&p.public.project===projectId);if(existing)return send(res,200,existing.public);
+        const existing=[...previews.values()].find(p=>p.public.delivery&&p.public.name===name&&p.public.project===projectId);if(existing){Object.assign(existing.public,proof);return send(res,200,existing.public);}
         const running=await serveDelivery(dest),id=randomUUID(),previewRecord=child('sessions',id+'.delivery.json');
         const publicInfo={...proof,id,delivery:true,urls:running.urls};
         try{write(previewRecord,{id,sessionId,name,project:projectId,kind:'delivery',startedAt:new Date().toISOString(),urls:running.urls});}catch(error){await close(running.server);throw error;}
