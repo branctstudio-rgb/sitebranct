@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "cedro",
+  "synthetic": true,
+  "name": "Ateliê Cedro",
+  "mark": "AC",
+  "origin": "https://cedro.example.invalid",
+  "locale": "pt-PT",
+  "palette": {"bg":"#f6f3ea","surface":"#ffffff","ink":"#19352b","accent":"#8a351d"},
+  "fonts": {"body":"manrope","display":"bricolage"},
+  "heroAsset": "workspace",
+  "eyebrow": "Laboratório de identidade / Referência A",
+  "headline": "Espaço para pensar. Forma para viver.",
+  "description": "Uma referência sintética de ateliê: linguagem editorial, materiais e decisões de desenho apresentados com clareza.",
+  "imageAlt": "Composição de trabalho digital usada apenas como ilustração do laboratório",
+  "imageCaption": "Imagem de referência; não representa projeto ou cliente do ateliê.",
+  "approachTitle": "Uma ideia, três perguntas.",
+  "steps": ["O que precisa de espaço?","O que merece permanecer?","O que pode ficar mais simples?"],
+  "contactTitle": "Vamos imaginar o próximo espaço.",
+  "contactText": "Este contacto é demonstrativo. Não há atendimento, recolha de dados ou envio de mensagens nesta referência.",
+  "navigation": {"home":"Ateliê","approach":"Abordagem","contact":"Contacto demonstrativo","open":"Abrir navegação","close":"Fechar navegação"}
+}
