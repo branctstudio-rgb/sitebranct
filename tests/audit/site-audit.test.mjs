@@ -6,6 +6,7 @@ import { mkdtemp, readFile, readdir, rm, unlink, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { join, normalize } from "node:path";
 import test from "node:test";
+import { classifyRecords } from "../../scripts/governance/classify-pr-paths.mjs";
 
 import "./f2-gov-08.test.mjs";
 
@@ -1037,10 +1038,15 @@ function assertManualDiagnosticWorkflow(bytes) {
 }
 
 function assertAuditedPaths(changed, readBlob) {
-  const allowed = /^(package(?:-lock)?\.json$|CLAUDE\.md$|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate|gate-integrity-sentinel)\.yml$|scripts\/governance\/)/;
-  assert.ok(changed.length > 0);
-  assert.deepEqual(changed.filter(path => !allowed.test(path) && path !== manualDiagnosticPath), [], "audited diff contains an unauthorized path");
-  assert.ok(!changed.includes(".github/workflows/deploy.yml"));
+  // Classifier owns current path categories. This audit enforces the offline
+  // boundary, not a second historical delivery allowlist or merge permission.
+  // Protected components remain subject to the separate base-only Sentinel.
+  const classification = classifyRecords(changed.map(path => ({ status: "M", path })));
+  assert.equal(classification.accepted, true, "audited diff contains an unauthorized path: unknown classification");
+  assert.deepEqual(classification.categories.filter(category => !["documentation", "fixtures", "tests", "workflow", "gate-internal"].includes(category)), [], "audited diff contains an unauthorized path: live or deployment category");
+  assert.ok(!changed.includes(".github/workflows/deploy.yml"), "audited diff contains an unauthorized path: deployment workflow");
+  // Preserve the closed manual diagnostic exception, including its lookalikes.
+  assert.deepEqual(changed.filter(path => path.startsWith(".github/workflows/website-linux-diagnostic-") && path !== manualDiagnosticPath), [], "audited diff contains an unauthorized path: manual diagnostic lookalike");
   if (changed.includes(manualDiagnosticPath)) assertManualDiagnosticWorkflow(readBlob(manualDiagnosticPath));
 }
 
@@ -1080,6 +1086,23 @@ test("the audited diff cannot mutate live pages or deployment", async () => {
     assert.match(tree, /^100644 blob [0-9a-f]{40}\t/, "manual workflow must remain a regular Git blob");
     return execFileSync("git", ["cat-file", "blob", `${authoritySha}:${path}`], { cwd: repository, encoding: null });
   });
+});
+
+test("offline audit follows canonical classification for Website base and project deliveries", () => {
+  for (const changed of [
+    [".github/workflows/website-base-references.yml", "docs/website-base/generator.md", "fixtures/website-base/site.css", "fixtures/website-base/navigation.js", "tests/website-base-publication.test.mjs"],
+    [".github/workflows/website-base-references.yml", "docs/website-base/local-studio.md", "fixtures/website-project/studio/index.html", "fixtures/website-project/studio/server.mjs", "tests/website-studio-delivery.test.mjs"],
+    ["docs/new-legitimate.md", "tests/new-legitimate.test.mjs", "fixtures/new-legitimate.json", ".github/workflows/common.yml"],
+  ]) assert.doesNotThrow(() => assertAuditedPaths(changed, () => { throw new Error("ordinary classification must not invent a blob exception"); }));
+});
+
+test("offline classification does not authorize live, deploy, unknown or mixed rename paths", () => {
+  for (const path of ["index.html", "src/css/branct.css", "src/js/branct.js", "src/fonts/example.woff2", "src/i18n/pt.json", "src/img/example.webp", "src/img/example.webm", "robots.txt", "deploy/publish-manifest.json", "scripts/deploy/build-publish-payload.mjs", ".github/workflows/deploy.yml", "unclassified/new.bin", "fixtures/../index.html"]) {
+    assert.throws(() => assertAuditedPaths(["docs/website-base/generator.md", path], () => Buffer.from("{}")), /unauthorized|unsafe/);
+  }
+  // The real collector uses --no-renames: moving live content to an offline path keeps both names.
+  assert.throws(() => assertAuditedPaths(["index.html", "fixtures/website-base/index.html"], () => Buffer.from("{}")), /unauthorized/);
+  assert.throws(() => assertAuditedPaths([], () => Buffer.from("{}")));
 });
 
 await import("./phase-2-governance.test.mjs");
