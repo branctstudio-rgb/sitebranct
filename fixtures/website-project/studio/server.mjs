@@ -24,7 +24,10 @@ const projectSlug=id=>{
 };
 const write=(file,value)=>fs.writeFileSync(file,JSON.stringify(value,null,2)+'\n',{flag:'wx'});
 const close=server=>new Promise((resolve,reject)=>{
-  server.close(error=>error&&error.code!=='ERR_SERVER_NOT_RUNNING'?reject(error):resolve());
+  // Browser preconnections may never send HTTP and are not considered idle requests.
+  // Give owned responses time to drain, then close only this server's connections.
+  const drain=setTimeout(()=>server.closeAllConnections(),500);
+  server.close(error=>{clearTimeout(drain);error&&error.code!=='ERR_SERVER_NOT_RUNNING'?reject(error):resolve();});
   server.closeIdleConnections();
 });
 

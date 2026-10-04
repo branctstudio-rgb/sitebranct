@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
+import net from 'node:net';
 import {createHash} from 'node:crypto';
 import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
@@ -11,6 +12,22 @@ import {fileURLToPath} from 'node:url';
 const entry=new URL('../fixtures/website-project/studio/server.mjs',import.meta.url);
 const available=fs.existsSync(entry);
 test('local studio provides a real loopback creation service',()=>assert.ok(available,'Local creation service has not been implemented'));
+test('owned studio shutdown finishes with an idle browser preconnection and preserves other servers',async()=>{
+ const {startStudio}=await import(entry.href);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'website68-stop-')),app=await startStudio(root);
+ const other=http.createServer((_req,res)=>res.end('unrelated'));
+ await new Promise(r=>other.listen(0,'127.0.0.1',r));
+ const socket=net.connect(new URL(app.url).port,'127.0.0.1');socket.on('error',()=>{});
+ await new Promise((resolve,reject)=>{socket.once('connect',resolve);socket.once('error',reject);});
+ // A browser can preconnect without sending an HTTP request. It still belongs to this server.
+ let timer,stopped;
+ try{
+  stopped=app.stop();
+  await Promise.race([stopped,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Owned preconnection prevented shutdown receipt')),2500);})]);
+  assert.equal(JSON.parse(fs.readFileSync(app.record+'.stopped.json','utf8')).state,'STOPPED');
+  assert.equal(await (await fetch(`http://127.0.0.1:${other.address().port}`)).text(),'unrelated');
+ }finally{clearTimeout(timer);socket.destroy();await stopped;await new Promise(r=>other.close(r));}
+});
 test('launcher refuses linked ancestors before creating any directory', {skip:process.platform!=='win32'},()=>{
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'website42-launch-'));
  const real=path.join(temp,'real'),linked=path.join(temp,'linked');fs.mkdirSync(real);fs.symlinkSync(real,linked,'junction');
