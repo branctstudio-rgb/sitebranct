@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 export const EXPECTED_POLICY = Object.freeze([
   "*.html", ".htaccess", "robots.txt", "sitemap.xml",
+  "website/.htaccess", "website/geo.php", "website/index.html", "website/lead.php", "website/quiz.css", "website/quiz.js",
   "src/css/**", "src/js/**", "src/fonts/**", "src/i18n/**",
   "src/img/**", "!src/img/video.mp4",
 ]);

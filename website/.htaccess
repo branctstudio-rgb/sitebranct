@@ -1,0 +1,8 @@
+GeoIPEnable On
+DirectoryIndex index.html
+Options -Indexes
+<FilesMatch "^(geo|lead)\.php$">
+  <IfModule mod_headers.c>
+    Header always set Cache-Control "private, no-store, max-age=0"
+  </IfModule>
+</FilesMatch>
