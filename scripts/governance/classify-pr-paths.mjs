@@ -2,6 +2,14 @@ import { appendFile, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const LIVE = new Set(["root-published", "html", "css", "javascript", "fonts", "translations", "images", "video"]);
+const websiteCampaignPaths = new Map([
+  ["website/.htaccess", "root-published"],
+  ["website/geo.php", "root-published"],
+  ["website/lead.php", "root-published"],
+  ["website/index.html", "html"],
+  ["website/quiz.css", "css"],
+  ["website/quiz.js", "javascript"],
+]);
 const AUDIT_SAFE = (path) => /^(?:package(?:-lock)?\.json$|CLAUDE\.md|docs\/audit\/|fixtures\/audit\/|tests\/audit\/|\.github\/workflows\/(audit-offline|universal-pr-gate)\.yml$|scripts\/governance\/)/.test(path);
 const GIT_STATUS = /^(?:A|M|D|T|[RC](?:100|0\d{2}))$/;
 
@@ -12,6 +20,7 @@ function assertSafePath(path) {
 }
 
 function categoryOf(path) {
+  if (websiteCampaignPaths.has(path)) return websiteCampaignPaths.get(path);
   if (/^(?:\.htaccess|robots\.txt|sitemap\.xml)$/.test(path)) return "root-published";
   if (/^docs\//.test(path) || /^(CLAUDE|AUDIT)\.md$/.test(path)) return "documentation";
   if (/^tests\//.test(path)) return "tests";

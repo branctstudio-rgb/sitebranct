@@ -143,12 +143,20 @@ if (process.env.F2_GOV_02A_TARGET === "current") {
   });
 
   test("every currently published file is a known live path", () => {
-    assert.equal(publishManifest.files.length, 56);
+    assert.equal(publishManifest.files.length, 63);
     for (const path of publishManifest.files) {
       const result = classifyRecords([{ status:"M", path }]);
       assert.equal(result.accepted, true, `published path classified unknown: ${path}`);
       assert.ok(result.suites.includes("browser-baseline"), `published path lacks browser verification: ${path}`);
       assert.ok(result.suites.includes("visual-evidence"), `published path lacks visual verification: ${path}`);
+    }
+  });
+
+  test("unlisted campaign files are rejected even inside the published directory", () => {
+    for (const path of ["website/admin.php", "website/other.html", "website/nested/quiz.js"]) {
+      const result = classifyRecords([{ status: "A", path }]);
+      assert.equal(result.accepted, false);
+      assert.deepEqual(result.unknownPaths, [path]);
     }
   });
 
