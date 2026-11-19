@@ -1,5 +1,21 @@
 'use strict';
 const copy = {
+  en: {
+    title: 'Request a website quote | BRANCT.Tech', hero: 'A website built around your business.',
+    intro: 'Tell us what you need. Our team will review your project and get in touch about a quote.',
+    steps: ['Website type','Industry','Goal','Timeline','Request a quote'],
+    questions: ['What kind of website do you need?', 'What industry is your business in?', 'What would you like visitors to do on your site?', 'When would you like your website to go live?', 'Who should we contact about the project?'],
+    options: [
+      ['Business website','Online shop','Campaign landing page','Redesign my current website','I’d like some guidance'],
+      ['Retail','Professional services','Health and wellness','Hospitality and restaurants','Construction and property','Other'],
+      ['Request a quote or get in touch','Buy products online','Book a service','Explore my business and portfolio','I’m still deciding'],
+      ['In the next month','In one to three months','More than three months from now','I don’t have a date yet']
+    ],
+    next: 'Continue', back: 'Back', send: 'Request a quote', sending: 'Sending…', name: 'Name', email: 'Email', company: 'Company (optional)',
+    privacy: 'Privacy policy (in Portuguese)', agree: 'I have read the privacy policy and agree that BRANCT may contact me about this request.',
+    summary: 'Review my answers', choose: 'Choose an option to continue.', missing: 'Enter your name (at least two letters) and a valid email address.', permission: 'Please confirm that we may contact you about your request.',
+    failed: 'We couldn’t send your request. Your answers are still here. Try again or contact our team.', contact: 'Contact BRANCT', success: 'We’ve received your request.', thanks: 'Our team will review your project and get in touch using the email address you provided.', done: 'Request sent'
+  },
   pt: {
     title: 'Pedido de proposta para website | BRANCT.Tech', hero: 'Um website à medida da tua empresa.',
     intro: 'Conta-nos o que precisas. Com estas respostas, a nossa equipa pode avaliar o projeto e falar contigo sobre uma proposta.',
@@ -33,11 +49,12 @@ const copy = {
     failed: 'Invio non riuscito. Le tue risposte sono ancora qui. Riprova o contatta il team.', contact: 'Contatta BRANCT', success: 'Abbiamo ricevuto la tua richiesta.', thanks: 'Il team BRANCT valuterà il progetto e ti contatterà all’indirizzo email indicato.', done: 'Richiesta inviata'
   }
 };
-const state = { lang: 'pt', step: 0, answers: [null,null,null,null], name: '', email: '', company: '', consent: false, busy: false, done: false };
+const state = { lang: 'en', step: 0, answers: [null,null,null,null], name: '', email: '', company: '', consent: false, busy: false, done: false };
 const el = id => document.getElementById(id);
 const query = new URLSearchParams(location.search);
 let interacted = false;
-const locale = () => state.lang === 'it' ? 'it-IT' : 'pt-PT';
+const locales = {pt: 'pt-PT', it: 'it-IT', en: 'en'};
+const locale = () => locales[state.lang];
 function storeContact() {
   if (!el('name')) return;
   for (const key of ['name','email','company']) state[key] = el(key).value;
@@ -49,12 +66,13 @@ function summaryRows(t) {
 function draw(focus = false) {
   const t = copy[state.lang];
   document.documentElement.lang = locale();
+  document.documentElement.classList.remove('locale-pending');
   document.title = t.title;
   document.querySelector('meta[name=description]').content = t.intro;
   el('hero-title').textContent = t.hero;
   el('intro').textContent = t.intro;
   el('privacy').textContent = t.privacy;
-  for (const lang of ['it','pt']) {
+  for (const lang of Object.keys(locales)) {
     el(lang).setAttribute('aria-pressed', String(state.lang === lang));
     el(lang).disabled = state.busy;
   }
@@ -148,31 +166,25 @@ el('quiz').onsubmit = async event => {
   }
 };
 el('back').onclick = () => { if(state.busy || state.step<1) return; storeContact(); state.step--; draw(true); };
-for (const lang of ['it','pt']) el(lang).onclick = () => {
+for (const lang of Object.keys(locales)) el(lang).onclick = () => {
   if (state.busy) return;
   interacted = true;
   storeContact();
   state.lang = lang;
-  try {localStorage.setItem('branct.website.language',lang)} catch {}
   draw();
 };
 async function initialize() {
-  let saved;
-  try {saved=localStorage.getItem('branct.website.language')} catch {}
-  const hint=query.get('lang')?.split('-')[0]?.toLowerCase();
-  const supported = value => ['pt','it'].includes(value);
-  const fallback = (navigator.languages || [navigator.language]).map(v => v.split('-')[0]).find(supported) || 'pt';
-  state.lang = supported(saved) ? saved : supported(hint) ? hint : fallback;
-  draw();
-  if (supported(saved) || supported(hint)) return;
+  let lang = 'en';
   try {
     const result=await fetch('./geo.php',{cache:'no-store',signal:AbortSignal.timeout(2200)});
-    if (!result.ok || interacted) return;
-    const country=(await result.json()).country;
-    if (!interacted && ['IT','PT'].includes(country)) {
-      state.lang=country.toLowerCase();
-      draw();
+    if (result.ok) {
+      const {country} = await result.json();
+      if (country === 'PT' || country === 'IT') lang = country.toLowerCase();
     }
   } catch {}
+  if (!interacted) {
+    state.lang = lang;
+    draw();
+  }
 }
 initialize();

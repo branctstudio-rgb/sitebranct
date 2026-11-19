@@ -21,7 +21,7 @@ $raw = file_get_contents('php://input', false, null, 0, 8193);
 if (strlen($raw) > 8192) reply(413);
 $data = json_decode($raw, true);
 if (!is_array($data) || ($data['consent'] ?? null) !== true ||
-    !in_array($data['locale'] ?? '', ['pt-PT', 'it-IT'], true) || !empty($data['website_url'])) reply(422);
+    !in_array($data['locale'] ?? '', ['pt-PT', 'it-IT', 'en'], true) || !empty($data['website_url'])) reply(422);
 
 function field(array $data, string $key, int $max, bool $required = true): string {
     $value = $data[$key] ?? '';
